@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/hrms-client/static/css/main.f855e6bc.css",
+    "main.js": "/hrms-client/static/js/main.e1bdfb0d.js",
+    "static/js/488.f5e8bd74.chunk.js": "/hrms-client/static/js/488.f5e8bd74.chunk.js",
+    "index.html": "/hrms-client/index.html",
+    "main.f855e6bc.css.map": "/hrms-client/static/css/main.f855e6bc.css.map",
+    "main.e1bdfb0d.js.map": "/hrms-client/static/js/main.e1bdfb0d.js.map",
+    "488.f5e8bd74.chunk.js.map": "/hrms-client/static/js/488.f5e8bd74.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f855e6bc.css",
+    "static/js/main.e1bdfb0d.js"
+  ]
+}
