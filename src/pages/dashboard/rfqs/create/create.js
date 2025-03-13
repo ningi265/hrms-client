@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,6 +21,8 @@ import { useAuth } from "../../../../authcontext/authcontext";
 export default function CreateRFQPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [requisitions, setRequisitions] = useState([]); // State to store all requisitions
+  const [selectedRequisition, setSelectedRequisition] = useState(null); // Selected requisition
   const [formData, setFormData] = useState({
     itemName: "",
     quantity: "",
@@ -26,28 +30,75 @@ export default function CreateRFQPage() {
   });
   const [vendors, setVendors] = useState([]); // State to store vendors
   const [isLoading, setIsLoading] = useState(false);
+  const [isVendorsLoading, setIsVendorsLoading] = useState(false); // Separate loading state for vendors
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
 
-  // Fetch vendors from the backend
+  // Fetch all requisitions and vendors on component mount
   useEffect(() => {
-    const fetchVendors = async () => {
+    const fetchRequisitionsAndVendors = async () => {
+      setIsLoading(true);
       try {
+        // Fetch all requisitions
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/vendors", {
+        const requisitionsResponse = await fetch("https://hrms-6s3i.onrender.com/api/requisitions", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        const data = await response.json();
-        setVendors(data);
+        const requisitionsData = await requisitionsResponse.json();
+
+        if (!requisitionsResponse.ok) {
+          throw new Error(requisitionsData.message || "Failed to fetch requisitions");
+        }
+
+        // Filter approved requisitions
+        const approvedRequisitions = requisitionsData.filter(
+          (req) => req.status === "approved"
+        );
+        setRequisitions(approvedRequisitions);
+
+        // Fetch vendors
+        setIsVendorsLoading(true);
+        const vendorsResponse = await fetch("https://hrms-6s3i.onrender.com/api/vendors", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const vendorsData = await vendorsResponse.json();
+
+        if (!vendorsResponse.ok) {
+          throw new Error(vendorsData.message || "Failed to fetch vendors");
+        }
+
+        setVendors(vendorsData);
       } catch (err) {
-        console.error("Failed to fetch vendors:", err);
+        setError(err.message || "Failed to fetch data");
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
+        setIsVendorsLoading(false);
       }
     };
 
-    fetchVendors();
+    fetchRequisitionsAndVendors();
   }, []);
+
+  // Handle requisition selection
+  const handleRequisitionChange = (e) => {
+    const requisitionId = e.target.value;
+    const selected = requisitions.find((req) => req._id === requisitionId);
+    setSelectedRequisition(selected);
+
+    // Auto-fill form with selected requisition data
+    if (selected) {
+      setFormData((prev) => ({
+        ...prev,
+        itemName: selected.itemName,
+        quantity: selected.quantity,
+      }));
+    }
+  };
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -55,6 +106,15 @@ export default function CreateRFQPage() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+    }));
+  };
+
+  // Handle vendor selection changes
+  const handleVendorChange = (e) => {
+    const { value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      vendors: value, // Update vendors array with selected values
     }));
   };
 
@@ -77,6 +137,7 @@ export default function CreateRFQPage() {
           itemName: formData.itemName,
           quantity: formData.quantity,
           vendors: formData.vendors,
+          requisitionId: selectedRequisition?._id, // Include selected requisition ID
         }),
       });
       const data = await response.json();
@@ -126,6 +187,24 @@ export default function CreateRFQPage() {
 
       <Paper sx={{ p: 3 }}>
         <form onSubmit={handleSubmit}>
+          {/* Requisition Selection */}
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Select Requisition</InputLabel>
+            <Select
+              name="requisition"
+              value={selectedRequisition?._id || ""}
+              onChange={handleRequisitionChange}
+              required
+              disabled={isLoading}
+            >
+              {requisitions.map((req) => (
+                <MenuItem key={req._id} value={req._id}>
+                  {req.itemName} (Qty: {req.quantity})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           {/* Item Name */}
           <TextField
             label="Item Name"
@@ -135,6 +214,7 @@ export default function CreateRFQPage() {
             fullWidth
             required
             sx={{ mb: 2 }}
+            disabled // Disable editing if auto-filled
           />
 
           {/* Quantity */}
@@ -147,6 +227,7 @@ export default function CreateRFQPage() {
             fullWidth
             required
             sx={{ mb: 2 }}
+            disabled // Disable editing if auto-filled
           />
 
           {/* Vendors */}
@@ -155,9 +236,10 @@ export default function CreateRFQPage() {
             <Select
               name="vendors"
               value={formData.vendors}
-              onChange={handleInputChange}
+              onChange={handleVendorChange}
               multiple
               required
+              disabled={isVendorsLoading} // Disable if vendors are still loading
             >
               {vendors.map((vendor) => (
                 <MenuItem key={vendor._id} value={vendor._id}>
@@ -165,6 +247,7 @@ export default function CreateRFQPage() {
                 </MenuItem>
               ))}
             </Select>
+            {isVendorsLoading && <CircularProgress size={24} sx={{ mt: 2 }} />}
           </FormControl>
 
           {/* Submit Button */}
@@ -173,7 +256,7 @@ export default function CreateRFQPage() {
             variant="contained"
             color="primary"
             startIcon={<Save />}
-            disabled={isLoading}
+            disabled={isLoading || isVendorsLoading || !selectedRequisition}
           >
             {isLoading ? <CircularProgress size={24} /> : "Submit RFQ"}
           </Button>
