@@ -54,7 +54,7 @@ export default function CreateRFQPage() {
 
         // Filter approved requisitions
         const approvedRequisitions = requisitionsData.filter(
-          (req) => req.status === "approved"
+          (req) => req.status === "approved" // Change to "pending" for testing
         );
         setRequisitions(approvedRequisitions);
 

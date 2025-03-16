@@ -38,15 +38,23 @@ export default function InvoicesPage() {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
+        console.log("Fetching invoices..."); // Debug log
         const token = localStorage.getItem("token");
+        console.log("Token from localStorage:", token); // Debug log
+
         const response = await fetch("https://hrms-6s3i.onrender.com/api/invoices", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
+
+        console.log("Fetch invoices response:", response); // Debug log
+
         if (!response.ok) throw new Error("Failed to fetch invoices");
+
         const data = await response.json();
+        console.log("Fetched invoices data:", data); // Debug log
         setInvoices(data);
       } catch (error) {
         console.error("Failed to fetch invoices:", error);
@@ -61,6 +69,8 @@ export default function InvoicesPage() {
 
   // Open the dialog for approving, rejecting, or marking as paid
   const openDialog = (invoice, type) => {
+    console.log("Opening dialog for invoice:", invoice); // Debug log
+    console.log("Action type:", type); // Debug log
     setSelectedInvoice(invoice);
     setActionType(type);
     setIsDialogOpen(true);
@@ -68,6 +78,7 @@ export default function InvoicesPage() {
 
   // Close the dialog
   const closeDialog = () => {
+    console.log("Closing dialog"); // Debug log
     setIsDialogOpen(false);
     setSelectedInvoice(null);
     setActionType("");
@@ -75,7 +86,13 @@ export default function InvoicesPage() {
 
   // Handle invoice action (approve, reject, mark as paid)
   const handleInvoiceAction = async () => {
+    console.log("Handling invoice action..."); // Debug log
+    console.log("Selected Invoice:", selectedInvoice); // Debug log
+    const token = localStorage.getItem("token");
+    console.log("Token:", token); // Debug log
+
     if (!selectedInvoice || !token) {
+      console.error("Invalid request: selectedInvoice or token is missing"); // Debug log
       setSnackbarMessage("Invalid request. Please try again.");
       setSnackbarOpen(true);
       return;
@@ -85,22 +102,25 @@ export default function InvoicesPage() {
 
     try {
       let url;
-      let method = "PUT"; // All actions use PUT method
+      let method = "POST"; // All actions use PUT method
 
       // Determine the endpoint based on the action type
       switch (actionType) {
         case "approve":
-          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/status/approve`;
+          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/approve`;
           break;
         case "reject":
-          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/status/reject`;
+          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/reject`;
           break;
         case "mark-as-paid":
-          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/status/pay`;
+          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/pay`;
           break;
         default:
           throw new Error("Invalid action type");
       }
+
+      console.log("API Endpoint:", url); // Debug log
+      console.log("Request Method:", method); // Debug log
 
       const response = await fetch(url, {
         method,
@@ -110,9 +130,14 @@ export default function InvoicesPage() {
         },
       });
 
+      console.log("API Response:", response); // Debug log
+
       const data = await response.json();
+      console.log("API Response Data:", data); // Debug log
+
       if (!response.ok) {
         if (data.message === "Invalid or expired token") {
+          console.error("Invalid or expired token"); // Debug log
           setSnackbarMessage("Your session has expired. Please log in again.");
           setSnackbarOpen(true);
           logout();
@@ -128,11 +153,12 @@ export default function InvoicesPage() {
         )
       );
 
+      console.log("Invoice action successful:", actionType); // Debug log
       setSnackbarMessage(`Invoice ${actionType.replace("-", " ")} successfully!`);
       setSnackbarOpen(true);
       closeDialog();
     } catch (error) {
-      console.error(`Error performing ${actionType} action:`, error);
+      console.error(`Error performing ${actionType} action:`, error); // Debug log
       setSnackbarMessage(error.message);
       setSnackbarOpen(true);
     } finally {
@@ -142,11 +168,13 @@ export default function InvoicesPage() {
 
   // Navigate to the payment page with invoice data
   const handlePayInvoice = (invoice) => {
+    console.log("Navigating to payment page for invoice:", invoice); // Debug log
     navigate("/invoices/pay", { state: { invoice } });
   };
 
   // Show loading spinner while data is being fetched
   if (isLoading) {
+    console.log("Loading invoices..."); // Debug log
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress />
@@ -156,6 +184,7 @@ export default function InvoicesPage() {
 
   // Show error message if fetching invoices fails
   if (error) {
+    console.error("Error fetching invoices:", error); // Debug log
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">{error}</Alert>

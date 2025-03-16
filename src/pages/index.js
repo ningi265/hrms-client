@@ -33,7 +33,7 @@ export default function Home() {
         <Typography variant="h6" color="textSecondary" style={{ maxWidth: "600px", margin: "0 auto 24px" }}>
           A complete solution for managing requisitions, vendors, purchase orders, and invoices.
         </Typography>
-        <Link to="/auth/register">
+        <Link to="/register">
           <Button variant="contained" size="large" style={{ padding: "12px 24px" }}>
             Get Started
           </Button>

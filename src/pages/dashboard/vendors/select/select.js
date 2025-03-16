@@ -33,7 +33,7 @@ export default function SelectVendorPage() {
     const fetchRFQs = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:4000/api/rfqs", {
+        const response = await fetch("https://hrms-6s3i.onrender.com/api/rfqs", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -64,7 +64,7 @@ export default function SelectVendorPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:4000/api/rfqs/${rfqId}/select`, {
+      const response = await fetch(`https://hrms-6s3i.onrender.com/api/rfqs/${rfqId}/select`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -14,7 +14,8 @@ import {
   CircularProgress,
   Alert,
   Chip,
-  Box
+  Box,
+  Snackbar,
 } from "@mui/material";
 import { Check, X, AlertCircle } from "lucide-react";
 
@@ -22,6 +23,8 @@ export default function ManageRequisitionsPage() {
   const [requisitions, setRequisitions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const navigate = useNavigate();
 
   // Fetch pending requisitions
@@ -66,6 +69,10 @@ export default function ManageRequisitionsPage() {
             req._id === requisitionId ? { ...req, status: action === "approve" ? "approved" : "rejected" } : req
           )
         );
+
+        // Show success notification
+        setSnackbarMessage(`Requisition ${action === "approve" ? "approved" : "rejected"} successfully!`);
+        setSnackbarOpen(true);
       } else {
         setError(data.message || "Failed to update requisition");
       }
@@ -73,6 +80,11 @@ export default function ManageRequisitionsPage() {
       setError("Failed to update requisition");
       console.error(err);
     }
+  };
+
+  // Close the Snackbar
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
   };
 
   if (isLoading) {
@@ -163,6 +175,15 @@ export default function ManageRequisitionsPage() {
           </Table>
         </TableContainer>
       )}
+
+      {/* Snackbar for success notifications */}
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000} // Auto-close after 6 seconds
+        onClose={handleCloseSnackbar}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }} // Position at bottom-right
+      />
     </Container>
   );
 }

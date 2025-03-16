@@ -20,6 +20,26 @@ import {
 } from "@mui/material";
 import { useAuth } from "../../../../authcontext/authcontext";
 
+// Utility function to generate a tracking number (2 letters + 4 digits)
+const generateTrackingNumber = () => {
+  const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const digits = "0123456789";
+
+  let trackingNumber = "";
+
+  // Generate 2 random letters
+  for (let i = 0; i < 2; i++) {
+    trackingNumber += letters[Math.floor(Math.random() * letters.length)];
+  }
+
+  // Generate 4 random digits
+  for (let i = 0; i < 4; i++) {
+    trackingNumber += digits[Math.floor(Math.random() * digits.length)];
+  }
+
+  return trackingNumber;
+};
+
 export default function VendorPODetailsPage() {
   const { token } = useAuth();
   const [vendorId, setVendorId] = useState(null);
@@ -31,6 +51,7 @@ export default function VendorPODetailsPage() {
   const [trackingNumber, setTrackingNumber] = useState(""); // Tracking number input
   const [carrier, setCarrier] = useState(""); // Carrier input
 
+  // Fetch vendor details
   useEffect(() => {
     const fetchVendorDetails = async () => {
       try {
@@ -51,6 +72,7 @@ export default function VendorPODetailsPage() {
     fetchVendorDetails();
   }, [token]);
 
+  // Fetch purchase orders for the vendor
   useEffect(() => {
     const fetchPOs = async () => {
       if (!vendorId) return;
@@ -77,11 +99,10 @@ export default function VendorPODetailsPage() {
     if (vendorId) fetchPOs();
   }, [vendorId, token]);
 
+  // Confirm a purchase order
   const handleConfirmPO = async (poId) => {
     try {
-      console.log("Confirming PO with ID:", poId);
       const token = localStorage.getItem("token");
-
       const response = await fetch(
         `https://hrms-6s3i.onrender.com/api/purchase-orders/${poId}/vendor/confirm`,
         {
@@ -113,21 +134,28 @@ export default function VendorPODetailsPage() {
     }
   };
 
+  // Open the dialog for updating delivery status
   const handleOpenDialog = (po) => {
-    setSelectedPO(po); // Set the selected PO
-    setOpenDialog(true); // Open the dialog
+    setSelectedPO(po);
+    setTrackingNumber(generateTrackingNumber()); // Auto-generate tracking number
+    setOpenDialog(true);
   };
 
+  // Close the dialog
   const handleCloseDialog = () => {
-    setOpenDialog(false); // Close the dialog
-    setTrackingNumber(""); // Reset tracking number
-    setCarrier(""); // Reset carrier
+    setOpenDialog(false);
+    setTrackingNumber("");
+    setCarrier("");
   };
 
-  const handleUpdateDeliveryStatus = async () => {
+  // Update delivery status (shipped or delivered)
+  const handleUpdateDeliveryStatus = async (status) => {
     try {
-      const token = localStorage.getItem("token");
+      if (!selectedPO || !trackingNumber || !carrier) {
+        throw new Error("Missing required data.");
+      }
 
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `https://hrms-6s3i.onrender.com/api/purchase-orders/${selectedPO._id}/delivery-status`,
         {
@@ -137,16 +165,20 @@ export default function VendorPODetailsPage() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            deliveryStatus: "shipped",
+            deliveryStatus: status,
             trackingNumber,
             carrier,
-            token
+            token,
           }),
         }
       );
 
-      if (!response.ok)
-        throw new Error(`Failed to update delivery status. Status: ${response.status}`);
+      if (!response.ok) {
+        const errorData = await response.json(); // Parse the error response
+        throw new Error(
+          `Failed to update delivery status. Status: ${response.status}. Message: ${errorData.message}`
+        );
+      }
 
       const updatedPO = await response.json();
 
@@ -154,7 +186,7 @@ export default function VendorPODetailsPage() {
       setPos((prevPos) =>
         prevPos.map((po) =>
           po._id === selectedPO._id
-            ? { ...po, deliveryStatus: "shipped", trackingNumber, carrier }
+            ? { ...po, deliveryStatus: status, trackingNumber, carrier }
             : po
         )
       );
@@ -162,49 +194,7 @@ export default function VendorPODetailsPage() {
       handleCloseDialog(); // Close the dialog
     } catch (err) {
       console.error("❌ Error updating delivery status:", err);
-      setError("Could not update delivery status.");
-    }
-  };
-
-  const handleUpdateDelivery = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await fetch(
-        `https://hrms-6s3i.onrender.com/api/purchase-orders/${selectedPO._id}/delivery-status`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            deliveryStatus: "delivered",
-            trackingNumber,
-            carrier,
-            token
-          }),
-        }
-      );
-
-      if (!response.ok)
-        throw new Error(`Failed to update delivery status. Status: ${response.status}`);
-
-      const updatedPO = await response.json();
-
-      // Update the state with the updated PO
-      setPos((prevPos) =>
-        prevPos.map((po) =>
-          po._id === selectedPO._id
-            ? { ...po, deliveryStatus: "delivered", trackingNumber, carrier }
-            : po
-        )
-      );
-
-      handleCloseDialog(); // Close the dialog
-    } catch (err) {
-      console.error("❌ Error updating delivery status:", err);
-      setError("Could not update delivery status.");
+      setError(err.message); // Display the detailed error message
     }
   };
 
@@ -259,35 +249,25 @@ export default function VendorPODetailsPage() {
                 <TableCell>{po.deliveryStatus}</TableCell>
                 <TableCell>${po.totalAmount}</TableCell>
                 <TableCell>
-  <Button
-    variant="contained"
-    color="primary"
-    onClick={() => handleConfirmPO(po._id)}
-    disabled={po.vendorConfirmation?.confirmed} // Disable button if already confirmed
-    sx={{ mr: 2 }}
-  >
-    {po.vendorConfirmation?.confirmed ? "Confirmed" : "Confirm"}
-  </Button>
-  {!po.vendorConfirmation?.confirmed && po.deliveryStatus !== "shipped" && po.deliveryStatus !== "delivered" && (
-    <Button
-      variant="contained"
-      color="secondary"
-      onClick={() => handleOpenDialog(po)}
-      sx={{ mr: 2 }}
-    >
-      Mark as Shipped
-    </Button>
-  )}
-  {po.vendorConfirmation?.confirmed && po.deliveryStatus === "shipped" && (
-    <Button
-      variant="contained"
-      color="secondary"
-      onClick={() => handleOpenDialog(po)}
-    >
-      Mark as Delivered
-    </Button>
-  )}
-</TableCell>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleConfirmPO(po._id)}
+                    disabled={po.vendorConfirmation?.confirmed}
+                    sx={{ mr: 2 }}
+                  >
+                    {po.vendorConfirmation?.confirmed ? "Confirmed" : "Confirm"}
+                  </Button>
+                  {po.vendorConfirmation?.confirmed && po.deliveryStatus !== "delivered" && (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => handleOpenDialog(po)}
+                    >
+                      {po.deliveryStatus === "shipped" ? "Mark as Delivered" : "Mark as Shipped"}
+                    </Button>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -301,7 +281,7 @@ export default function VendorPODetailsPage() {
           <TextField
             label="Tracking Number"
             value={trackingNumber}
-            onChange={(e) => setTrackingNumber(e.target.value)}
+            InputProps={{ readOnly: true }} // Make the field read-only
             fullWidth
             sx={{ mt: 2 }}
           />
@@ -311,21 +291,23 @@ export default function VendorPODetailsPage() {
             onChange={(e) => setCarrier(e.target.value)}
             fullWidth
             sx={{ mt: 2 }}
+            required
           />
         </DialogContent>
         <DialogActions>
-  <Button onClick={handleCloseDialog}>Cancel</Button>
-  {!selectedPO?.vendorConfirmation?.confirmed && selectedPO?.deliveryStatus !== "shipped" && selectedPO?.deliveryStatus !== "delivered" && (
-    <Button onClick={handleUpdateDeliveryStatus} color="primary">
-      Mark as Shipped
-    </Button>
-  )}
-  {selectedPO?.vendorConfirmation?.confirmed && selectedPO?.deliveryStatus === "shipped" && (
-    <Button onClick={handleUpdateDelivery} color="primary">
-      Mark as Delivered
-    </Button>
-  )}
-</DialogActions> 
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Button
+            onClick={() =>
+              handleUpdateDeliveryStatus(
+                selectedPO.deliveryStatus === "shipped" ? "delivered" : "shipped"
+              )
+            }
+            color="primary"
+            disabled={!carrier} // Disable if carrier is not provided
+          >
+            {selectedPO?.deliveryStatus === "shipped" ? "Mark as Delivered" : "Mark as Shipped"}
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

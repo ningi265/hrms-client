@@ -52,7 +52,7 @@ export default function NewRequisitionPage() {
 
       const data = await response.json();
       toast.success(data.message || "Requisition submitted successfully.");
-      navigate("/dashboard"); // Navigate to the dashboard after successful submission
+      navigate("/employee-dash"); // Navigate to the dashboard after successful submission
     } catch (error) {
       toast.error(error.message || "Error submitting requisition. Please try again.");
     } finally {
@@ -135,7 +135,7 @@ export default function NewRequisitionPage() {
             />
           </CardContent>
           <CardActions style={{ justifyContent: "space-between", padding: 16 }}>
-            <Button variant="outlined" onClick={() => navigate("/dashboard")}>
+            <Button variant="outlined" onClick={() => navigate("/employee-dash")}>
               Cancel
             </Button>
             <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>

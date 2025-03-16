@@ -147,13 +147,19 @@ export default function VendorRFQsPage() {
         setError("Failed to submit quote. Please check your network connection.");
     }
 };
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <CircularProgress />
-      </div>
-    );
-  }
+if (isLoading) {
+  return (
+    <Box
+      display="flex"
+      justifyContent="center"
+      alignItems="center"
+      minHeight="100vh" // Full viewport height
+    >
+      <CircularProgress />
+    </Box>
+  );
+}
+
 
   if (error) {
     return (
