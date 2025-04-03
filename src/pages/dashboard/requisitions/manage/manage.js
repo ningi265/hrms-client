@@ -110,7 +110,13 @@ export default function ManageRequisitionsPage() {
   }
 
   return (
-    <Container>
+    <Container  maxWidth="lg"
+    sx={{
+      py: 4,
+      backgroundColor: "white", // Set background to black
+      minHeight: "100vh", // Ensure it covers the full height
+      color: "white", // Set text color to white
+    }}>
       <Typography variant="h4" gutterBottom>
         Manage Requisitions
       </Typography>

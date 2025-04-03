@@ -12,6 +12,7 @@ import {
   CreditCard,
   BarChart3,
   AlertCircle,
+ Truck as LocalShipping,
 } from "lucide-react";
 import {
   Container,
@@ -53,6 +54,22 @@ export default function DashboardPage() {
     { id: "requisitioning", label: "Requisitioning", icon: <ShoppingCart className="h-5 w-5" />, description: "Submit requisition forms and track approvals.", action: "Manage Requisitions", path: "/requisitions/manage", stats: mockStats.requisitions },
     { id: "purchase-orders", label: "Purchase Orders", icon: <Package className="h-5 w-5" />, description: "Create and manage purchase orders.", action: "Manage Purchase Orders", path: "/purchase-orders", stats: mockStats.purchaseOrders },
     { id: "invoice-payment", label: "Invoice & Payment", icon: <CreditCard className="h-5 w-5" />, description: "Approve invoices and process payments.", action: "Process Payments", path: "/invoice-payment", stats: mockStats.invoices },
+    {
+      id: "travel-management",
+      label: "Travel Management",
+      icon: <LocalShipping className="h-5 w-5" />,
+      description: "Manage travel requests and reconciliations.",
+      action: "Manage Travel",
+      path: "/travel/manage/dash",
+    },
+    {
+      id: "travel-management-recon",
+      label: "Travel Management Reconciliation",
+      icon: <LocalShipping className="h-5 w-5" />,
+      description: "Manage travel requests and reconciliations.",
+      action: "Manage Travel",
+      path: "/travel/manage/recon",
+    },
   ];
 
   return (

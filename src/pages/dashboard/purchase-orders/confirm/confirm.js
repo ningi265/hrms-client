@@ -36,7 +36,8 @@ export default function PurchaseOrdersPage() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/purchase-orders", {
+        console.log(token)
+        const response = await fetch("http://localhost:4000/api/purchase-orders", {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -73,7 +74,7 @@ export default function PurchaseOrdersPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `https://hrms-6s3i.onrender.com/api/purchase-orders/${selectedPoId}/delivery-confirmed`,
+        `http://localhost:4000/api/purchase-orders/${selectedPoId}/delivery-confirmed`,
         {
           method: "PUT",
           headers: {
