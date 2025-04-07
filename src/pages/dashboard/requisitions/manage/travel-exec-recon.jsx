@@ -80,10 +80,12 @@ import {
 } from "@mui/material"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import { MapPin } from "lucide-react"
+import { useAuth } from "../../../../authcontext/authcontext";
 
 export default function TravelExecutionReconciliation() {
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
+   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("active")
   const [selectedTrip, setSelectedTrip] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -102,6 +104,8 @@ export default function TravelExecutionReconciliation() {
   const [selectedDecision, setSelectedDecision] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [travelRequests, setTravelRequests] = useState([])
+  const [alertMessage, setAlertMessage] = useState(null)
+  const [showAlert, setShowAlert] = useState(false)
 
   const [newExpense, setNewExpense] = useState({
     category: "",
@@ -129,8 +133,20 @@ export default function TravelExecutionReconciliation() {
   const transformRequestData = (apiData) => {
     return apiData.map(request => {
       const today = new Date();
-      const departureDate = new Date(request.departureDate);
-      const returnDate = new Date(request.returnDate);
+      const departureDate = request.departureDate ? new Date(request.departureDate) : new Date();
+      const returnDate = request.returnDate ? new Date(request.returnDate) : new Date(departureDate.getTime() + 86400000);
+      // Create reasonable flight times by adding hours to the base dates
+    const outboundDepartureTime = new Date(departureDate);
+    outboundDepartureTime.setHours(9, 0, 0); // Set to 9:00 AM
+    
+    const outboundArrivalTime = new Date(outboundDepartureTime);
+    outboundArrivalTime.setHours(outboundDepartureTime.getHours() + 2); // 2 hour flight
+    
+    const returnDepartureTime = new Date(returnDate);
+    returnDepartureTime.setHours(16, 0, 0); // Set to 4:00 PM
+    
+    const returnArrivalTime = new Date(returnDepartureTime);
+    returnArrivalTime.setHours(returnDepartureTime.getHours() + 2); 
       
       const isCompleted = returnDate < today;
       const isActive = (today >= departureDate) && (today <= returnDate);
@@ -187,16 +203,16 @@ export default function TravelExecutionReconciliation() {
             outbound: {
               airline: "Unknown",
               flightNumber: "N/A",
-              departureTime: request.departureDate,
-              arrivalTime: request.departureDate,
+              departureTime: new Date(request.departureDate),
+              arrivalTime: new Date(request.departureDate),
               from: "Unknown",
               to: request.location || "Destination",
             },
             return: {
               airline: "Unknown",
               flightNumber: "N/A",
-              departureTime: request.returnDate,
-              arrivalTime: request.returnDate,
+              departureTime: new Date(request.returnDate),
+              arrivalTime: new Date(request.returnDate),
               from: request.location || "Destination",
               to: "Unknown",
             },
@@ -287,9 +303,9 @@ export default function TravelExecutionReconciliation() {
 
     // Initialize reconciliation data if the trip is completed
     if (trip.status === "completed") {
-      const totalSpent = trip.expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0)
-      const remainingBalance = trip.perDiemAmount - totalSpent
-
+      const totalSpent = trip.expenses.reduce((sum, expense) => sum + (expense.amount || 0), 0);
+      const remainingBalance = trip.perDiemAmount - totalSpent;
+    
       setReconciliationData({
         tripReport: "",
         totalSpent: totalSpent,
@@ -297,11 +313,10 @@ export default function TravelExecutionReconciliation() {
         expenses: [...trip.expenses],
         receipts: trip.expenses.map((exp) => exp.receipt),
         additionalNotes: "",
-        returnDate: format(trip.returnDate, "yyyy-MM-dd"),
+        returnDate: trip.returnDate ? format(new Date(trip.returnDate), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
         status: "draft",
-      })
+      });
     }
-
     // Reset new expense form
     setNewExpense({
       category: "",
@@ -416,36 +431,75 @@ export default function TravelExecutionReconciliation() {
   }
 
   // Submit reconciliation
-  const handleSubmitReconciliation = () => {
-    setIsSubmitting(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      // Update the selected trip status to reconciled
-      const updatedTrip = {
-        ...selectedTrip,
-        status: "reconciled",
-        reconciliation: {
-          submittedDate: new Date(),
-          approvedDate: null,
-          approvedBy: null,
-          totalSpent: reconciliationData.totalSpent,
-          remainingBalance: reconciliationData.remainingBalance,
-          status: "pending",
-          notes: reconciliationData.additionalNotes,
+  const handleSubmitReconciliation = async () => {
+    // Add date validation
+    if (!selectedTrip || !selectedTrip.id) {
+      setAlertMessage({
+        type: 'error',
+        text: 'Please select a valid travel request',
+      });
+      setShowAlert(true);
+      return;
+    }
+  
+    // Validate return date
+    const returnDate = reconciliationData.returnDate 
+      ? new Date(reconciliationData.returnDate)
+      : new Date(selectedTrip.returnDate);
+      
+    if (isNaN(returnDate.getTime())) {
+      setAlertMessage({
+        type: 'error',
+        text: 'Please enter a valid return date',
+      });
+      setShowAlert(true);
+      return;
+    }
+  
+    setIsSubmitting(true);
+  
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:4000/api/travel-requests/${selectedTrip.id}/reconcile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
+        body: JSON.stringify({
+          totalSpent: parseFloat(reconciliationData.totalSpent),
+          remainingBalance: parseFloat(reconciliationData.remainingBalance),
+          additionalNotes: reconciliationData.additionalNotes || '',
+          returnDate: returnDate.toISOString(), // Send as ISO string
+        }),
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to submit reconciliation');
       }
-
-      setSelectedTrip(updatedTrip)
-      setIsSubmitting(false)
-      setShowReconciliation(false)
-      setReconciliationStep(1)
-
-      // Switch to the reconciled tab
-      setActiveTab("reconciled")
-    }, 2000)
-  }
-
+  
+      const data = await response.json();
+      setSelectedTrip(data.travelRequest);
+      setShowReconciliation(false);
+      setReconciliationStep(1);
+      setActiveTab("reconciled");
+      
+      setAlertMessage({
+        type: 'success',
+        text: 'Reconciliation submitted successfully!',
+      });
+      
+    } catch (error) {
+      setAlertMessage({
+        type: 'error',
+        text: error.message || 'Failed to submit reconciliation',
+      });
+    } finally {
+      setIsSubmitting(false);
+      setShowAlert(true);
+    }
+  };
   // Format currency
   const formatCurrency = (amount, currency) => {
     return new Intl.NumberFormat("en-US", {
@@ -538,26 +592,12 @@ export default function TravelExecutionReconciliation() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
-      {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          height: 64,
-          px: 2,
-          bgcolor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <IconButton onClick={() => navigate("/travel-dashboard")} sx={{ mr: 1 }}>
-          <ArrowLeft />
-        </IconButton>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      {/* Main Content */}
+      <Box sx={{ flex: 1, p: 3 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { lg: "1fr 2fr" }, gap: 3 }}>
+          {/* Left Column - Trips List */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
             <Flight />
           </Avatar>
@@ -565,25 +605,8 @@ export default function TravelExecutionReconciliation() {
             Travel Execution & Reconciliation
           </Typography>
         </Box>
-        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1 }}>
-          <Tooltip title="Return to Dashboard">
-            <IconButton>
-              <Home />
-            </IconButton>
-          </Tooltip>
-          <Avatar src="/placeholder.svg" alt="User">
-            JD
-          </Avatar>
-        </Box>
-      </Paper>
-
-      {/* Main Content */}
-      <Box sx={{ flex: 1, p: 3 }}>
-        <Box sx={{ display: "grid", gridTemplateColumns: { lg: "1fr 2fr" }, gap: 3 }}>
-          {/* Left Column - Trips List */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="h6">My Trips</Typography>
+         
               <Select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -1884,12 +1907,14 @@ export default function TravelExecutionReconciliation() {
                                 {selectedTrip.purpose}
                               </Typography>
                               <Typography>
-                                <Typography component="span" fontWeight="medium">
-                                  Travel Period:
-                                </Typography>{" "}
-                                {format(selectedTrip.departureDate, "MMM d")} -{" "}
-                                {format(new Date(reconciliationData.returnDate), "MMM d, yyyy")}
-                              </Typography>
+  <Typography component="span" fontWeight="medium">
+    Travel Period:
+  </Typography>{" "}
+  {format(selectedTrip.departureDate, "MMM d")} -{" "}
+  {reconciliationData.returnDate && !isNaN(new Date(reconciliationData.returnDate).getTime()) 
+    ? format(new Date(reconciliationData.returnDate), "MMM d, yyyy")
+    : "N/A"}
+</Typography>
                             </Box>
                             <Box>
                               <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -1982,26 +2007,31 @@ export default function TravelExecutionReconciliation() {
                       >
                         Next Step
                       </Button>
-                    ) : (
-                      <Button
-                        variant="contained"
-                        color="warning"
-                        onClick={handleSubmitReconciliation}
-                        disabled={isSubmitting}
-                        sx={{ borderRadius: 28 }}
-                      >
-                        {isSubmitting ? (
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <CircularProgress size={16} sx={{ mr: 1 }} />
-                            Submitting...
-                          </Box>
-                        ) : (
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <Check sx={{ mr: 1 }} />
-                            Submit Reconciliation
-                          </Box>
-                        )}
-                      </Button>
+                    ) : (<Button
+                      variant="contained"
+                      color="warning"
+                      onClick={() => {
+                        console.log('Button clicked');
+                        console.log('Selected trip ID:', selectedTrip?._id);
+                        console.log('Reconciliation data:', reconciliationData);
+                        handleSubmitReconciliation();
+                      }}
+                      disabled={isSubmitting}
+                      sx={{ borderRadius: 28 }}
+                    >
+                      {isSubmitting ? (
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <CircularProgress size={16} sx={{ mr: 1 }} />
+                          Submitting...
+                        </Box>
+                      ) : (
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Check sx={{ mr: 1 }} />
+                          Submit Reconciliation
+                        </Box>
+                      )}
+                    </Button>
+                  
                     )}
                   </DialogActions>
                 </Dialog>

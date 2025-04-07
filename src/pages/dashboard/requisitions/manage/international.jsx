@@ -272,7 +272,7 @@ export default function InternationalTravelRequest() {
         });
 
         setTimeout(() => {
-          navigate('/travel/manage/dash');
+          navigate('/employee-dash');
         }, 2000);
       } else {
         const errorData = await response.json();

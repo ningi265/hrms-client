@@ -46,8 +46,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
-      <Card sx={{ maxWidth: 400, padding: 3, boxShadow: 3 }}>
+    <div style={{ background: "linear-gradient(135deg,rgb(1, 4, 17) 0%,rgb(54, 79, 100) 100%)",display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", backgroundColor: "#f5f5f5" }}>
+      <Card sx={{ background: "linear-gradient(135deg,rgb(221, 223, 237) 0%,rgb(180, 191, 200) 100%)",maxWidth: 400, padding: 3, boxShadow: 3 }}>
         <CardHeader
           title={<Typography variant="h5" fontWeight="bold">Login</Typography>}
           subheader={<Typography color="textSecondary">Enter your credentials to access your account</Typography>}

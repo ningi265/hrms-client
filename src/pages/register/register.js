@@ -410,7 +410,7 @@ export default function RegisterPage() {
     <Box sx={{
       display: "flex",
       minHeight: "100vh",
-      background: "linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)",
+      background: "linear-gradient(135deg,rgb(1, 4, 17) 0%,rgb(54, 79, 100) 100%)",
       p: 2
     }}>
       <Box sx={{
@@ -424,7 +424,7 @@ export default function RegisterPage() {
       }}>
         {/* Header with Progress Indicator */}
         <Box sx={{
-          background: "linear-gradient(135deg, #3f51b5 0%, #2196f3 100%)",
+          background: "linear-gradient(135deg, #3f51b5 0%,rgb(4, 50, 88) 100%)",
           color: "white",
           p: 3,
           position: "relative"
@@ -457,7 +457,7 @@ export default function RegisterPage() {
           </Typography>
         </Box>
 
-        <CardContent sx={{ p: 4 }}>
+        <CardContent sx={{ background: "linear-gradient(135deg,rgb(221, 223, 237) 0%,rgb(180, 191, 200) 100%)",p: 4 }}>
           {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
           
           {renderStepContent(activeStep)}
@@ -470,6 +470,7 @@ export default function RegisterPage() {
                 variant="outlined"
                 onClick={handleBack}
                 sx={{
+                  
                   height: 48,
                   borderRadius: 12,
                   textTransform: "none",

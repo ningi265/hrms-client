@@ -522,48 +522,7 @@ useEffect(() => {
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "linear-gradient(to bottom, #f9fafb, #f3f4f6)" }}>
       <Box sx={{ display: "flex", flexDirection: "column" }}>
-        <Paper sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          height: 64,
-          gap: 2,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          px: { xs: 2, md: 3 },
-          bgcolor: "background.paper",
-          backdropFilter: "blur(12px)",
-          background: "rgba(255, 255, 255, 0.8)"
-        }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => navigate("/travel-dashboard")}
-            sx={{ minWidth: 40, height: 40, borderRadius: "50%", p: 0 }}
-          >
-            <ArrowLeft size={20} />
-          </Button>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Box sx={{ p: 1, borderRadius: "50%", bgcolor: blue[50] }}>
-              <Wallet size={20} color={blue[600]} />
-            </Box>
-            <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
-              Finance Department Processing
-            </Typography>
-          </Box>
-          <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1 }}>
-            <Tooltip title="Refresh Exchange Rates">
-              <Button variant="outlined" size="small" sx={{ minWidth: 40, height: 40, borderRadius: "50%", p: 0 }}>
-                <RefreshCw size={20} />
-              </Button>
-            </Tooltip>
-            <Avatar sx={{ width: 32, height: 32 }}>
-              FO
-            </Avatar>
-          </Box>
-        </Paper>
+
 
         <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
           {isLoading ? (
@@ -576,7 +535,7 @@ useEffect(() => {
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Financial Requests
+                    Financial Requests Processing 
                   </Typography>
                   <Select
                     value={filterStatus}

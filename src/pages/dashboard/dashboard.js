@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate ,useSearchParams } from "react-router-dom";
 import {
   Error,
-  BarChart,
+ 
   Notifications,
   CalendarToday,
   Check,
@@ -14,6 +14,7 @@ import {
   Loop,
   ExitToApp,
   Inventory,
+  BarChart,
   PieChart,
   Add,
   Search,
@@ -201,6 +202,20 @@ export default function ProcurementDashboard() {
     setActiveSection(section);
     navigate(`?section=${section}`, { replace: true });
   };
+  const [scrollPosition, setScrollPosition] = useState(0);
+  
+  // Handle scroll events
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.pageYOffset);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Calculate opacity (0 when at top, 1 when scrolled down a bit)
+  const opacity = Math.min(scrollPosition / 100, 1); 
 
   useEffect(() => {
     const section = searchParams.get('section');
@@ -340,39 +355,45 @@ export default function ProcurementDashboard() {
     }}>
       {/* Sidebar */}
       <Sidebar variant="permanent" open>
-        <SidebarHeader>
-          <Box sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 2, 
-            px: 1,
-            width: '100%',
-            justifyContent: 'space-between',
-          }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  height: 34,
-                  width: 36,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: 1.5,
-                  bgcolor: "primary.main",
-                  color: "primary.contrastText",
-                }}
-              >
-                <Layers sx={{ fontSize: 20 }} />
-              </Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                HRMS Dashboard
-              </Typography>
-            </Box>
-            <IconButton onClick={toggleSidebar} size="small">
-              {sidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
-            </IconButton>
+      <Box sx={{
+    position: 'sticky',
+    top: 0,
+    zIndex: 1,
+    backgroundColor: 'background.paper',
+    borderBottom: '1px solid',
+    borderColor: 'divider'
+  }}>
+    <SidebarHeader>
+      <Box sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 2, 
+        px: 1,
+        width: '100%',
+        justifyContent: 'space-between',
+      }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              height: 34,
+              width: 36,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: 1.5,
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
+            }}
+          >
+            <Layers sx={{ fontSize: 20 }} />
           </Box>
-        </SidebarHeader>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            HRMS Dashboard
+          </Typography>
+        </Box>
+      </Box>
+    </SidebarHeader>
+  </Box>
 
         <Divider />
 
@@ -544,14 +565,16 @@ export default function ProcurementDashboard() {
       }}>
         {/* Header */}
         <Paper elevation={0} sx={{ 
-  p: 1.5, 
-  borderBottom: 1, 
-  borderColor: "divider",
-  backgroundColor: theme.palette.background.paper,
-  position: 'sticky',
-  top: 0,
-  zIndex: theme.zIndex.appBar,
-}}>
+      p: 1.5, 
+      borderBottom: 1, 
+      borderColor: "divider",
+      backgroundColor: theme => `rgba(${theme.palette.background.paper.replace(/^rgba?\(|\s+|\)$/g, '').split(',')[0]}, ${opacity})`,
+      backdropFilter: `blur(${opacity * 10}px)`, 
+      position: 'sticky',
+      top: 0,
+      zIndex: theme => theme.zIndex.appBar,
+      transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease' 
+    }}>
   <Toolbar sx={{ px: { sm: 2 } }}>
     {/* Left-aligned items */}
     <Box sx={{ 
@@ -575,7 +598,7 @@ export default function ProcurementDashboard() {
         </Badge>
       </IconButton>
 
-      {/* User profile with working dropdown */}
+      {/* User profile with dropdown */}
       <Box>
         <Button
           variant="text"
@@ -605,17 +628,17 @@ export default function ProcurementDashboard() {
             {user.name.split(" ").map((n) => n[0]).join("")}
           </Avatar>
           <Box sx={{ display: { xs: "none", md: "block" } }}>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              {user.name}
+            <Typography variant="body2" sx={{ fontWeight: 500,fontVariant: "small-caps",}}>
+              {user?.name}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              {user.role}
+              {user?.role}
             </Typography>
           </Box>
           <ExpandMore sx={{ fontSize: 16 }} />
         </Button>
 
-        {/* Menu dropdown - keep this near the button */}
+        {/* Menu dropdown */}
         <Menu
           id="user-menu"
           anchorEl={anchorEl}

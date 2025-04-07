@@ -104,16 +104,15 @@ export default function FleetCoordinator() {
 
   const transformRequestData = (data) => {
     return data.map(request => {
-      // Helper function to safely parse dates
       const parseDate = (dateString) => {
-        if (!dateString) return null;
+        if (!dateString) return new Date();
         const date = new Date(dateString);
-        return isNaN(date.getTime()) ? null : date;
+        return isNaN(date.getTime()) ? new Date() : date;
       };
   
       return {
-        id: request._id,
-        employeeName: request.employee.name,
+        id: request._id || request.id || '',
+      employeeName: request.employee?.name || 'Unknown',
         fleetNotification: request.fleetNotification || {
           sent: false,
           sentAt: null,
@@ -123,10 +122,10 @@ export default function FleetCoordinator() {
           includeItinerary: false,
           sentBy: null
         },
-        employeeId: request.employee._id,
+        employeeId: request.employee?._id || '',
         department: request.fundingCodes || "Not specified",
-        email: request.employee.email,
-        purpose: request.purpose,
+        email: request.employee?.email || '',
+        purpose: request.purpose || '',
         country: request.location || "Not specified",
         city: request.location || "Not specified",
         departureDate: parseDate(request.departureDate),
@@ -223,16 +222,22 @@ export default function FleetCoordinator() {
 
   // Filter travel requests based on search query and status filter
   const filteredRequests = travelRequests.filter((request) => {
+    // Safely handle potentially undefined/null values
+    const employeeName = request.employeeName || '';
+    const id = request.id || '';
+    const country = request.country || '';
+    const city = request.city || '';
+  
     const matchesSearch =
-      request.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.city.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const matchesStatus = filterStatus === "all" || request.status === filterStatus
-
-    return matchesSearch && matchesStatus
-  })
+      employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      country.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      city.toLowerCase().includes(searchQuery.toLowerCase());
+  
+    const matchesStatus = filterStatus === "all" || request.status === filterStatus;
+  
+    return matchesSearch && matchesStatus;
+  });
 
   // Set default selected request if none is selected
   useEffect(() => {
@@ -253,42 +258,56 @@ export default function FleetCoordinator() {
   const handleSelectDriver = (driver) => {
     setSelectedDriver(driver)
   }
+  
   const handleAssignDriver = async () => {
     try {
-       
-      const token = localStorage.getItem("token")
-
-      const driverResponse = await fetch(`http://localhost:4000/api/travel-requests/${selectedRequest.id}/assign-driver`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          driverId: selectedDriver 
-        })
-      });
-      console.log('Selected Request ID:', selectedRequest._id);
-console.log('Selected Driver ID:', selectedDriver);
+      setIsProcessing(true);
+      const token = localStorage.getItem("token");
   
-      if (!driverResponse.ok) {
+      const response = await fetch(
+        `http://localhost:4000/api/travel-requests/${selectedRequest.id}/assign-driver`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            driverId: selectedDriver._id
+          })
+        }
+      );
+  
+      if (!response.ok) {
         throw new Error('Failed to assign driver');
       }
   
-      const updatedRequest = await driverResponse.json();
+      const data = await response.json();
+      const updatedRequest = transformRequestData([data.travelRequest])[0];
       
-      setIsProcessing(false);
+      // Update state and close modal
       setSelectedRequest(updatedRequest);
-      setShowNotification(true); 
-  
+      setTravelRequests(prevRequests => 
+        prevRequests.map(req => 
+          req.id === selectedRequest.id ? updatedRequest : req
+        )
+      );
+      setShowDrivers(false); // This closes the modal
+      setShowNotification(true);
+      
+      setSnackbarMessage(data.message || "Driver assigned successfully");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      
     } catch (error) {
-      console.error('Error processing request:', error);
+      console.error('Error assigning driver:', error);
+      setSnackbarMessage(error.message || 'Failed to assign driver');
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
       setIsProcessing(false);
-      setError(error.message || 'Failed to assign driver');
     }
-    
-  }
-
+  };
   const handleProcessRequest = () => {
     setIsProcessing(true)
 
@@ -453,43 +472,7 @@ setNotificationDetails({
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", bgcolor: "background.default" }}>
       {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-          display: "flex",
-          alignItems: "center",
-          height: 64,
-          px: 2,
-          bgcolor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <IconButton onClick={() => navigate("/travel-dashboard")} sx={{ mr: 1 }}>
-          <ArrowBack />
-        </IconButton>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
-            <LocalShipping />
-          </Avatar>
-          <Typography variant="h6" component="h1">
-            Fleet Coordinator & Air Ticket Booking
-          </Typography>
-        </Box>
-        <Box sx={{ ml: "auto", display: "flex", alignItems: "center", gap: 1 }}>
-          <Tooltip title="Notifications">
-            <IconButton>
-              <Notifications />
-            </IconButton>
-          </Tooltip>
-          <Avatar src="/placeholder.svg" alt="Coordinator">
-            FC
-          </Avatar>
-        </Box>
-      </Paper>
+  
 
       {/* Main Content */}
       <Box sx={{ flex: 1, p: 3 }}>
@@ -497,7 +480,14 @@ setNotificationDetails({
           {/* Left Column - Travel Requests */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="h6">Travel Requests</Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
+            <LocalShipping />
+          </Avatar>
+          <Typography variant="h6" component="h1">
+            Fleet Coordinator & Air Ticket Booking
+          </Typography>
+        </Box>
               <Select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
@@ -937,7 +927,7 @@ setNotificationDetails({
                 </Card>
 
                 {/* Driver Assignment Dialog */}
-                {/* Driver Assignment Dialog */}
+
 <Dialog
   open={showDrivers}
   onClose={() => setShowDrivers(false)}
@@ -978,7 +968,7 @@ setNotificationDetails({
           <Paper
             key={driver._id}
             elevation={0}
-            onClick={() => handleSelectDriver(driver)}
+            onClick={() => setSelectedDriver(driver)}
             sx={{
               p: 2,
               display: "flex",
@@ -1038,16 +1028,13 @@ setNotificationDetails({
       Cancel
     </Button>
     <Button
-      variant="contained"
-      disabled={!selectedDriver}
-      onClick={() => {
-        setShowDrivers(false);
-        handleAssignDriver();
-      }}
-      sx={{ borderRadius: 28 }}
-    >
-      Confirm Driver
-    </Button>
+  variant="contained"
+  disabled={!selectedDriver}
+  onClick={handleAssignDriver}
+  sx={{ borderRadius: 28 }}
+>
+  Confirm Driver
+</Button>
   </DialogActions>
 </Dialog>
 

@@ -32,10 +32,16 @@ import {
   LinearProgress,
   Grid,
   Chip,
+  DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import axios from "axios";
 import { useSnackbar } from "notistack";
+import LocalTravelForm from "../../../employee-dash/travel"; 
+import InternationalTravelForm from "../../requisitions/manage/international"; 
 
 export default function TravelDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -51,6 +57,8 @@ export default function TravelDashboard() {
   const [totalPending, setTotalPending] = useState();
   const [pendingLocal, setPendingLocal] = useState();
   const [pendingInternational, setPendingInternational] = useState();
+  const [localModalOpen, setLocalModalOpen] = useState(false);
+  const [internationalModalOpen, setInternationalModalOpen] = useState(false);
 
   
 
@@ -93,7 +101,7 @@ export default function TravelDashboard() {
     };
   
     fetchPendingStats();
-  }, []); // Runs once when component mounts
+  }, []); 
   
   
   
@@ -101,38 +109,72 @@ export default function TravelDashboard() {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "rgba(0, 0, 0, 0.04)" }}>
-      <AppBar position="sticky" elevation={0} sx={{ backgroundColor: "background.paper", color: "text.primary" }}>
-        <Toolbar>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <FlightTakeoff color="primary" />
-            <Typography variant="h6" component="h1">
-              Travel Management
-            </Typography>
-          </Box>
-          <Box sx={{ flexGrow: 1 }} />
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Button variant="outlined" size="small" startIcon={<Settings />}>
-              Preferences
-            </Button>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.light", color: "primary.main" }}>
-                JD
-              </Avatar>
-              <Box sx={{ display: { xs: "none", md: "block" } }}>
-                <Typography variant="subtitle2">John Doe</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  Marketing Department
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-        </Toolbar>
-      </AppBar>
+        {/* Local Travel Modal */}
+<Dialog
+  open={localModalOpen}
+  onClose={() => setLocalModalOpen(false)}
+  fullWidth
+  maxWidth="md"
+  sx={{
+    '& .MuiDialog-paper': {
+      height: '80vh', // Adjust height as needed
+      maxHeight: '800px'
+    }
+  }}
+>
+  <DialogTitle>
+    <Box display="flex" alignItems="center">
+      <Place sx={{ mr: 1 }} />
+      New Local Travel Request
+    </Box>
+  </DialogTitle>
+  <DialogContent dividers>
+    <LocalTravelForm 
+      onCancel={() => setLocalModalOpen(false)}
+      onSubmitSuccess={() => {
+        setLocalModalOpen(false);
+        // Add any success handling here (e.g., refresh data, show notification)
+        enqueueSnackbar("Local travel request submitted successfully!", { variant: "success" });
+      }}
+    />
+  </DialogContent>
+</Dialog>
+
+      {/* International Travel Modal */}
+<Dialog
+  open={internationalModalOpen}
+  onClose={() => setInternationalModalOpen(false)}
+  fullWidth
+  maxWidth="md"
+  sx={{
+    '& .MuiDialog-paper': {
+      height: '80vh', // Adjust height as needed
+      maxHeight: '800px'
+    }
+  }}
+>
+  <DialogTitle>
+    <Box display="flex" alignItems="center">
+      <Public sx={{ mr: 1 }} />
+      New International Travel Request
+    </Box>
+  </DialogTitle>
+  <DialogContent dividers>
+    <InternationalTravelForm 
+      onCancel={() => setInternationalModalOpen(false)}
+      onSubmitSuccess={() => {
+        setInternationalModalOpen(false);
+        // Add any success handling here
+        enqueueSnackbar("International travel request submitted successfully!", { variant: "success" });
+      }}
+    />
+  </DialogContent>
+</Dialog>
 
       <Box component="main" sx={{ flex: 1, p: 3 }}>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
           <Typography variant="h4" fontWeight="bold">
-            Dashboard
+           Travel Dashboard
           </Typography>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Button
@@ -143,19 +185,25 @@ export default function TravelDashboard() {
               New Travel Request
             </Button>
             <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-            >
-              <MenuItem onClick={() => { navigate("/local-travel"); handleMenuClose(); }}>
-                <Place sx={{ mr: 1 }} />
-                Local Travel
-              </MenuItem>
-              <MenuItem onClick={() => { navigate("/international-travel"); handleMenuClose(); }}>
-                <Public sx={{ mr: 1 }} />
-                International Travel
-              </MenuItem>
-            </Menu>
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+        >
+          <MenuItem onClick={() => { 
+            setLocalModalOpen(true); 
+            handleMenuClose(); 
+          }}>
+            <Place sx={{ mr: 1 }} />
+            Local Travel
+          </MenuItem>
+          <MenuItem onClick={() => { 
+            setInternationalModalOpen(true); 
+            handleMenuClose(); 
+          }}>
+            <Public sx={{ mr: 1 }} />
+            International Travel
+          </MenuItem>
+        </Menu>
           </Box>
         </Box>
 
