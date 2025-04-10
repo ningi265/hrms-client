@@ -129,7 +129,12 @@ export default function FinanceReconciliationReview() {
   const [isSendingClarification, setIsSendingClarification] = useState(false)
   const [currentExpense, setCurrentExpense] = useState(null)
   const [showReceiptDialog, setShowReceiptDialog] = useState(false)
-
+     const [alertMessage, setAlertMessage] = useState(null)
+     const [showAlert, setShowAlert] = useState(false)
+      const [isLoading, setIsLoading] = useState(true)
+       const [snackbarMessage, setSnackbarMessage] = useState("")
+       const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+         const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [reviewNotes, setReviewNotes] = useState({
     internalNotes: "",
     expenseNotes: {},
@@ -146,6 +151,76 @@ export default function FinanceReconciliationReview() {
     requestedItems: [],
     dueDate: format(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"), // 3 days from now
   })
+
+  const transformRequestData = (apiData) => {
+    return apiData.map(recon => {
+      const today = new Date();
+      const departureDate = recon.departureDate ? new Date(recon.departureDate) : new Date();
+      const returnDate = recon.returnDate ? new Date(recon.returnDate) : new Date(departureDate.getTime() + 86400000);
+      
+      const isCompleted = returnDate < today;
+      const isActive = (today >= departureDate) && (today <= returnDate);
+      const isFinanceProcessed = recon.financeStatus === "processed";
+      const isReconciled = recon.reconciled || false;
+      
+      let status;
+    if (recon.status === "pending_reconciliation") {
+      status = "pending_reconciliation";
+    } else if (isReconciled) {
+      status = "clarified";
+    } else if (isCompleted) {
+      status = "approved";
+    } else {
+      status = "rejected";
+    }
+
+  
+      const totalSpent = recon.payment?.expenses?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0;
+      const perDiemAmount = recon.payment?.perDiemAmount || (recon.currency === "MWK" ? 100000 : 1000);
+  
+      return {
+        id: recon._id,
+        employeeName: recon.employee?.name || 'Unknown Employee',
+        employeeId: recon.employee._id,
+        department: recon.employee?.department || "Unknown Department",
+        purpose: recon.purpose,
+        country: recon.travelType === "international" ? "International" : recon.location || "Local",
+        city: recon.location || "Local",
+        departureDate: departureDate,
+        returnDate: returnDate,
+        status: status,
+        reconciled: isReconciled,
+        perDiemAmount: perDiemAmount,
+        currency: recon.currency || "USD",
+        submittedDate: new Date(recon.reconciliation?.submittedDate || recon.createdAt),
+        totalExpenses: totalSpent,
+        remainingBalance: perDiemAmount - totalSpent,
+        tripReport: recon.reconciliation?.tripReport || "No trip report submitted",
+        additionalNotes: recon.reconciliation?.notes || "",
+        expenses: recon.payment?.expenses?.map(exp => ({
+          id: exp._id || Math.random().toString(36).substr(2, 9),
+          category: exp.category || "Miscellaneous",
+          description: exp.description || "No description",
+          amount: exp.amount || 0,
+          currency: recon.currency || "USD",
+          date: new Date(exp.date || recon.departureDate),
+          paymentMethod: exp.paymentMethod || "card",
+          receipt: exp.receipt || null,
+          status: exp.status || "recorded"
+        })) || [],
+        reconciliation: isReconciled ? {
+          submittedDate: new Date(recon.reconciliation?.submittedDate || recon.updatedAt),
+          approvedDate: recon.reconciliation?.approvedDate ? new Date(recon.reconciliation.approvedDate) : null,
+          approvedBy: recon.reconciliation?.approvedBy || recon.finalApprover,
+          totalSpent: totalSpent,
+          remainingBalance: perDiemAmount - totalSpent,
+          status: recon.reconciliation?.status || "pending",
+          notes: recon.reconciliation?.notes || ""
+        } : null
+      };
+    });
+  };
+  const [travelRequests, setTravelRequests] = useState([])
 
   // Sample data for reconciliations (same as original)
   const reconciliations = [
@@ -352,6 +427,44 @@ export default function FinanceReconciliationReview() {
     return !expense.receipt
   }
 
+
+    useEffect(() => {
+      const fetchPendingReconciliations = async () => {
+        setIsLoading(true);
+        try {
+          const token = localStorage.getItem("token");
+          console.log(token)
+          const response = await fetch(
+            "https://hrms-6s3i.onrender.com/api/travel-requests/pending/recon",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+    
+          if (!response.ok) {
+            throw new Error("Failed to fetch completed travel requests");
+          }
+    
+          const data = await response.json();
+          const transformedData = transformRequestData(data);
+          
+          setTravelRequests(transformedData);
+    
+        } catch (error) {
+          console.error("Failed to fetch completed travel requests:", error);
+          setSnackbarMessage("Failed to fetch completed travel requests");
+          setSnackbarSeverity("error");
+          setSnackbarOpen(true);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+    
+      fetchPendingReconciliations();
+    }, []);
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "linear-gradient(to bottom, #f9fafb, #f3f4f6)" }}>
       <Box sx={{ display: "flex", flexDirection: "column" }}>
@@ -405,21 +518,27 @@ export default function FinanceReconciliationReview() {
                 }}
               />
 
-              <StyledTabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ width: "100%" }}>
-                <StyledTab value="pending" label="Pending" />
-                <StyledTab value="clarification" label="Clarification" />
-                <StyledTab value="approved" label="Approved" />
-                <StyledTab value="rejected" label="Rejected" />
-              </StyledTabs>
+<StyledTabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ width: "100%" }}>
+  <StyledTab value="pending" label="Pending" />
+  <StyledTab value="clarification" label="Clarification" />
+  <StyledTab value="approved" label="Approved" />
+  <StyledTab value="rejected" label="Rejected" />
+</StyledTabs>
 
               <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
-                {filteredReconciliations.filter((rec) => rec.status === activeTab).length === 0 ? (
-                  <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
-                    No {activeTab} reconciliations found
-                  </Box>
-                ) : (
+              {filteredReconciliations.filter((recon) => 
+  (activeTab === "pending" && (recon.status === "pending" || recon.status === "pending_reconciliation")) ||
+  (activeTab !== "pending" && recon.status === activeTab)
+).length === 0 ? (
+  <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+    No {activeTab} reconciliations found
+  </Box>
+)  : (
                   filteredReconciliations
-                    .filter((rec) => rec.status === activeTab)
+                  .filter((recon) => 
+                    (activeTab === "pending" && (recon.status === "pending" || recon.status === "pending_reconciliation")) ||
+                    (activeTab !== "pending" && recon.status === activeTab)
+                  )
                     .map((reconciliation) => (
                       <StyledCard
                         key={reconciliation.id}
@@ -444,10 +563,19 @@ export default function FinanceReconciliationReview() {
                                 {reconciliation.id}
                               </Typography>
                             </Box>
-                            <StatusBadge label={reconciliation.status === "pending" ? "Pending Review" : 
-                                              reconciliation.status === "clarification-requested" ? "Clarification Requested" :
-                                              reconciliation.status === "approved" ? "Approved" : "Rejected"} 
-                                        status={reconciliation.status} size="small" />
+                            <StatusBadge 
+  label={
+    reconciliation.status === "pending_reconciliation" ? "Pending Reconciliation" :
+    reconciliation.status === "pending" ? "Pending Review" : 
+    reconciliation.status === "clarification-requested" ? "Clarification Requested" :
+    reconciliation.status === "approved" ? "Approved" : "Rejected"
+  } 
+  status={
+    reconciliation.status === "pending_reconciliation" ? "pending" :
+    reconciliation.status
+  } 
+  size="small" 
+/>
                           </Box>
                           <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                             <Globe size={16} sx={{ mr: 0.5, color: "text.secondary" }} />
@@ -766,13 +894,13 @@ export default function FinanceReconciliationReview() {
                         </Box>
                       </Box>
 
-                      {selectedReconciliation.status === "pending" && (
+                      {selectedReconciliation.status === "pending" || selectedReconciliation.status === "pending_reconciliation" ? (
                         <Alert severity="warning" sx={{ bgcolor: amber[50], borderColor: amber[200], color: amber[800], mt: 2 }}>
                           <AlertTitle sx={{ color: amber[700] }}>Action Required</AlertTitle>
                           This reconciliation requires your review. Please check all expenses and the trip report for
                           accuracy and compliance with company policy.
                         </Alert>
-                      )}
+                     ):null}
                     </CardContent>
                     <CardActions sx={{ justifyContent: "space-between", p: 2, bgcolor: grey[50] }}>
                       <Button
@@ -782,7 +910,7 @@ export default function FinanceReconciliationReview() {
                         Back to Dashboard
                       </Button>
 
-                      {selectedReconciliation.status === "pending" && (
+                      {(selectedReconciliation.status === "pending" || selectedReconciliation.status === "pending_reconciliation") && (
                         <Box sx={{ display: "flex", gap: 1 }}>
                           <Button
                             variant="outlined"

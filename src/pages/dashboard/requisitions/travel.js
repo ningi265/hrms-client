@@ -44,7 +44,7 @@ const SupervisorDashboard = () => {
     const fetchPendingRequests = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:4000/api/travel-requests/pending/all", {
+        const response = await fetch("https://hrms-6s3i.onrender.com/api/travel-requests/pending/all", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -80,7 +80,7 @@ const SupervisorDashboard = () => {
       const token = localStorage.getItem("token");
       const supervisorId = JSON.parse(localStorage.getItem("user"))._id; // Supervisor's ID
 
-      const response = await fetch(`http://localhost:4000/api/travel-requests/${id}/supervisor-approval`, {
+      const response = await fetch(`https://hrms-6s3i.onrender.com/api/travel-requests/${id}/supervisor-approval`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

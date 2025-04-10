@@ -54,7 +54,7 @@ export default function EmployeeReconciliationPage() {
       try {
         setIsLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:4000/api/travel-requests/employee/processed', {
+        const response = await fetch('https://hrms-6s3i.onrender.com/api/travel-requests/employee/processed', {
           headers: {
             'Authorization': `Bearer ${token}`
           }

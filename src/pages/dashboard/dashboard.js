@@ -246,7 +246,7 @@ export default function ProcurementDashboard() {
         const token = localStorage.getItem("token"); // Retrieve the token from local storage or your auth context
 
         // Fetch requisitions stats
-        const requisitionsResponse = await fetch("http://localhost:4000/api/requisitions/stats", {
+        const requisitionsResponse = await fetch("https://hrms-6s3i.onrender.com/api/requisitions/stats", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -254,7 +254,7 @@ export default function ProcurementDashboard() {
         const requisitionsData = await requisitionsResponse.json();
 
         // Fetch RFQs stats
-        const rfqsResponse = await fetch("http://localhost:4000/api/rfqs/stats", {
+        const rfqsResponse = await fetch("https://hrms-6s3i.onrender.com/api/rfqs/stats", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -262,7 +262,7 @@ export default function ProcurementDashboard() {
         const rfqsData = await rfqsResponse.json();
 
         // Fetch purchase orders stats
-        const purchaseOrdersResponse = await fetch("http://localhost:4000/api/purchase-orders/stats", {
+        const purchaseOrdersResponse = await fetch("https://hrms-6s3i.onrender.com/api/purchase-orders/stats", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -270,7 +270,7 @@ export default function ProcurementDashboard() {
         const purchaseOrdersData = await purchaseOrdersResponse.json();
 
         // Fetch invoices stats
-        const invoicesResponse = await fetch("http://localhost:4000/api/invoices/stats", {
+        const invoicesResponse = await fetch("https://hrms-6s3i.onrender.com/api/invoices/stats", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

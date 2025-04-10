@@ -14,7 +14,7 @@ COPY package*.json ./
 
 # Install dependencies with retry logic
 RUN for i in {1..5}; do \
-      npm install --legacy-peer-deps && break || \
+      npm install --legacy-peer-deps && \ npm install react-scripts --save break || \
       (echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5); \
     done
 
@@ -32,9 +32,5 @@ COPY --from=builder /app/build /usr/share/nginx/html
 
 # Copy custom Nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
-
-# Set permissions and start Nginx
-RUN chmod -R 755 /usr/share/nginx/html && \
-    chown -R nginx:nginx /usr/share/nginx/html
 
 CMD ["sh", "-c", "envsubst < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]

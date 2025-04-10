@@ -91,7 +91,7 @@ const TravelRequestForm = () => {
         currency: 'MWK',
       };
 
-      const response = await fetch('http://localhost:4000/api/travel-requests', {
+      const response = await fetch('https://hrms-6s3i.onrender.com/api/travel-requests', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

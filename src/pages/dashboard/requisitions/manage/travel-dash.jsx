@@ -85,7 +85,7 @@ export default function TravelDashboard() {
     const fetchPendingStats = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:4000/api/travel-requests/pending/stats", {
+        const response = await axios.get("https://hrms-6s3i.onrender.com/api/travel-requests/pending/stats", {
           headers: { Authorization: `Bearer ${token}` },
         });
   

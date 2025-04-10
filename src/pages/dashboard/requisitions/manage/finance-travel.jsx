@@ -295,7 +295,7 @@ export default function FinanceProcessing() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:4000/api/travel-requests/${selectedRequest.id}/finance-process`,
+        `https://hrms-6s3i.onrender.com/api/travel-requests/${selectedRequest.id}/finance-process`,
         {
           method: "PUT",
           headers: {
@@ -456,7 +456,7 @@ useEffect(() => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:4000/api/travel-requests/finance/processed",
+        "https://hrms-6s3i.onrender.com/api/travel-requests/finance/processed",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -495,7 +495,7 @@ useEffect(() => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:4000/api/travel-requests/finance/pending",
+          "https://hrms-6s3i.onrender.com/api/travel-requests/finance/pending",
           {
             headers: {
               Authorization: `Bearer ${token}`,

@@ -39,7 +39,7 @@ const FinalApproverDashboard = () => {
     const fetchApprovedRequests = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:4000/api/travel-requests/supervisor-approved", {
+        const response = await fetch("https://hrms-6s3i.onrender.com/api/travel-requests/supervisor-approved", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -73,7 +73,7 @@ const FinalApproverDashboard = () => {
       const token = localStorage.getItem("token");
       const finalApproverId = JSON.parse(localStorage.getItem("user"))._id;
 
-      const response = await fetch(`http://localhost:4000/api/travel-requests/${id}/final-approval`, {
+      const response = await fetch(`https://hrms-6s3i.onrender.com/api/travel-requests/${id}/final-approval`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
