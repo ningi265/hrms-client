@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  react-app:
+    build:
+      context: .
+    container_name: hrms
+    ports:
+      - "80:80"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: always
+
+volumes:
+  caddy_data:
+  caddy_config:

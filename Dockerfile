@@ -13,8 +13,9 @@ RUN npm config set registry https://registry.npmmirror.com/ && \
 COPY package*.json ./
 
 # Install dependencies with retry logic
-RUN for i in {1..5}; do \
-      npm install --legacy-peer-deps && \ npm install react-scripts --save break || \
+RUN for i in 1 2 3 4 5; do \
+      npm install --legacy-peer-deps && \
+      npm install react-scripts --save && break || \
       (echo "Attempt $i failed, retrying in 5 seconds..." && sleep 5); \
     done
 
@@ -24,13 +25,11 @@ COPY . .
 # Build the app
 RUN npm run build
 
-# Stage 2: Serve the app with Nginx
-FROM nginxinc/nginx-unprivileged:alpine
+# Stage 2: Serve the app using Caddy
+FROM caddy:alpine
 
-# Copy built files from builder stage
-COPY --from=builder /app/build /usr/share/nginx/html
+# Copy build output to Caddy's web root
+COPY --from=builder /app/build /usr/share/caddy
 
-# Copy custom Nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf.template
-
-CMD ["sh", "-c", "envsubst < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# Optional: Custom Caddyfile for advanced routing (spa fallback, etc.)
+COPY Caddyfile /etc/caddy/Caddyfile

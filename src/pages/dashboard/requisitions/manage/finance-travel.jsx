@@ -190,7 +190,7 @@ export default function FinanceProcessing() {
       departureDate: new Date(request.departureDate),
       returnDate: new Date(request.returnDate),
       status: request.finalApproval === "approved" ? "approved" : "pending",
-      financialStatus: request.financeStatus || "pending",
+      financialStatus: request.financeStatus,
       perDiemAmount: request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000), 
       currency: request.currency || "USD",
       cardDetails: {
@@ -447,55 +447,12 @@ export default function FinanceProcessing() {
     }
   }, [transferDetails])
 
-  // Add this useEffect hook alongside your existing ones
-useEffect(() => {
-  const fetchCompletedRequests = async () => {
-    if (activeTab !== "completed") return; // Only run for completed tab
-
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        "https://hrms-6s3i.onrender.com/api/travel-requests/finance/processed",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch completed travel requests");
-      }
-
-      const data = await response.json();
-      // Transform and set only the completed requests
-      const completedRequests = transformRequestData(data);
-      setTravelRequests(prevRequests => {
-        // Keep non-completed requests from previous state
-        const otherRequests = prevRequests.filter(req => req.financialStatus !== "completed");
-        return [...otherRequests, ...completedRequests];
-      });
-
-    } catch (error) {
-      console.error("Failed to fetch completed travel requests:", error);
-      setSnackbarMessage("Failed to fetch completed travel requests");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  fetchCompletedRequests();
-}, [activeTab]); // Runs when activeTab changes
-
   useEffect(() => {
     const fetchApprovedRequests = async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "https://hrms-6s3i.onrender.com/api/travel-requests/finance/pending",
+          "http://localhost:4000/api/travel-requests/finance/pending",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -551,7 +508,6 @@ useEffect(() => {
                   >
                     <MenuItem value="all">All Requests</MenuItem>
                     <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="in-progress">In Progress</MenuItem>
                     <MenuItem value="completed">Completed</MenuItem>
                   </Select>
                 </Box>
@@ -574,8 +530,7 @@ useEffect(() => {
 
                 <StyledTabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ width: "100%" }}>
                   <StyledTab value="pending" label="Pending" />
-                  <StyledTab value="in-progress" label="In Progress" />
-                  <StyledTab value="completed" label="Completed" />
+                  <StyledTab value="processed" label="Processed" />
                 </StyledTabs>
 
                 <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
@@ -844,7 +799,7 @@ useEffect(() => {
                           <>
                             <Button
                               variant="outlined"
-                              onClick={() => navigate("/travel-dashboard")}
+                              onClick={() => navigate("/")}
                             >
                               Back to Dashboard
                             </Button>

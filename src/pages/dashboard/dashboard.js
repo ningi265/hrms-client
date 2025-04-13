@@ -25,6 +25,9 @@ import {
   People,
   ChevronLeft,
   ChevronRight,
+  HelpOutline,
+  ChatBubbleOutline,
+  Upgrade
 } from "@mui/icons-material";
 import MenuIcon from '@mui/icons-material/Menu';
 import {
@@ -56,7 +59,7 @@ import {
   styled,
   alpha,
 } from "@mui/material";
-
+import Tooltip from '@mui/material/Tooltip';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
 import PurchaseOrdersSection  from '../../pages/dashboard/purchase-orders/purchase-order';
@@ -354,208 +357,483 @@ export default function ProcurementDashboard() {
       backgroundColor: theme.palette.background.default,
     }}>
       {/* Sidebar */}
-      <Sidebar variant="permanent" open>
-      <Box sx={{
+    <Sidebar variant="permanent" open sx={{
+  backgroundColor: '#1f2836',
+  borderRight: '1px solid #e0e0e0',
+  width: 240
+}}>
+  {/* Fixed Header */}
+  <Box sx={{
     position: 'sticky',
     top: 0,
-    zIndex: 1,
-    backgroundColor: 'background.paper',
-    borderBottom: '1px solid',
-    borderColor: 'divider'
+    zIndex: 1200,
+    backgroundColor: '#ffffff',
+    height: 64,
+    display: 'flex',
+    alignItems: 'center'
   }}>
-    <SidebarHeader>
-      <Box sx={{ 
+     <Box sx={{ 
         display: "flex", 
         alignItems: "center", 
         gap: 2, 
-        px: 1,
-        width: '100%',
-        justifyContent: 'space-between',
+        px: 2,
+        width: '100%'
       }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Box
-            sx={{
-              display: "flex",
-              height: 34,
-              width: 36,
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: 1.5,
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
-            }}
-          >
-            <Layers sx={{ fontSize: 20 }} />
-          </Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            HRMS Dashboard
-          </Typography>
+        <Box
+          sx={{
+            display: "flex",
+            height: 36,
+            width: 36,
+            alignItems: "center",
+            justifyContent: "center",
+            borderRadius: 1,
+            backgroundColor: '#1976d2',
+            color: "#ffffff"
+          }}
+        >
+          <Layers sx={{ fontSize: 20 }} />
         </Box>
+        <Typography variant="subtitle1" sx={{ 
+          fontWeight: 600, 
+          color: "text.primary"
+        }}>
+          HRMS
+        </Typography>
       </Box>
-    </SidebarHeader>
   </Box>
 
-        <Divider />
+  {/* Scrollable Content */}
+  <Box sx={{
+    overflowY: 'auto',
+    height: 'calc(100vh - 64px)',
+    '&::-webkit-scrollbar': { width: 6 },
+    '&::-webkit-scrollbar-track': { background: 'transparent' },
+    '&::-webkit-scrollbar-thumb': { 
+      backgroundColor: '#bdbdbd',
+      borderRadius: 3
+    }
+  }}>
 
-        <List>
-          <SidebarGroupLabel>Main</SidebarGroupLabel>
-          <StyledListItemButton
-            selected={activeSection === "dashboard"}
-            onClick={() =>handleSectionChange("dashboard")}
-          >
-            <ListItemIcon>
-              <Home sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" />
-          </StyledListItemButton>
 
-          <StyledListItemButton
-            selected={activeSection === "requisitions"}
-            onClick={() => handleSectionChange("requisitions")}
-          >
-            <ListItemIcon>
-              <ShoppingCart sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Requisitions" />
-            <Badge badgeContent={stats.requisitions.counts.pending} color="primary" />
-          </StyledListItemButton>
-
-          <StyledListItemButton
-            selected={activeSection === "rfqs"}
-            onClick={() => handleSectionChange("rfqs")}
-          >
-            <ListItemIcon>
-              <People sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="RFQs" />
-            <Badge badgeContent={stats.rfqs.counts.open} color="primary" />
-          </StyledListItemButton>
-
-          <StyledListItemButton
-            selected={activeSection === "purchase-orders"}
-            onClick={() => handleSectionChange("purchase-orders")}
-          >
-            <ListItemIcon>
-              <Inventory sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Purchase Orders" />
-            <Badge badgeContent={stats.purchaseOrders.counts.pending} color="primary" />
-          </StyledListItemButton>
-
-          <StyledListItemButton
-            selected={activeSection === "invoices"}
-            onClick={() => handleSectionChange("invoices")}
-          >
-            <ListItemIcon>
-              <CreditCard sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Invoices" />
-            <Badge badgeContent={stats.invoices.counts.pending} color="primary" />
-          </StyledListItemButton>
-        </List>
-
-        <Divider />
-
-        <List>
-          <SidebarGroupLabel>Travel Management</SidebarGroupLabel>
-          <StyledListItemButton
-            selected={activeSection === "travel-requests"}
-            onClick={() => handleSectionChange("travel-requests")}
-          >
-            <ListItemIcon>
-              <CalendarToday sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Travel Requests" />
-          </StyledListItemButton>
-          <StyledListItemButton
-            selected={activeSection === "final-approval"}
-            onClick={() => handleSectionChange("final-approval")}
-          >
-            <ListItemIcon>
-              <CalendarToday sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Final Approval" />
-          </StyledListItemButton>
-          <StyledListItemButton
-            selected={activeSection === "fleet-management"}
-            onClick={() => handleSectionChange("fleet-management")}
-          >
-            <ListItemIcon>
-              <LocalShipping sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Fleet Management" />
-          </StyledListItemButton>
-
+    {/* Main Section */}
+    <List>
+      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>Main</SidebarGroupLabel>
       
-        </List>
+      <StyledListItemButton
+        selected={activeSection === "dashboard"}
+        onClick={() => handleSectionChange("dashboard")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <Home sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Dashboard" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
 
-        <Divider />
-        <List>
-          <SidebarGroupLabel>FINANCE PROCESSING</SidebarGroupLabel>
-          <StyledListItemButton
-            selected={activeSection === "finance-processing"}
-            onClick={() => handleSectionChange("finance-processing")}
-          >
-            <ListItemIcon>
-              <CreditCard sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Processing" />
-          </StyledListItemButton>
-
-          <StyledListItemButton
-            selected={activeSection === "reconciliation"}
-            onClick={() => handleSectionChange("reconciliation")}
-          >
-            <ListItemIcon>
-              <Description sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Reconciliation" />
-          </StyledListItemButton>
-        </List>
-        <Divider />
-
-        <List>
-          <SidebarGroupLabel>Reports</SidebarGroupLabel>
-          <StyledListItemButton
-            selected={activeSection === "analytics"}
-            onClick={() => setActiveSection("analytics")}
-          >
-            <ListItemIcon>
-              <BarChart sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Analytics" />
-          </StyledListItemButton>
-
-          <StyledListItemButton
-            selected={activeSection === "reports"}
-            onClick={() => setActiveSection("reports")}
-          >
-            <ListItemIcon>
-              <PieChart sx={{ fontSize: 20 }} />
-            </ListItemIcon>
-            <ListItemText primary="Reports" />
-          </StyledListItemButton>
-        </List>
-
-        <Box sx={{ mt: "auto" }}>
-          <Divider />
-          <List>
-            <StyledListItemButton onClick={() => navigate("/settings")}>
-              <ListItemIcon>
-                <Settings sx={{ fontSize: 20 }} />
-              </ListItemIcon>
-              <ListItemText primary="Settings" />
-            </StyledListItemButton>
-
-            <StyledListItemButton onClick={() => console.log("Logout")}>
-              <ListItemIcon>
-                <ExitToApp sx={{ fontSize: 20 }} />
-              </ListItemIcon>
-              <ListItemText primary="Logout" />
-            </StyledListItemButton>
-          </List>
+      <StyledListItemButton
+        selected={activeSection === "requisitions"}
+        onClick={() => handleSectionChange("requisitions")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <ShoppingCart sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Requisitions" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.requisitions.counts.pending} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
         </Box>
-      </Sidebar>
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "rfqs"}
+        onClick={() => handleSectionChange("rfqs")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <People sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="RFQs" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.rfqs.counts.open} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "purchase-orders"}
+        onClick={() => handleSectionChange("purchase-orders")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <Inventory sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Purchase Orders" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.purchaseOrders.counts.pending} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "invoices"}
+        onClick={() => handleSectionChange("invoices")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <CreditCard sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Invoices" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.invoices.counts.pending} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
+    </List>
+
+    <Divider sx={{ borderColor: '#e0e0e0' }} />
+
+    {/* Travel Management Section */}
+    <List>
+      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>Travel Management</SidebarGroupLabel>
+      
+      <StyledListItemButton
+        selected={activeSection === "travel-requests"}
+        onClick={() => handleSectionChange("travel-requests")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Travel Requests" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "final-approval"}
+        onClick={() => handleSectionChange("final-approval")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Final Approval" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "fleet-management"}
+        onClick={() => handleSectionChange("fleet-management")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <LocalShipping sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Fleet Management" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+    </List>
+
+    <Divider sx={{ borderColor: '#e0e0e0' }} />
+
+    {/* Finance Processing Section */}
+    <List>
+      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>FINANCE PROCESSING</SidebarGroupLabel>
+      
+      <StyledListItemButton
+        selected={activeSection === "finance-processing"}
+        onClick={() => handleSectionChange("finance-processing")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <CreditCard sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Processing" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "reconciliation"}
+        onClick={() => handleSectionChange("reconciliation")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <Description sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Reconciliation" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+    </List>
+
+    <Divider sx={{ borderColor: '#e0e0e0' }} />
+
+    {/* Reports Section */}
+    <List>
+      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>Reports</SidebarGroupLabel>
+      
+      <StyledListItemButton
+        selected={activeSection === "analytics"}
+        onClick={() => setActiveSection("analytics")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <BarChart sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Analytics" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "reports"}
+        onClick={() => setActiveSection("reports")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <PieChart sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Reports" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+    </List>
+
+    {/* Settings & Logout Section */}
+    <Box sx={{ mt: 'auto' }}>
+      <Divider sx={{ borderColor: '#e0e0e0' }} />
+      <List>
+        <StyledListItemButton 
+          onClick={() => navigate("/settings")}
+          sx={{ 
+            '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          }}
+        >
+          <ListItemIcon>
+            <Settings sx={{ fontSize: 20, color: 'text.secondary' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Settings" 
+            primaryTypographyProps={{ 
+              color: 'text.primary',
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }} 
+          />
+        </StyledListItemButton>
+
+        <StyledListItemButton 
+          onClick={() => console.log("Logout")}
+          sx={{ 
+            '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          }}
+        >
+          <ListItemIcon>
+            <ExitToApp sx={{ fontSize: 20, color: 'text.secondary' }} />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Logout" 
+            primaryTypographyProps={{ 
+              color: 'text.primary',
+              fontSize: '0.875rem',
+              fontWeight: 500
+            }} 
+          />
+        </StyledListItemButton>
+      </List>
+    </Box>
+  </Box>
+</Sidebar>
 
       {/* Main Content */}
       <Box component="main" sx={{ 
@@ -565,16 +843,16 @@ export default function ProcurementDashboard() {
       }}>
         {/* Header */}
         <Paper elevation={0} sx={{ 
-      p: 1.5, 
-      borderBottom: 1, 
-      borderColor: "divider",
-      backgroundColor: theme => `rgba(${theme.palette.background.paper.replace(/^rgba?\(|\s+|\)$/g, '').split(',')[0]}, ${opacity})`,
-      backdropFilter: `blur(${opacity * 10}px)`, 
-      position: 'sticky',
-      top: 0,
-      zIndex: theme => theme.zIndex.appBar,
-      transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease' 
-    }}>
+  p: 1.5, 
+  borderBottom: 1, 
+  height: 70,
+  borderColor: "divider",
+  backdropFilter: `blur(${opacity * 10}px)`, 
+  position: 'sticky',
+  top: 0,
+  zIndex: theme => theme.zIndex.appBar,
+  transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease' 
+}}>
   <Toolbar sx={{ px: { sm: 2 } }}>
     {/* Left-aligned items */}
     <Box sx={{ 
@@ -597,104 +875,149 @@ export default function ProcurementDashboard() {
           <Notifications sx={{ color: theme.palette.text.primary }} />
         </Badge>
       </IconButton>
+    </Box>
 
-      {/* User profile with dropdown */}
-      <Box>
+    {/* Right-aligned items - new icons added here */}
+    <Box sx={{ 
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: 1,
+      mr: 1 
+    }}>
+      {/* Help icon */}
+      <Tooltip title="Help">
+        <IconButton color="inherit">
+          <HelpOutline sx={{ color: theme.palette.text.secondary }} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Chat icon */}
+      <Tooltip title="Chat with us now">
+        <IconButton color="inherit">
+          <ChatBubbleOutline sx={{ color: theme.palette.text.secondary }} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Settings icon */}
+      <Tooltip title="Settings">
+        <IconButton color="inherit">
+          <Settings sx={{ color: theme.palette.text.secondary }} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Upgrade button */}
+      <Tooltip title="Upgrade">
         <Button
-          variant="text"
-          color="inherit"
-          onClick={handleMenuClick}
-          sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 1,
+          variant="contained"
+          color="primary"
+          size="small"
+          startIcon={<Upgrade />}
+          sx={{
             borderRadius: 20,
-            px: 1.5,
+            textTransform: 'none',
+            px: 2,
             py: 0.5,
-            '&:hover': {
-              backgroundColor: theme.palette.action.hover,
-            }
+            fontSize: '0.75rem',
+            fontWeight: 600
           }}
-          id="user-menu-button"  
-          aria-controls={open ? 'user-menu' : undefined}
-          aria-haspopup="true"
-          aria-expanded={open ? 'true' : undefined}
         >
-          <Avatar sx={{ 
-            width: 36, 
-            height: 36, 
-            bgcolor: theme.palette.primary.main 
-          }} src={user.avatar}>
-            {user.name.split(" ").map((n) => n[0]).join("")}
-          </Avatar>
-          <Box sx={{ display: { xs: "none", md: "block" } }}>
-            <Typography variant="body2" sx={{ fontWeight: 500,fontVariant: "small-caps",}}>
-              {user?.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {user?.role}
-            </Typography>
-          </Box>
-          <ExpandMore sx={{ fontSize: 16 }} />
+          Upgrade
         </Button>
+      </Tooltip>
+    </Box>
 
-        {/* Menu dropdown */}
-        <Menu
-          id="user-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleMenuClose}
-          anchorOrigin={{
-            vertical: "bottom",
-            horizontal: "right",
-          }}
-          transformOrigin={{
-            vertical: "top",
-            horizontal: "right",
-          }}
-          PaperProps={{
-            elevation: 4,
-            sx: {
-              mt: 1.5,
-              minWidth: 200,
-              borderRadius: 2,
-              overflow: 'visible',
-              '&:before': {
-                content: '""',
-                display: 'block',
-                position: 'absolute',
-                top: 0,
-                right: 14,
-                width: 10,
-                height: 10,
-                bgcolor: 'background.paper',
-                transform: 'translateY(-50%) rotate(45deg)',
-                zIndex: 0,
-              }
+    {/* User profile with dropdown */}
+    <Box>
+      <Button
+        variant="text"
+        color="inherit"
+        onClick={handleMenuClick}
+        sx={{ 
+          display: "flex", 
+          alignItems: "center", 
+          gap: 1,
+          borderRadius: 20,
+          px: 1.5,
+          py: 0.5,
+          '&:hover': {
+            backgroundColor: theme.palette.action.hover,
+          }
+        }}
+        id="user-menu-button"  
+        aria-controls={open ? 'user-menu' : undefined}
+        aria-haspopup="true"
+        aria-expanded={open ? 'true' : undefined}
+      >
+        <Avatar sx={{ 
+          width: 36, 
+          height: 36, 
+          bgcolor: theme.palette.primary.main 
+        }} src={user.avatar}>
+          {user.name.split(" ").map((n) => n[0]).join("")}
+        </Avatar>
+        <Box sx={{ display: { xs: "none", md: "block" } }}>
+          <Typography variant="body3" sx={{ fontWeight: 100, fontVariant: "small-caps" }}>
+            {user?.name}
+          </Typography>
+        </Box>
+      </Button>
+
+      {/* Menu dropdown */}
+      <Menu
+        id="user-menu"
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "right",
+        }}
+        transformOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+        PaperProps={{
+          elevation: 4,
+          sx: {
+            mt: 1.5,
+            minWidth: 200,
+            borderRadius: 2,
+            overflow: 'visible',
+            '&:before': {
+              content: '""',
+              display: 'block',
+              position: 'absolute',
+              top: 0,
+              right: 14,
+              width: 10,
+              height: 10,
+              bgcolor: 'background.paper',
+              transform: 'translateY(-50%) rotate(45deg)',
+              zIndex: 0,
             }
-          }}
-        >
-          <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-            <ListItemIcon>
-              <Person fontSize="small" />
-            </ListItemIcon>
-            Profile
-          </MenuItem>
-          <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-            <ListItemIcon>
-              <Settings fontSize="small" />
-            </ListItemIcon>
-            Settings
-          </MenuItem>
-          <Divider />
-          <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-            <ListItemIcon>
-              <ExitToApp fontSize="small" />
-            </ListItemIcon>
-            Log out
-          </MenuItem>
-        </Menu>
-      </Box>
+          }
+        }}
+      >
+        <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
+          <ListItemIcon>
+            <Person fontSize="small" />
+          </ListItemIcon>
+          Profile
+        </MenuItem>
+        <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
+          <ListItemIcon>
+            <Settings fontSize="small" />
+          </ListItemIcon>
+          Settings
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
+          <ListItemIcon>
+            <ExitToApp fontSize="small" />
+          </ListItemIcon>
+          Log out
+        </MenuItem>
+      </Menu>
     </Box>
 
     {/* Mobile menu button on the right */}

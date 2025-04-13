@@ -83,6 +83,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import { MapPin } from "lucide-react"
 import { useAuth } from "../../../../authcontext/authcontext";
+import { generateTravelReconciliationReport } from "../../../../utils/generatedPdfReport";
 
 
 
@@ -352,7 +353,7 @@ export default function TravelExecutionReconciliation() {
   
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`https://hrms-6s3i.onrender.com/api/travel-requests/${selectedTrip.id}/expenses`, {
+      const response = await fetch(`http://localhost:4000/api/travel-requests/${selectedTrip.id}/expenses`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -487,7 +488,7 @@ export default function TravelExecutionReconciliation() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `https://hrms-6s3i.onrender.com/api/travel-requests/${selectedTrip.id}/reconcile`,
+        `http://localhost:4000/api/travel-requests/${selectedTrip.id}/reconcile`,
         {
           method: 'POST',
           headers: {
@@ -616,7 +617,7 @@ export default function TravelExecutionReconciliation() {
         const token = localStorage.getItem("token");
         console.log(token)
         const response = await fetch(
-          "https://hrms-6s3i.onrender.com/api/travel-requests/finance/processed",
+          "http://localhost:4000/api/travel-requests/finance/processed",
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -1233,12 +1234,13 @@ export default function TravelExecutionReconciliation() {
 
                     {selectedTrip.status === "reconciled" && (
                       <Button
-                        variant="outlined"
-                        startIcon={<Download />}
-                        sx={{ borderRadius: 28, borderColor: "success.main", color: "success.dark" }}
-                      >
-                        Download Report
-                      </Button>
+                      variant="outlined"
+                      startIcon={<Download />}
+                      onClick={() => generateTravelReconciliationReport(selectedTrip)}
+                      sx={{ borderRadius: 28, borderColor: "success.main", color: "success.dark" }}
+                    >
+                      Download Report
+                    </Button>
                     )}
                   </Box>
                 </Card>
@@ -1451,75 +1453,75 @@ safeFormatDate(selectedTrip.travelArrangements?.flight?.outbound?.departureTime,
 
                 {/* Expenses List */}
                 <Card sx={{ boxShadow: 3 }}>
-                  <CardHeader
-                    title={
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Receipt color="primary" />
-                        <Typography variant="h6">Expenses</Typography>
-                      </Box>
-                    }
-                    action={
-                      selectedTrip.status === "active" && (
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() => setShowExpenseForm(true)}
-                          startIcon={<Add />}
-                          sx={{ borderRadius: 28 }}
-                        >
-                          Add Expense
-                        </Button>
-                      )
-                    }
-                    sx={{ bgcolor: "action.hover" }}
-                  />
-                  <CardContent sx={{ p: 0 }}>
-                    {selectedTrip?.expenses || [].length === 0 ? (
-                      <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
-                        No expenses recorded yet
-                      </Typography>
-                    ) : (
-                      <Table>
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Date</TableCell>
-                            <TableCell>Category</TableCell>
-                            <TableCell>Description</TableCell>
-                            <TableCell align="right">Amount</TableCell>
-                            <TableCell>Status</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {selectedTrip?.expenses || [].map((expense) => (
-                            <TableRow key={expense.id}>
-                              <TableCell>{format(expense.date, "MMM d, yyyy")}</TableCell>
-                              <TableCell>{expense.category}</TableCell>
-                              <TableCell>{expense.description}</TableCell>
-                              <TableCell align="right">
-                                {formatCurrency(expense.amount, selectedTrip.currency)}
-                              </TableCell>
-                              <TableCell>{getExpenseStatusBadge(expense.status)}</TableCell>
-                            </TableRow>
-                          ))}
-                          <TableRow sx={{ bgcolor: "action.hover" }}>
-                            <TableCell colSpan={3} align="right">
-                              <Typography fontWeight="medium">Total</Typography>
-                            </TableCell>
-                            <TableCell align="right">
-                              <Typography fontWeight="medium">
-                                {formatCurrency(
-                                  calculateTotalExpenses(selectedTrip?.expenses || []),
-                                  selectedTrip.currency,
-                                )}
-                              </Typography>
-                            </TableCell>
-                            <TableCell></TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
+  <CardHeader
+    title={
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Receipt color="primary" />
+        <Typography variant="h6">Expenses</Typography>
+      </Box>
+    }
+    action={
+      selectedTrip.status === "active" && (
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => setShowExpenseForm(true)}
+          startIcon={<Add />}
+          sx={{ borderRadius: 28 }}
+        >
+          Add Expense
+        </Button>
+      )
+    }
+    sx={{ bgcolor: "action.hover" }}
+  />
+  <CardContent sx={{ p: 0 }}>
+    {selectedTrip?.expenses?.length === 0 ? (
+      <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
+        No expenses recorded yet
+      </Typography>
+    ) : (
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Date</TableCell>
+            <TableCell>Category</TableCell>
+            <TableCell>Description</TableCell>
+            <TableCell align="right">Amount</TableCell>
+            <TableCell>Status</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {selectedTrip?.expenses?.map((expense) => (
+            <TableRow key={expense.id}>
+              <TableCell>{format(expense.date, "MMM d, yyyy")}</TableCell>
+              <TableCell>{expense.category}</TableCell>
+              <TableCell>{expense.description}</TableCell>
+              <TableCell align="right">
+                {formatCurrency(expense.amount, selectedTrip.currency)}
+              </TableCell>
+              <TableCell>{getExpenseStatusBadge(expense.status)}</TableCell>
+            </TableRow>
+          ))}
+          <TableRow sx={{ bgcolor: "action.hover" }}>
+            <TableCell colSpan={3} align="right">
+              <Typography fontWeight="medium">Total</Typography>
+            </TableCell>
+            <TableCell align="right">
+              <Typography fontWeight="medium">
+                {formatCurrency(
+                  calculateTotalExpenses(selectedTrip?.expenses || []),
+                  selectedTrip.currency,
+                )}
+              </Typography>
+            </TableCell>
+            <TableCell></TableCell>
+          </TableRow>
+        </TableBody>
+      </Table>
+    )}
+  </CardContent>
+</Card>
 
                 {/* Add Expense Form Dialog */}
                 <Dialog
