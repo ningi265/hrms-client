@@ -21,13 +21,13 @@ export default function SubmitQuotePage() {
   const [notes, setNotes] = useState("");
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`https://hrms-6s3i.onrender.com/api/rfqs/${rfq.id}/quote`, {
+      const response = await fetch(`${backendUrl}/api/rfqs/${rfq.id}/quote`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

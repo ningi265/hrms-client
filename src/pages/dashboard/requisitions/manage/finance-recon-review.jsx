@@ -160,6 +160,7 @@ export default function FinanceReconciliationReview() {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [travelRequests, setTravelRequests] = useState([])
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const [reviewNotes, setReviewNotes] = useState({
     internalNotes: "",
@@ -248,7 +249,7 @@ export default function FinanceReconciliationReview() {
       try {
         const token = localStorage.getItem("token")
         const response = await fetch(
-          "http://localhost:4000/api/travel-requests/pending/recon",
+          `${backendUrl}/api/travel-requests/pending/recon`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -379,7 +380,7 @@ export default function FinanceReconciliationReview() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:4000/api/travel-requests/${selectedReconciliation.id}/process-reconciliation`,
+        `${backendUrl}/api/travel-requests/${selectedReconciliation.id}/process-reconciliation`,
         {
           method: "PUT",
           headers: {

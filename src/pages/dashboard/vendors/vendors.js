@@ -32,13 +32,14 @@ export default function VendorsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedVendor, setSelectedVendor] = useState(null);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Fetch vendors from the backend
   useEffect(() => {
     const fetchVendors = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/vendors", {
+        const response = await fetch(`${backendUrl}/api/vendors`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -114,7 +115,7 @@ export default function VendorsPage() {
   const handleDeleteVendor = async (vendorId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`https://hrms-6s3i.onrender.com/api/vendors/${vendorId}`, {
+      const response = await fetch(`${backendUrl}/api/vendors/${vendorId}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

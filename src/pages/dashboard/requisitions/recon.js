@@ -39,7 +39,7 @@ export default function EmployeeReconciliationPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [tabValue, setTabValue] = useState(0);
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const expenseCategories = [
     'Transportation',
     'Meals',
@@ -54,7 +54,7 @@ export default function EmployeeReconciliationPage() {
       try {
         setIsLoading(true);
         const token = localStorage.getItem('token');
-        const response = await fetch('https://hrms-6s3i.onrender.com/api/travel-requests/employee/processed', {
+        const response = await fetch(`${backendUrl}/api/travel-requests/employee/processed`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

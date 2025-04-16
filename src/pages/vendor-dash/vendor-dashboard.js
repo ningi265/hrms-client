@@ -34,6 +34,7 @@ import {
 } from "@mui/material";
 
 import { useAuth } from "../../authcontext/authcontext"; // Import the useAuth hook
+import { Backspace } from "@mui/icons-material";
 
 export default function VendorDashboard() {
   const { user } = useAuth(); // Use the actual useAuth hook
@@ -41,6 +42,7 @@ export default function VendorDashboard() {
   const [stats, setStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("rfqs");
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     const getStats = async () => {
@@ -48,7 +50,7 @@ export default function VendorDashboard() {
         const token = localStorage.getItem("token"); // Retrieve the token from local storage or your auth context
 
         // Fetch RFQs stats
-        const rfqsResponse = await fetch("https://hrms-6s3i.onrender.com/api/rfqs/stats", {
+        const rfqsResponse = await fetch(`${backendUrl}/api/rfqs/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -56,7 +58,7 @@ export default function VendorDashboard() {
         const rfqsData = await rfqsResponse.json();
 
         // Fetch purchase orders stats
-        const purchaseOrdersResponse = await fetch("https://hrms-6s3i.onrender.com/api/purchase-orders/stats", {
+        const purchaseOrdersResponse = await fetch(`${backendUrl}/api/purchase-orders/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -64,7 +66,7 @@ export default function VendorDashboard() {
         const purchaseOrdersData = await purchaseOrdersResponse.json();
 
         // Fetch invoices stats
-        const invoicesResponse = await fetch("https://hrms-6s3i.onrender.com/api/invoices/stats", {
+        const invoicesResponse = await fetch(`${backendUrl}/api/invoices/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

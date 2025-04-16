@@ -29,13 +29,13 @@ export default function VendorInvoiceSubmissionPage() {
   const [openInvoiceDialog, setOpenInvoiceDialog] = useState(false); // For the invoice submission dialog
   const [selectedPO, setSelectedPO] = useState(null); // Selected PO for invoice submission
   const [invoiceNumber, setInvoiceNumber] = useState(""); // Invoice number input
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   // Fetch vendor details
   useEffect(() => {
     const fetchVendorDetails = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/vendors/me", {
+        const response = await fetch(`${backendUrl}/api/vendors/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -58,7 +58,7 @@ export default function VendorInvoiceSubmissionPage() {
 
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/purchase-orders", {
+        const response = await fetch(`${backendUrl}/api/purchase-orders`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -102,7 +102,7 @@ export default function VendorInvoiceSubmissionPage() {
     try {
       const token = localStorage.getItem("token");
 
-      const response = await fetch("https://hrms-6s3i.onrender.com/api/invoices", {
+      const response = await fetch(`${backendUrl}/api/invoices`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

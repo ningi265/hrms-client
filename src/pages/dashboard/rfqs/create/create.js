@@ -33,6 +33,7 @@ export default function CreateRFQPage() {
   const [isVendorsLoading, setIsVendorsLoading] = useState(false); // Separate loading state for vendors
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Fetch all requisitions and vendors on component mount
   useEffect(() => {
@@ -41,7 +42,7 @@ export default function CreateRFQPage() {
       try {
         // Fetch all requisitions
         const token = localStorage.getItem("token");
-        const requisitionsResponse = await fetch("https://hrms-6s3i.onrender.com/api/requisitions", {
+        const requisitionsResponse = await fetch(`${backendUrl}/api/requisitions`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -60,7 +61,7 @@ export default function CreateRFQPage() {
 
         // Fetch vendors
         setIsVendorsLoading(true);
-        const vendorsResponse = await fetch("https://hrms-6s3i.onrender.com/api/vendors", {
+        const vendorsResponse = await fetch(`${backendUrl}/api/vendors`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -127,7 +128,7 @@ export default function CreateRFQPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("https://hrms-6s3i.onrender.com/api/rfqs", {
+      const response = await fetch(`${backendUrl}/api/rfqs`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

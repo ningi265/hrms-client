@@ -1,6 +1,7 @@
 import axios from 'axios';
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-const API_URL = 'http://localhost:4000/api/travel-requests';
+const API_URL = `${backendUrl}/api/travel-requests`;
 
 // Get dashboard overview data
 const getDashboardOverview = async (token) => {

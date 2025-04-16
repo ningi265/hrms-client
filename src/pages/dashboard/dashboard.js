@@ -86,6 +86,7 @@ import InternationalTravelRequestSection from '../../pages/dashboard/requisition
 import FinanceReconciliationReviewSection from '../../pages/dashboard/requisitions/manage/finance-recon-review';
 import FleetCoordinatorSection from '../../pages/dashboard/requisitions/manage/fleet';
 import { useAuth } from "../../authcontext/authcontext"; 
+import axios from 'axios';
 
 
 
@@ -184,6 +185,8 @@ const ActivityCard = styled(Card)(({ theme }) => ({
   },
 }));
 
+const backendUrl = process.env.REACT_APP_BACKEND_URL;
+console.log(backendUrl);
 
 
 export default function ProcurementDashboard() {
@@ -200,6 +203,10 @@ export default function ProcurementDashboard() {
   const [activeSection, setActiveSection] = useState(() => {
     return searchParams.get('section') || 'dashboard';
   });
+
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -249,7 +256,7 @@ export default function ProcurementDashboard() {
         const token = localStorage.getItem("token"); // Retrieve the token from local storage or your auth context
 
         // Fetch requisitions stats
-        const requisitionsResponse = await fetch("https://hrms-6s3i.onrender.com/api/requisitions/stats", {
+        const requisitionsResponse = await fetch(`${backendUrl}/api/requisitions/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -257,7 +264,7 @@ export default function ProcurementDashboard() {
         const requisitionsData = await requisitionsResponse.json();
 
         // Fetch RFQs stats
-        const rfqsResponse = await fetch("https://hrms-6s3i.onrender.com/api/rfqs/stats", {
+        const rfqsResponse = await fetch(`${backendUrl}/api/rfqs/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -265,7 +272,7 @@ export default function ProcurementDashboard() {
         const rfqsData = await rfqsResponse.json();
 
         // Fetch purchase orders stats
-        const purchaseOrdersResponse = await fetch("https://hrms-6s3i.onrender.com/api/purchase-orders/stats", {
+        const purchaseOrdersResponse = await fetch(`${backendUrl}/api/purchase-orders/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -273,7 +280,7 @@ export default function ProcurementDashboard() {
         const purchaseOrdersData = await purchaseOrdersResponse.json();
 
         // Fetch invoices stats
-        const invoicesResponse = await fetch("https://hrms-6s3i.onrender.com/api/invoices/stats", {
+        const invoicesResponse = await fetch(`${backendUrl}/api/invoices/stats`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -358,7 +365,7 @@ export default function ProcurementDashboard() {
     }}>
       {/* Sidebar */}
     <Sidebar variant="permanent" open sx={{
-  backgroundColor: '#1f2836',
+  backgroundColor: '#0f172a',
   borderRight: '1px solid #e0e0e0',
   width: 240
 }}>

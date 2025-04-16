@@ -102,6 +102,7 @@ export default function FleetCoordinator() {
     message: "",
     includeItinerary: true,
   })
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const transformRequestData = (data) => {
     return data.map(request => {
@@ -159,7 +160,7 @@ export default function FleetCoordinator() {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "https://hrms-6s3i.onrender.com/api/auth/drivers", 
+          `${backendUrl}/api/auth/drivers`, 
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -190,7 +191,7 @@ export default function FleetCoordinator() {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:4000/api/travel-requests/finance/pending", // Updated endpoint
+          `${backendUrl}/api/travel-requests/finance/pending`, // Updated endpoint
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -327,7 +328,7 @@ export default function FleetCoordinator() {
       const token = localStorage.getItem("token");
   
       const response = await fetch(
-        `http://localhost:4000/api/travel-requests/${selectedRequest.id}/assign-driver`,
+        `${backendUrl}/api/travel-requests/${selectedRequest.id}/assign-driver`,
         {
           method: 'PUT',
           headers: {
@@ -395,7 +396,7 @@ export default function FleetCoordinator() {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:4000/api/travel-requests/${selectedRequest.id}/send-notifications`, {
+      const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/send-notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -120,6 +120,7 @@ export default function TravelExecutionReconciliation() {
   const [travelRequests, setTravelRequests] = useState([])
   const [alertMessage, setAlertMessage] = useState(null)
   const [showAlert, setShowAlert] = useState(false)
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const [newExpense, setNewExpense] = useState({
     category: "",
@@ -353,7 +354,7 @@ export default function TravelExecutionReconciliation() {
   
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:4000/api/travel-requests/${selectedTrip.id}/expenses`, {
+      const response = await fetch(`${backendUrl}/api/travel-requests/${selectedTrip.id}/expenses`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -488,7 +489,7 @@ export default function TravelExecutionReconciliation() {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:4000/api/travel-requests/${selectedTrip.id}/reconcile`,
+        `${backendUrl}/api/travel-requests/${selectedTrip.id}/reconcile`,
         {
           method: 'POST',
           headers: {
@@ -617,7 +618,7 @@ export default function TravelExecutionReconciliation() {
         const token = localStorage.getItem("token");
         console.log(token)
         const response = await fetch(
-          "http://localhost:4000/api/travel-requests/finance/processed",
+          `${backendUrl}/api/travel-requests/finance/processed`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

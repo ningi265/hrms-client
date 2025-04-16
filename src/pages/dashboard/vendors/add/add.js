@@ -30,6 +30,7 @@ export default function AddVendorPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -49,7 +50,7 @@ export default function AddVendorPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("https://hrms-6s3i.onrender.com/api/vendors", {
+      const response = await fetch(`${backendUrl}/api/vendors`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -44,13 +44,14 @@ const FinanceProcessingPage = () => {
     paymentMethod: "none",
     notes: "",
   });
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     const fetchApprovedRequests = async () => {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "https://hrms-6s3i.onrender.com/api/travel-requests/finance/pending",
+          `${backendUrl}/api/travel-requests/finance/pending`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -119,7 +120,7 @@ const FinanceProcessingPage = () => {
       const perDiemAmount = calculatePerDiem(selectedRequest);
 
       const response = await fetch(
-        `https://hrms-6s3i.onrender.com/api/travel-requests/${selectedRequest._id}/finance-process`,
+        `${backendUrl}/api/travel-requests/${selectedRequest._id}/finance-process`,
         {
           method: "PUT",
           headers: {

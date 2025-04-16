@@ -33,6 +33,7 @@ export default function InvoicesPage() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const navigate = useNavigate();
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Fetch invoices from the backend
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function InvoicesPage() {
         const token = localStorage.getItem("token");
         console.log("Token from localStorage:", token); // Debug log
 
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/invoices", {
+        const response = await fetch(`${backendUrl}/api/invoices`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -107,13 +108,13 @@ export default function InvoicesPage() {
       // Determine the endpoint based on the action type
       switch (actionType) {
         case "approve":
-          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/approve`;
+          url = `${backendUrl}/api/invoices/${selectedInvoice._id}/approve`;
           break;
         case "reject":
-          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/reject`;
+          url = `${backendUrl}/api/invoices/${selectedInvoice._id}/reject`;
           break;
         case "mark-as-paid":
-          url = `https://hrms-6s3i.onrender.com/api/invoices/${selectedInvoice._id}/pay`;
+          url = `${backendUrl}/api/invoices/${selectedInvoice._id}/pay`;
           break;
         default:
           throw new Error("Invalid action type");

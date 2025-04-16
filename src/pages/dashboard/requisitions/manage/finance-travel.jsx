@@ -118,6 +118,7 @@ export default function FinanceProcessing() {
   const [selectedDecision, setSelectedDecision] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [travelRequests, setTravelRequests] = useState([])
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const [perDiemDetails, setPerDiemDetails] = useState({
     dailyRate: 0,
@@ -295,7 +296,7 @@ export default function FinanceProcessing() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `https://hrms-6s3i.onrender.com/api/travel-requests/${selectedRequest.id}/finance-process`,
+        `${backendUrl}/api/travel-requests/${selectedRequest.id}/finance-process`,
         {
           method: "PUT",
           headers: {
@@ -452,7 +453,7 @@ export default function FinanceProcessing() {
       try {
         const token = localStorage.getItem("token");
         const response = await fetch(
-          "http://localhost:4000/api/travel-requests/finance/pending",
+          `${backendUrl}/api/travel-requests/finance/pending`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

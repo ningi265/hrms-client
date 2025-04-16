@@ -30,14 +30,14 @@ export default function PurchaseOrdersPage() {
   const [selectedPoId, setSelectedPoId] = useState(null);
   const [proofOfDelivery, setProofOfDelivery] = useState("");
   const [receivedBy, setReceivedBy] = useState(user ? user.name : "");
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   // Fetch purchase orders from the backend
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
         console.log(token)
-        const response = await fetch("http://localhost:4000/api/purchase-orders", {
+        const response = await fetch(`${backendUrl}/api/purchase-orders`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -74,7 +74,7 @@ export default function PurchaseOrdersPage() {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:4000/api/purchase-orders/${selectedPoId}/delivery-confirmed`,
+        `${backendUrl}/api/purchase-orders/${selectedPoId}/delivery-confirmed`,
         {
           method: "PUT",
           headers: {

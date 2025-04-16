@@ -32,6 +32,7 @@ export default function PaymentPage() {
   const [isPaymentSuccessful, setIsPaymentSuccessful] = useState(false); // Track payment success
 
   const token = localStorage.getItem("token");
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Debugging: Log invoice and token
   useEffect(() => {
@@ -60,7 +61,7 @@ export default function PaymentPage() {
 
     try {
       const response = await fetch(
-        `https://hrms-6s3i.onrender.com/api/invoices/${invoice._id}/status/pay`,
+        `${backendUrl}/api/invoices/${invoice._id}/status/pay`,
         {
           method: "PUT",
           headers: {
