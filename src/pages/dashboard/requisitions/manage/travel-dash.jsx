@@ -59,7 +59,7 @@ export default function TravelDashboard() {
   const [pendingInternational, setPendingInternational] = useState();
   const [localModalOpen, setLocalModalOpen] = useState(false);
   const [internationalModalOpen, setInternationalModalOpen] = useState(false);
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   
 
   const handleMenuOpen = (event) => {
@@ -85,7 +85,7 @@ export default function TravelDashboard() {
     const fetchPendingStats = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await axios.get("https://hrms-6s3i.onrender.com/api/travel-requests/pending/stats", {
+        const response = await axios.get(`${backendUrl}/api/travel-requests/pending/stat`, {
           headers: { Authorization: `Bearer ${token}` },
         });
   

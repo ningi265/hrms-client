@@ -15,6 +15,7 @@ export default function RFQsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const [anchorEl, setAnchorEl] = useState(null)
   const [selectedRFQ, setSelectedRFQ] = useState(null)
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     const fetchRFQs = async () => {

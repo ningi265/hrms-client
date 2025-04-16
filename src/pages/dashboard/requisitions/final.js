@@ -34,12 +34,12 @@ const FinalApproverDashboard = () => {
   const [openConfirmation, setOpenConfirmation] = useState(false);
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [selectedDecision, setSelectedDecision] = useState(null);
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   useEffect(() => {
     const fetchApprovedRequests = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/travel-requests/supervisor-approved", {
+        const response = await fetch(`${backendUrl}/api/travel-requests/supervisor-approved`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -73,7 +73,7 @@ const FinalApproverDashboard = () => {
       const token = localStorage.getItem("token");
       const finalApproverId = JSON.parse(localStorage.getItem("user"))._id;
 
-      const response = await fetch(`https://hrms-6s3i.onrender.com/api/travel-requests/${id}/final-approval`, {
+      const response = await fetch(`${backendUrl}/api/travel-requests/${id}/final-approval`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

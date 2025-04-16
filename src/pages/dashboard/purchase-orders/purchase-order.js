@@ -39,14 +39,14 @@ export default function PurchaseOrdersPage() {
   const [rfqs, setRfqs] = useState([]);
   const [selectedRfqId, setSelectedRfqId] = useState("");
   const [selectedQuote, setSelectedQuote] = useState(null);
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   // Fetch purchase orders and RFQs
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch purchase orders
         const token = localStorage.getItem("token");
-        const poResponse = await fetch("https://hrms-6s3i.onrender.com/api/purchase-orders", {
+        const poResponse = await fetch(`${backendUrl}/api/purchase-orders`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -57,7 +57,7 @@ export default function PurchaseOrdersPage() {
         setPurchaseOrders(poData);
 
         // Fetch RFQs
-        const rfqResponse = await fetch("https://hrms-6s3i.onrender.com/api/rfqs", {
+        const rfqResponse = await fetch(`${backendUrl}/api/rfqs`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -125,7 +125,7 @@ export default function PurchaseOrdersPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("https://hrms-6s3i.onrender.com/api/purchase-orders", {
+      const response = await fetch(`${backendUrl}/api/purchase-orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -45,6 +45,7 @@ export default function VendorRFQsPage() {
   const [price, setPrice] = useState(""); // Price input
   const [deliveryTime, setDeliveryTime] = useState(""); // Delivery time input
   const [notes, setNotes] = useState(""); // Notes input
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Log the token and user role when the component mounts or when the user object changes
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function VendorRFQsPage() {
     const fetchRFQs = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/rfqs", {
+        const response = await fetch(`${backendUrl}/api/rfqs`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -118,7 +119,7 @@ export default function VendorRFQsPage() {
         console.log("Notes:", notes);
 
         const response = await fetch(
-            `https://hrms-6s3i.onrender.com/api/rfqs/${selectedRFQ._id}/quote`,
+            `${backendUrl}/api/rfqs/${selectedRFQ._id}/quote`,
             {
                 method: "POST",
                 headers: {

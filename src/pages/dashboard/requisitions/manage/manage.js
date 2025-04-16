@@ -26,13 +26,14 @@ export default function ManageRequisitionsPage() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const navigate = useNavigate();
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Fetch pending requisitions
   useEffect(() => {
     const fetchPendingRequisitions = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/requisitions/pending", {
+        const response = await fetch(`${backendUrl}/api/requisitions/pending`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -54,7 +55,7 @@ export default function ManageRequisitionsPage() {
   const handleAction = async (requisitionId, action) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`https://hrms-6s3i.onrender.com/api/requisitions/${requisitionId}/${action}`, {
+      const response = await fetch(`${backendUrl}/api/requisitions/${requisitionId}/${action}`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,

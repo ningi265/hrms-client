@@ -81,7 +81,7 @@ export default function NewRequisition() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredForms, setFilteredForms] = useState(forms);
   const [openConfirmation, setOpenConfirmation] = useState(false);
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     const autoSave = setTimeout(() => {

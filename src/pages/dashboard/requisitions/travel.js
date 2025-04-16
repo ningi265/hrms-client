@@ -38,13 +38,14 @@ const SupervisorDashboard = () => {
   const [selectedDecision, setSelectedDecision] = useState(null);
 
   const navigate = useNavigate();
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Fetch all pending travel requests
   useEffect(() => {
     const fetchPendingRequests = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/travel-requests/pending/all", {
+        const response = await fetch(`${backendUrl}/api/travel-requests/pending/all`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -80,7 +81,7 @@ const SupervisorDashboard = () => {
       const token = localStorage.getItem("token");
       const supervisorId = JSON.parse(localStorage.getItem("user"))._id; // Supervisor's ID
 
-      const response = await fetch(`https://hrms-6s3i.onrender.com/api/travel-requests/${id}/supervisor-approval`, {
+      const response = await fetch(`${backendUrl}/api/travel-requests/${id}/supervisor-approval`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

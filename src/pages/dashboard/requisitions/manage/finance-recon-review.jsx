@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { format, parseISO, differenceInDays } from "date-fns"
+import { format, differenceInDays, parseISO } from "date-fns"
 import {
   AlertCircle,
   ArrowLeft,
@@ -76,8 +76,10 @@ import {
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { grey, blue, green, amber, red } from "@mui/material/colors"
+import { generateApprovalReport } from "../../../../utils/generatedPdfReport";
 
-// Custom styled components to match the original design
+
+// Custom styled components
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[3],
@@ -100,21 +102,43 @@ const StyledTab = styled(Tab)(({ theme }) => ({
 }))
 
 const StatusBadge = styled(Chip)(({ status }) => ({
-  backgroundColor: status === "pending" ? amber[50] : status === "clarification-requested" ? blue[50] : status === "approved" ? green[50] : red[50],
-  color: status === "pending" ? amber[700] : status === "clarification-requested" ? blue[700] : status === "approved" ? green[700] : red[700],
-  border: `1px solid ${status === "pending" ? amber[200] : status === "clarification-requested" ? blue[200] : status === "approved" ? green[200] : red[200]}`,
+  backgroundColor: status === "pending" ? amber[50] : 
+                 status === "clarification-requested" ? blue[50] : 
+                 status === "approved" ? green[50] : red[50],
+  color: status === "pending" ? amber[700] : 
+        status === "clarification-requested" ? blue[700] : 
+        status === "approved" ? green[700] : red[700],
+  border: `1px solid ${status === "pending" ? amber[200] : 
+                      status === "clarification-requested" ? blue[200] : 
+                      status === "approved" ? green[200] : red[200]}`,
 }))
 
 const ExpenseStatusBadge = styled(Chip)(({ status }) => ({
-  backgroundColor: status === "pending" ? amber[50] : status === "approved" ? green[50] : red[50],
-  color: status === "pending" ? amber[700] : status === "approved" ? green[700] : red[700],
-  border: `1px solid ${status === "pending" ? amber[200] : status === "approved" ? green[200] : red[200]}`,
+  backgroundColor: status === "pending" ? amber[50] : 
+                 status === "approved" ? green[50] : red[50],
+  color: status === "pending" ? amber[700] : 
+        status === "approved" ? green[700] : red[700],
+  border: `1px solid ${status === "pending" ? amber[200] : 
+                      status === "approved" ? green[200] : red[200]}`,
 }))
 
 const PriorityBadge = styled(Chip)(({ priority }) => ({
-  backgroundColor: priority === "high" ? red[500] : priority === "medium" ? amber[500] : green[500],
+  backgroundColor: priority === "high" ? red[500] : 
+                 priority === "medium" ? amber[500] : green[500],
   color: "white",
 }))
+
+// Safe date parsing function
+const safeDateParse = (dateString) => {
+  if (!dateString) return new Date()
+  try {
+    const date = new Date(dateString)
+    return isNaN(date.getTime()) ? new Date() : date
+  } catch (e) {
+    console.warn('Invalid date string:', dateString)
+    return new Date()
+  }
+}
 
 export default function FinanceReconciliationReview() {
   const navigate = useNavigate()
@@ -129,12 +153,15 @@ export default function FinanceReconciliationReview() {
   const [isSendingClarification, setIsSendingClarification] = useState(false)
   const [currentExpense, setCurrentExpense] = useState(null)
   const [showReceiptDialog, setShowReceiptDialog] = useState(false)
-     const [alertMessage, setAlertMessage] = useState(null)
-     const [showAlert, setShowAlert] = useState(false)
-      const [isLoading, setIsLoading] = useState(true)
-       const [snackbarMessage, setSnackbarMessage] = useState("")
-       const [snackbarSeverity, setSnackbarSeverity] = useState("success")
-         const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [alertMessage, setAlertMessage] = useState(null)
+  const [showAlert, setShowAlert] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [snackbarMessage, setSnackbarMessage] = useState("")
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+  const [snackbarOpen, setSnackbarOpen] = useState(false)
+  const [travelRequests, setTravelRequests] = useState([])
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
   const [reviewNotes, setReviewNotes] = useState({
     internalNotes: "",
     expenseNotes: {},
@@ -149,127 +176,160 @@ export default function FinanceReconciliationReview() {
     reason: "",
     details: "",
     requestedItems: [],
-    dueDate: format(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"), // 3 days from now
+    dueDate: format(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
   })
 
   const transformRequestData = (apiData) => {
-    return apiData.map(recon => {
-      const today = new Date();
-      const departureDate = recon.departureDate ? new Date(recon.departureDate) : new Date();
-      const returnDate = recon.returnDate ? new Date(recon.returnDate) : new Date(departureDate.getTime() + 86400000);
-      
-      const isCompleted = returnDate < today;
-      const isActive = (today >= departureDate) && (today <= returnDate);
-      const isFinanceProcessed = recon.financeStatus === "processed";
-      const isReconciled = recon.reconciled || false;
-      
-      let status;
-    if (recon.status === "pending_reconciliation") {
-      status = "pending_reconciliation";
-    } else if (isReconciled) {
-      status = "clarified";
-    } else if (isCompleted) {
-      status = "approved";
-    } else {
-      status = "rejected";
-    }
+    return apiData.map(request => {
+      const today = new Date()
+      const departureDate = safeDateParse(request.departureDate)
+      const returnDate = safeDateParse(request.returnDate || new Date(departureDate.getTime() + 86400000))
+      const isCompleted = returnDate < today
+      const isReconciled = request.reconciled || false
+      const status = request.reconciliation ? request.reconciliation.status : request.status
+      const totalSpent = request.payment?.expenses?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0
+      const perDiemAmount = request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000)
+      const employee = request.employee || {};
+      const employeeName = employee.name || 'Unknown Employee';
+      const department = employee.department || "Unknown Department";
+  
 
-  
-      const totalSpent = recon.payment?.expenses?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0;
-      const perDiemAmount = recon.payment?.perDiemAmount || (recon.currency === "MWK" ? 100000 : 1000);
-  
       return {
-        id: recon._id,
-        employeeName: recon.employee?.name || 'Unknown Employee',
-        employeeId: recon.employee._id,
-        department: recon.employee?.department || "Unknown Department",
-        purpose: recon.purpose,
-        country: recon.travelType === "international" ? "International" : recon.location || "Local",
-        city: recon.location || "Local",
+        id: request._id,
+        employeeName: request.employee?.name || 'Unknown Employee',
+        employeeId: request.employee._id,
+        department: request.employee?.department || "Unknown Department",
+        purpose: request.purpose,
+        country: request.travelType === "international" ? "International" : request.location || "Local",
+        city: request.location || "Local",
         departureDate: departureDate,
         returnDate: returnDate,
         status: status,
         reconciled: isReconciled,
         perDiemAmount: perDiemAmount,
-        currency: recon.currency || "USD",
-        submittedDate: new Date(recon.reconciliation?.submittedDate || recon.createdAt),
+        currency: request.currency || "USD",
+        submittedDate: safeDateParse(request.reconciliation?.submittedDate || request.createdAt),
         totalExpenses: totalSpent,
         remainingBalance: perDiemAmount - totalSpent,
-        tripReport: recon.reconciliation?.tripReport || "No trip report submitted",
-        additionalNotes: recon.reconciliation?.notes || "",
-        expenses: recon.payment?.expenses?.map(exp => ({
+        tripReport: request.reconciliation?.tripReport || "No trip report submitted",
+        additionalNotes: request.reconciliation?.notes || "",
+        expenses: request.payment?.expenses?.map(exp => ({
           id: exp._id || Math.random().toString(36).substr(2, 9),
           category: exp.category || "Miscellaneous",
           description: exp.description || "No description",
           amount: exp.amount || 0,
-          currency: recon.currency || "USD",
-          date: new Date(exp.date || recon.departureDate),
+          currency: request.currency || "USD",
+          date: safeDateParse(exp.date || request.departureDate),
           paymentMethod: exp.paymentMethod || "card",
           receipt: exp.receipt || null,
           status: exp.status || "recorded"
         })) || [],
-        reconciliation: isReconciled ? {
-          submittedDate: new Date(recon.reconciliation?.submittedDate || recon.updatedAt),
-          approvedDate: recon.reconciliation?.approvedDate ? new Date(recon.reconciliation.approvedDate) : null,
-          approvedBy: recon.reconciliation?.approvedBy || recon.finalApprover,
+        reconciliation: request.reconciliation ? {
+          submittedDate: safeDateParse(request.reconciliation.submittedDate || request.updatedAt),
+          approvedDate: request.reconciliation.approvedDate ? safeDateParse(request.reconciliation.approvedDate) : null,
+          approvedBy: request.reconciliation.approvedBy || request.finalApprover,
           totalSpent: totalSpent,
           remainingBalance: perDiemAmount - totalSpent,
-          status: recon.reconciliation?.status || "pending",
-          notes: recon.reconciliation?.notes || ""
-        } : null
-      };
-    });
-  };
-  const [travelRequests, setTravelRequests] = useState([])
+          status: request.reconciliation.status,
+          notes: request.reconciliation.notes || ""
+        } : null,
+        bankDetails: request.bankDetails || {
+          accountName: "John Doe",
+          accountNumber: "1234567890",
+          bankName: "Example Bank",
+          routingNumber: "987654321"
+        }
+      }
+    })
+  }
 
-  // Sample data for reconciliations (same as original)
-  const reconciliations = [
-    // ... (same reconciliation data as original)
-  ]
-
-  // Filter reconciliations based on search query and department filter
-  const filteredReconciliations = reconciliations.filter((rec) => {
-    const matchesSearch =
-      rec.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rec.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rec.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rec.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      rec.tripId.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const matchesDepartment =
-      filterDepartment === "all" || rec.department.toLowerCase() === filterDepartment.toLowerCase()
-
-    return matchesSearch && matchesDepartment
-  })
-
-  // Set default selected reconciliation if none is selected
   useEffect(() => {
-    if (!selectedReconciliation && filteredReconciliations.length > 0) {
-      setSelectedReconciliation(filteredReconciliations[0])
+    const fetchPendingReconciliations = async () => {
+      setIsLoading(true)
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(
+          `${backendUrl}/api/travel-requests/pending/recon`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
 
-      // Initialize review notes
-      if (filteredReconciliations[0]) {
-        setReviewNotes({
-          internalNotes: "",
-          expenseNotes: {},
-          approvalDecision: "approve",
-          reimbursementMethod: filteredReconciliations[0].remainingBalance < 0 ? "bank-transfer" : "n/a",
-          reimbursementAmount:
-            filteredReconciliations[0].remainingBalance < 0 ? Math.abs(filteredReconciliations[0].remainingBalance) : 0,
-          reimbursementCurrency: filteredReconciliations[0].currency,
-          reimbursementDate: format(new Date(), "yyyy-MM-dd"),
-        })
+        if (!response.ok) {
+          throw new Error("Failed to fetch completed travel requests")
+        }
+
+        const data = await response.json()
+        const transformedData = transformRequestData(data)
+        setTravelRequests(transformedData)
+
+        if (transformedData.length > 0) {
+          setSelectedReconciliation(transformedData[0])
+          setReviewNotes({
+            internalNotes: "",
+            expenseNotes: {},
+            approvalDecision: "approve",
+            reimbursementMethod: transformedData[0].remainingBalance < 0 ? "bank-transfer" : "n/a",
+            reimbursementAmount: transformedData[0].remainingBalance < 0 ? Math.abs(transformedData[0].remainingBalance) : 0,
+            reimbursementCurrency: transformedData[0].currency,
+            reimbursementDate: format(new Date(), "yyyy-MM-dd"),
+          })
+        }
+      } catch (error) {
+        console.error("Failed to fetch completed travel requests:", error)
+        setSnackbarMessage("Failed to fetch completed travel requests")
+        setSnackbarSeverity("error")
+        setSnackbarOpen(true)
+      } finally {
+        setIsLoading(false)
       }
     }
-  }, [filteredReconciliations, selectedReconciliation])
 
-  // Handle selecting a reconciliation
+    fetchPendingReconciliations()
+  }, [])
+
+  
+  const handleDownloadReport = async () => {
+    setIsProcessing(true);
+    try {
+      await generateApprovalReport(selectedReconciliation);
+      setSnackbarMessage("Report downloaded successfully");
+      setSnackbarSeverity("success");
+    } catch (error) {
+      console.error("Error generating report:", error);
+      setSnackbarMessage("Failed to generate report");
+      setSnackbarSeverity("error");
+    } finally {
+      setSnackbarOpen(true);
+      setIsProcessing(false);
+    }
+  };
+
+  const filteredReconciliations = travelRequests.filter((request) => {
+    const matchesSearch =
+      request.employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      request.city.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesDepartment =
+      filterDepartment === "all" || request.department.toLowerCase() === filterDepartment.toLowerCase()
+
+    const matchesStatus = 
+      activeTab === "pending" ? request.reconciliation?.status === "pending" :
+      activeTab === "pending_reconciliation" ? request.status === "pending_reconciliation" :
+      request.reconciliation?.status === activeTab
+
+    return matchesSearch && matchesDepartment && matchesStatus
+  })
+
   const handleSelectReconciliation = (reconciliation) => {
     setSelectedReconciliation(reconciliation)
     setShowReviewForm(false)
     setShowClarificationForm(false)
 
-    // Initialize review notes
     setReviewNotes({
       internalNotes: "",
       expenseNotes: {},
@@ -280,16 +340,14 @@ export default function FinanceReconciliationReview() {
       reimbursementDate: format(new Date(), "yyyy-MM-dd"),
     })
 
-    // Initialize clarification request
     setClarificationRequest({
       reason: "",
       details: "",
       requestedItems: [],
-      dueDate: format(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"), // 3 days from now
+      dueDate: format(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
     })
   }
 
-  // Handle expense note change
   const handleExpenseNoteChange = (expenseId, note) => {
     setReviewNotes({
       ...reviewNotes,
@@ -300,7 +358,6 @@ export default function FinanceReconciliationReview() {
     })
   }
 
-  // Handle requested item toggle
   const handleRequestedItemToggle = (item) => {
     const currentItems = [...clarificationRequest.requestedItems]
     const itemIndex = currentItems.indexOf(item)
@@ -317,83 +374,88 @@ export default function FinanceReconciliationReview() {
     })
   }
 
-  // Process reconciliation approval
-  const handleApproveReconciliation = () => {
-    setIsApproving(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      // Update the selected reconciliation status to approved
-      const updatedReconciliation = {
-        ...selectedReconciliation,
-        status: reviewNotes.approvalDecision === "approve" ? "approved" : "rejected",
-        approvalDetails:
-          reviewNotes.approvalDecision === "approve"
-            ? {
-                approvedBy: "Sarah Johnson",
-                approvedDate: format(new Date(), "yyyy-MM-dd"),
-                notes: reviewNotes.internalNotes,
-                reimbursementMethod: reviewNotes.reimbursementMethod,
-                reimbursementAmount: reviewNotes.reimbursementAmount,
-                reimbursementDate: reviewNotes.reimbursementDate,
-              }
-            : null,
-        rejectionDetails:
-          reviewNotes.approvalDecision === "reject"
-            ? {
-                rejectedBy: "Sarah Johnson",
-                rejectedDate: format(new Date(), "yyyy-MM-dd"),
-                reason: "Policy violations",
-                notes: reviewNotes.internalNotes,
-              }
-            : null,
-        expenses: selectedReconciliation.expenses.map((expense) => ({
-          ...expense,
-          status: reviewNotes.approvalDecision === "approve" ? "approved" : "rejected",
-          notes: reviewNotes.expenseNotes[expense.id] || expense.notes,
-        })),
+  const handleApproveReconciliation = async () => {
+    setIsApproving(true);
+    
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${backendUrl}/api/travel-requests/${selectedReconciliation.id}/process-reconciliation`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            decision: reviewNotes.approvalDecision,
+            internalNotes: reviewNotes.internalNotes,
+            expenseNotes: reviewNotes.expenseNotes,
+            reimbursementMethod: reviewNotes.reimbursementMethod,
+            reimbursementAmount: reviewNotes.reimbursementAmount,
+            reimbursementCurrency: reviewNotes.reimbursementCurrency,
+            reimbursementDate: reviewNotes.reimbursementDate,
+          }),
+        }
+      );
+  
+      if (!response.ok) {
+        throw new Error("Failed to process reconciliation");
       }
+  
+      const data = await response.json();
+      
+      // Update the local state with the response
+      setSelectedReconciliation(data.travelRequest);
+      setShowReviewForm(false);
+      setActiveTab(reviewNotes.approvalDecision === "approve" ? "approved" : "rejected");
+      
+      // Show success message
+      setSnackbarMessage(
+        `Reconciliation ${reviewNotes.approvalDecision === "approve" ? "approved" : "rejected"} successfully`
+      );
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+  
+    } catch (error) {
+      console.error("Error processing reconciliation:", error);
+      setSnackbarMessage(error.message || "Failed to process reconciliation");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setIsApproving(false);
+    }
+  };
 
-      setSelectedReconciliation(updatedReconciliation)
-      setIsApproving(false)
-      setShowReviewForm(false)
-
-      // Switch to the appropriate tab
-      setActiveTab(reviewNotes.approvalDecision === "approve" ? "approved" : "rejected")
-    }, 2000)
-  }
-
-  // Send clarification request
   const handleSendClarification = () => {
     setIsSendingClarification(true)
 
-    // Simulate API call
     setTimeout(() => {
-      // Update the selected reconciliation status to clarification-requested
       const updatedReconciliation = {
         ...selectedReconciliation,
         status: "clarification-requested",
-        clarificationRequest: {
-          requestedBy: "Sarah Johnson",
-          requestedDate: format(new Date(), "yyyy-MM-dd"),
-          reason: clarificationRequest.reason,
-          details: clarificationRequest.details,
-          requestedItems: clarificationRequest.requestedItems,
-          dueDate: clarificationRequest.dueDate,
-          status: "pending",
+        reconciliation: {
+          ...selectedReconciliation.reconciliation,
+          status: "clarification-requested",
+          clarificationRequest: {
+            requestedBy: "Sarah Johnson",
+            requestedDate: new Date(),
+            reason: clarificationRequest.reason,
+            details: clarificationRequest.details,
+            requestedItems: clarificationRequest.requestedItems,
+            dueDate: new Date(clarificationRequest.dueDate),
+            status: "pending",
+          },
         },
       }
 
       setSelectedReconciliation(updatedReconciliation)
       setIsSendingClarification(false)
       setShowClarificationForm(false)
-
-      // Switch to the clarification tab
-      setActiveTab("clarification")
+      setActiveTab("clarification-requested")
     }, 1500)
   }
 
-  // Format currency
   const formatCurrency = (amount, currency) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -403,14 +465,11 @@ export default function FinanceReconciliationReview() {
     }).format(amount)
   }
 
-  // Calculate travel days
   const calculateTravelDays = (departureDate, returnDate) => {
-    return differenceInDays(parseISO(returnDate), parseISO(departureDate)) + 1
+    return differenceInDays(returnDate, departureDate) + 1
   }
 
-  // Check if an expense amount is unusual (for demo purposes)
   const isExpenseUnusual = (expense) => {
-    // For demo purposes, flag expenses over certain thresholds by category
     const thresholds = {
       Meals: 100,
       Entertainment: 150,
@@ -422,48 +481,9 @@ export default function FinanceReconciliationReview() {
     return expense.amount > (thresholds[expense.category] || 100)
   }
 
-  // Check if an expense is missing a receipt
   const isReceiptMissing = (expense) => {
     return !expense.receipt
   }
-
-
-    useEffect(() => {
-      const fetchPendingReconciliations = async () => {
-        setIsLoading(true);
-        try {
-          const token = localStorage.getItem("token");
-          console.log(token)
-          const response = await fetch(
-            "https://hrms-6s3i.onrender.com/api/travel-requests/pending/recon",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-    
-          if (!response.ok) {
-            throw new Error("Failed to fetch completed travel requests");
-          }
-    
-          const data = await response.json();
-          const transformedData = transformRequestData(data);
-          
-          setTravelRequests(transformedData);
-    
-        } catch (error) {
-          console.error("Failed to fetch completed travel requests:", error);
-          setSnackbarMessage("Failed to fetch completed travel requests");
-          setSnackbarSeverity("error");
-          setSnackbarOpen(true);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-    
-      fetchPendingReconciliations();
-    }, []);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "linear-gradient(to bottom, #f9fafb, #f3f4f6)" }}>
@@ -473,14 +493,14 @@ export default function FinanceReconciliationReview() {
             {/* Left Column - Reconciliations List */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Box sx={{ p: 1, borderRadius: "50%", bgcolor: blue[50] }}>
-              <FileCheck size={20} color={blue[600]} />
-            </Box>
-            <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
-              Finance Department Reconciliations Review 
-            </Typography>
-          </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Box sx={{ p: 1, borderRadius: "50%", bgcolor: blue[50] }}>
+                    <FileCheck size={20} color={blue[600]} />
+                  </Box>
+                  <Typography variant="h6" component="h1" sx={{ fontWeight: 600 }}>
+                    Finance Department Reconciliations Review
+                  </Typography>
+                </Box>
                 <Select
                   value={filterDepartment}
                   onChange={(e) => setFilterDepartment(e.target.value)}
@@ -518,95 +538,86 @@ export default function FinanceReconciliationReview() {
                 }}
               />
 
-<StyledTabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ width: "100%" }}>
-  <StyledTab value="pending" label="Pending" />
-  <StyledTab value="clarification" label="Clarification" />
-  <StyledTab value="approved" label="Approved" />
-  <StyledTab value="rejected" label="Rejected" />
-</StyledTabs>
+              <StyledTabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ width: "100%" }}>
+                <StyledTab value="pending_reconciliation" label="Review" />
+                <StyledTab value="approved" label="Approved" />
+                <StyledTab value="rejected" label="Rejected" />
+              </StyledTabs>
 
               <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 1 }}>
-              {filteredReconciliations.filter((recon) => 
-  (activeTab === "pending" && (recon.status === "pending" || recon.status === "pending_reconciliation")) ||
-  (activeTab !== "pending" && recon.status === activeTab)
-).length === 0 ? (
-  <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
-    No {activeTab} reconciliations found
-  </Box>
-)  : (
-                  filteredReconciliations
-                  .filter((recon) => 
-                    (activeTab === "pending" && (recon.status === "pending" || recon.status === "pending_reconciliation")) ||
-                    (activeTab !== "pending" && recon.status === activeTab)
-                  )
-                    .map((reconciliation) => (
-                      <StyledCard
-                        key={reconciliation.id}
-                        sx={{
-                          cursor: "pointer",
-                          transition: "all 0.2s",
-                          border: selectedReconciliation?.id === reconciliation.id ? `1px solid ${blue[300]}` : "1px solid transparent",
-                          boxShadow: selectedReconciliation?.id === reconciliation.id ? 3 : 0,
-                          "&:hover": {
-                            borderColor: blue[200]
-                          }
-                        }}
-                        onClick={() => handleSelectReconciliation(reconciliation)}
-                      >
-                        <CardContent sx={{ p: 2 }}>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
-                            <Box>
-                              <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                                {reconciliation.employeeName}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {reconciliation.id}
-                              </Typography>
+                {filteredReconciliations.length === 0 ? (
+                  <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
+                    No {activeTab} reconciliations found
+                  </Box>
+                ) : (
+                  filteredReconciliations.map((reconciliation) => (
+                    <StyledCard
+                      key={reconciliation.id}
+                      sx={{
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        border: selectedReconciliation?.id === reconciliation.id ? `1px solid ${blue[300]}` : "1px solid transparent",
+                        boxShadow: selectedReconciliation?.id === reconciliation.id ? 3 : 0,
+                        "&:hover": {
+                          borderColor: blue[200]
+                        }
+                      }}
+                      onClick={() => handleSelectReconciliation(reconciliation)}
+                    >
+                      <CardContent sx={{ p: 2 }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
+                          <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                              {reconciliation.employeeName}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {reconciliation.id}
+                            </Typography>
+                          </Box>
+                          <StatusBadge 
+                            label={
+                              reconciliation.status === "pending_reconciliation" ? "Pending Reconciliation" :
+                              reconciliation.status === "pending" ? "Pending Review" : 
+                              reconciliation.status === "clarification-requested" ? "Clarification Requested" :
+                              reconciliation.status === "approved" ? "Approved" : "Rejected"
+                            } 
+                            status={
+                              reconciliation.status === "pending_reconciliation" ? "pending" :
+                              reconciliation.status
+                            } 
+                            size="small" 
+                          />
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                          <Globe size={16} sx={{ mr: 0.5, color: "text.secondary" }} />
+                          <Typography variant="body2">
+                            {reconciliation.city}, {reconciliation.country}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <Calendar size={16} sx={{ mr: 0.5, color: "text.secondary" }} />
+                          <Typography variant="body2">
+                            {format(reconciliation.departureDate, "MMM d")} - {format(reconciliation.returnDate, "MMM d, yyyy")}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Chip
+                              label={reconciliation.department}
+                              size="small"
+                              sx={{ bgcolor: blue[50], color: blue[700], border: `1px solid ${blue[200]}` }}
+                            />
+                            <Box sx={{ p: 0.5, borderRadius: "50%", bgcolor: blue[100] }}>
+                              <Receipt size={12} sx={{ color: blue[600] }} />
                             </Box>
-                            <StatusBadge 
-  label={
-    reconciliation.status === "pending_reconciliation" ? "Pending Reconciliation" :
-    reconciliation.status === "pending" ? "Pending Review" : 
-    reconciliation.status === "clarification-requested" ? "Clarification Requested" :
-    reconciliation.status === "approved" ? "Approved" : "Rejected"
-  } 
-  status={
-    reconciliation.status === "pending_reconciliation" ? "pending" :
-    reconciliation.status
-  } 
-  size="small" 
-/>
                           </Box>
-                          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                            <Globe size={16} sx={{ mr: 0.5, color: "text.secondary" }} />
-                            <Typography variant="body2">
-                              {reconciliation.city}, {reconciliation.country}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: "flex", alignItems: "center" }}>
-                            <Calendar size={16} sx={{ mr: 0.5, color: "text.secondary" }} />
-                            <Typography variant="body2">
-                              {format(parseISO(reconciliation.departureDate), "MMM d")} - {format(parseISO(reconciliation.returnDate), "MMM d, yyyy")}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Chip
-                                label={reconciliation.department}
-                                size="small"
-                                sx={{ bgcolor: blue[50], color: blue[700], border: `1px solid ${blue[200]}` }}
-                              />
-                              <Box sx={{ p: 0.5, borderRadius: "50%", bgcolor: blue[100] }}>
-                                <Receipt size={12} sx={{ color: blue[600] }} />
-                              </Box>
-                            </Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Submitted: {format(parseISO(reconciliation.submittedDate), "MMM d, yyyy")}
-                            </Typography>
-                          </Box>
-                        </CardContent>
-                      </StyledCard>
-                    ))
+                          <Typography variant="caption" color="text.secondary">
+                            Submitted: {format(reconciliation.submittedDate, "MMM d, yyyy")}
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </StyledCard>
+                  ))
                 )}
               </Box>
             </Box>
@@ -635,13 +646,19 @@ export default function FinanceReconciliationReview() {
                       title={
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                           <Typography variant="h6">{selectedReconciliation.purpose}</Typography>
-                          <StatusBadge label={selectedReconciliation.status === "pending" ? "Pending Review" : 
-                                            selectedReconciliation.status === "clarification-requested" ? "Clarification Requested" :
-                                            selectedReconciliation.status === "approved" ? "Approved" : "Rejected"} 
-                                      status={selectedReconciliation.status} size="small" />
+                          <StatusBadge 
+                            label={
+                              selectedReconciliation.status === "pending_reconciliation" ? "Pending Reconciliation" :
+                              selectedReconciliation.status === "pending" ? "Pending Review" : 
+                              selectedReconciliation.status === "clarification-requested" ? "Clarification Requested" :
+                              selectedReconciliation.status === "approved" ? "Approved" : "Rejected"
+                            } 
+                            status={selectedReconciliation.status} 
+                            size="small" 
+                          />
                         </Box>
                       }
-                      subheader={`${selectedReconciliation.id} • ${selectedReconciliation.tripId} • ${selectedReconciliation.department}`}
+                      subheader={`${selectedReconciliation.id} • ${selectedReconciliation.department}`}
                       action={
                         <Button variant="text" size="small" sx={{ minWidth: 40, height: 40, borderRadius: "50%", p: 0 }}>
                           <MoreHorizontal size={20} />
@@ -667,7 +684,7 @@ export default function FinanceReconciliationReview() {
                                   {selectedReconciliation.employeeName}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {selectedReconciliation.employeeId} • {selectedReconciliation.email}
+                                  {selectedReconciliation.employeeId}
                                 </Typography>
                               </Box>
                             </Box>
@@ -687,8 +704,8 @@ export default function FinanceReconciliationReview() {
                               <Box sx={{ display: "flex", alignItems: "center" }}>
                                 <Calendar size={16} sx={{ mr: 1, color: blue[600] }} />
                                 <Typography>
-                                  {format(parseISO(selectedReconciliation.departureDate), "MMM d, yyyy")} -{" "}
-                                  {format(parseISO(selectedReconciliation.returnDate), "MMM d, yyyy")}
+                                  {format(selectedReconciliation.departureDate, "MMM d, yyyy")} -{" "}
+                                  {format(selectedReconciliation.returnDate, "MMM d, yyyy")}
                                   <Chip
                                     label={`${calculateTravelDays(
                                       selectedReconciliation.departureDate,
@@ -702,7 +719,7 @@ export default function FinanceReconciliationReview() {
                               <Box sx={{ display: "flex", alignItems: "center" }}>
                                 <Clock size={16} sx={{ mr: 1, color: blue[600] }} />
                                 <Typography>
-                                  Submitted on {format(parseISO(selectedReconciliation.submittedDate), "MMMM d, yyyy")}
+                                  Submitted on {format(selectedReconciliation.submittedDate, "MMMM d, yyyy")}
                                 </Typography>
                               </Box>
                             </Box>
@@ -796,22 +813,22 @@ export default function FinanceReconciliationReview() {
                           </Box>
 
                           {selectedReconciliation.status === "clarification-requested" &&
-                            selectedReconciliation.clarificationRequest && (
+                            selectedReconciliation.reconciliation?.clarificationRequest && (
                               <Box>
                                 <Typography variant="caption" color="text.secondary">
                                   Clarification Request
                                 </Typography>
                                 <Paper sx={{ p: 2, bgcolor: blue[50], border: "1px solid", borderColor: blue[200], mt: 1 }}>
                                   <Typography variant="body2" sx={{ fontWeight: 500, color: blue[800] }}>
-                                    {selectedReconciliation.clarificationRequest.reason}
+                                    {selectedReconciliation.reconciliation.clarificationRequest.reason}
                                   </Typography>
                                   <Typography variant="body2" sx={{ color: blue[700], mt: 1 }}>
-                                    {selectedReconciliation.clarificationRequest.details}
+                                    {selectedReconciliation.reconciliation.clarificationRequest.details}
                                   </Typography>
                                   <Box sx={{ mt: 1 }}>
                                     <Typography variant="caption" sx={{ color: blue[600] }}>Requested items:</Typography>
                                     <ul style={{ listStyleType: "disc", paddingLeft: 20 }}>
-                                      {selectedReconciliation.clarificationRequest.requestedItems.map((item, index) => (
+                                      {selectedReconciliation.reconciliation.clarificationRequest.requestedItems.map((item, index) => (
                                         <li key={index}>
                                           <Typography variant="caption" sx={{ color: blue[700] }}>{item}</Typography>
                                         </li>
@@ -820,17 +837,17 @@ export default function FinanceReconciliationReview() {
                                   </Box>
                                   <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
                                     <Typography variant="caption" sx={{ color: blue[600] }}>
-                                      Requested by: {selectedReconciliation.clarificationRequest.requestedBy}
+                                      Requested by: {selectedReconciliation.reconciliation.clarificationRequest.requestedBy}
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: blue[600] }}>
-                                      Due: {format(parseISO(selectedReconciliation.clarificationRequest.dueDate), "MMM d, yyyy")}
+                                      Due: {format(new Date(selectedReconciliation.reconciliation.clarificationRequest.dueDate), "MMM d, yyyy")}
                                     </Typography>
                                   </Box>
                                 </Paper>
                               </Box>
                             )}
 
-                          {selectedReconciliation.status === "approved" && selectedReconciliation.approvalDetails && (
+                          {selectedReconciliation.status === "approved" && selectedReconciliation.reconciliation?.approvedDate && (
                             <Box>
                               <Typography variant="caption" color="text.secondary">
                                 Approval Details
@@ -839,27 +856,27 @@ export default function FinanceReconciliationReview() {
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                   <CheckCircle2 size={16} color={green[600]} />
                                   <Typography variant="body2" sx={{ fontWeight: 500, color: green[800] }}>
-                                    Approved by {selectedReconciliation.approvalDetails.approvedBy}
+                                    Approved by {selectedReconciliation.reconciliation.approvedBy}
                                   </Typography>
                                 </Box>
                                 <Typography variant="body2" sx={{ color: green[700], mt: 1 }}>
-                                  {selectedReconciliation.approvalDetails.notes}
+                                  {selectedReconciliation.reconciliation.notes}
                                 </Typography>
-                                {selectedReconciliation.approvalDetails.reimbursementMethod !== "n/a" && (
+                                {reviewNotes.reimbursementMethod !== "n/a" && (
                                   <Box sx={{ mt: 1 }}>
                                     <Typography variant="caption" sx={{ color: green[600] }}>Reimbursement Details:</Typography>
                                     <Typography variant="body2" sx={{ color: green[700], mt: 0.5 }}>
                                       {formatCurrency(
-                                        selectedReconciliation.approvalDetails.reimbursementAmount,
+                                        reviewNotes.reimbursementAmount,
                                         selectedReconciliation.currency,
                                       )}{" "}
-                                      via {selectedReconciliation.approvalDetails.reimbursementMethod}
+                                      via {reviewNotes.reimbursementMethod}
                                     </Typography>
-                                    {selectedReconciliation.approvalDetails.reimbursementDate && (
+                                    {reviewNotes.reimbursementDate && (
                                       <Typography variant="caption" sx={{ color: green[600], mt: 0.5 }}>
                                         Processed on:{" "}
                                         {format(
-                                          parseISO(selectedReconciliation.approvalDetails.reimbursementDate),
+                                          new Date(reviewNotes.reimbursementDate),
                                           "MMMM d, yyyy",
                                         )}
                                       </Typography>
@@ -870,7 +887,7 @@ export default function FinanceReconciliationReview() {
                             </Box>
                           )}
 
-                          {selectedReconciliation.status === "rejected" && selectedReconciliation.rejectionDetails && (
+                          {selectedReconciliation.status === "rejected" && selectedReconciliation.reconciliation?.notes && (
                             <Box>
                               <Typography variant="caption" color="text.secondary">
                                 Rejection Details
@@ -879,14 +896,11 @@ export default function FinanceReconciliationReview() {
                                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                   <X size={16} color={red[600]} />
                                   <Typography variant="body2" sx={{ fontWeight: 500, color: red[800] }}>
-                                    Rejected by {selectedReconciliation.rejectionDetails.rejectedBy}
+                                    Rejected by {selectedReconciliation.reconciliation.approvedBy}
                                   </Typography>
                                 </Box>
-                                <Typography variant="caption" sx={{ color: red[700], mt: 1 }}>
-                                  Reason: {selectedReconciliation.rejectionDetails.reason}
-                                </Typography>
                                 <Typography variant="body2" sx={{ color: red[700], mt: 1 }}>
-                                  {selectedReconciliation.rejectionDetails.notes}
+                                  {selectedReconciliation.reconciliation.notes}
                                 </Typography>
                               </Paper>
                             </Box>
@@ -894,13 +908,13 @@ export default function FinanceReconciliationReview() {
                         </Box>
                       </Box>
 
-                      {selectedReconciliation.status === "pending" || selectedReconciliation.status === "pending_reconciliation" ? (
+                      {(selectedReconciliation.status === "pending" || selectedReconciliation.status === "pending_reconciliation") && (
                         <Alert severity="warning" sx={{ bgcolor: amber[50], borderColor: amber[200], color: amber[800], mt: 2 }}>
                           <AlertTitle sx={{ color: amber[700] }}>Action Required</AlertTitle>
                           This reconciliation requires your review. Please check all expenses and the trip report for
                           accuracy and compliance with company policy.
                         </Alert>
-                     ):null}
+                      )}
                     </CardContent>
                     <CardActions sx={{ justifyContent: "space-between", p: 2, bgcolor: grey[50] }}>
                       <Button
@@ -941,13 +955,15 @@ export default function FinanceReconciliationReview() {
                       )}
 
                       {selectedReconciliation.status === "approved" && (
-                        <Button
-                          variant="outlined"
-                          sx={{ borderColor: green[200], color: green[700], "&:hover": { bgcolor: green[50] } }}
-                          startIcon={<Download size={16} />}
-                        >
-                          Download Approval Report
-                        </Button>
+                       <Button
+                       variant="outlined"
+                       sx={{ borderColor: green[200], color: green[700], "&:hover": { bgcolor: green[50] } }}
+                       startIcon={isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                       onClick={handleDownloadReport}
+                       disabled={isProcessing}
+                     >
+                       {isProcessing ? "Generating Report..." : "Download Approval Report"}
+                     </Button>
                       )}
 
                       {selectedReconciliation.status === "rejected" && (
@@ -1017,7 +1033,7 @@ export default function FinanceReconciliationReview() {
                                   }}
                                 >
                                   <TableCell>
-                                    {format(parseISO(expense.date), "MMM d, yyyy")}
+                                    {format(safeDateParse(expense.date), "MMM d, yyyy")}
                                   </TableCell>
                                   <TableCell>{expense.category}</TableCell>
                                   <TableCell>{expense.description}</TableCell>
@@ -1318,7 +1334,7 @@ export default function FinanceReconciliationReview() {
                                       {expense.category}: {expense.description}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                      {format(parseISO(expense.date), "MMMM d, yyyy")}
+                                      {format(safeDateParse(expense.date), "MMM d, yyyy")}
                                     </Typography>
                                   </Box>
                                   <Box sx={{ textAlign: "right" }}>

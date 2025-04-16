@@ -43,7 +43,7 @@ const TravelRequestForm = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false); // Snackbar visibility
   const [snackbarMessage, setSnackbarMessage] = useState(""); // Snackbar message
   const [snackbarSeverity, setSnackbarSeverity] = useState("success"); // Snackbar severity (success, error, etc.)
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const navigate = useNavigate();
   const { token } = useAuth();
 
@@ -91,7 +91,7 @@ const TravelRequestForm = () => {
         currency: 'MWK',
       };
 
-      const response = await fetch('https://hrms-6s3i.onrender.com/api/travel-requests', {
+      const response = await fetch(`${backendUrl}/api/travel-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

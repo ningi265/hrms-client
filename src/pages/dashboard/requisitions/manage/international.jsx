@@ -78,7 +78,7 @@ export default function InternationalTravelRequest() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
-
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const countries = [
     { name: "United Kingdom", code: "GB", currencies: ["GBP", "EUR"] },
     { name: "France", code: "FR", currencies: ["EUR"] },
@@ -243,7 +243,7 @@ export default function InternationalTravelRequest() {
         destination: formData.country,
       };
 
-      const response = await fetch('https://hrms-6s3i.onrender.com/api/travel-requests', {
+      const response = await fetch(`${backendUrl}/api/travel-requests`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

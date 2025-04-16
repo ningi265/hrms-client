@@ -34,13 +34,14 @@ export default function RFQsPage() {
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedRFQ, setSelectedRFQ] = useState(null);
   const navigate = useNavigate();
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Fetch RFQs from the backend
   useEffect(() => {
     const fetchRFQs = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch("https://hrms-6s3i.onrender.com/api/rfqs", {
+        const response = await fetch(`${backendUrl}/api/rfqs`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -112,7 +113,7 @@ export default function RFQsPage() {
   const handleSelectVendor = async (rfqId, vendorId) => {
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`https://hrms-6s3i.onrender.com/api/rfqs/${rfqId}/select-vendor`, {
+      const response = await fetch(`${backendUrl}/api/rfqs/${rfqId}/select-vendor`, {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
