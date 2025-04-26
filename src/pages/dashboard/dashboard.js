@@ -1614,7 +1614,7 @@ function ActivityCardComponent({ title, description, time, icon, color }) {
             </Typography>
           </Box>
         </Box>
-      </CardContent>
-    </ActivityCard>
+      </CardContent>  q
+    </ActivityCard> 
   );
 }
