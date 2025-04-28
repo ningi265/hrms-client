@@ -41,6 +41,125 @@ import {
   Done,
   Info
 } from "@mui/icons-material";
+import { styled } from "@mui/material/styles";
+
+// Custom styled components for modern look
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 16,
+  overflow: "hidden",
+  boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12)",
+  width: "100%",
+  maxWidth: 540
+}));
+
+const StyledHeader = styled(Box)(({ theme }) => ({
+  background: `linear-gradient(135deg, #6366F1 0%, #4338CA 100%)`,
+  color: "white",
+  padding: theme.spacing(4),
+  position: "relative"
+}));
+
+const StyledContent = styled(CardContent)(({ theme }) => ({
+  background: "#FFFFFF",
+  padding: theme.spacing(4)
+}));
+
+const StyledStepper = styled(Stepper)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  '& .MuiStepLabel-label': { 
+    color: 'rgba(255, 255, 255, 0.9) !important',
+    fontWeight: 500,
+    fontSize: '0.875rem'
+  },
+  '& .MuiStepIcon-root': {
+    color: 'rgba(255, 255, 255, 0.4)'
+  },
+  '& .MuiStepIcon-root.Mui-active': { 
+    color: 'white',
+    boxShadow: '0 0 0 4px rgba(255, 255, 255, 0.2)',
+    borderRadius: '50%'
+  },
+  '& .MuiStepIcon-root.Mui-completed': { 
+    color: 'white'
+  },
+  '& .MuiStepConnector-line': {
+    borderColor: 'rgba(255, 255, 255, 0.3)'
+  }
+}));
+
+const PrimaryButton = styled(Button)(({ theme }) => ({
+  height: 52,
+  borderRadius: 12,
+  fontWeight: 600,
+  textTransform: "none",
+  fontSize: 16,
+  boxShadow: "0 4px 14px rgba(99, 102, 241, 0.4)",
+  transition: "all 0.2s ease",
+  background: "linear-gradient(135deg, #6366F1 0%, #4338CA 100%)",
+  "&:hover": {
+    boxShadow: "0 6px 20px rgba(99, 102, 241, 0.6)",
+    transform: "translateY(-1px)"
+  }
+}));
+
+const SecondaryButton = styled(Button)(({ theme }) => ({
+  height: 52,
+  borderRadius: 12,
+  fontWeight: 500,
+  textTransform: "none",
+  fontSize: 16,
+  borderColor: "#D1D5DB",
+  color: "#4B5563",
+  "&:hover": {
+    borderColor: "#9CA3AF",
+    background: "rgba(249, 250, 251, 0.8)"
+  }
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  marginBottom: theme.spacing(3),
+  '& .MuiOutlinedInput-root': {
+    borderRadius: 12,
+    transition: "all 0.2s ease",
+    '&:hover fieldset': {
+      borderColor: '#9CA3AF',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#6366F1',
+      boxShadow: '0 0 0 3px rgba(99, 102, 241, 0.12)'
+    }
+  },
+  '& .MuiInputLabel-root.Mui-focused': {
+    color: '#4338CA'
+  }
+}));
+
+const ReviewBox = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(3.5),
+  border: "1px solid #E5E7EB",
+  borderRadius: 16,
+  backgroundColor: "#F9FAFB",
+  marginBottom: theme.spacing(3),
+  boxShadow: "0 2px 6px rgba(0, 0, 0, 0.03)"
+}));
+
+const SuccessCard = styled(Card)(({ theme }) => ({
+  maxWidth: 500, 
+  width: "100%", 
+  padding: theme.spacing(5), 
+  textAlign: "center",
+  borderRadius: 16,
+  boxShadow: "0 12px 40px rgba(0, 0, 0, 0.12)"
+}));
+
+const SuccessAvatar = styled(Avatar)(({ theme }) => ({
+  backgroundColor: "#10B981", 
+  width: 88, 
+  height: 88,
+  boxShadow: "0 8px 16px rgba(16, 185, 129, 0.2)",
+  margin: "0 auto",
+  marginBottom: theme.spacing(3)
+}));
 
 export default function RegisterPage() {
   const [activeStep, setActiveStep] = useState(0);
@@ -132,18 +251,23 @@ export default function RegisterPage() {
 
   const renderReviewItem = (icon, label, value) => (
     <ListItem sx={{ px: 0 }}>
-      <ListItemIcon sx={{ minWidth: 40 }}>
+      <ListItemIcon sx={{ minWidth: 40, color: "#6366F1" }}>
         {icon}
       </ListItemIcon>
       <ListItemText 
-        primary={label} 
-        secondary={value || "Not provided"} 
-        secondaryTypographyProps={{ 
-          sx: { 
-            color: value ? "text.primary" : "text.secondary",
-            fontWeight: value ? 500 : 400
-          } 
-        }}
+        primary={<Typography variant="body2" color="text.secondary">{label}</Typography>} 
+        secondary={
+          <Typography 
+            variant="body1" 
+            sx={{ 
+              color: value ? "#111827" : "#9CA3AF",
+              fontWeight: value ? 500 : 400,
+              mt: 0.5
+            }}
+          >
+            {value || "Not provided"}
+          </Typography>
+        }
       />
     </ListItem>
   );
@@ -152,7 +276,7 @@ export default function RegisterPage() {
     switch (step) {
       case 0:
         return (
-          <TextField
+          <StyledTextField
             fullWidth
             variant="outlined"
             size="medium"
@@ -160,14 +284,12 @@ export default function RegisterPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            sx={{ mb: 3 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
-                  <Email color="action" />
+                  <Email sx={{ color: "#6B7280" }} />
                 </InputAdornment>
-              ),
-              style: { borderRadius: 12 }
+              )
             }}
           />
         );
@@ -175,7 +297,7 @@ export default function RegisterPage() {
         return (
           <>
             <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
-              <TextField
+              <StyledTextField
                 fullWidth
                 variant="outlined"
                 size="medium"
@@ -185,13 +307,13 @@ export default function RegisterPage() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Person color="action" />
+                      <Person sx={{ color: "#6B7280" }} />
                     </InputAdornment>
-                  ),
-                  style: { borderRadius: 12 }
+                  )
                 }}
+                sx={{ mb: 0 }}
               />
-              <TextField
+              <StyledTextField
                 fullWidth
                 variant="outlined"
                 size="medium"
@@ -201,31 +323,29 @@ export default function RegisterPage() {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <Person color="action" />
+                      <Person sx={{ color: "#6B7280" }} />
                     </InputAdornment>
-                  ),
-                  style: { borderRadius: 12 }
+                  )
                 }}
+                sx={{ mb: 0 }}
               />
             </Box>
-            <TextField
+            <StyledTextField
               fullWidth
               variant="outlined"
               size="medium"
               label="Company Name"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Business color="action" />
+                    <Business sx={{ color: "#6B7280" }} />
                   </InputAdornment>
-                ),
-                style: { borderRadius: 12 }
+                )
               }}
             />
-            <TextField
+            <StyledTextField
               fullWidth
               variant="outlined"
               size="medium"
@@ -233,20 +353,18 @@ export default function RegisterPage() {
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <VpnKey color="action" />
+                    <VpnKey sx={{ color: "#6B7280" }} />
                   </InputAdornment>
                 ),
-                style: { borderRadius: 12 },
                 endAdornment: (
                   <InputAdornment position="end">
                     <IconButton
                       onClick={() => setShowPassword(!showPassword)}
                       edge="end"
-                      sx={{ color: "text.secondary" }}
+                      sx={{ color: "#6B7280" }}
                     >
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
@@ -259,7 +377,7 @@ export default function RegisterPage() {
       case 2:
         return (
           <>
-            <TextField
+            <StyledTextField
               select
               fullWidth
               variant="outlined"
@@ -267,14 +385,12 @@ export default function RegisterPage() {
               label="Which industry best describes your company?"
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Work color="action" />
+                    <Work sx={{ color: "#6B7280" }} />
                   </InputAdornment>
-                ),
-                style: { borderRadius: 12 }
+                )
               }}
             >
               <MenuItem value="" disabled>
@@ -285,8 +401,8 @@ export default function RegisterPage() {
                   {option}
                 </MenuItem>
               ))}
-            </TextField>
-            <TextField
+            </StyledTextField>
+            <StyledTextField
               select
               fullWidth
               variant="outlined"
@@ -294,14 +410,12 @@ export default function RegisterPage() {
               label="What is your role in the company?"
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Badge color="action" />
+                    <Badge sx={{ color: "#6B7280" }} />
                   </InputAdornment>
-                ),
-                style: { borderRadius: 12 }
+                )
               }}
             >
               <MenuItem value="" disabled>
@@ -312,21 +426,23 @@ export default function RegisterPage() {
                   {option}
                 </MenuItem>
               ))}
-            </TextField>
+            </StyledTextField>
           </>
         );
       case 3:
         return (
-          <Box sx={{ 
-            p: 3, 
-            border: "1px solid", 
-            borderColor: "divider", 
-            borderRadius: 3,
-            backgroundColor: "background.paper",
-            mb: 3
-          }}>
-            <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-              <Info color="primary" sx={{ mr: 1 }} />
+          <ReviewBox>
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                mb: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                fontWeight: 600,
+                color: "#111827"
+              }}
+            >
+              <Info sx={{ mr: 1, color: "#6366F1" }} />
               Review your information
             </Typography>
             <List dense sx={{ width: '100%' }}>
@@ -337,7 +453,7 @@ export default function RegisterPage() {
               {renderReviewItem(<Work />, "Industry", industry)}
               {renderReviewItem(<Badge />, "Role", role)}
             </List>
-            <TextField
+            <StyledTextField
               fullWidth
               variant="outlined"
               size="medium"
@@ -345,18 +461,17 @@ export default function RegisterPage() {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              sx={{ mt: 2 }}
+              sx={{ mt: 2, mb: 0 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Phone color="action" />
+                    <Phone sx={{ color: "#6B7280" }} />
                   </InputAdornment>
-                ),
-                style: { borderRadius: 12 }
+                )
               }}
               helperText="We'll send a verification code to this number"
             />
-          </Box>
+          </ReviewBox>
         );
       default:
         return null;
@@ -370,38 +485,20 @@ export default function RegisterPage() {
         justifyContent: "center", 
         alignItems: "center", 
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%)"
+        background: "linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%)"
       }}>
-        <Card sx={{ 
-          maxWidth: 500, 
-          width: "100%", 
-          p: 4, 
-          textAlign: "center",
-          borderRadius: 3,
-          boxShadow: "0 8px 32px rgba(31, 38, 135, 0.1)"
-        }}>
-          <Box sx={{
-            display: "flex",
-            justifyContent: "center",
-            mb: 3
-          }}>
-            <Avatar sx={{ 
-              bgcolor: "success.main", 
-              width: 80, 
-              height: 80,
-              boxShadow: "0 4px 12px rgba(46, 125, 50, 0.3)"
-            }}>
-              <CheckCircle sx={{ fontSize: 48 }} />
-            </Avatar>
-          </Box>
-          <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+        <SuccessCard>
+          <SuccessAvatar>
+            <CheckCircle sx={{ fontSize: 48, color: "white" }} />
+          </SuccessAvatar>
+          <Typography variant="h5" gutterBottom sx={{ fontWeight: 700, color: "#111827" }}>
             Registration Successful!
           </Typography>
-          <Typography color="text.secondary" sx={{ mb: 3 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
             Welcome to our platform. You're being redirected to your dashboard...
           </Typography>
-          <CircularProgress color="primary" size={24} />
-        </Card>
+          <CircularProgress size={28} sx={{ color: "#6366F1" }} />
+        </SuccessCard>
       </Box>
     );
   }
@@ -409,124 +506,98 @@ export default function RegisterPage() {
   return (
     <Box sx={{
       display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
       minHeight: "100vh",
-      background: "linear-gradient(135deg,rgb(1, 4, 17) 0%,rgb(54, 79, 100) 100%)",
-      p: 2
+      background: "linear-gradient(135deg, #1E293B 0%, #0F172A 100%)",
+      padding: 3
     }}>
-      <Box sx={{
-        maxWidth: 520,
-        width: "100%",
-        m: "auto",
-        boxShadow: "0 8px 32px rgba(31, 38, 135, 0.1)",
-        borderRadius: 3,
-        overflow: "hidden",
-        bgcolor: "background.paper"
-      }}>
+      <StyledCard>
         {/* Header with Progress Indicator */}
-        <Box sx={{
-          background: "linear-gradient(135deg, #3f51b5 0%,rgb(4, 50, 88) 100%)",
-          color: "white",
-          p: 3,
-          position: "relative"
-        }}>
-          <Stepper 
-            activeStep={activeStep} 
-            alternativeLabel
-            sx={{ 
-              mb: 2,
-              '& .MuiStepLabel-label': { color: 'white !important' },
-              '& .MuiStepIcon-root.Mui-completed': { color: 'white' },
-              '& .MuiStepIcon-root.Mui-active': { color: 'white' }
-            }}
-          >
+        <StyledHeader>
+          <StyledStepper activeStep={activeStep} alternativeLabel>
             {steps.slice(0, 4).map((label) => (
               <Step key={label}>
                 <StepLabel>{label}</StepLabel>
               </Step>
             ))}
-          </Stepper>
+          </StyledStepper>
           
-          <Typography variant="h5" component="h1" fontWeight="600" sx={{ textAlign: 'center', mb: 1 }}>
+          <Typography variant="h5" component="h1" fontWeight="700" textAlign="center" sx={{ mb: 1 }}>
             {steps[activeStep]}
           </Typography>
-          <Typography variant="body2" sx={{ textAlign: 'center', opacity: 0.9 }}>
+          <Typography variant="body1" textAlign="center" sx={{ opacity: 0.9, fontWeight: 400 }}>
             {activeStep === 0 ? "Start with your email address" : 
              activeStep === 1 ? "Tell us about yourself" : 
              activeStep === 2 ? "Complete your company profile" : 
              activeStep === 3 ? "Verify your information" : "Complete your registration"}
           </Typography>
-        </Box>
+        </StyledHeader>
 
-        <CardContent sx={{ background: "linear-gradient(135deg,rgb(221, 223, 237) 0%,rgb(180, 191, 200) 100%)",p: 4 }}>
-          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+        <StyledContent>
+          {error && (
+            <Alert 
+              severity="error" 
+              sx={{ 
+                mb: 3, 
+                borderRadius: 2,
+                '& .MuiAlert-icon': {
+                  color: '#EF4444'
+                }
+              }}
+            >
+              {error}
+            </Alert>
+          )}
           
           {renderStepContent(activeStep)}
 
           <Box sx={{ display: "flex", gap: 2, mt: 4 }}>
             {activeStep > 0 && (
-              <Button
+              <SecondaryButton
                 fullWidth
                 size="large"
                 variant="outlined"
                 onClick={handleBack}
-                sx={{
-                  
-                  height: 48,
-                  borderRadius: 12,
-                  textTransform: "none",
-                  fontSize: 16
-                }}
                 startIcon={<ArrowBack />}
               >
                 Back
-              </Button>
+              </SecondaryButton>
             )}
-            <Button
+            <PrimaryButton
               fullWidth
               size="large"
               variant="contained"
               onClick={activeStep === steps.length - 2 ? handleSubmit : handleNext}
               disabled={isLoading}
-              sx={{
-                height: 48,
-                borderRadius: 12,
-                fontWeight: 600,
-                textTransform: "none",
-                fontSize: 16,
-                boxShadow: "none",
-                "&:hover": {
-                  boxShadow: "0 4px 12px rgba(33, 150, 243, 0.2)"
-                }
-              }}
               startIcon={isLoading ? <CircularProgress size={20} color="inherit" /> : 
                         activeStep === steps.length - 2 ? <Done /> : null}
             >
               {isLoading ? "Processing..." : 
                activeStep === steps.length - 2 ? "Complete Registration" : 
                "Continue"}
-            </Button>
+            </PrimaryButton>
           </Box>
 
           {activeStep === 0 && (
             <>
-              <Divider sx={{ my: 3 }}>
-                <Typography variant="body2" color="text.secondary">or</Typography>
+              <Divider sx={{ my: 4, '&::before, &::after': { borderColor: '#E5E7EB' } }}>
+                <Typography variant="body2" color="text.secondary" sx={{ px: 1 }}>or</Typography>
               </Divider>
-              <Typography textAlign="center" sx={{ color: "text.secondary" }}>
+              <Typography textAlign="center" sx={{ color: "#6B7280" }}>
                 Already have an account?{" "}
                 <Link to="/login" style={{ 
-                  color: "#2196f3", 
-                  fontWeight: 500, 
-                  textDecoration: "none",
-                  "&:hover": { textDecoration: "underline" }
+                  color: "#6366F1", 
+                  fontWeight: 600, 
+                  textDecoration: "none"
                 }}>
                   Sign in
                 </Link>
               </Typography>
             </>
           )}
-        </CardContent>
-      </Box>
+        </StyledContent>
+      </StyledCard>
     </Box>
   );
 }

@@ -37,6 +37,7 @@ import FinanceProcessing from './pages/dashboard/requisitions/manage/finance-tra
 import FinanceReconciliationReview from './pages/dashboard/requisitions/manage/finance-recon-review';
 import FleetCoordinator from './pages/dashboard/requisitions/manage/fleet';
 import ProcurementDashboardWithSidebar from './pages/dashboard/dashboard';
+import FoodBudgetPlanner from './pages/FoodBudgetPlanner';
 
 
 
@@ -73,6 +74,7 @@ function App() {
           <Route path="/requisitions/manage" element={<ManageRequisitionsPage/>} />
           <Route path="/vendors" element={<VendorsPage/>}/>
           <Route path="/rfqs" element={<RFQsPage/>}/>
+          <Route path="/food" element={<FoodBudgetPlanner/>}/>
    
            {/*Employee Routes */}
           <Route path="/employee-dash" element={<EmployeeDashboard/>}/>

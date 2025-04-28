@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useNavigate ,useSearchParams } from "react-router-dom";
 import {
   Error,
- 
   Notifications,
   CalendarToday,
   Check,
@@ -16,18 +15,18 @@ import {
   Inventory,
   BarChart,
   PieChart,
-  Add,
-  Search,
   Settings,
   ShoppingCart,
   LocalShipping,
   Person,
   People,
-  ChevronLeft,
-  ChevronRight,
-  HelpOutline,
-  ChatBubbleOutline,
-  Upgrade
+  NotificationsActive, 
+  LiveHelp, 
+  SmartToy, 
+  Tune, 
+  RocketLaunch, 
+  SettingsApplications, 
+  MenuOpen 
 } from "@mui/icons-material";
 import MenuIcon from '@mui/icons-material/Menu';
 import {
@@ -840,27 +839,31 @@ export default function ProcurementDashboard() {
       </List>
     </Box>
   </Box>
-</Sidebar>
+    </Sidebar>
 
       {/* Main Content */}
-      <Box component="main" sx={{ 
+    <Box component="main" sx={{ 
         flexGrow: 1, 
         overflow: "auto",
         backgroundColor: theme.palette.background.default,
       }}>
         {/* Header */}
         <Paper elevation={0} sx={{ 
-  p: 1.5, 
-  borderBottom: 1, 
-  height: 70,
-  borderColor: "divider",
-  backdropFilter: `blur(${opacity * 10}px)`, 
+  p: 1.5,
+  border: 'none',
+  height: 75,
+  backdropFilter: `blur(${opacity * 12}px) saturate(180%)`,
   position: 'sticky',
   top: 0,
   zIndex: theme => theme.zIndex.appBar,
-  transition: 'background-color 0.3s ease, backdrop-filter 0.3s ease' 
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  background: alpha(theme.palette.background.default, 0.8),
+  boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`,
+  '&:hover': {
+    backdropFilter: `blur(${opacity * 16}px) saturate(200%)`
+  }
 }}>
-  <Toolbar sx={{ px: { sm: 2 } }}>
+  <Toolbar sx={{ px: { sm: 2 }, gap: 1 }}>
     {/* Left-aligned items */}
     <Box sx={{ 
       display: "flex", 
@@ -868,173 +871,227 @@ export default function ProcurementDashboard() {
       gap: 2,
       mr: 'auto' 
     }}>
-      {/* Notification icon */}
+      {/* Modern Notification icon with pulse animation */}
       <IconButton 
         color="inherit"
         sx={{
-          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+          position: 'relative',
+          transition: 'all 0.3s ease',
           '&:hover': {
-            backgroundColor: alpha(theme.palette.primary.main, 0.2),
+            transform: 'translateY(-1px)',
+            backgroundColor: alpha(theme.palette.primary.main, 0.15),
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            animation: 'pulse 2s infinite',
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
           }
         }}
       >
-        <Badge badgeContent={3} color="error">
-          <Notifications sx={{ color: theme.palette.text.primary }} />
+        <Badge badgeContent={3} color="error" variant="dot" overlap="circular">
+          <NotificationsActive sx={{ 
+            color: theme.palette.text.primary,
+            transform: 'rotate(-20deg)',
+            transition: 'transform 0.3s ease',
+            '&:hover': {
+              transform: 'rotate(0deg)'
+            }
+          }} />
         </Badge>
       </IconButton>
     </Box>
 
-    {/* Right-aligned items - new icons added here */}
+    {/* Right-aligned items */}
     <Box sx={{ 
       display: 'flex', 
       alignItems: 'center', 
-      gap: 1,
+      gap: 1.5,
       mr: 1 
     }}>
-      {/* Help icon */}
-      <Tooltip title="Help">
-        <IconButton color="inherit">
-          <HelpOutline sx={{ color: theme.palette.text.secondary }} />
+      {/* Modern Icons */}
+      <Tooltip title="Help Center">
+        <IconButton color="inherit" sx={{ p: 1.2 }}>
+          <LiveHelp sx={{ 
+            fontSize: 22,
+            color: theme.palette.text.secondary,
+            transition: 'color 0.2s ease',
+            '&:hover': {
+              color: theme.palette.primary.main
+            }
+          }} />
         </IconButton>
       </Tooltip>
 
-      {/* Chat icon */}
-      <Tooltip title="Chat with us now">
-        <IconButton color="inherit">
-          <ChatBubbleOutline sx={{ color: theme.palette.text.secondary }} />
+      <Tooltip title="AI Assistant">
+        <IconButton color="inherit" sx={{ p: 1.2 }}>
+          <SmartToy sx={{
+            fontSize: 22,
+            color: theme.palette.text.secondary,
+            transition: 'transform 0.3s ease',
+            '&:hover': {
+              color: theme.palette.secondary.main,
+              transform: 'scale(1.1)'
+            }
+          }} />
         </IconButton>
       </Tooltip>
 
-      {/* Settings icon */}
-      <Tooltip title="Settings">
-        <IconButton color="inherit">
-          <Settings sx={{ color: theme.palette.text.secondary }} />
+      <Tooltip title="Preferences">
+        <IconButton color="inherit" sx={{ p: 1.2 }}>
+          <Tune sx={{
+            fontSize: 22,
+            color: theme.palette.text.secondary,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              color: theme.palette.success.main,
+              transform: 'rotate(90deg)'
+            }
+          }} />
         </IconButton>
       </Tooltip>
 
-      {/* Upgrade button */}
-      <Tooltip title="Upgrade">
+      {/* Upgrade button with gradient */}
+      <Tooltip title="Go Premium">
         <Button
           variant="contained"
-          color="primary"
           size="small"
-          startIcon={<Upgrade />}
+          startIcon={<RocketLaunch sx={{ fontSize: 18 }} />}
           sx={{
-            borderRadius: 20,
-            textTransform: 'none',
-            px: 2,
-            py: 0.5,
-            fontSize: '0.75rem',
-            fontWeight: 600
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+            color: theme.palette.common.white,
+            borderRadius: 4,
+            px: 2.5,
+            py: 0.8,
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-1px)',
+              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`
+            }
           }}
         >
-          Upgrade
+          Premium
         </Button>
       </Tooltip>
     </Box>
 
-    {/* User profile with dropdown */}
-    <Box>
+    {/* User profile with modern dropdown */}
+    <Box sx={{ position: 'relative' }}>
       <Button
-        variant="text"
-        color="inherit"
         onClick={handleMenuClick}
         sx={{ 
-          display: "flex", 
-          alignItems: "center", 
-          gap: 1,
-          borderRadius: 20,
-          px: 1.5,
-          py: 0.5,
+          p: 0.5,
+          borderRadius: '50%',
+          transition: 'all 0.3s ease',
           '&:hover': {
-            backgroundColor: theme.palette.action.hover,
+            transform: 'scale(1.05)',
+            '& .MuiAvatar-root': {
+              boxShadow: `0 0 0 2px ${theme.palette.primary.main}`
+            }
           }
         }}
-        id="user-menu-button"  
-        aria-controls={open ? 'user-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
       >
         <Avatar sx={{ 
-          width: 36, 
-          height: 36, 
-          bgcolor: theme.palette.primary.main 
+          width: 38, 
+          height: 38,
+          bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.primary.main, 0.9) : theme.palette.primary.main,
+          position: 'relative',
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '50%',
+            border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+            animation: 'ripple 3s infinite'
+          }
         }} src={user.avatar}>
-          {user.name.split(" ").map((n) => n[0]).join("")}
-        </Avatar>
-        <Box sx={{ display: { xs: "none", md: "block" } }}>
-          <Typography variant="body3" sx={{ fontWeight: 100, fontVariant: "small-caps" }}>
-            {user?.name}
+          <Typography variant="h6" sx={{ fontWeight: 500 }}>
+            {user.name.split(" ").map(n => n[0]).join("")}
           </Typography>
-        </Box>
+        </Avatar>
       </Button>
 
-      {/* Menu dropdown */}
+      {/* Modern Menu dropdown */}
       <Menu
         id="user-menu"
         anchorEl={anchorEl}
         open={open}
         onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
         PaperProps={{
-          elevation: 4,
+          elevation: 8,
           sx: {
             mt: 1.5,
-            minWidth: 200,
-            borderRadius: 2,
+            minWidth: 220,
+            borderRadius: 3,
             overflow: 'visible',
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: `0 12px 24px ${alpha(theme.palette.common.black, 0.1)}`,
             '&:before': {
               content: '""',
-              display: 'block',
               position: 'absolute',
-              top: 0,
-              right: 14,
-              width: 10,
-              height: 10,
+              top: -8,
+              right: 16,
+              width: 16,
+              height: 16,
               bgcolor: 'background.paper',
-              transform: 'translateY(-50%) rotate(45deg)',
-              zIndex: 0,
+              transform: 'rotate(45deg)',
+              borderLeft: `1px solid ${theme.palette.divider}`,
+              borderTop: `1px solid ${theme.palette.divider}`
             }
           }
         }}
       >
-        <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-          <ListItemIcon>
-            <Person fontSize="small" />
-          </ListItemIcon>
-          Profile
+        <MenuItem onClick={handleMenuClose} sx={{ py: 1.2, gap: 1.5 }}>
+          <Person sx={{ fontSize: 20, color: theme.palette.text.secondary }} />
+          <Typography variant="body2">Profile</Typography>
         </MenuItem>
-        <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-          <ListItemIcon>
-            <Settings fontSize="small" />
-          </ListItemIcon>
-          Settings
+        <MenuItem onClick={handleMenuClose} sx={{ py: 1.2, gap: 1.5 }}>
+          <SettingsApplications sx={{ fontSize: 20, color: theme.palette.text.secondary }} />
+          <Typography variant="body2">Settings</Typography>
         </MenuItem>
-        <Divider />
-        <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-          <ListItemIcon>
-            <ExitToApp fontSize="small" />
-          </ListItemIcon>
-          Log out
+        <Divider sx={{ my: 1 }} />
+        <MenuItem onClick={handleMenuClose} sx={{ 
+          py: 1.2,
+          gap: 1.5,
+          color: theme.palette.error.main,
+          '&:hover': {
+            backgroundColor: alpha(theme.palette.error.main, 0.08)
+          }
+        }}>
+          <ExitToApp sx={{ fontSize: 20 }} />
+          <Typography variant="body2">Sign Out</Typography>
         </MenuItem>
       </Menu>
     </Box>
 
-    {/* Mobile menu button on the right */}
+    {/* Modern Mobile menu button */}
     <IconButton
-      color="inherit"
-      edge="start"
       onClick={() => setMobileOpen(!mobileOpen)}
-      sx={{ mr: 2, display: { sm: "none" } }}
+      sx={{ 
+        display: { sm: 'none' },
+        p: 1.2,
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.1)
+        }
+      }}
     >
-      <MenuIcon />
+      <MenuOpen sx={{ 
+        fontSize: 26,
+        color: theme.palette.text.primary,
+        transition: 'transform 0.3s ease',
+        '&:hover': {
+          transform: 'rotate(90deg)'
+        }
+      }} />
     </IconButton>
   </Toolbar>
 </Paper>
@@ -1614,7 +1671,7 @@ function ActivityCardComponent({ title, description, time, icon, color }) {
             </Typography>
           </Box>
         </Box>
-      </CardContent>
-    </ActivityCard>
+      </CardContent>  
+    </ActivityCard> 
   );
 }
