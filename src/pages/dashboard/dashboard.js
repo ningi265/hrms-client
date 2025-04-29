@@ -1290,8 +1290,9 @@ const [stats, setStats] = useState({
     }}
   />
   <CardContent sx={{ p: 3 }}>
-    <div className="flex flex-col lg:flex-row gap-6">
-      <div className="w-full lg:w-2/3 h-72">
+    <div className="flex flex-col gap-6">
+      {/* PieChart section - full width */}
+      <div className="w-full h-72">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -1341,8 +1342,9 @@ const [stats, setStats] = useState({
         </ResponsiveContainer>
       </div>
       
-      <div className="w-full lg:w-1/3 flex flex-col gap-4">
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
+      {/* Process Breakdown and Quick Insights - now horizontal below the PieChart */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="w-full lg:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
             <svg className="w-5 h-5 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clipRule="evenodd" />
@@ -1373,7 +1375,7 @@ const [stats, setStats] = useState({
           ))}
         </div>
         
-        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
+        <div className="w-full lg:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
           <h3 className="text-lg font-semibold mb-3 text-gray-800 flex items-center">
             <svg className="w-5 h-5 mr-2 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
@@ -1381,63 +1383,62 @@ const [stats, setStats] = useState({
             Quick Insights
           </h3>
           <ul className="space-y-2.5">
-  {/* Insight 1: Approved/Paid status percentage */}
-  <li className="flex items-start">
-    <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-green-500 mr-2.5"></div>
-    <span className="text-sm text-gray-700">
-      {`Most items are in approved or paid status (${Math.round(
-        ((stats.requisitions.counts.approved + stats.invoices.counts.paid) / 
-         (stats.requisitions.counts.total + stats.rfqs.counts.total + 
-          stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
-      )}%)`}
-    </span>
-  </li>
+            {/* Insight 1: Approved/Paid status percentage */}
+            <li className="flex items-start">
+              <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-green-500 mr-2.5"></div>
+              <span className="text-sm text-gray-700">
+                {`Most items are in approved or paid status (${Math.round(
+                  ((stats.requisitions.counts.approved + stats.invoices.counts.paid) / 
+                   (stats.requisitions.counts.total + stats.rfqs.counts.total + 
+                    stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
+                )}%)`}
+              </span>
+            </li>
 
-  {/* Insight 2: Pending items count */}
-  <li className="flex items-start">
-    <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5"></div>
-    <span className="text-sm text-gray-700">
-      {`${stats.requisitions.counts.pending + stats.rfqs.counts.open + 
-         stats.purchaseOrders.counts.pending + stats.invoices.counts.pending} 
-         items are pending action (${Math.round(
-           ((stats.requisitions.counts.pending + stats.rfqs.counts.open + 
-             stats.purchaseOrders.counts.pending + stats.invoices.counts.pending) / 
-            (stats.requisitions.counts.total + stats.rfqs.counts.total + 
-             stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
-         )}%)`}
-    </span>
-  </li>
+            {/* Insight 2: Pending items count */}
+            <li className="flex items-start">
+              <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5"></div>
+              <span className="text-sm text-gray-700">
+                {`${stats.requisitions.counts.pending + stats.rfqs.counts.open + 
+                   stats.purchaseOrders.counts.pending + stats.invoices.counts.pending} 
+                   items are pending action (${Math.round(
+                     ((stats.requisitions.counts.pending + stats.rfqs.counts.open + 
+                       stats.purchaseOrders.counts.pending + stats.invoices.counts.pending) / 
+                      (stats.requisitions.counts.total + stats.rfqs.counts.total + 
+                       stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
+                   )}%)`}
+              </span>
+            </li>
 
-  {/* Insight 3: Largest process volume */}
-  <li className="flex items-start">
-    <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2.5"></div>
-    <span className="text-sm text-gray-700">
-      {(() => {
-        const processTotals = {
-          'Requisitions': stats.requisitions.counts.total,
-          'RFQs': stats.rfqs.counts.total,
-          'Purchase Orders': stats.purchaseOrders.counts.total,
-          'Invoices': stats.invoices.counts.total
-        };
-        
-        const largestProcess = Object.keys(processTotals).reduce((a, b) => 
-          processTotals[a] > processTotals[b] ? a : b
-        );
-        
-        const total = Object.values(processTotals).reduce((a, b) => a + b, 0);
-        const percentage = Math.round((processTotals[largestProcess] / total) * 100);
-        
-        return `${largestProcess} represent the largest process volume (${percentage}%)`;
-      })()}
-    </span>
-  </li>
-</ul>
+            {/* Insight 3: Largest process volume */}
+            <li className="flex items-start">
+              <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2.5"></div>
+              <span className="text-sm text-gray-700">
+                {(() => {
+                  const processTotals = {
+                    'Requisitions': stats.requisitions.counts.total,
+                    'RFQs': stats.rfqs.counts.total,
+                    'Purchase Orders': stats.purchaseOrders.counts.total,
+                    'Invoices': stats.invoices.counts.total
+                  };
+                  
+                  const largestProcess = Object.keys(processTotals).reduce((a, b) => 
+                    processTotals[a] > processTotals[b] ? a : b
+                  );
+                  
+                  const total = Object.values(processTotals).reduce((a, b) => a + b, 0);
+                  const percentage = Math.round((processTotals[largestProcess] / total) * 100);
+                  
+                  return `${largestProcess} represent the largest process volume (${percentage}%)`;
+                })()}
+              </span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
   </CardContent>
 </Card>
-
               {/* Pending Approvals */}
               <Card sx={{ 
   borderRadius: 3,
