@@ -14,7 +14,6 @@ import {
   ExitToApp,
   Inventory,
   BarChart,
-  PieChart,
   Settings,
   ShoppingCart,
   LocalShipping,
@@ -28,7 +27,9 @@ import {
   SettingsApplications, 
   MenuOpen 
 } from "@mui/icons-material";
+import Tooltip from '@mui/material/Tooltip';
 import MenuIcon from '@mui/icons-material/Menu';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 import {
   Avatar,
   Badge,
@@ -58,7 +59,6 @@ import {
   styled,
   alpha,
 } from "@mui/material";
-import Tooltip from '@mui/material/Tooltip';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
 import PurchaseOrdersSection  from '../../pages/dashboard/purchase-orders/purchase-order';
@@ -92,10 +92,10 @@ import axios from 'axios';
 
 // Styled components
 const Sidebar = styled(Drawer)(({ theme }) => ({
-  width: 240,
+  width: 290,
   flexShrink: 0,
   "& .MuiDrawer-paper": {
-    width: 240,
+    width: 290,
     boxSizing: "border-box",
     backgroundColor: theme.palette.background.default,
     borderRight: `1px solid ${theme.palette.divider}`,
@@ -192,7 +192,13 @@ export default function ProcurementDashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
   const { user } = useAuth();
-  const [stats, setStats] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(null);
+const [stats, setStats] = useState({
+  requisitions: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingRequisitions: [] },
+  rfqs: { counts: { open: 0, closed: 0, total: 0 }, openRFQs: [] },
+  purchaseOrders: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingPOs: [] },
+  invoices: { counts: { pending: 0, approved: 0, paid: 0, total: 0 }, pendingInvoices: [] }
+});
   const [isLoading, setIsLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -205,7 +211,73 @@ export default function ProcurementDashboard() {
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
+  const colors = {
+    pending: '#FF9F1C',    // warm orange
+    approved: '#2EC4B6',   // teal
+    rejected: '#E71D36',   // bright red
+    open: '#4361EE',       // bright blue
+    closed: '#3A0CA3',     // deep purple
+    paid: '#7209B7'        // vibrant purple
+  };
 
+  const allData = [
+    { name: 'Pending Requisitions', value: stats.requisitions.counts.pending, category: 'Requisitions', status: 'pending' },
+    { name: 'Approved Requisitions', value: stats.requisitions.counts.approved, category: 'Requisitions', status: 'approved' },
+    { name: 'Rejected Requisitions', value: stats.requisitions.counts.rejected, category: 'Requisitions', status: 'rejected' },
+    { name: 'Open RFQs', value: stats.rfqs.counts.open, category: 'RFQs', status: 'open' },
+    { name: 'Closed RFQs', value: stats.rfqs.counts.closed, category: 'RFQs', status: 'closed' },
+    { name: 'Pending POs', value: stats.purchaseOrders.counts.pending, category: 'Purchase Orders', status: 'pending' },
+    { name: 'Approved POs', value: stats.purchaseOrders.counts.approved, category: 'Purchase Orders', status: 'approved' },
+    { name: 'Rejected POs', value:stats.purchaseOrders.counts.rejected , category: 'Purchase Orders', status: 'rejected' },
+    { name: 'Pending Invoices', value: stats.invoices.counts.pending, category: 'Invoices', status: 'pending' },
+    { name: 'Approved Invoices', value: stats.invoices.counts.approved, category: 'Invoices', status: 'approved' },
+    { name: 'Paid Invoices', value: stats.invoices.counts.paid, category: 'Invoices', status: 'paid' }
+  ];
+
+  const totals = {
+    Requisitions: stats.requisitions.counts.total,
+    RFQs: stats.rfqs.counts.total,
+    'Purchase Orders': stats.purchaseOrders.counts.total,
+    Invoices: stats.invoices.counts.total
+  };
+
+  const statusSummary = allData.reduce((acc, item) => {
+    if (!acc[item.status]) {
+      acc[item.status] = 0;
+    }
+    acc[item.status] += item.value;
+    return acc;
+  }, {});
+  
+  const summaryData = Object.entries(statusSummary).map(([status, value]) => ({
+    name: status.charAt(0).toUpperCase() + status.slice(1),
+    value,
+    status
+  }));
+
+  const onPieEnter = (_, index) => {
+    setActiveIndex(index);
+  };
+  
+  const onPieLeave = () => {
+    setActiveIndex(null);
+  };
+  
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-gray-900 bg-opacity-80 p-4 rounded-lg text-white border border-gray-700">
+          <p className="font-bold text-lg">{payload[0].name}</p>
+          <p className="text-md">Count: <span className="font-bold">{payload[0].value}</span></p>
+          <p className="text-sm text-gray-300">
+            {Math.round((payload[0].value / 160) * 100)}% of total procurement items
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+  
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -366,7 +438,7 @@ export default function ProcurementDashboard() {
     <Sidebar variant="permanent" open sx={{
   backgroundColor: '#0f172a',
   borderRight: '1px solid #e0e0e0',
-  width: 240
+  width: 290
 }}>
   {/* Fixed Header */}
   <Box sx={{
@@ -1188,58 +1260,183 @@ export default function ProcurementDashboard() {
             }}>
               {/* Procurement Status */}
               <Card sx={{ 
-                borderRadius: 3,
-                boxShadow: theme.shadows[1],
-              }}>
-                <CardHeader
-                  title="Procurement Status"
-                  subheader="Current status of procurement activities"
-                  titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-                  subheaderTypographyProps={{ variant: 'body2' }}
+  borderRadius: 3,
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+  border: '1px solid rgba(0, 0, 0, 0.05)',
+  transition: 'transform 0.2s, box-shadow 0.2s',
+  '&:hover': {
+    transform: 'translateY(-2px)',
+    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)'
+  }
+}}>
+  <CardHeader
+    title="Procurement Status"
+    subheader="Current status of procurement activities"
+    titleTypographyProps={{ 
+      variant: 'h6', 
+      fontWeight: 700,
+      color: 'text.primary',
+      letterSpacing: 0.5
+    }}
+    subheaderTypographyProps={{ 
+      variant: 'body2',
+      color: 'text.secondary'
+    }}
+    sx={{
+      borderBottom: '1px solid',
+      borderColor: 'divider',
+      backgroundColor: 'rgba(250, 250, 252, 0.5)',
+      backdropFilter: 'blur(8px)'
+    }}
+  />
+  <CardContent sx={{ p: 3 }}>
+    <div className="flex flex-col lg:flex-row gap-6">
+      <div className="w-full lg:w-2/3 h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={summaryData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={activeIndex !== null ? 110 : 100}
+              paddingAngle={4}
+              dataKey="value"
+              onMouseEnter={onPieEnter}
+              onMouseLeave={onPieLeave}
+              stroke="#ffffff"
+              strokeWidth={1}
+            >
+              {summaryData.map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={colors[entry.status.toLowerCase()]} 
+                  fillOpacity={activeIndex === index ? 1 : 0.8}
+                  style={{
+                    filter: activeIndex === index ? 'drop-shadow(0 0 12px rgba(0,0,0,0.2))' : 'none',
+                    transition: 'all 0.3s ease'
+                  }}
                 />
-                <CardContent>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                    <StatusItemComponent
-                      title="Requisitions"
-                      total={stats.requisitions.counts.total}
-                      items={[
-                        { label: "Pending", value: stats.requisitions.counts.pending, color: "warning" },
-                        { label: "Approved", value: stats.requisitions.counts.approved, color: "success" },
-                        { label: "Rejected", value: stats.requisitions.counts.rejected, color: "error" },
-                      ]}
-                    />
+              ))}
+            </Pie>
+            <Tooltip 
+              content={<CustomTooltip />}
+              contentStyle={{
+                background: 'rgba(255, 255, 255, 0.96)',
+                border: '1px solid rgba(0, 0, 0, 0.1)',
+                borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                padding: '8px 12px'
+              }}
+            />
+            <Legend 
+              verticalAlign="bottom"
+              layout="horizontal"
+              wrapperStyle={{ paddingTop: 20 }}
+              formatter={(value) => (
+                <span className="text-sm text-gray-600 font-medium">{value}</span>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      
+      <div className="w-full lg:w-1/3 flex flex-col gap-4">
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clipRule="evenodd" />
+            </svg>
+            Process Breakdown
+          </h3>
+          {Object.entries(totals).map(([category, total]) => (
+            <div key={category} className="mb-4 last:mb-0">
+              <div className="flex justify-between items-center mb-1.5">
+                <span className="text-gray-600 text-sm font-medium">{category}</span>
+                <span className="text-gray-800 font-semibold">{total}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div 
+                  className={`h-full rounded-full ${
+                    category === 'Requisitions' ? 'bg-gradient-to-r from-blue-400 to-indigo-500' :
+                    category === 'RFQs' ? 'bg-gradient-to-r from-purple-400 to-indigo-500' :
+                    category === 'Purchase Orders' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
+                    'bg-gradient-to-r from-pink-400 to-rose-500'
+                  }`}
+                  style={{ 
+                    width: `${Math.round((total / 160) * 100)}%`,
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
+                  }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
+          <h3 className="text-lg font-semibold mb-3 text-gray-800 flex items-center">
+            <svg className="w-5 h-5 mr-2 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
+            </svg>
+            Quick Insights
+          </h3>
+          <ul className="space-y-2.5">
+  {/* Insight 1: Approved/Paid status percentage */}
+  <li className="flex items-start">
+    <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-green-500 mr-2.5"></div>
+    <span className="text-sm text-gray-700">
+      {`Most items are in approved or paid status (${Math.round(
+        ((stats.requisitions.counts.approved + stats.invoices.counts.paid) / 
+         (stats.requisitions.counts.total + stats.rfqs.counts.total + 
+          stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
+      )}%)`}
+    </span>
+  </li>
 
-                    <StatusItemComponent
-                      title="RFQs"
-                      total={stats.rfqs.counts.total}
-                      items={[
-                        { label: "Open", value: stats.rfqs.counts.open, color: "info" },
-                        { label: "Closed", value: stats.rfqs.counts.closed, color: "primary" },
-                      ]}
-                    />
+  {/* Insight 2: Pending items count */}
+  <li className="flex items-start">
+    <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5"></div>
+    <span className="text-sm text-gray-700">
+      {`${stats.requisitions.counts.pending + stats.rfqs.counts.open + 
+         stats.purchaseOrders.counts.pending + stats.invoices.counts.pending} 
+         items are pending action (${Math.round(
+           ((stats.requisitions.counts.pending + stats.rfqs.counts.open + 
+             stats.purchaseOrders.counts.pending + stats.invoices.counts.pending) / 
+            (stats.requisitions.counts.total + stats.rfqs.counts.total + 
+             stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
+         )}%)`}
+    </span>
+  </li>
 
-                    <StatusItemComponent
-                      title="Purchase Orders"
-                      total={stats.purchaseOrders.counts.total}
-                      items={[
-                        { label: "Pending", value: stats.purchaseOrders.counts.pending, color: "warning" },
-                        { label: "Approved", value: stats.purchaseOrders.counts.approved, color: "success" },
-                        { label: "Rejected", value: stats.purchaseOrders.counts.rejected, color: "error" },
-                      ]}
-                    />
-
-                    <StatusItemComponent
-                      title="Invoices"
-                      total={stats.invoices.counts.total}
-                      items={[
-                        { label: "Pending", value: stats.invoices.counts.pending, color: "warning" },
-                        { label: "Approved", value: stats.invoices.counts.approved, color: "success" },
-                        { label: "Paid", value: stats.invoices.counts.paid, color: "info" },
-                      ]}
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
+  {/* Insight 3: Largest process volume */}
+  <li className="flex items-start">
+    <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2.5"></div>
+    <span className="text-sm text-gray-700">
+      {(() => {
+        const processTotals = {
+          'Requisitions': stats.requisitions.counts.total,
+          'RFQs': stats.rfqs.counts.total,
+          'Purchase Orders': stats.purchaseOrders.counts.total,
+          'Invoices': stats.invoices.counts.total
+        };
+        
+        const largestProcess = Object.keys(processTotals).reduce((a, b) => 
+          processTotals[a] > processTotals[b] ? a : b
+        );
+        
+        const total = Object.values(processTotals).reduce((a, b) => a + b, 0);
+        const percentage = Math.round((processTotals[largestProcess] / total) * 100);
+        
+        return `${largestProcess} represent the largest process volume (${percentage}%)`;
+      })()}
+    </span>
+  </li>
+</ul>
+        </div>
+      </div>
+    </div>
+  </CardContent>
+</Card>
 
               {/* Pending Approvals */}
               <Card sx={{ 
