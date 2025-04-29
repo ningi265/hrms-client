@@ -124,7 +124,6 @@ export default function ManageRequisitionsPage() {
       <Typography variant="subtitle1" gutterBottom>
         Review and approve or reject pending requisitions.
       </Typography>
-
       {requisitions.length === 0 ? (
         <Alert severity="info">No pending requisitions found.</Alert>
       ) : (

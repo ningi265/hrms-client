@@ -97,12 +97,14 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
   "& .MuiDrawer-paper": {
     width: 290,
     boxSizing: "border-box",
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: theme.palette.mode === 'dark' ? "#1e1e2f" : "#f9f9f9", // Dark or light mode
     borderRight: `1px solid ${theme.palette.divider}`,
     backgroundImage: 'none',
     boxShadow: 'none',
+    color: theme.palette.text.primary,
   },
 }));
+
 
 const SidebarHeader = styled("div")(({ theme }) => ({
   display: "flex",
