@@ -1,25 +1,136 @@
 import { useState, useEffect } from "react";
 import {
-  Button,
+  Container,
+  Typography,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
+  Button,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
-  Typography,
   Box,
   CircularProgress,
   Alert,
   Snackbar,
+  Chip,
+  styled,
+  createTheme,
+  ThemeProvider,
 } from "@mui/material";
+import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { useNavigate } from "react-router-dom";
+
+// Custom theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#4f46e5",
+    },
+    secondary: {
+      main: "#ec4899",
+    },
+    background: {
+      default: "#f9fafb",
+      paper: "#ffffff",
+    },
+    text: {
+      primary: "#111827",
+      secondary: "#6b7280",
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', sans-serif",
+    h4: {
+      fontWeight: 700,
+      background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+    },
+    subtitle1: {
+      fontWeight: 400,
+      color: "#6b7280",
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          textTransform: "none",
+          fontWeight: 500,
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: "1px solid #e5e7eb",
+        },
+        head: {
+          fontWeight: 600,
+          color: "#6b7280",
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: "16px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+          background: "#ffffff",
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: "12px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+        },
+      },
+    },
+    MuiSnackbar: {
+      styleOverrides: {
+        root: {
+          "& .MuiSnackbarContent-root": {
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          },
+        },
+      },
+    },
+  },
+});
+
+// Custom styled components
+const GradientContainer = styled(Container)(({ theme }) => ({
+  background: "linear-gradient(135deg, #f9fafb, #e5e7eb)",
+  borderRadius: "16px",
+  padding: theme.spacing(4),
+  minHeight: "100vh",
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "4px",
+    background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+  },
+}));
 
 export default function InvoicesPage() {
   const { token, user, logout } = useAuth();
@@ -35,14 +146,10 @@ export default function InvoicesPage() {
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Fetch invoices from the backend
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        console.log("Fetching invoices..."); // Debug log
         const token = localStorage.getItem("token");
-        console.log("Token from localStorage:", token); // Debug log
-
         const response = await fetch(`${backendUrl}/api/invoices`, {
           method: "GET",
           headers: {
@@ -50,12 +157,9 @@ export default function InvoicesPage() {
           },
         });
 
-        console.log("Fetch invoices response:", response); // Debug log
-
         if (!response.ok) throw new Error("Failed to fetch invoices");
 
         const data = await response.json();
-        console.log("Fetched invoices data:", data); // Debug log
         setInvoices(data);
       } catch (error) {
         console.error("Failed to fetch invoices:", error);
@@ -68,32 +172,20 @@ export default function InvoicesPage() {
     fetchInvoices();
   }, [token]);
 
-  // Open the dialog for approving, rejecting, or marking as paid
   const openDialog = (invoice, type) => {
-    console.log("Opening dialog for invoice:", invoice); // Debug log
-    console.log("Action type:", type); // Debug log
     setSelectedInvoice(invoice);
     setActionType(type);
     setIsDialogOpen(true);
   };
 
-  // Close the dialog
   const closeDialog = () => {
-    console.log("Closing dialog"); // Debug log
     setIsDialogOpen(false);
     setSelectedInvoice(null);
     setActionType("");
   };
 
-  // Handle invoice action (approve, reject, mark as paid)
   const handleInvoiceAction = async () => {
-    console.log("Handling invoice action..."); // Debug log
-    console.log("Selected Invoice:", selectedInvoice); // Debug log
-    const token = localStorage.getItem("token");
-    console.log("Token:", token); // Debug log
-
     if (!selectedInvoice || !token) {
-      console.error("Invalid request: selectedInvoice or token is missing"); // Debug log
       setSnackbarMessage("Invalid request. Please try again.");
       setSnackbarOpen(true);
       return;
@@ -103,9 +195,8 @@ export default function InvoicesPage() {
 
     try {
       let url;
-      let method = "POST"; // All actions use PUT method
+      let method = "POST";
 
-      // Determine the endpoint based on the action type
       switch (actionType) {
         case "approve":
           url = `${backendUrl}/api/invoices/${selectedInvoice._id}/approve`;
@@ -120,9 +211,6 @@ export default function InvoicesPage() {
           throw new Error("Invalid action type");
       }
 
-      console.log("API Endpoint:", url); // Debug log
-      console.log("Request Method:", method); // Debug log
-
       const response = await fetch(url, {
         method,
         headers: {
@@ -131,14 +219,10 @@ export default function InvoicesPage() {
         },
       });
 
-      console.log("API Response:", response); // Debug log
-
       const data = await response.json();
-      console.log("API Response Data:", data); // Debug log
 
       if (!response.ok) {
         if (data.message === "Invalid or expired token") {
-          console.error("Invalid or expired token"); // Debug log
           setSnackbarMessage("Your session has expired. Please log in again.");
           setSnackbarOpen(true);
           logout();
@@ -147,19 +231,16 @@ export default function InvoicesPage() {
         throw new Error(data.message || "Failed to perform action");
       }
 
-      // Update the invoices list with the updated invoice
       setInvoices((prevInvoices) =>
         prevInvoices.map((invoice) =>
           invoice._id === selectedInvoice._id ? data.invoice : invoice
         )
       );
 
-      console.log("Invoice action successful:", actionType); // Debug log
       setSnackbarMessage(`Invoice ${actionType.replace("-", " ")} successfully!`);
       setSnackbarOpen(true);
       closeDialog();
     } catch (error) {
-      console.error(`Error performing ${actionType} action:`, error); // Debug log
       setSnackbarMessage(error.message);
       setSnackbarOpen(true);
     } finally {
@@ -167,132 +248,217 @@ export default function InvoicesPage() {
     }
   };
 
-  // Navigate to the payment page with invoice data
   const handlePayInvoice = (invoice) => {
-    console.log("Navigating to payment page for invoice:", invoice); // Debug log
     navigate("/invoices/pay", { state: { invoice } });
   };
 
-  // Show loading spinner while data is being fetched
-  if (isLoading) {
-    console.log("Loading invoices..."); // Debug log
+  const getStatusChip = (status) => {
+    const color =
+      status === "approved" ? "success" :
+      status === "rejected" ? "error" :
+      status === "pending" ? "warning" :
+      status === "paid" ? "primary" : "default";
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
+      <Chip
+        label={status.charAt(0).toUpperCase() + status.slice(1)}
+        color={color}
+        size="small"
+        sx={{ fontWeight: 500 }}
+      />
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CircularProgress size={60} thickness={5} />
+        </motion.div>
       </Box>
     );
   }
 
-  // Show error message if fetching invoices fails
   if (error) {
-    console.error("Error fetching invoices:", error); // Debug log
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error">{error}</Alert>
-      </Box>
+      <GradientContainer maxWidth="lg">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Alert severity="error" sx={{ borderRadius: "8px" }}>
+            {error}
+          </Alert>
+        </motion.div>
+      </GradientContainer>
     );
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ mb: 3 }}>Invoices</Typography>
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Invoice Number</TableCell>
-              <TableCell>PO Number</TableCell>
-              <TableCell>Vendor</TableCell>
-              <TableCell>Amount Due</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {invoices.map((invoice) => (
-              <TableRow key={invoice._id}>
-                <TableCell>{invoice.invoiceNumber}</TableCell>
-                <TableCell>{invoice.po?.poNumber}</TableCell>
-                <TableCell>{invoice.vendor?.name}</TableCell>
-                <TableCell>${invoice.amountDue}</TableCell>
-                <TableCell>{invoice.status}</TableCell>
-                <TableCell>
-                  {invoice.status === "pending" && (
-                    <>
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={() => openDialog(invoice, "approve")}
-                        disabled={isProcessing}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={() => openDialog(invoice, "reject")}
-                        sx={{ ml: 2 }}
-                        disabled={isProcessing}
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  {invoice.status === "approved" && (
-                    <>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() => handlePayInvoice(invoice)}
-                        sx={{ mr: 2 }}
-                      >
-                        Pay
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="info"
-                        onClick={() => openDialog(invoice, "mark-as-paid")}
-                      >
-                        Mark as Paid
-                      </Button>
-                    </>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Action Dialog */}
-      <Dialog open={isDialogOpen} onClose={closeDialog}>
-        <DialogTitle>{`Confirm ${actionType.replace("-", " ")}`}</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to {actionType.replace("-", " ")} invoice{" "}
-            <strong>{selectedInvoice?.invoiceNumber}</strong>?
+    <ThemeProvider theme={theme}>
+      <GradientContainer maxWidth="lg">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+          <Typography variant="h4" component="h1" mb={4}>
+            Invoices
           </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDialog}>Cancel</Button>
-          <Button
-            onClick={handleInvoiceAction}
-            variant="contained"
-            color="primary"
-            disabled={isProcessing}
-          >
-            {isProcessing ? "Processing..." : "Confirm"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        </motion.div>
 
-      {/* Snackbar for feedback */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        message={snackbarMessage}
-      />
-    </Box>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Invoice Number</TableCell>
+                  <TableCell>PO Number</TableCell>
+                  <TableCell>Vendor</TableCell>
+                  <TableCell>Amount Due</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {invoices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                      No invoices found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  invoices.map((invoice) => (
+                    <motion.tr
+                      key={invoice._id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                      whileHover={{ backgroundColor: "#f3f4f6" }}
+                    >
+                      <TableCell>{invoice.invoiceNumber || "N/A"}</TableCell>
+                      <TableCell>{invoice.po?.poNumber || "N/A"}</TableCell>
+                      <TableCell>{invoice.vendor?.name || "N/A"}</TableCell>
+                      <TableCell>${invoice.amountDue?.toFixed(2) || "0.00"}</TableCell>
+                      <TableCell>{getStatusChip(invoice.status)}</TableCell>
+                      <TableCell align="right">
+                        {invoice.status === "pending" && (
+                          <>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              onClick={() => openDialog(invoice, "approve")}
+                              disabled={isProcessing}
+                              sx={{ mr: 1, borderRadius: "8px", textTransform: "none" }}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="contained"
+                              color="secondary"
+                              onClick={() => openDialog(invoice, "reject")}
+                              disabled={isProcessing}
+                              sx={{ borderRadius: "8px", textTransform: "none" }}
+                            >
+                              Reject
+                            </Button>
+                          </>
+                        )}
+                        {invoice.status === "approved" && (
+                          <>
+                            <Button
+                              variant="contained"
+                              color="success"
+                              onClick={() => handlePayInvoice(invoice)}
+                              sx={{ mr: 1, borderRadius: "8px", textTransform: "none" }}
+                            >
+                              Pay
+                            </Button>
+                            <Button
+                              variant="contained"
+                              color="info"
+                              onClick={() => openDialog(invoice, "mark-as-paid")}
+                              sx={{ borderRadius: "8px", textTransform: "none" }}
+                            >
+                              Mark as Paid
+                            </Button>
+                          </>
+                        )}
+                      </TableCell>
+                    </motion.tr>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </motion.div>
+
+        <Dialog
+          open={isDialogOpen}
+          onClose={closeDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Box sx={{ p: 3, background: "linear-gradient(135deg, #f9fafb, #e5e7eb)" }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  mb: 2,
+                }}
+              >
+                Confirm {actionType.replace("-", " ")}
+              </Typography>
+              <DialogContent sx={{ p: 0 }}>
+                <Typography variant="body1">
+                  Are you sure you want to {actionType.replace("-", " ")} invoice{" "}
+                  <strong>{selectedInvoice?.invoiceNumber || "N/A"}</strong>?
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={closeDialog}
+                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleInvoiceAction}
+                  variant="contained"
+                  color="primary"
+                  disabled={isProcessing}
+                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                >
+                  {isProcessing ? <CircularProgress size={24} /> : "Confirm"}
+                </Button>
+              </DialogActions>
+            </Box>
+          </motion.div>
+        </Dialog>
+
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert
+            onClose={() => setSnackbarOpen(false)}
+            severity={snackbarMessage.includes("successfully") ? "success" : "error"}
+            sx={{ width: "100%", borderRadius: "8px" }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </GradientContainer>
+    </ThemeProvider>
   );
 }

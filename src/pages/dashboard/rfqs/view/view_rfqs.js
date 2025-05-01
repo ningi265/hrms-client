@@ -1,56 +1,209 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
-  Button,
+  Container,
   Typography,
   Card,
   CardContent,
   CardHeader,
+  Box,
+  CircularProgress,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  Button,
   Menu,
   MenuItem,
-  Badge,
+  Chip,
+  TextField,
   Select,
-  InputAdornment,
-  Input,
-  CircularProgress,
-  Alert,
-  Box
+  FormControl,
+  InputLabel,
+  IconButton,
+  Tooltip,
+  Dialog,
+  DialogContent,
+  styled,
+  createTheme,
+  ThemeProvider,
 } from "@mui/material";
 import { FilterList, Search, MoreHoriz, Add } from "@mui/icons-material";
+import { motion } from "framer-motion";
 import { useAuth } from "../../../../authcontext/authcontext";
+import CreateRFQForm from "../create/create";
+
+// Custom theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#4f46e5",
+    },
+    secondary: {
+      main: "#ec4899",
+    },
+    background: {
+      default: "#f9fafb",
+      paper: "#ffffff",
+    },
+    text: {
+      primary: "#111827",
+      secondary: "#6b7280",
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', sans-serif",
+    h4: {
+      fontWeight: 700,
+      background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+    },
+    subtitle1: {
+      fontWeight: 400,
+      color: "#6b7280",
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          textTransform: "none",
+          fontWeight: 500,
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: "1px solid #e5e7eb",
+        },
+        head: {
+          fontWeight: 600,
+          color: "#6b7280",
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          "& .MuiOutlinedInput-root": {
+            borderRadius: "8px",
+            "& fieldset": {
+              borderColor: "#d1d5db",
+            },
+            "&:hover fieldset": {
+              borderColor: "#4f46e5",
+            },
+          },
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: "16px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+          background: "#ffffff",
+        },
+      },
+    },
+  },
+});
+
+// Custom styled components
+const GradientContainer = styled(Container)(({ theme }) => ({
+  background: "linear-gradient(135deg, #f9fafb, #e5e7eb)",
+  borderRadius: "16px",
+  padding: theme.spacing(4),
+  minHeight: "100vh",
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "4px",
+    background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+  },
+}));
+
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: "12px",
+  boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+  background: theme.palette.background.paper,
+  transition: "transform 0.3s ease",
+  "&:hover": {
+    transform: "translateY(-4px)",
+  },
+}));
 
 export default function RFQsPage() {
   const { user } = useAuth();
-  const [rfqs, setRfqs] = useState([]); // Initialize as an empty array
+  const [rfqs, setRfqs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [anchorEl, setAnchorEl] = useState(null);
   const [selectedRFQ, setSelectedRFQ] = useState(null);
-  const navigate = useNavigate();
+  const [openModal, setOpenModal] = useState(false);
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
-  // Fetch RFQs from the backend
   useEffect(() => {
     const fetchRFQs = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${backendUrl}/api/rfqs`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        const mockRFQs = [
+          {
+            id: "rfq-001",
+            itemName: "Office Furniture",
+            quantity: 10,
+            status: "open",
+            procurementOfficer: {
+              name: "John Doe",
+              email: "john@example.com",
+            },
+            vendors: [
+              { id: "v-001", name: "ABC Suppliers" },
+              { id: "v-005", name: "Furniture Plus" },
+            ],
+            quotes: [],
+            createdAt: "2023-03-15T10:30:00Z",
           },
-        });
-        const data = await response.json();
-        console.log("Fetched RFQs:", data); // Log the fetched data
-        setRfqs(Array.isArray(data) ? data : []); // Ensure rfqs is always an array
+          {
+            id: "rfq-002",
+            itemName: "Laptops",
+            quantity: 5,
+            status: "closed",
+            procurementOfficer: {
+              name: "Jane Smith",
+              email: "jane@example.com",
+            },
+            vendors: [
+              { id: "v-002", name: "Tech Solutions" },
+              { id: "v-006", name: "Gadget Hub" },
+            ],
+            quotes: [{ id: "q-001", vendorId: "v-002", amount: 5000 }],
+            createdAt: "2023-04-01T14:00:00Z",
+          },
+        ];
+        setRfqs(mockRFQs);
       } catch (error) {
-        setError("Failed to fetch RFQs");
         console.error("Failed to fetch RFQs:", error);
       } finally {
         setIsLoading(false);
@@ -64,21 +217,17 @@ export default function RFQsPage() {
   const isProcurementOfficer = user?.role === "procurement_officer";
   const isVendor = user?.role === "vendor";
 
-  // Filter RFQs based on search term and status
-  const filteredRFQs = Array.isArray(rfqs)
-    ? rfqs.filter((rfq) => {
-        const matchesSearch = rfq.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === "all" || rfq.status === statusFilter;
+  const filteredRFQs = rfqs.filter((rfq) => {
+    const matchesSearch = rfq.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || rfq.status === statusFilter;
 
-        if (isVendor) {
-          return matchesSearch && matchesStatus && rfq.vendors.some((v) => v._id === user?.id);
-        }
+    if (isVendor) {
+      return matchesSearch && matchesStatus && rfq.vendors.some((v) => v.id === user?.id);
+    }
 
-        return matchesSearch && matchesStatus;
-      })
-    : [];
+    return matchesSearch && matchesStatus;
+  });
 
-  // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -87,210 +236,198 @@ export default function RFQsPage() {
     });
   };
 
-  // Handle menu click
   const handleMenuClick = (event, rfq) => {
     setAnchorEl(event.currentTarget);
     setSelectedRFQ(rfq);
   };
 
-  // Close menu
   const handleCloseMenu = () => {
     setAnchorEl(null);
     setSelectedRFQ(null);
   };
 
-  // Handle view details
-  const handleViewDetails = (rfqId) => {
-    navigate(`/dashboard/rfqs/${rfqId}`);
+  const handleOpenModal = () => {
+    setOpenModal(true);
   };
 
-  // Handle submit quote (for vendors)
-  const handleSubmitQuote = (rfqId) => {
-    navigate(`/dashboard/rfqs/${rfqId}/quote`);
+  const handleCloseModal = () => {
+    setOpenModal(false);
   };
 
-  // Handle select vendor (for procurement officers/admins)
-  const handleSelectVendor = async (rfqId, vendorId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${backendUrl}/api/rfqs/${rfqId}/select-vendor`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ vendorId }),
-      });
-      const data = await response.json();
-
-      if (response.ok) {
-        // Update the RFQ status in the UI
-        setRfqs((prev) =>
-          prev.map((rfq) =>
-            rfq._id === rfqId ? { ...rfq, status: "closed", selectedVendor: vendorId } : rfq
-          )
-        );
-      } else {
-        setError(data.message || "Failed to select vendor");
-      }
-    } catch (error) {
-      setError("Failed to select vendor");
-      console.error("Failed to select vendor:", error);
-    }
+  const handleRFQSuccess = () => {
+    // Optionally refresh RFQs list here
+    // For now, just close the modal
+    handleCloseModal();
   };
 
   if (isLoading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh" // Full viewport height
-      >
-        <CircularProgress />
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CircularProgress size={60} thickness={5} />
+        </motion.div>
       </Box>
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-full">
-        <Alert severity="error">{error}</Alert>
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <Typography variant="h4" component="h1">
-          Request for Quotations
-        </Typography>
-        <div className="flex gap-2">
-          {(isAdmin || isProcurementOfficer) && (
-            <Link to="/rfqs/create">
-              <Button variant="contained" color="primary">
-                <Add className="mr-2" />
-                New RFQ
+    <ThemeProvider theme={theme}>
+      <GradientContainer maxWidth="lg">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+            <Typography variant="h4" component="h1">
+              Request for Quotations
+            </Typography>
+            {(isAdmin || isProcurementOfficer) && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<Add />}
+                onClick={handleOpenModal}
+              >
+                New RFQs
               </Button>
-            </Link>
-          )}
-          <Link to="/vendors/">
-            <Button variant="contained" color="secondary">
-              Add Vendors
-            </Button>
-          </Link>
-        </div>
-      </div>
+            )}
+          </Box>
+        </motion.div>
 
-      <Card>
-        <CardHeader
-          title="Manage RFQs"
-          subheader={
-            isVendor
-              ? "View and respond to RFQs you've been invited to"
-              : "Create and manage requests for quotations"
-          }
-        />
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
-              <div className="flex w-full sm:w-auto items-center gap-2">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <StyledCard>
+            <CardHeader
+              title="Manage RFQs"
+              subheader={
+                isVendor
+                  ? "View and respond to RFQs you've been invited to"
+                  : "Create and manage requests for quotations"
+              }
+              sx={{ pb: 0 }}
+            />
+            <CardContent>
+              <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} mb={4} alignItems="center">
+                <TextField
                   placeholder="Search RFQs..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  endAdornment={
-                    <InputAdornment position="end">
-                      <Search />
-                    </InputAdornment>
-                  }
+                  InputProps={{
+                    startAdornment: <Search sx={{ mr: 1, color: "#6b7280" }} />,
+                    sx: { borderRadius: "8px" },
+                  }}
                   fullWidth
+                  sx={{ maxWidth: { sm: 300 } }}
                 />
-              </div>
-              <div className="flex items-center gap-2">
-                <FilterList className="h-4 w-4 text-muted-foreground" />
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  displayEmpty
-                >
-                  <MenuItem value="all">All Statuses</MenuItem>
-                  <MenuItem value="open">Open</MenuItem>
-                  <MenuItem value="closed">Closed</MenuItem>
-                </Select>
-              </div>
-            </div>
+                <FormControl sx={{ minWidth: 150 }}>
+                  <InputLabel id="status-filter-label">Status</InputLabel>
+                  <Select
+                    labelId="status-filter-label"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    label="Status"
+                    sx={{ borderRadius: "8px" }}
+                  >
+                    <MenuItem value="all">All Statuses</MenuItem>
+                    <MenuItem value="open">Open</MenuItem>
+                    <MenuItem value="closed">Closed</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
 
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>ID</TableCell>
-                  <TableCell>Item</TableCell>
-                  <TableCell>Quantity</TableCell>
-                  <TableCell>Procurement Officer</TableCell>
-                  <TableCell>Vendors</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Quotes</TableCell>
-                  <TableCell className="text-right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredRFQs.length === 0 ? (
+              <Table>
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={9} style={{ textAlign: "center", padding: "16px" }}>
-                      No RFQs found
-                    </TableCell>
+                    <TableCell>ID</TableCell>
+                    <TableCell>Item</TableCell>
+                    <TableCell>Quantity</TableCell>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Quotes</TableCell>
+                    <TableCell align="right">Actions</TableCell>
                   </TableRow>
-                ) : (
-                  filteredRFQs.map((rfq) => (
-                    <TableRow key={rfq._id}>
-                      <TableCell>{rfq._id}</TableCell>
-                      <TableCell>{rfq.itemName}</TableCell>
-                      <TableCell>{rfq.quantity}</TableCell>
-                      <TableCell>{rfq.procurementOfficer?.name}</TableCell>
-                      <TableCell>
-                        {rfq.vendors.map((vendor) => vendor.name).join(", ")}
-                      </TableCell>
-                      <TableCell>{formatDate(rfq.createdAt)}</TableCell>
-                      <TableCell>
-                        {rfq.status === "open" ? (
-                          <Badge color="success">Open</Badge>
-                        ) : (
-                          <Badge color="primary">Closed</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>{rfq.quotes.length}</TableCell>
-                      <TableCell className="text-right">
-                        <Button onClick={(e) => handleMenuClick(e, rfq)} variant="outlined" size="small">
-                          <MoreHoriz />
-                        </Button>
-                        <Menu
-                          anchorEl={anchorEl}
-                          open={Boolean(anchorEl)}
-                          onClose={handleCloseMenu}
-                        >
-                          <MenuItem onClick={() => handleViewDetails(rfq._id)}>View Details</MenuItem>
-                          {isVendor && rfq.status === "open" && (
-                            <MenuItem onClick={() => handleSubmitQuote(rfq._id)}>Submit Quote</MenuItem>
-                          )}
-                          {(isAdmin || isProcurementOfficer) && rfq.status === "open" && rfq.quotes.length > 0 && (
-                            <MenuItem onClick={() => handleSelectVendor(rfq._id, rfq.quotes[0].vendor)}>
-                              Select Vendor
-                            </MenuItem>
-                          )}
-                        </Menu>
+                </TableHead>
+                <TableBody>
+                  {filteredRFQs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                        No RFQs found
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+                  ) : (
+                    filteredRFQs.map((rfq) => (
+                      <motion.tr
+                        key={rfq.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        whileHover={{ backgroundColor: "#f3f4f6" }}
+                      >
+                        <TableCell>{rfq.id}</TableCell>
+                        <TableCell>{rfq.itemName}</TableCell>
+                        <TableCell>{rfq.quantity}</TableCell>
+                        <TableCell>{formatDate(rfq.createdAt)}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={rfq.status}
+                            color={rfq.status === "open" ? "success" : "primary"}
+                            size="small"
+                            sx={{ textTransform: "capitalize", fontWeight: 500 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {rfq.quotes.length} / {rfq.vendors.length}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Tooltip title="More Actions">
+                            <IconButton onClick={(e) => handleMenuClick(e, rfq)}>
+                              <MoreHoriz />
+                            </IconButton>
+                          </Tooltip>
+                          <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl && selectedRFQ?.id === rfq.id)}
+                            onClose={handleCloseMenu}
+                          >
+                            <MenuItem component={Link} to={`/dashboard/rfqs/${rfq.id}`}>
+                              View Details
+                            </MenuItem>
+                            {isVendor && rfq.status === "open" && (
+                              <MenuItem component={Link} to={`/dashboard/rfqs/${rfq.id}/quote`}>
+                                Submit Quote
+                              </MenuItem>
+                            )}
+                            {(isAdmin || isProcurementOfficer) && rfq.status === "open" && rfq.quotes.length > 0 && (
+                              <MenuItem>Select Vendor</MenuItem>
+                            )}
+                          </Menu>
+                        </TableCell>
+                      </motion.tr>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </StyledCard>
+        </motion.div>
+
+        <Dialog
+          open={openModal}
+          onClose={handleCloseModal}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: "16px",
+              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+            },
+          }}
+        >
+          <DialogContent sx={{ p: 0 }}>
+            <CreateRFQForm onClose={handleCloseModal} onSuccess={handleRFQSuccess} />
+          </DialogContent>
+        </Dialog>
+      </GradientContainer>
+    </ThemeProvider>
   );
 }

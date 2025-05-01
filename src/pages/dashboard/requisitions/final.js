@@ -8,7 +8,6 @@ import {
   CircularProgress,
   Snackbar,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TableContainer,
@@ -21,11 +20,12 @@ import {
   Card,
   Chip,
   Avatar,
-  Paper,
   Divider,
   IconButton,
   Tooltip,
-  alpha,
+  styled,
+  createTheme,
+  ThemeProvider,
 } from "@mui/material"
 import {
   Check,
@@ -41,6 +41,117 @@ import {
   ArrowForward,
 } from "@mui/icons-material"
 import MuiAlert from "@mui/material/Alert"
+import { motion } from "framer-motion"
+
+// Custom theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#4f46e5",
+    },
+    secondary: {
+      main: "#ec4899",
+    },
+    background: {
+      default: "#f9fafb",
+      paper: "#ffffff",
+    },
+    text: {
+      primary: "#111827",
+      secondary: "#6b7280",
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', sans-serif",
+    h4: {
+      fontWeight: 700,
+      background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+    },
+    subtitle1: {
+      fontWeight: 400,
+      color: "#6b7280",
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          textTransform: "none",
+          fontWeight: 500,
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: "1px solid #e5e7eb",
+        },
+        head: {
+          fontWeight: 600,
+          color: "#6b7280",
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: "12px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+          transition: "transform 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-4px)",
+          },
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: "16px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+          background: "#ffffff",
+        },
+      },
+    },
+    MuiSnackbar: {
+      styleOverrides: {
+        root: {
+          "& .MuiSnackbarContent-root": {
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          },
+        },
+      },
+    },
+  },
+});
+
+// Custom styled components
+const GradientContainer = styled(Container)(({ theme }) => ({
+  background: "linear-gradient(135deg, #f9fafb, #e5e7eb)",
+  borderRadius: "16px",
+  padding: theme.spacing(4),
+  minHeight: "100vh",
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "4px",
+    background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+  },
+}));
 
 // Snackbar Alert component
 const Alert = React.forwardRef(function Alert(props, ref) {
@@ -124,12 +235,8 @@ const FinalApproverDashboard = () => {
       setIsPreviewMode(false)
     } catch (error) {
       console.error("Failed to fetch supervisor-approved travel requests:", error)
-
-      // Use mock data for preview/development
       setTravelRequests(MOCK_TRAVEL_REQUESTS)
       setIsPreviewMode(true)
-
-      // Only show error in non-preview environments
       if (
         typeof window !== "undefined" &&
         window.location.hostname !== "localhost" &&
@@ -140,7 +247,6 @@ const FinalApproverDashboard = () => {
         setSnackbarOpen(true)
       }
     } finally {
-      // Add a small delay to simulate network request
       setTimeout(() => {
         setIsLoading(false)
         setRefreshing(false)
@@ -161,12 +267,8 @@ const FinalApproverDashboard = () => {
 
   const handleFinalDecision = async (id, decision) => {
     try {
-      // If in preview mode, just update the UI without making API calls
       if (isPreviewMode) {
-        // Update the UI by removing the approved/rejected request
         setTravelRequests((prev) => prev.filter((request) => request._id !== id))
-
-        // Show success message
         setSnackbarMessage(
           `Travel request ${decision === "approve" ? "approved" : "rejected"} successfully! (Preview mode)`,
         )
@@ -196,13 +298,11 @@ const FinalApproverDashboard = () => {
         setSnackbarSeverity("success")
       } else {
         const errorData = await response.json()
-        console.error("Server Error:", errorData)
         setSnackbarMessage(errorData.message || "Failed to update travel request")
         setSnackbarSeverity("error")
       }
       setSnackbarOpen(true)
     } catch (error) {
-      console.error("Error updating final approval:", error)
       setSnackbarMessage("An error occurred while updating the travel request")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
@@ -217,6 +317,8 @@ const FinalApproverDashboard = () => {
 
   const closeConfirmationDialog = () => {
     setOpenConfirmation(false)
+    setSelectedRequestId(null)
+    setSelectedDecision(null)
   }
 
   const confirmDecision = () => {
@@ -224,7 +326,6 @@ const FinalApproverDashboard = () => {
     closeConfirmationDialog()
   }
 
-  // Format date string
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -233,7 +334,6 @@ const FinalApproverDashboard = () => {
     })
   }
 
-  // Get travel means display text
   const getTravelMeansText = (meansCode) => {
     switch (meansCode) {
       case "own":
@@ -245,18 +345,14 @@ const FinalApproverDashboard = () => {
       case "public_transport":
         return "Public Transport"
       default:
-        return meansCode
+        return meansCode || "N/A"
     }
   }
 
-  // Get travel means icon
   const getTravelMeansIcon = (meansCode) => {
-    // You could use different icons for different travel means
-    // For simplicity, we're using FlightTakeoff for all
     return <FlightTakeoff fontSize="small" />
   }
 
-  // Get status chip
   const getStatusChip = (status) => {
     switch (status) {
       case "supervisor_approved":
@@ -266,14 +362,10 @@ const FinalApproverDashboard = () => {
             label="Supervisor Approved"
             size="small"
             sx={{
-              bgcolor: alpha("#1976d2", 0.1),
-              color: "#1976d2",
-              fontWeight: 600,
-              borderRadius: "16px",
-              "& .MuiChip-icon": { color: "#1976d2" },
-              boxShadow: "0 2px 4px rgba(25, 118, 210, 0.1)",
-              border: "1px solid",
-              borderColor: alpha("#1976d2", 0.2),
+              bgcolor: "#e5e7eb",
+              color: "#111827",
+              fontWeight: 500,
+              borderRadius: "6px",
             }}
           />
         )
@@ -284,14 +376,10 @@ const FinalApproverDashboard = () => {
             label="Final Approved"
             size="small"
             sx={{
-              bgcolor: alpha("#2e7d32", 0.1),
-              color: "#2e7d32",
-              fontWeight: 600,
-              borderRadius: "16px",
-              "& .MuiChip-icon": { color: "#2e7d32" },
-              boxShadow: "0 2px 4px rgba(46, 125, 50, 0.1)",
-              border: "1px solid",
-              borderColor: alpha("#2e7d32", 0.2),
+              bgcolor: "#e5e7eb",
+              color: "#111827",
+              fontWeight: 500,
+              borderRadius: "6px",
             }}
           />
         )
@@ -302,14 +390,10 @@ const FinalApproverDashboard = () => {
             label="Rejected"
             size="small"
             sx={{
-              bgcolor: alpha("#d32f2f", 0.1),
-              color: "#d32f2f",
-              fontWeight: 600,
-              borderRadius: "16px",
-              "& .MuiChip-icon": { color: "#d32f2f" },
-              boxShadow: "0 2px 4px rgba(211, 47, 47, 0.1)",
-              border: "1px solid",
-              borderColor: alpha("#d32f2f", 0.2),
+              bgcolor: "#e5e7eb",
+              color: "#111827",
+              fontWeight: 500,
+              borderRadius: "6px",
             }}
           />
         )
@@ -319,20 +403,16 @@ const FinalApproverDashboard = () => {
             label={status || "Unknown"}
             size="small"
             sx={{
-              bgcolor: alpha("#757575", 0.1),
-              color: "#757575",
-              fontWeight: 600,
-              borderRadius: "16px",
-              boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-              border: "1px solid",
-              borderColor: alpha("#757575", 0.2),
+              bgcolor: "#e5e7eb",
+              color: "#111827",
+              fontWeight: 500,
+              borderRadius: "6px",
             }}
           />
         )
     }
   }
 
-  // Get employee avatar
   const getEmployeeAvatar = (name) => {
     if (!name) return "?"
     const initials = name
@@ -344,20 +424,19 @@ const FinalApproverDashboard = () => {
     return initials
   }
 
-  // Get random background color for avatar based on name
   const getAvatarColor = (name) => {
-    if (!name) return "#757575"
+    if (!name) return "#6b7280"
     const colors = [
-      "#1976d2", // blue
-      "#2e7d32", // green
-      "#ed6c02", // orange
-      "#9c27b0", // purple
-      "#d32f2f", // red
-      "#0288d1", // light blue
-      "#388e3c", // light green
-      "#f57c00", // dark orange
-      "#7b1fa2", // dark purple
-      "#c62828", // dark red
+      "#4f46e5",
+      "#ec4899",
+      "#10b981",
+      "#f59e0b",
+      "#ef4444",
+      "#8b5cf6",
+      "#06b6d4",
+      "#84cc16",
+      "#f97316",
+      "#3b82f6",
     ]
     const charCode = name.charCodeAt(0) || 0
     return colors[charCode % colors.length]
@@ -365,469 +444,333 @@ const FinalApproverDashboard = () => {
 
   if (isLoading) {
     return (
-      <Box
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="100vh"
-        sx={{ background: "linear-gradient(to bottom, #f5f7fa, #ffffff)" }}
-      >
-        <CircularProgress size={60} thickness={4} sx={{ color: "#6a11cb", mb: 2 }} />
-        <Typography variant="h6" color="textSecondary" sx={{ fontWeight: 500 }}>
-          Loading travel requests...
-        </Typography>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CircularProgress size={60} thickness={5} />
+        </motion.div>
       </Box>
     )
   }
 
   return (
-    <Box sx={{ background: "linear-gradient(to bottom, #f5f7fa, #ffffff)", minHeight: "100vh", py: 4 }}>
-      <Container maxWidth="lg">
-        {isPreviewMode && (
-          <Alert
-            severity="warning"
-            sx={{
-              mb: 3,
-              borderRadius: 2,
-              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
-              "& .MuiAlert-icon": { alignItems: "center" },
-            }}
-            icon={<Warning />}
-          >
-            Using mock data for preview. In production, this would connect to your backend API.
-          </Alert>
-        )}
-
-        <Card
-          elevation={0}
-          sx={{
-            overflow: "hidden",
-            borderRadius: 3,
-            mb: 4,
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.08)",
-            border: "1px solid rgba(230, 235, 240, 0.9)",
-          }}
-        >
-          <Box
-            sx={{
-              background: "linear-gradient(135deg, #4776E6 0%, #8E54E9 100%)",
-              color: "white",
-              p: 4,
-              position: "relative",
-              overflow: "hidden",
-            }}
-          >
-            {/* Decorative elements */}
-            <Box
-              sx={{
-                position: "absolute",
-                top: -20,
-                right: -20,
-                width: 150,
-                height: 150,
-                borderRadius: "50%",
-                background: "rgba(255, 255, 255, 0.1)",
-              }}
-            />
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: -30,
-                right: 60,
-                width: 100,
-                height: 100,
-                borderRadius: "50%",
-                background: "rgba(255, 255, 255, 0.1)",
-              }}
-            />
-
-            <Box sx={{ position: "relative", zIndex: 1 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
-                    Final Approval Dashboard
-                  </Typography>
-                  <Typography variant="body1" sx={{ opacity: 0.9, maxWidth: 600 }}>
-                    Review and finalize supervisor-approved travel requests for your team members.
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Chip
-                    label={`${travelRequests.length} Pending`}
-                    sx={{
-                      bgcolor: "rgba(255, 255, 255, 0.2)",
-                      color: "white",
-                      fontWeight: "bold",
-                      border: "none",
-                      borderRadius: "20px",
-                      px: 1,
-                      height: 36,
-                      "& .MuiChip-label": { px: 2 },
-                    }}
-                  />
-                  <Tooltip title="Refresh requests">
-                    <IconButton
-                      onClick={fetchApprovedRequests}
-                      disabled={refreshing}
-                      sx={{
-                        color: "white",
-                        bgcolor: "rgba(255, 255, 255, 0.2)",
-                        "&:hover": { bgcolor: "rgba(255, 255, 255, 0.3)" },
-                      }}
-                    >
-                      <Refresh />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Box>
-
-              <Box sx={{ display: "flex", gap: 3, mt: 3 }}>
-                <Box
-                  sx={{
-                    bgcolor: "rgba(255, 255, 255, 0.2)",
-                    borderRadius: 2,
-                    p: 2,
-                    flex: 1,
-                    backdropFilter: "blur(10px)",
-                  }}
-                >
-                  <Typography variant="body2" sx={{ opacity: 0.8, mb: 1 }}>
-                    Pending Approvals
-                  </Typography>
-                  <Typography variant="h4" fontWeight="bold">
-                    {travelRequests.length}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    bgcolor: "rgba(255, 255, 255, 0.2)",
-                    borderRadius: 2,
-                    p: 2,
-                    flex: 1,
-                    backdropFilter: "blur(10px)",
-                  }}
-                >
-                  <Typography variant="body2" sx={{ opacity: 0.8, mb: 1 }}>
-                    Approved Today
-                  </Typography>
-                  <Typography variant="h4" fontWeight="bold">
-                    {isPreviewMode ? "3" : "0"}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    bgcolor: "rgba(255, 255, 255, 0.2)",
-                    borderRadius: 2,
-                    p: 2,
-                    flex: 1,
-                    backdropFilter: "blur(10px)",
-                  }}
-                >
-                  <Typography variant="body2" sx={{ opacity: 0.8, mb: 1 }}>
-                    Denied Today
-                  </Typography>
-                  <Typography variant="h4" fontWeight="bold">
-                    {isPreviewMode ? "1" : "0"}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-
-          {travelRequests.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                p: 8,
-                textAlign: "center",
-                background: "rgba(255, 255, 255, 0.5)",
-                backdropFilter: "blur(10px)",
-              }}
-            >
-              <Avatar
+    <ThemeProvider theme={theme}>
+      <GradientContainer maxWidth="lg">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+            <Typography variant="h4" component="h1">
+              Final Approval Dashboard
+            </Typography>
+            <Tooltip title="Refresh requests">
+              <IconButton
+                onClick={fetchApprovedRequests}
+                disabled={refreshing}
                 sx={{
-                  bgcolor: alpha("#4776E6", 0.1),
-                  color: "#4776E6",
-                  width: 80,
-                  height: 80,
-                  mb: 3,
+                  bgcolor: "#e5e7eb",
+                  "&:hover": { bgcolor: "#d1d5db" },
                 }}
               >
-                <InfoIcon sx={{ fontSize: 40 }} />
-              </Avatar>
-              <Typography variant="h5" gutterBottom fontWeight="bold">
-                No Pending Requests
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mb: 3 }}>
-                There are currently no supervisor-approved travel requests waiting for your final approval.
-              </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<Refresh />}
-                onClick={fetchApprovedRequests}
-                sx={{ borderRadius: 2, px: 3 }}
-              >
-                Refresh
-              </Button>
-            </Box>
-          ) : (
-            <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 0 }}>
-              <Table sx={{ minWidth: 650 }}>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: alpha("#4776E6", 0.03) }}>
-                    <TableCell sx={{ fontWeight: 600, py: 2.5, fontSize: "0.875rem" }}>Employee</TableCell>
-                    <TableCell sx={{ fontWeight: 600, py: 2.5, fontSize: "0.875rem" }}>Travel Period</TableCell>
-                    <TableCell sx={{ fontWeight: 600, py: 2.5, fontSize: "0.875rem" }}>Location</TableCell>
-                    <TableCell sx={{ fontWeight: 600, py: 2.5, fontSize: "0.875rem" }}>Details</TableCell>
-                    <TableCell sx={{ fontWeight: 600, py: 2.5, fontSize: "0.875rem" }}>Status</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600, py: 2.5, fontSize: "0.875rem" }}>
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {travelRequests.map((request, index) => (
-                    <TableRow
-                      key={request._id}
-                      sx={{
-                        "&:hover": { bgcolor: alpha("#4776E6", 0.02) },
-                        bgcolor: index % 2 === 0 ? "white" : alpha("#f5f7fa", 0.5),
-                        transition: "background-color 0.2s",
-                      }}
-                    >
-                      <TableCell sx={{ py: 2.5 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                          <Avatar
-                            sx={{
-                              bgcolor: getAvatarColor(request.employee?.name),
-                              width: 40,
-                              height: 40,
-                              fontWeight: "bold",
-                              fontSize: "1rem",
-                            }}
-                          >
-                            {getEmployeeAvatar(request.employee?.name)}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="body1" fontWeight={600}>
-                              {request.employee?.name || "N/A"}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                              Employee ID: {request.employee?._id?.substring(0, 8) || "N/A"}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                          <CalendarMonth fontSize="small" sx={{ color: "#4776E6" }} />
-                          <Box>
-                            <Typography variant="body2" fontWeight={500}>
-                              {formatDate(request.departureDate)}
-                            </Typography>
-                            <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
-                              <Box
-                                sx={{
-                                  height: 2,
-                                  width: 8,
-                                  bgcolor: "text.disabled",
-                                  borderRadius: 1,
-                                  mx: 0.5,
-                                }}
-                              />
-                              <ArrowForward sx={{ fontSize: 12, color: "text.disabled", mx: 0.5 }} />
-                              <Box
-                                sx={{
-                                  height: 2,
-                                  width: 8,
-                                  bgcolor: "text.disabled",
-                                  borderRadius: 1,
-                                  mx: 0.5,
-                                }}
-                              />
-                            </Box>
-                            <Typography variant="body2" fontWeight={500}>
-                              {formatDate(request.returnDate)}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                          <LocationOn fontSize="small" sx={{ color: "#4776E6" }} />
-                          <Typography variant="body2" fontWeight={500}>
-                            {request.location}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5 }}>
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            {getTravelMeansIcon(request.meansOfTravel)}
-                            <Typography variant="body2" fontWeight={500}>
-                              {getTravelMeansText(request.meansOfTravel)}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <CreditCard fontSize="small" sx={{ color: "#4776E6" }} />
-                            <Typography variant="body2" fontWeight={500}>
-                              {request.fundingCodes}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell sx={{ py: 2.5 }}>{getStatusChip(request.status)}</TableCell>
-                      <TableCell align="right" sx={{ py: 2.5 }}>
-                        <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<Check />}
-                            onClick={() => openConfirmationDialog(request._id, "approve")}
-                            sx={{
-                              bgcolor: "#2e7d32",
-                              "&:hover": { bgcolor: "#1b5e20" },
-                              borderRadius: "8px",
-                              boxShadow: "0 4px 10px rgba(46, 125, 50, 0.2)",
-                              textTransform: "none",
-                              fontWeight: 600,
-                            }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="contained"
-                            size="small"
-                            startIcon={<Close />}
-                            onClick={() => openConfirmationDialog(request._id, "reject")}
-                            sx={{
-                              bgcolor: "#d32f2f",
-                              "&:hover": { bgcolor: "#b71c1c" },
-                              borderRadius: "8px",
-                              boxShadow: "0 4px 10px rgba(211, 47, 47, 0.2)",
-                              textTransform: "none",
-                              fontWeight: 600,
-                            }}
-                          >
-                            Deny
-                          </Button>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-          <Divider />
-          <Box
-            sx={{
-              bgcolor: alpha("#4776E6", 0.02),
-              p: 3,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              Showing all supervisor-approved travel requests that require your final approval.
-            </Typography>
-            <Button
-              variant="text"
-              size="small"
-              onClick={fetchApprovedRequests}
-              startIcon={<Refresh />}
-              sx={{ textTransform: "none", fontWeight: 600 }}
-            >
-              Refresh Data
-            </Button>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
           </Box>
-        </Card>
+        </motion.div>
+
+        {isPreviewMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: "8px" }} icon={<Warning />}>
+              Using mock data for preview. In production, this would connect to your backend API.
+            </Alert>
+          </motion.div>
+        )}
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <Card>
+            <Box
+              sx={{
+                background: "linear-gradient(135deg, #4f46e5, #ec4899)",
+                color: "white",
+                p: 3,
+                borderTopLeftRadius: "12px",
+                borderTopRightRadius: "12px",
+              }}
+            >
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="h5" fontWeight="bold">
+                    Travel Requests
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    Review and finalize supervisor-approved travel requests
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${travelRequests.length} Pending`}
+                  sx={{
+                    bgcolor: "rgba(255, 255, 255, 0.2)",
+                    color: "white",
+                    fontWeight: "medium",
+                    border: "none",
+                    borderRadius: "8px",
+                  }}
+                />
+              </Box>
+            </Box>
+
+            {travelRequests.length === 0 ? (
+              <Box sx={{ p: 6, textAlign: "center" }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "rgba(79, 70, 229, 0.1)",
+                    color: "primary.main",
+                    width: 56,
+                    height: 56,
+                    mb: 2,
+                    mx: "auto",
+                  }}
+                >
+                  <InfoIcon fontSize="large" />
+                </Avatar>
+                <Typography variant="h6" gutterBottom>
+                  No Pending Requests
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto", mb: 3 }}>
+                  There are currently no supervisor-approved travel requests waiting for your final approval.
+                </Typography>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Refresh />}
+                  onClick={fetchApprovedRequests}
+                  disabled={refreshing}
+                  sx={{ borderRadius: "8px" }}
+                >
+                  Refresh
+                </Button>
+              </Box>
+            ) : (
+              <TableContainer>
+                <Table sx={{ minWidth: 650 }}>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: "#f3f4f6" }}>
+                      <TableCell>Employee</TableCell>
+                      <TableCell>Travel Period</TableCell>
+                      <TableCell>Location</TableCell>
+                      <TableCell>Details</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {travelRequests.map((request, index) => (
+                      <motion.tr
+                        key={request._id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        whileHover={{ backgroundColor: "#f3f4f6" }}
+                      >
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            <Avatar
+                              sx={{
+                                bgcolor: getAvatarColor(request.employee?.name),
+                                width: 40,
+                                height: 40,
+                                fontWeight: "bold",
+                                fontSize: "1rem",
+                              }}
+                            >
+                              {getEmployeeAvatar(request.employee?.name)}
+                            </Avatar>
+                            <Box>
+                              <Typography variant="body1" fontWeight={500}>
+                                {request.employee?.name || "N/A"}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                ID: {request.employee?._id?.substring(0, 8) || "N/A"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <CalendarMonth fontSize="small" color="action" />
+                            <Box>
+                              <Typography variant="body2" fontWeight={500}>
+                                {formatDate(request.departureDate)}
+                              </Typography>
+                              <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
+                                <Box
+                                  sx={{
+                                    height: 2,
+                                    width: 8,
+                                    bgcolor: "text.disabled",
+                                    borderRadius: 1,
+                                    mx: 0.5,
+                                  }}
+                                />
+                                <ArrowForward sx={{ fontSize: 12, color: "text.disabled", mx: 0.5 }} />
+                                <Box
+                                  sx={{
+                                    height: 2,
+                                    width: 8,
+                                    bgcolor: "text.disabled",
+                                    borderRadius: 1,
+                                    mx: 0.5,
+                                  }}
+                                />
+                              </Box>
+                              <Typography variant="body2" fontWeight={500}>
+                                {formatDate(request.returnDate)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <LocationOn fontSize="small" color="action" />
+                            <Typography variant="body2" fontWeight={500}>
+                              {request.location || "N/A"}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                              {getTravelMeansIcon(request.meansOfTravel)}
+                              <Typography variant="body2" fontWeight={500}>
+                                {getTravelMeansText(request.meansOfTravel)}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                              <CreditCard fontSize="small" color="action" />
+                              <Typography variant="body2" fontWeight={500}>
+                                {request.fundingCodes || "N/A"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell sx={{ py: 2.5 }}>{getStatusChip(request.status)}</TableCell>
+                        <TableCell align="right" sx={{ py: 2.5 }}>
+                          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<Check />}
+                              onClick={() => openConfirmationDialog(request._id, "approve")}
+                              sx={{
+                                bgcolor: "success.main",
+                                "&:hover": { bgcolor: "success.dark" },
+                              }}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<Close />}
+                              onClick={() => openConfirmationDialog(request._id, "reject")}
+                              sx={{
+                                bgcolor: "error.main",
+                                "&:hover": { bgcolor: "error.dark" },
+                              }}
+                            >
+                              Deny
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+            <Divider />
+            <Box sx={{ p: 2, bgcolor: "#f9fafb", borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px" }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing all supervisor-approved travel requests that require your final approval.
+              </Typography>
+            </Box>
+          </Card>
+        </motion.div>
 
         {/* Confirmation Dialog */}
         <Dialog
           open={openConfirmation}
           onClose={closeConfirmationDialog}
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              boxShadow: "0 10px 30px rgba(0, 0, 0, 0.1)",
-              maxWidth: 450,
-            },
-          }}
+          maxWidth="sm"
+          fullWidth
         >
-          <DialogTitle
-            sx={{
-              bgcolor: selectedDecision === "approve" ? alpha("#2e7d32", 0.05) : alpha("#d32f2f", 0.05),
-              py: 3,
-              px: 4,
-            }}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            <Typography variant="h6" fontWeight="bold">
-              {selectedDecision === "approve" ? "Confirm Approval" : "Confirm Denial"}
-            </Typography>
-          </DialogTitle>
-          <DialogContent sx={{ p: 4 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-              <Avatar
+            <Box sx={{ p: 3, background: "linear-gradient(135deg, #f9fafb, #e5e7eb)" }}>
+              <Typography
+                variant="h5"
                 sx={{
-                  bgcolor: selectedDecision === "approve" ? alpha("#2e7d32", 0.1) : alpha("#d32f2f", 0.1),
-                  color: selectedDecision === "approve" ? "#2e7d32" : "#d32f2f",
+                  fontWeight: 700,
+                  background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  mb: 2,
                 }}
               >
-                {selectedDecision === "approve" ? <Check /> : <Close />}
-              </Avatar>
-              <Typography variant="body1" fontWeight={500}>
-                You are about to{" "}
-                <Typography
-                  component="span"
-                  fontWeight="bold"
-                  color={selectedDecision === "approve" ? "success.main" : "error.main"}
-                >
-                  {selectedDecision === "approve" ? "approve" : "deny"}
-                </Typography>{" "}
-                this travel request.
+                {selectedDecision === "approve" ? "Confirm Approval" : "Confirm Denial"}
               </Typography>
+              <DialogContent sx={{ p: 0 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                  <Avatar
+                    sx={{
+                      bgcolor: selectedDecision === "approve" ? "success.light" : "error.light",
+                      color: selectedDecision === "approve" ? "success.main" : "error.main",
+                    }}
+                  >
+                    {selectedDecision === "approve" ? <Check /> : <Close />}
+                  </Avatar>
+                  <Typography variant="body1">
+                    You are about to{" "}
+                    <Typography
+                      component="span"
+                      fontWeight="bold"
+                      color={selectedDecision === "approve" ? "success.main" : "error.main"}
+                    >
+                      {selectedDecision === "approve" ? "approve" : "deny"}
+                    </Typography>{" "}
+                    this travel request.
+                  </Typography>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  This action cannot be undone. The employee will be notified of your decision.
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={closeConfirmationDialog}
+                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDecision}
+                  variant="contained"
+                  color={selectedDecision === "approve" ? "success" : "error"}
+                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                >
+                  {selectedDecision === "approve" ? "Confirm Approval" : "Confirm Denial"}
+                </Button>
+              </DialogActions>
             </Box>
-            <Typography variant="body2" color="text.secondary">
-              This action cannot be undone. The employee will be notified of your decision.
-            </Typography>
-          </DialogContent>
-          <DialogActions sx={{ px: 4, pb: 3 }}>
-            <Button
-              onClick={closeConfirmationDialog}
-              sx={{
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                color: "text.secondary",
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmDecision}
-              variant="contained"
-              color={selectedDecision === "approve" ? "success" : "error"}
-              sx={{
-                borderRadius: 2,
-                textTransform: "none",
-                fontWeight: 600,
-                px: 3,
-                boxShadow:
-                  selectedDecision === "approve"
-                    ? "0 4px 10px rgba(46, 125, 50, 0.2)"
-                    : "0 4px 10px rgba(211, 47, 47, 0.2)",
-              }}
-            >
-              {selectedDecision === "approve" ? "Confirm Approval" : "Confirm Denial"}
-            </Button>
-          </DialogActions>
+          </motion.div>
         </Dialog>
 
         {/* Snackbar for Notifications */}
@@ -835,22 +778,14 @@ const FinalApproverDashboard = () => {
           open={snackbarOpen}
           autoHideDuration={6000}
           onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
-          <Alert
-            onClose={handleSnackbarClose}
-            severity={snackbarSeverity}
-            sx={{
-              borderRadius: 2,
-              boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
-              width: "100%",
-            }}
-          >
+          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%", borderRadius: "8px" }}>
             {snackbarMessage}
           </Alert>
         </Snackbar>
-      </Container>
-    </Box>
+      </GradientContainer>
+    </ThemeProvider>
   )
 }
 

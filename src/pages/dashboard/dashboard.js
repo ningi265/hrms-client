@@ -84,8 +84,10 @@ import TravelSection from '../../pages/dashboard/requisitions/manage/travel-dash
 import InternationalTravelRequestSection from '../../pages/dashboard/requisitions/manage/international';
 import FinanceReconciliationReviewSection from '../../pages/dashboard/requisitions/manage/finance-recon-review';
 import FleetCoordinatorSection from '../../pages/dashboard/requisitions/manage/fleet';
+import VendorsPage from '../../pages/dashboard/vendors/vendors';
 import { useAuth } from "../../authcontext/authcontext"; 
 import axios from 'axios';
+import AddVendorPage from "../../pages/dashboard/vendors/add/add";
 
 
 
@@ -522,6 +524,85 @@ const [stats, setStats] = useState({
       </StyledListItemButton>
 
       <StyledListItemButton
+        selected={activeSection === "rfqs"}
+        onClick={() => handleSectionChange("rfqs")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <People sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Employees" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.rfqs.counts.open} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "vendors"}
+        onClick={() => handleSectionChange("vendors")}
+        sx={{
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.08)',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+        }}
+      >
+        <ListItemIcon>
+          <People sx={{ fontSize: 20, color: 'text.secondary' }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Vendors" 
+          primaryTypographyProps={{ 
+            color: 'text.primary',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.rfqs.counts.open} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
+
+     
+      <StyledListItemButton
         selected={activeSection === "requisitions"}
         onClick={() => handleSectionChange("requisitions")}
         sx={{
@@ -559,7 +640,6 @@ const [stats, setStats] = useState({
           />
         </Box>
       </StyledListItemButton>
-
       <StyledListItemButton
         selected={activeSection === "rfqs"}
         onClick={() => handleSectionChange("rfqs")}
@@ -598,6 +678,7 @@ const [stats, setStats] = useState({
           />
         </Box>
       </StyledListItemButton>
+    
 
       <StyledListItemButton
         selected={activeSection === "purchase-orders"}
@@ -1631,6 +1712,7 @@ const [stats, setStats] = useState({
       {activeSection === "international-travel" && <InternationalTravelRequestSection/>}
       {activeSection === "recon-review" && <FinanceReconciliationReviewSection/>}
       {activeSection === "fleet-cordination" && <FleetCoordinatorSection/>}
+      {activeSection === "vendors" && <VendorsPage/>}
 
       {/* other sections */}
     </Box>

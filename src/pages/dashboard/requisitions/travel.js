@@ -9,7 +9,6 @@ import {
   CircularProgress,
   Snackbar,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   TableContainer,
@@ -23,6 +22,9 @@ import {
   Chip,
   Avatar,
   Alert as MuiAlert,
+  styled,
+  createTheme,
+  ThemeProvider,
 } from "@mui/material"
 import {
   Check,
@@ -34,6 +36,117 @@ import {
   CreditCard,
   Warning,
 } from "@mui/icons-material"
+import { motion } from "framer-motion"
+
+// Custom theme
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: "#4f46e5",
+    },
+    secondary: {
+      main: "#ec4899",
+    },
+    background: {
+      default: "#f9fafb",
+      paper: "#ffffff",
+    },
+    text: {
+      primary: "#111827",
+      secondary: "#6b7280",
+    },
+  },
+  typography: {
+    fontFamily: "'Inter', sans-serif",
+    h4: {
+      fontWeight: 700,
+      background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+    },
+    subtitle1: {
+      fontWeight: 400,
+      color: "#6b7280",
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: "8px",
+          textTransform: "none",
+          fontWeight: 500,
+          transition: "all 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          },
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          borderBottom: "1px solid #e5e7eb",
+        },
+        head: {
+          fontWeight: 600,
+          color: "#6b7280",
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: "12px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+          transition: "transform 0.3s ease",
+          "&:hover": {
+            transform: "translateY(-4px)",
+          },
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: "16px",
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
+          background: "#ffffff",
+        },
+      },
+    },
+    MuiSnackbar: {
+      styleOverrides: {
+        root: {
+          "& .MuiSnackbarContent-root": {
+            borderRadius: "8px",
+            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+          },
+        },
+      },
+    },
+  },
+});
+
+// Custom styled components
+const GradientContainer = styled(Container)(({ theme }) => ({
+  background: "linear-gradient(135deg, #f9fafb, #e5e7eb)",
+  borderRadius: "16px",
+  padding: theme.spacing(4),
+  minHeight: "100vh",
+  position: "relative",
+  overflow: "hidden",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "4px",
+    background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+  },
+}));
 
 // Snackbar Alert component
 const Alert = React.forwardRef(function Alert(props, ref) {
@@ -94,7 +207,6 @@ const SupervisorDashboard = () => {
   const navigate = useNavigate()
   const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:3000"
 
-  // Fetch all pending travel requests
   useEffect(() => {
     const fetchPendingRequests = async () => {
       try {
@@ -114,12 +226,8 @@ const SupervisorDashboard = () => {
         setIsPreviewMode(false)
       } catch (error) {
         console.error("Failed to fetch pending travel requests:", error)
-
-        // Use mock data for preview/development
         setTravelRequests(MOCK_TRAVEL_REQUESTS)
         setIsPreviewMode(true)
-
-        // Only show error in non-preview environments
         if (
           typeof window !== "undefined" &&
           window.location.hostname !== "localhost" &&
@@ -130,7 +238,6 @@ const SupervisorDashboard = () => {
           setSnackbarOpen(true)
         }
       } finally {
-        // Add a small delay to simulate network request
         setTimeout(() => {
           setIsLoading(false)
         }, 800)
@@ -140,7 +247,6 @@ const SupervisorDashboard = () => {
     fetchPendingRequests()
   }, [backendUrl])
 
-  // Handle Snackbar close
   const handleSnackbarClose = (event, reason) => {
     if (reason === "clickaway") {
       return
@@ -148,15 +254,10 @@ const SupervisorDashboard = () => {
     setSnackbarOpen(false)
   }
 
-  // Handle approval or rejection
   const handleDecision = async (id, decision) => {
     try {
-      // If in preview mode, just update the UI without making API calls
       if (isPreviewMode) {
-        // Update the UI by removing the approved/rejected request
         setTravelRequests((prev) => prev.filter((request) => request._id !== id))
-
-        // Show success message
         setSnackbarMessage(`Travel request ${decision} successfully! (Preview mode)`)
         setSnackbarSeverity("info")
         setSnackbarOpen(true)
@@ -176,51 +277,40 @@ const SupervisorDashboard = () => {
       })
 
       if (response.ok) {
-        // Update the UI by removing the approved/rejected request
         setTravelRequests((prev) => prev.filter((request) => request._id !== id))
-
-        // Show success message
         setSnackbarMessage(`Travel request ${decision} successfully!`)
         setSnackbarSeverity("success")
         setSnackbarOpen(true)
       } else {
         const errorData = await response.json()
-        console.error("Server Error:", errorData)
-
-        // Show error message
         setSnackbarMessage(errorData.message || "Failed to update travel request")
         setSnackbarSeverity("error")
         setSnackbarOpen(true)
       }
     } catch (error) {
-      console.error("Error updating approval:", error)
-
-      // Show error message
       setSnackbarMessage("An error occurred while updating the travel request")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
     }
   }
 
-  // Open confirmation dialog
   const openConfirmationDialog = (id, decision) => {
     setSelectedRequestId(id)
     setSelectedDecision(decision)
     setOpenConfirmation(true)
   }
 
-  // Close confirmation dialog
   const closeConfirmationDialog = () => {
     setOpenConfirmation(false)
+    setSelectedRequestId(null)
+    setSelectedDecision(null)
   }
 
-  // Confirm decision
   const confirmDecision = () => {
     handleDecision(selectedRequestId, selectedDecision)
     closeConfirmationDialog()
   }
 
-  // Format date string
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -232,222 +322,261 @@ const SupervisorDashboard = () => {
   if (isLoading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
-        <CircularProgress />
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <CircularProgress size={60} thickness={5} />
+        </motion.div>
       </Box>
     )
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      {isPreviewMode && (
-        <Alert severity="warning" sx={{ mb: 3 }} icon={<Warning />}>
-          Using mock data for preview. In production, this would connect to your backend API.
-        </Alert>
-      )}
+    <ThemeProvider theme={theme}>
+      <GradientContainer maxWidth="lg">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+          <Typography variant="h4" component="h1" mb={4}>
+            Supervisor Dashboard
+          </Typography>
+        </motion.div>
 
-      <Card
-        elevation={3}
-        sx={{
-          overflow: "hidden",
-          borderRadius: 2,
-          mb: 4,
-        }}
-      >
-        <Box
-          sx={{
-            background: "linear-gradient(135deg, #6a11cb 0%, #2575fc 100%)",
-            color: "white",
-            p: 3,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <Box>
-            <Typography variant="h5" fontWeight="bold">
-              Travel Requests
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-              Review and manage pending travel requests
-            </Typography>
-          </Box>
-          <Chip
-            label={`${travelRequests.length} Pending`}
-            sx={{
-              bgcolor: "rgba(255, 255, 255, 0.2)",
-              color: "white",
-              fontWeight: "medium",
-              border: "none",
-            }}
-          />
-        </Box>
-
-        {travelRequests.length === 0 ? (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              p: 6,
-              textAlign: "center",
-            }}
+        {isPreviewMode && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
           >
-            <Avatar
+            <Alert severity="warning" sx={{ mb: 3, borderRadius: "8px" }} icon={<Warning />}>
+              Using mock data for preview. In production, this would connect to your backend API.
+            </Alert>
+          </motion.div>
+        )}
+
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <Card>
+            <Box
               sx={{
-                bgcolor: "rgba(25, 118, 210, 0.1)",
-                color: "primary.main",
-                width: 56,
-                height: 56,
-                mb: 2,
+                background: "linear-gradient(135deg, #4f46e5, #ec4899)",
+                color: "white",
+                p: 3,
+                borderTopLeftRadius: "12px",
+                borderTopRightRadius: "12px",
               }}
             >
-              <InfoIcon fontSize="large" />
-            </Avatar>
-            <Typography variant="h6" gutterBottom>
-              No Pending Requests
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400 }}>
-              There are currently no travel requests waiting for your approval.
-            </Typography>
-          </Box>
-        ) : (
-          <TableContainer>
-            <Table sx={{ minWidth: 650 }}>
-              <TableHead>
-                <TableRow sx={{ bgcolor: "rgba(0, 0, 0, 0.03)" }}>
-                  <TableCell sx={{ fontWeight: "bold" }}>Employee</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Travel Period</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Location</TableCell>
-                  <TableCell sx={{ fontWeight: "bold" }}>Details</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                    Actions
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {travelRequests.map((request) => (
-                  <TableRow key={request._id} hover sx={{ "&:hover": { bgcolor: "rgba(0, 0, 0, 0.02)" } }}>
-                    <TableCell sx={{ fontWeight: "medium" }}>{request.employee.name}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <CalendarMonth fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          {formatDate(request.departureDate)}
-                          <Typography component="span" color="text.secondary" sx={{ mx: 0.5 }}>
-                            →
-                          </Typography>
-                          {formatDate(request.returnDate)}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <LocationOn fontSize="small" color="action" />
-                        <Typography variant="body2">{request.location}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <FlightTakeoff fontSize="small" color="action" />
-                          <Typography variant="body2">{request.meansOfTravel}</Typography>
-                        </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <CreditCard fontSize="small" color="action" />
-                          <Typography variant="body2">{request.fundingCodes}</Typography>
-                        </Box>
-                      </Box>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<Check />}
-                          onClick={() => openConfirmationDialog(request._id, "approved")}
-                          sx={{
-                            color: "success.main",
-                            borderColor: "success.light",
-                            "&:hover": {
-                              bgcolor: "success.lighter",
-                              borderColor: "success.main",
-                            },
-                          }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<Close />}
-                          onClick={() => openConfirmationDialog(request._id, "rejected")}
-                          sx={{
-                            color: "error.main",
-                            borderColor: "error.light",
-                            "&:hover": {
-                              bgcolor: "error.lighter",
-                              borderColor: "error.main",
-                            },
-                          }}
-                        >
-                          Reject
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-        <Box sx={{ bgcolor: "rgba(0, 0, 0, 0.02)", p: 2, borderTop: "1px solid rgba(0, 0, 0, 0.1)" }}>
-          <Typography variant="body2" color="text.secondary">
-            Showing all pending travel requests that require your approval.
-          </Typography>
-        </Box>
-      </Card>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="h5" fontWeight="bold">
+                    Travel Requests
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                    Review and manage pending travel requests
+                  </Typography>
+                </Box>
+                <Chip
+                  label={`${travelRequests.length} Pending`}
+                  sx={{
+                    bgcolor: "rgba(255, 255, 255, 0.2)",
+                    color: "white",
+                    fontWeight: "medium",
+                    border: "none",
+                    borderRadius: "8px",
+                  }}
+                />
+              </Box>
+            </Box>
 
-      {/* Confirmation Dialog */}
-      <Dialog open={openConfirmation} onClose={closeConfirmationDialog}>
-        <DialogTitle>Confirm Decision</DialogTitle>
-        <DialogContent>
-          <Typography>
-            Are you sure you want to mark this travel request as{" "}
-            <Typography
-              component="span"
-              fontWeight="bold"
-              color={selectedDecision === "approved" ? "success.main" : "error.main"}
-            >
-              {selectedDecision}
-            </Typography>
-            ? This action cannot be undone.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeConfirmationDialog}>Cancel</Button>
-          <Button
-            onClick={confirmDecision}
-            variant="contained"
-            color={selectedDecision === "approved" ? "success" : "error"}
+            {travelRequests.length === 0 ? (
+              <Box sx={{ p: 6, textAlign: "center" }}>
+                <Avatar
+                  sx={{
+                    bgcolor: "rgba(79, 70, 229, 0.1)",
+                    color: "primary.main",
+                    width: 56,
+                    height: 56,
+                    mb: 2,
+                    mx: "auto",
+                  }}
+                >
+                  <InfoIcon fontSize="large" />
+                </Avatar>
+                <Typography variant="h6" gutterBottom>
+                  No Pending Requests
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto" }}>
+                  There are currently no travel requests waiting for your approval.
+                </Typography>
+              </Box>
+            ) : (
+              <TableContainer>
+                <Table sx={{ minWidth: 650 }}>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: "#f3f4f6" }}>
+                      <TableCell>Employee</TableCell>
+                      <TableCell>Travel Period</TableCell>
+                      <TableCell>Location</TableCell>
+                      <TableCell>Details</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {travelRequests.map((request) => (
+                      <motion.tr
+                        key={request._id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3 }}
+                        whileHover={{ backgroundColor: "#f3f4f6" }}
+                      >
+                        <TableCell sx={{ fontWeight: 500 }}>{request.employee?.name || "N/A"}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <CalendarMonth fontSize="small" color="action" />
+                            <Typography variant="body2">
+                              {formatDate(request.departureDate)}
+                              <Typography component="span" color="text.secondary" sx={{ mx: 0.5 }}>
+                                →
+                              </Typography>
+                              {formatDate(request.returnDate)}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <LocationOn fontSize="small" color="action" />
+                            <Typography variant="body2">{request.location || "N/A"}</Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <FlightTakeoff fontSize="small" color="action" />
+                              <Typography variant="body2">{request.meansOfTravel || "N/A"}</Typography>
+                            </Box>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <CreditCard fontSize="small" color="action" />
+                              <Typography variant="body2">{request.fundingCodes || "N/A"}</Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<Check />}
+                              onClick={() => openConfirmationDialog(request._id, "approved")}
+                              sx={{
+                                bgcolor: "success.main",
+                                "&:hover": {
+                                  bgcolor: "success.dark",
+                                },
+                              }}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              variant="contained"
+                              size="small"
+                              startIcon={<Close />}
+                              onClick={() => openConfirmationDialog(request._id, "rejected")}
+                              sx={{
+                                bgcolor: "error.main",
+                                "&:hover": {
+                                  bgcolor: "error.dark",
+                                },
+                              }}
+                            >
+                              Reject
+                            </Button>
+                          </Box>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+            <Box sx={{ p: 2, bgcolor: "#f9fafb", borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px" }}>
+              <Typography variant="body2" color="text.secondary">
+                Showing all pending travel requests that require your approval.
+              </Typography>
+            </Box>
+          </Card>
+        </motion.div>
+
+        {/* Confirmation Dialog */}
+        <Dialog
+          open={openConfirmation}
+          onClose={closeConfirmationDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
           >
-            Confirm
-          </Button>
-        </DialogActions>
-      </Dialog>
+            <Box sx={{ p: 3, background: "linear-gradient(135deg, #f9fafb, #e5e7eb)" }}>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 700,
+                  background: "linear-gradient(90deg, #4f46e5, #ec4899)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  mb: 2,
+                }}
+              >
+                Confirm Decision
+              </Typography>
+              <DialogContent sx={{ p: 0 }}>
+                <Typography>
+                  Are you sure you want to mark this travel request as{" "}
+                  <Typography
+                    component="span"
+                    fontWeight="bold"
+                    color={selectedDecision === "approved" ? "success.main" : "error.main"}
+                  >
+                    {selectedDecision}
+                  </Typography>
+                  ? This action cannot be undone.
+                </Typography>
+              </DialogContent>
+              <DialogActions>
+                <Button
+                  onClick={closeConfirmationDialog}
+                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDecision}
+                  variant="contained"
+                  color={selectedDecision === "approved" ? "success" : "error"}
+                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                >
+                  Confirm
+                </Button>
+              </DialogActions>
+            </Box>
+          </motion.div>
+        </Dialog>
 
-      {/* Snackbar for Notifications */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
-    </Container>
+        {/* Snackbar for Notifications */}
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        >
+          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%", borderRadius: "8px" }}>
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
+      </GradientContainer>
+    </ThemeProvider>
   )
 }
 
