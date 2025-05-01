@@ -5,15 +5,12 @@ import { useNavigate } from "react-router-dom"
 import { format } from "date-fns"
 import { jsPDF } from "jspdf"
 import {
-  ArrowBack,
-  Notifications,
   CalendarToday,
   Check,
   AccessTime,
   Description,
   FilterList,
   Language,
-  Info,
   MoreHoriz,
   Flight,
   Send,
@@ -45,61 +42,35 @@ import {
   Checkbox,
   Switch,
   TextField,
-  Divider,
   Box,
   Paper,
   IconButton,
   Dialog,
   DialogContent,
   DialogActions,
-  Badge as MuiBadge,
   styled,
   createTheme,
   ThemeProvider,
-  Snackbar, // Added to fix potential missing import error
+  Snackbar,
   CircularProgress,
 } from "@mui/material"
 import { motion } from "framer-motion"
 
-// Custom theme for consistent styling
+// Custom theme for modern styling
 const theme = createTheme({
   palette: {
-    primary: {
-      main: "#4f46e5",
-    },
-    secondary: {
-      main: "#ec4899",
-    },
-    background: {
-      default: "#f9fafb",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#111827",
-      secondary: "#6b7280",
-    },
+    primary: { main: "#4f46e5" },
+    secondary: { main: "#ec4899" },
+    background: { default: "#f9fafb", paper: "#ffffff" },
+    text: { primary: "#111827", secondary: "#6b7280" },
+    success: { main: "#22c55e", light: "#86efac" },
+    info: { main: "#3b82f6", light: "#bfdbfe" },
+    warning: { main: "#f59e0b", light: "#fde68a" },
   },
   typography: {
     fontFamily: "'Inter', sans-serif",
-    h4: {
-      fontWeight: 700,
-      background: "linear-gradient(90deg, #4f46e5, #ec4899)",
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-    },
-    h5: {
-      fontWeight: 700,
-      background: "linear-gradient(90deg, #4f46e5, #ec4899)",
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-    },
-    h6: {
-      fontWeight: 600,
-    },
-    subtitle1: {
-      fontWeight: 400,
-      color: "#6b7280",
-    },
+    h6: { fontWeight: 600 },
+    body2: { fontSize: "0.875rem" },
   },
   components: {
     MuiButton: {
@@ -120,11 +91,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: "12px",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)",
           transition: "transform 0.3s ease",
-          "&:hover": {
-            transform: "translateY(-4px)",
-          },
+          "&:hover": { transform: "translateY(-4px)" },
         },
       },
     },
@@ -137,43 +106,15 @@ const theme = createTheme({
         },
       },
     },
-    MuiSnackbar: {
+    MuiTextField: {
       styleOverrides: {
-        root: {
-          "& .MuiSnackbarContent-root": {
-            borderRadius: "8px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-          },
-        },
-      },
-    },
-    MuiTabs: {
-      styleOverrides: {
-        root: {
-          borderBottom: "1px solid #e5e7eb",
-        },
-        indicator: {
-          backgroundColor: "#4f46e5",
-          height: 3,
-        },
-      },
-    },
-    MuiTab: {
-      styleOverrides: {
-        root: {
-          textTransform: "none",
-          fontWeight: 500,
-          fontSize: "0.95rem",
-          "&.Mui-selected": {
-            color: "#4f46e5",
-          },
-        },
+        root: { "& .MuiOutlinedInput-root": { borderRadius: "8px" } },
       },
     },
   },
 })
 
-// Custom styled container
+// Styled container with gradient background
 const GradientContainer = styled(Box)(({ theme }) => ({
   background: "linear-gradient(135deg, #f9fafb, #e5e7eb)",
   borderRadius: "16px",
@@ -199,7 +140,6 @@ export default function FleetCoordinator() {
   const [selectedDriver, setSelectedDriver] = useState(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
-  const [error, setError] = useState()
   const [showDrivers, setShowDrivers] = useState(false)
   const [showTicketBooking, setShowTicketBooking] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
@@ -236,7 +176,6 @@ export default function FleetCoordinator() {
         const date = new Date(dateString)
         return isNaN(date.getTime()) ? new Date() : date
       }
-
       return {
         id: request._id || request.id || "",
         employeeName: request.employee?.name || "Unknown",
@@ -285,15 +224,9 @@ export default function FleetCoordinator() {
       try {
         const token = localStorage.getItem("token")
         const response = await fetch(`${backendUrl}/api/auth/drivers`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         })
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch drivers")
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch drivers")
         const data = await response.json()
         setDrivers(data)
       } catch (error) {
@@ -303,7 +236,6 @@ export default function FleetCoordinator() {
         setSnackbarOpen(true)
       }
     }
-
     fetchDrivers()
   }, [backendUrl])
 
@@ -313,15 +245,9 @@ export default function FleetCoordinator() {
       try {
         const token = localStorage.getItem("token")
         const response = await fetch(`${backendUrl}/api/travel-requests/finance/pending`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         })
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch pending travel requests")
-        }
-
+        if (!response.ok) throw new Error("Failed to fetch pending travel requests")
         const data = await response.json()
         const transformedRequests = transformRequestData(data)
         setTravelRequests(transformedRequests)
@@ -334,7 +260,6 @@ export default function FleetCoordinator() {
         setIsLoading(false)
       }
     }
-
     fetchTravelRequests()
   }, [backendUrl])
 
@@ -343,15 +268,12 @@ export default function FleetCoordinator() {
     const id = request.id || ""
     const country = request.country || ""
     const city = request.city || ""
-
     const matchesSearch =
       employeeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       country.toLowerCase().includes(searchQuery.toLowerCase()) ||
       city.toLowerCase().includes(searchQuery.toLowerCase())
-
     const matchesStatus = filterStatus === "all" || request.status === filterStatus
-
     return matchesSearch && matchesStatus
   })
 
@@ -363,53 +285,40 @@ export default function FleetCoordinator() {
 
   const generateAndDownloadItinerary = () => {
     if (!selectedRequest) return
-
     try {
       const doc = new jsPDF()
-      doc.setFont("Inter", "bold")
       doc.setFontSize(18)
       doc.setTextColor(79, 70, 229)
       doc.text(`Travel Itinerary - ${selectedRequest.id}`, 105, 20, { align: "center" })
-
       doc.setFontSize(14)
       doc.setTextColor(0, 0, 0)
       doc.text("Employee Information", 20, 40)
-      doc.setFont("Inter", "normal")
       doc.setFontSize(12)
       doc.text(`Name: ${selectedRequest.employeeName}`, 20, 50)
       doc.text(`Department: ${selectedRequest.department}`, 20, 60)
       doc.text(`Email: ${selectedRequest.email}`, 20, 70)
-
-      doc.setFont("Inter", "bold")
       doc.setFontSize(14)
       doc.text("Travel Details", 20, 90)
-      doc.setFont("Inter", "normal")
       doc.setFontSize(12)
       doc.text(`Purpose: ${selectedRequest.purpose}`, 20, 100)
       doc.text(`Destination: ${selectedRequest.city}, ${selectedRequest.country}`, 20, 110)
       doc.text(`Departure: ${format(selectedRequest.departureDate, "MMM d, yyyy")}`, 20, 120)
       doc.text(`Return: ${format(selectedRequest.returnDate, "MMM d, yyyy")}`, 20, 130)
       doc.text(
-        `Duration: ${Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1
-        } days`,
+        `Duration: ${Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1} days`,
         20,
-        140,
+        140
       )
-
       if (selectedRequest.fleetNotification) {
-        doc.setFont("Inter", "bold")
         doc.setFontSize(14)
         doc.text("Travel Arrangements", 20, 160)
-        doc.setFont("Inter", "normal")
         doc.setFontSize(12)
-
         if (selectedRequest.requiresFlight && bookingDetails.airline) {
           doc.text(`Flight: ${bookingDetails.airline} ${bookingDetails.flightNumber}`, 20, 170)
           doc.text(`Departure: ${bookingDetails.departureTime}`, 20, 180)
           doc.text(`Arrival: ${bookingDetails.arrivalTime}`, 20, 190)
           doc.text(`Class: ${bookingDetails.ticketClass}`, 20, 200)
         }
-
         if (selectedDriver) {
           doc.text(`Assigned Driver: ${selectedDriver.name}`, 20, selectedRequest.requiresFlight ? 210 : 170)
           if (selectedDriver.phone) {
@@ -417,12 +326,10 @@ export default function FleetCoordinator() {
           }
         }
       }
-
       doc.setFontSize(10)
       doc.setTextColor(100)
       doc.text("Generated by HRMS Travel System", 105, 280, { align: "center" })
       doc.text(format(new Date(), "MMM d, yyyy h:mm a"), 105, 285, { align: "center" })
-
       doc.save(`itinerary-${selectedRequest.id}.pdf`)
     } catch (error) {
       console.error("Error generating PDF:", error)
@@ -447,32 +354,23 @@ export default function FleetCoordinator() {
     try {
       setIsProcessing(true)
       const token = localStorage.getItem("token")
-
       const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/assign-driver`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          driverId: selectedDriver._id,
-        }),
+        body: JSON.stringify({ driverId: selectedDriver._id }),
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to assign driver")
-      }
-
+      if (!response.ok) throw new Error("Failed to assign driver")
       const data = await response.json()
       const updatedRequest = transformRequestData([data.travelRequest])[0]
-
       setSelectedRequest(updatedRequest)
       setTravelRequests((prevRequests) =>
-        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req)),
+        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
       )
       setShowDrivers(false)
       setShowNotification(true)
-
       setSnackbarMessage(data.message || "Driver assigned successfully")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
@@ -490,7 +388,6 @@ export default function FleetCoordinator() {
     try {
       setIsProcessing(true)
       const token = localStorage.getItem("token")
-
       const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/process`, {
         method: "PUT",
         headers: {
@@ -499,23 +396,17 @@ export default function FleetCoordinator() {
         },
         body: JSON.stringify({ status: "in-progress" }),
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to process request")
-      }
-
+      if (!response.ok) throw new Error("Failed to process request")
       const updatedRequest = { ...selectedRequest, status: "in-progress" }
       setSelectedRequest(updatedRequest)
       setTravelRequests((prevRequests) =>
-        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req)),
+        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
       )
-
       if (updatedRequest.requiresFlight) {
         setShowTicketBooking(true)
       } else {
         setShowNotification(true)
       }
-
       setSnackbarMessage("Request processing started")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
@@ -533,7 +424,6 @@ export default function FleetCoordinator() {
     try {
       setIsBookingTicket(true)
       const token = localStorage.getItem("token")
-
       const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/book-flight`, {
         method: "POST",
         headers: {
@@ -542,20 +432,14 @@ export default function FleetCoordinator() {
         },
         body: JSON.stringify(bookingDetails),
       })
-
-      if (!response.ok) {
-        throw new Error("Failed to book flight")
-      }
-
+      if (!response.ok) throw new Error("Failed to book flight")
       setShowTicketBooking(false)
       setShowNotification(true)
-
       setNotificationDetails({
         ...notificationDetails,
         subject: `Travel Details for ${selectedRequest.id}`,
         message: `Dear ${selectedRequest.employeeName},\n\nYour travel to ${selectedRequest.city}, ${selectedRequest.country} has been arranged. Flight details: ${bookingDetails.airline} ${bookingDetails.flightNumber}, departing at ${bookingDetails.departureTime}.\n\n${selectedDriver ? `A driver (${selectedDriver.name}) has been assigned to assist you during your trip.` : "No driver has been assigned for this trip."}\n\nPlease contact the travel department if you have any questions.`,
       })
-
       setSnackbarMessage("Flight booked successfully")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
@@ -573,7 +457,6 @@ export default function FleetCoordinator() {
     try {
       setIsSendingNotification(true)
       const token = localStorage.getItem("token")
-
       const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/send-notifications`, {
         method: "POST",
         headers: {
@@ -582,13 +465,8 @@ export default function FleetCoordinator() {
         },
         body: JSON.stringify(notificationDetails),
       })
-
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to send notifications")
-      }
-
+      if (!response.ok) throw new Error(data.message || "Failed to send notifications")
       const updatedRequest = {
         ...selectedRequest,
         status: "completed",
@@ -602,13 +480,11 @@ export default function FleetCoordinator() {
           sentBy: "currentUserId",
         },
       }
-
       setSelectedRequest(updatedRequest)
       setTravelRequests((prevRequests) =>
-        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req)),
+        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
       )
       setShowNotification(false)
-
       setSnackbarMessage("Notifications sent successfully")
       setSnackbarSeverity("success")
       setSnackbarOpen(true)
@@ -670,7 +546,7 @@ export default function FleetCoordinator() {
             <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
               <LocalShipping />
             </Avatar>
-            <Typography variant="h4" component="h1">
+            <Typography variant="h6" component="h1">
               Fleet Coordinator & Air Ticket Booking
             </Typography>
           </Box>
@@ -710,12 +586,13 @@ export default function FleetCoordinator() {
                   startAdornment: <Search fontSize="small" sx={{ mr: 1, color: "text.disabled" }} />,
                   sx: { borderRadius: "8px" },
                 }}
+                aria-label="Search travel requests"
               />
 
               <Tabs
                 value={activeTab}
                 onChange={(e, newValue) => setActiveTab(newValue)}
-                sx={{ mb: 2 }}
+                sx={{ mb: 2, "& .MuiTabs-indicator": { backgroundColor: "primary.main", height: 3 } }}
                 variant="fullWidth"
               >
                 <Tab label="Pending" value="pending" />
@@ -725,7 +602,7 @@ export default function FleetCoordinator() {
               {activeTab === "pending" && (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {filteredRequests.filter(
-                    (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver,
+                    (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
                   ).length === 0 ? (
                     <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
                       No pending requests found
@@ -733,8 +610,7 @@ export default function FleetCoordinator() {
                   ) : (
                     filteredRequests
                       .filter(
-                        (request) =>
-                          (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver,
+                        (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
                       )
                       .map((request) => (
                         <motion.div
@@ -747,10 +623,10 @@ export default function FleetCoordinator() {
                             onClick={() => handleSelectRequest(request)}
                             sx={{
                               cursor: "pointer",
-                              border:
-                                selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
+                              border: selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
                               borderColor: selectedRequest?.id === request.id ? "primary.main" : "divider",
                             }}
+                            aria-label={`Select request for ${request.employeeName}`}
                           >
                             <CardContent>
                               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
@@ -771,8 +647,7 @@ export default function FleetCoordinator() {
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 <CalendarToday fontSize="small" sx={{ color: "text.disabled" }} />
                                 <Typography variant="body2">
-                                  {format(request.departureDate, "MMM d")} -{" "}
-                                  {format(request.returnDate, "MMM d, yyyy")}
+                                  {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
                                 </Typography>
                               </Box>
                               <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
@@ -806,8 +681,8 @@ export default function FleetCoordinator() {
 
               {activeTab === "completed" && (
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent)
-                    .length === 0 ? (
+                  {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent).length ===
+                  0 ? (
                     <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
                       No completed requests found
                     </Typography>
@@ -825,10 +700,10 @@ export default function FleetCoordinator() {
                             onClick={() => handleSelectRequest(request)}
                             sx={{
                               cursor: "pointer",
-                              border:
-                                selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
+                              border: selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
                               borderColor: selectedRequest?.id === request.id ? "primary.main" : "divider",
                             }}
+                            aria-label={`Select request for ${request.employeeName}`}
                           >
                             <CardContent>
                               <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
@@ -849,8 +724,7 @@ export default function FleetCoordinator() {
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 <CalendarToday fontSize="small" sx={{ color: "text.disabled" }} />
                                 <Typography variant="body2">
-                                  {format(request.departureDate, "MMM d")} -{" "}
-                                  {format(request.returnDate, "MMM d, yyyy")}
+                                  {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
                                 </Typography>
                               </Box>
                               <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
@@ -906,7 +780,7 @@ export default function FleetCoordinator() {
                         </Box>
                       }
                       action={
-                        <IconButton>
+                        <IconButton aria-label="More options">
                           <MoreHoriz />
                         </IconButton>
                       }
@@ -945,7 +819,7 @@ export default function FleetCoordinator() {
                                   label={`${
                                     Math.ceil(
                                       (selectedRequest.returnDate - selectedRequest.departureDate) /
-                                        (1000 * 60 * 60 * 24),
+                                        (1000 * 60 * 60 * 24)
                                     ) + 1
                                   } days`}
                                   size="small"
@@ -1035,6 +909,7 @@ export default function FleetCoordinator() {
                             variant="outlined"
                             onClick={() => navigate("/travel-dashboard")}
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Back to dashboard"
                           >
                             Back to Dashboard
                           </Button>
@@ -1045,6 +920,7 @@ export default function FleetCoordinator() {
                                 onClick={() => setShowDrivers(true)}
                                 startIcon={<People />}
                                 sx={{ borderRadius: "8px", borderColor: "info.main", color: "info.dark" }}
+                                aria-label="Assign driver"
                               >
                                 Assign Driver
                               </Button>
@@ -1054,6 +930,7 @@ export default function FleetCoordinator() {
                               onClick={handleProcessRequest}
                               disabled={isProcessing}
                               sx={{ borderRadius: "8px" }}
+                              aria-label="Process request"
                             >
                               {isProcessing ? (
                                 <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -1077,6 +954,7 @@ export default function FleetCoordinator() {
                             variant="outlined"
                             onClick={() => navigate("/travel-dashboard")}
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Back to dashboard"
                           >
                             Back to Dashboard
                           </Button>
@@ -1087,6 +965,7 @@ export default function FleetCoordinator() {
                                 onClick={() => setShowTicketBooking(true)}
                                 startIcon={<Flight />}
                                 sx={{ borderRadius: "8px" }}
+                                aria-label="Book flight"
                               >
                                 Book Flight
                               </Button>
@@ -1097,6 +976,7 @@ export default function FleetCoordinator() {
                                 onClick={() => setShowNotification(true)}
                                 startIcon={<Send />}
                                 sx={{ borderRadius: "8px" }}
+                                aria-label="Send notifications"
                               >
                                 Send Notifications
                               </Button>
@@ -1111,6 +991,7 @@ export default function FleetCoordinator() {
                             variant="outlined"
                             onClick={() => navigate("/travel-dashboard")}
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Back to dashboard"
                           >
                             Back to Dashboard
                           </Button>
@@ -1119,6 +1000,7 @@ export default function FleetCoordinator() {
                             startIcon={<Description />}
                             onClick={generateAndDownloadItinerary}
                             sx={{ borderRadius: "8px", borderColor: "success.main", color: "success.dark" }}
+                            aria-label="View itinerary"
                           >
                             View Itinerary
                           </Button>
@@ -1140,9 +1022,7 @@ export default function FleetCoordinator() {
                             <People />
                           </Avatar>
                           <Box>
-                            <Typography variant="h5">
-                              Assign Driver
-                            </Typography>
+                            <Typography variant="h6">Assign Driver</Typography>
                             <Typography variant="body2" color="text.secondary">
                               Select a driver for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
                             </Typography>
@@ -1157,6 +1037,7 @@ export default function FleetCoordinator() {
                                 startAdornment: <Search fontSize="small" sx={{ mr: 1, color: "text.disabled" }} />,
                                 sx: { borderRadius: "8px" },
                               }}
+                              aria-label="Search drivers"
                             />
                           </Box>
 
@@ -1185,6 +1066,7 @@ export default function FleetCoordinator() {
                                     },
                                     borderRadius: "8px",
                                   }}
+                                  aria-label={`Select driver ${driver.name}`}
                                 >
                                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                                     <Avatar src={driver.photo} alt={driver.name}>
@@ -1226,6 +1108,7 @@ export default function FleetCoordinator() {
                             variant="outlined"
                             onClick={() => setShowDrivers(false)}
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Cancel driver assignment"
                           >
                             Cancel
                           </Button>
@@ -1234,6 +1117,7 @@ export default function FleetCoordinator() {
                             disabled={!selectedDriver || isProcessing}
                             onClick={handleAssignDriver}
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Confirm driver assignment"
                           >
                             {isProcessing ? (
                               <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -1262,10 +1146,8 @@ export default function FleetCoordinator() {
                             <Flight />
                           </Avatar>
                           <Box>
-                            <Typography variant="h5">
-                              Air Ticket Booking
-                            </Typography>
-                            <Typography variant="bodylls
+                            <Typography variant="h6">Air Ticket Booking</Typography>
+                            <Typography variant="body2" color="text.secondary">
                               Book flight for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city},{" "}
                               {selectedRequest?.country}
                             </Typography>
@@ -1280,6 +1162,7 @@ export default function FleetCoordinator() {
                                   onChange={(e) => setBookingDetails({ ...bookingDetails, airline: e.target.value })}
                                   displayEmpty
                                   sx={{ borderRadius: "8px" }}
+                                  aria-label="Select airline"
                                 >
                                   <MenuItem value="" disabled>
                                     Select Airline
@@ -1298,6 +1181,7 @@ export default function FleetCoordinator() {
                                 onChange={(e) => setBookingDetails({ ...bookingDetails, flightNumber: e.target.value })}
                                 fullWidth
                                 sx={{ borderRadius: "8px" }}
+                                aria-label="Flight number"
                               />
                               <FormControl>
                                 <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -1315,8 +1199,7 @@ export default function FleetCoordinator() {
                                       p: 2,
                                       flex: 1,
                                       border: "1px solid",
-                                      borderColor:
-                                        bookingDetails.ticketClass === "economy" ? "primary.main" : "divider",
+                                      borderColor: bookingDetails.ticketClass === "economy" ? "primary.main" : "divider",
                                       borderRadius: "8px",
                                     }}
                                   >
@@ -1333,8 +1216,7 @@ export default function FleetCoordinator() {
                                       p: 2,
                                       flex: 1,
                                       border: "1px solid",
-                                      borderColor:
-                                        bookingDetails.ticketClass === "business" ? "primary.main" : "divider",
+                                      borderColor: bookingDetails.ticketClass === "business" ? "primary.main" : "divider",
                                       borderRadius: "8px",
                                     }}
                                   >
@@ -1374,6 +1256,7 @@ export default function FleetCoordinator() {
                                 onChange={(e) => setBookingDetails({ ...bookingDetails, departureTime: e.target.value })}
                                 fullWidth
                                 sx={{ borderRadius: "8px" }}
+                                aria-label="Departure time"
                               />
                               <TextField
                                 label="Arrival Time"
@@ -1383,6 +1266,7 @@ export default function FleetCoordinator() {
                                 onChange={(e) => setBookingDetails({ ...bookingDetails, arrivalTime: e.target.value })}
                                 fullWidth
                                 sx={{ borderRadius: "8px" }}
+                                aria-label="Arrival time"
                               />
                               <TextField
                                 label="Ticket Price"
@@ -1395,6 +1279,7 @@ export default function FleetCoordinator() {
                                 }}
                                 fullWidth
                                 sx={{ borderRadius: "8px" }}
+                                aria-label="Ticket price"
                               />
                             </Box>
                           </Box>
@@ -1402,11 +1287,12 @@ export default function FleetCoordinator() {
                             label="Additional Notes"
                             placeholder="Any special requirements or notes for the booking"
                             multiline
-                            rows={4} // Fixed: Changed from rows=4 to rows={4}
+                            rows={4}
                             value={bookingDetails.notes}
                             onChange={(e) => setBookingDetails({ ...bookingDetails, notes: e.target.value })}
                             fullWidth
                             sx={{ mt: 3, borderRadius: "8px" }}
+                            aria-label="Additional notes"
                           />
                         </DialogContent>
                         <DialogActions sx={{ p: 2, bgcolor: "#f9fafb" }}>
@@ -1414,6 +1300,7 @@ export default function FleetCoordinator() {
                             variant="outlined"
                             onClick={() => setShowTicketBooking(false)}
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Cancel flight booking"
                           >
                             Cancel
                           </Button>
@@ -1428,6 +1315,7 @@ export default function FleetCoordinator() {
                               !bookingDetails.departureTime
                             }
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Confirm flight booking"
                           >
                             {isBookingTicket ? (
                               <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -1459,9 +1347,7 @@ export default function FleetCoordinator() {
                             <Send />
                           </Avatar>
                           <Box>
-                            <Typography variant="h5">
-                              Send Notifications
-                            </Typography>
+                            <Typography variant="h6">Send Notifications</Typography>
                             <Typography variant="body2" color="text.secondary">
                               Notify relevant parties about the travel arrangements
                             </Typography>
@@ -1548,16 +1434,18 @@ export default function FleetCoordinator() {
                               onChange={(e) => setNotificationDetails({ ...notificationDetails, subject: e.target.value })}
                               fullWidth
                               sx={{ borderRadius: "8px" }}
+                              aria-label="Notification subject"
                             />
                             <TextField
                               label="Message"
                               placeholder="Enter notification message"
                               multiline
-                              rows={6} // Fixed: Changed from rows=6 to rows={6}
+                              rows={6}
                               value={notificationDetails.message}
                               onChange={(e) => setNotificationDetails({ ...notificationDetails, message: e.target.value })}
                               fullWidth
                               sx={{ borderRadius: "8px" }}
+                              aria-label="Notification message"
                             />
                             <FormControlLabel
                               control={
@@ -1580,6 +1468,7 @@ export default function FleetCoordinator() {
                             variant="outlined"
                             onClick={() => setShowNotification(false)}
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Cancel notification"
                           >
                             Cancel
                           </Button>
@@ -1594,6 +1483,7 @@ export default function FleetCoordinator() {
                               !notificationDetails.message
                             }
                             sx={{ borderRadius: "8px" }}
+                            aria-label="Send notifications"
                           >
                             {isSendingNotification ? (
                               <Box sx={{ display: "flex", alignItems: "center" }}>
