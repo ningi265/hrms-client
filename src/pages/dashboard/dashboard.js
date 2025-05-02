@@ -59,6 +59,7 @@ import {
   styled,
   alpha,
 } from "@mui/material";
+import { motion } from 'framer-motion';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
 import PurchaseOrdersSection  from '../../pages/dashboard/purchase-orders/purchase-order';
@@ -99,10 +100,11 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
   "& .MuiDrawer-paper": {
     width: 290,
     boxSizing: "border-box",
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: '#292929 ', // Dark background
     borderRight: `1px solid ${theme.palette.divider}`,
     backgroundImage: 'none',
     boxShadow: 'none',
+    color: '#ffffff', // White text
   },
 }));
 
@@ -111,11 +113,13 @@ const SidebarHeader = styled("div")(({ theme }) => ({
   alignItems: "center",
   padding: theme.spacing(2, 1.5),
   ...theme.mixins.toolbar,
+  backgroundColor: '#292929 ', // Dark background
+  color: '#ffffff', // White text
 }));
 
 const SidebarGroupLabel = styled(Typography)(({ theme }) => ({
   padding: theme.spacing(1.5, 2, 1),
-  color: theme.palette.text.secondary,
+  color: 'rgba(255, 255, 255, 0.7)', // Lighter white for secondary text
   fontSize: "0.75rem",
   fontWeight: 600,
   textTransform: "uppercase",
@@ -438,16 +442,19 @@ const [stats, setStats] = useState({
     }}>
       {/* Sidebar */}
     <Sidebar variant="permanent" open sx={{
-  backgroundColor: '#0f172a',
-  borderRight: '1px solid #e0e0e0',
-  width: 290
+  backgroundColor: '#121212',
+  borderRight:'1px solid rgba(255, 255, 255, 0.12)',
+  width: 290,
+  color: '#ffffff'
+
 }}>
   {/* Fixed Header */}
   <Box sx={{
     position: 'sticky',
     top: 0,
     zIndex: 1200,
-    backgroundColor: '#ffffff',
+    backgroundColor: '#292929 ',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
     height: 64,
     display: 'flex',
     alignItems: 'center'
@@ -459,23 +466,15 @@ const [stats, setStats] = useState({
         px: 2,
         width: '100%'
       }}>
-        <Box
-          sx={{
-            display: "flex",
-            height: 36,
-            width: 36,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 1,
-            backgroundColor: '#1976d2',
-            color: "#ffffff"
-          }}
-        >
-          <Layers sx={{ fontSize: 20 }} />
-        </Box>
+        <div className="inline-flex items-center">
+    <img
+      src="/Logo.png"
+      className="h-16 w-auto mx-auto"  // Increased the height to 64
+    />
+  </div>
         <Typography variant="subtitle1" sx={{ 
           fontWeight: 600, 
-          color: "text.primary"
+          color: "#ffffff"
         }}>
           HRMS
         </Typography>
@@ -497,26 +496,28 @@ const [stats, setStats] = useState({
 
     {/* Main Section */}
     <List>
-      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>Main</SidebarGroupLabel>
+      <SidebarGroupLabel sx={{  color: 'inherit', }}>Main</SidebarGroupLabel>
       
       <StyledListItemButton
         selected={activeSection === "dashboard"}
         onClick={() => handleSectionChange("dashboard")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <Home sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <Home sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Dashboard" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -527,20 +528,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "rfqs"}
         onClick={() => handleSectionChange("rfqs")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <People sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <People sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Employees" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -566,20 +569,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "vendors"}
         onClick={() => handleSectionChange("vendors")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <People sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <People sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Vendors" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -606,20 +611,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "requisitions"}
         onClick={() => handleSectionChange("requisitions")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <ShoppingCart sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <ShoppingCart sx={{ fontSize: 20,  color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Requisitions" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -644,20 +651,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "rfqs"}
         onClick={() => handleSectionChange("rfqs")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <People sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <People sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="RFQs" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -684,20 +693,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "purchase-orders"}
         onClick={() => handleSectionChange("purchase-orders")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <Inventory sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <Inventory sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Purchase Orders" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -723,20 +734,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "invoices"}
         onClick={() => handleSectionChange("invoices")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <CreditCard sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <CreditCard sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Invoices" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -759,30 +772,32 @@ const [stats, setStats] = useState({
       </StyledListItemButton>
     </List>
 
-    <Divider sx={{ borderColor: '#e0e0e0' }} />
+    <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
 
     {/* Travel Management Section */}
     <List>
-      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>Travel Management</SidebarGroupLabel>
+      <SidebarGroupLabel sx={{  color: 'inherit', }}>Travel Management</SidebarGroupLabel>
       
       <StyledListItemButton
         selected={activeSection === "travel-requests"}
         onClick={() => handleSectionChange("travel-requests")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <CalendarToday sx={{ fontSize: 20,  color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Travel Requests" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -793,20 +808,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "final-approval"}
         onClick={() => handleSectionChange("final-approval")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <CalendarToday sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <CalendarToday sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Final Approval" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -817,20 +834,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "fleet-management"}
         onClick={() => handleSectionChange("fleet-management")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <LocalShipping sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <LocalShipping sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Fleet Management" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -838,30 +857,32 @@ const [stats, setStats] = useState({
       </StyledListItemButton>
     </List>
 
-    <Divider sx={{ borderColor: '#e0e0e0' }} />
+    <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
 
     {/* Finance Processing Section */}
     <List>
-      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>FINANCE PROCESSING</SidebarGroupLabel>
+      <SidebarGroupLabel sx={{  color: 'inherit', }}>FINANCE PROCESSING</SidebarGroupLabel>
       
       <StyledListItemButton
         selected={activeSection === "finance-processing"}
         onClick={() => handleSectionChange("finance-processing")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <CreditCard sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <CreditCard sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Processing" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -872,20 +893,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "reconciliation"}
         onClick={() => handleSectionChange("reconciliation")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <Description sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <Description sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Reconciliation" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -893,30 +916,32 @@ const [stats, setStats] = useState({
       </StyledListItemButton>
     </List>
 
-    <Divider sx={{ borderColor: '#e0e0e0' }} />
+    <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
 
     {/* Reports Section */}
     <List>
-      <SidebarGroupLabel sx={{ color: 'text.secondary' }}>Reports</SidebarGroupLabel>
+      <SidebarGroupLabel sx={{  color: 'inherit', }}>Reports</SidebarGroupLabel>
       
       <StyledListItemButton
         selected={activeSection === "analytics"}
         onClick={() => setActiveSection("analytics")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <BarChart sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <BarChart sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Analytics" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -927,20 +952,22 @@ const [stats, setStats] = useState({
         selected={activeSection === "reports"}
         onClick={() => setActiveSection("reports")}
         sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
           '&.Mui-selected': { 
-            backgroundColor: 'rgba(25, 118, 210, 0.08)',
-            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
           },
-          '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
         }}
       >
         <ListItemIcon>
-          <PieChart sx={{ fontSize: 20, color: 'text.secondary' }} />
+          <PieChart sx={{ fontSize: 20,   color: '#f9f9f9', }} />
         </ListItemIcon>
         <ListItemText 
           primary="Reports" 
           primaryTypographyProps={{ 
-            color: 'text.primary',
+            color: 'inherit',
             fontSize: '0.875rem',
             fontWeight: 500
           }} 
@@ -950,7 +977,7 @@ const [stats, setStats] = useState({
 
     {/* Settings & Logout Section */}
     <Box sx={{ mt: 'auto' }}>
-      <Divider sx={{ borderColor: '#e0e0e0' }} />
+    <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.12)' }} />
       <List>
         <StyledListItemButton 
           onClick={() => navigate("/settings")}
@@ -959,12 +986,12 @@ const [stats, setStats] = useState({
           }}
         >
           <ListItemIcon>
-            <Settings sx={{ fontSize: 20, color: 'text.secondary' }} />
+            <Settings sx={{ fontSize: 20,   color: '#f9f9f9', }} />
           </ListItemIcon>
           <ListItemText 
             primary="Settings" 
             primaryTypographyProps={{ 
-              color: 'text.primary',
+              color: 'inherit',
               fontSize: '0.875rem',
               fontWeight: 500
             }} 
@@ -978,12 +1005,12 @@ const [stats, setStats] = useState({
           }}
         >
           <ListItemIcon>
-            <ExitToApp sx={{ fontSize: 20, color: 'text.secondary' }} />
+            <ExitToApp sx={{ fontSize: 20,   color: '#f9f9f9', }} />
           </ListItemIcon>
           <ListItemText 
             primary="Logout" 
             primaryTypographyProps={{ 
-              color: 'text.primary',
+              color: 'inherit',
               fontSize: '0.875rem',
               fontWeight: 500
             }} 
@@ -1340,284 +1367,435 @@ const [stats, setStats] = useState({
               mb: 4
             }}>
               {/* Procurement Status */}
-              <Card sx={{ 
-  borderRadius: 3,
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
-  border: '1px solid rgba(0, 0, 0, 0.05)',
-  transition: 'transform 0.2s, box-shadow 0.2s',
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 6px 16px rgba(0, 0, 0, 0.12)'
-  }
-}}>
-  <CardHeader
-    title="Procurement Status"
-    subheader="Current status of procurement activities"
-    titleTypographyProps={{ 
-      variant: 'h6', 
-      fontWeight: 700,
-      color: 'text.primary',
-      letterSpacing: 0.5
-    }}
-    subheaderTypographyProps={{ 
-      variant: 'body2',
-      color: 'text.secondary'
-    }}
-    sx={{
-      borderBottom: '1px solid',
-      borderColor: 'divider',
-      backgroundColor: 'rgba(250, 250, 252, 0.5)',
-      backdropFilter: 'blur(8px)'
-    }}
-  />
-  <CardContent sx={{ p: 3 }}>
-    <div className="flex flex-col gap-6">
-      {/* PieChart section - full width */}
-      <div className="w-full h-72">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={summaryData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={activeIndex !== null ? 110 : 100}
-              paddingAngle={4}
-              dataKey="value"
-              onMouseEnter={onPieEnter}
-              onMouseLeave={onPieLeave}
-              stroke="#ffffff"
-              strokeWidth={1}
-            >
-              {summaryData.map((entry, index) => (
-                <Cell 
-                  key={`cell-${index}`} 
-                  fill={colors[entry.status.toLowerCase()]} 
-                  fillOpacity={activeIndex === index ? 1 : 0.8}
-                  style={{
-                    filter: activeIndex === index ? 'drop-shadow(0 0 12px rgba(0,0,0,0.2))' : 'none',
-                    transition: 'all 0.3s ease'
-                  }}
-                />
-              ))}
-            </Pie>
-            <Tooltip 
-              content={<CustomTooltip />}
-              contentStyle={{
-                background: 'rgba(255, 255, 255, 0.96)',
-                border: '1px solid rgba(0, 0, 0, 0.1)',
-                borderRadius: 8,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                padding: '8px 12px'
-              }}
-            />
-            <Legend 
-              verticalAlign="bottom"
-              layout="horizontal"
-              wrapperStyle={{ paddingTop: 20 }}
-              formatter={(value) => (
-                <span className="text-sm text-gray-600 font-medium">{value}</span>
-              )}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-      
-      {/* Process Breakdown and Quick Insights - now horizontal below the PieChart */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="w-full lg:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z" clipRule="evenodd" />
-            </svg>
-            Process Breakdown
-          </h3>
-          {Object.entries(totals).map(([category, total]) => (
-            <div key={category} className="mb-4 last:mb-0">
-              <div className="flex justify-between items-center mb-1.5">
-                <span className="text-gray-600 text-sm font-medium">{category}</span>
-                <span className="text-gray-800 font-semibold">{total}</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2">
-                <div 
-                  className={`h-full rounded-full ${
-                    category === 'Requisitions' ? 'bg-gradient-to-r from-blue-400 to-indigo-500' :
-                    category === 'RFQs' ? 'bg-gradient-to-r from-purple-400 to-indigo-500' :
-                    category === 'Purchase Orders' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' :
-                    'bg-gradient-to-r from-pink-400 to-rose-500'
-                  }`}
-                  style={{ 
-                    width: `${Math.round((total / 160) * 100)}%`,
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)'
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        <div className="w-full lg:w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-5 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold mb-3 text-gray-800 flex items-center">
-            <svg className="w-5 h-5 mr-2 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-            </svg>
-            Quick Insights
-          </h3>
-          <ul className="space-y-2.5">
-            {/* Insight 1: Approved/Paid status percentage */}
-            <li className="flex items-start">
-              <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-green-500 mr-2.5"></div>
-              <span className="text-sm text-gray-700">
-                {`Most items are in approved or paid status (${Math.round(
-                  ((stats.requisitions.counts.approved + stats.invoices.counts.paid) / 
-                   (stats.requisitions.counts.total + stats.rfqs.counts.total + 
-                    stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
-                )}%)`}
-              </span>
-            </li>
-
-            {/* Insight 2: Pending items count */}
-            <li className="flex items-start">
-              <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-amber-400 mr-2.5"></div>
-              <span className="text-sm text-gray-700">
-                {`${stats.requisitions.counts.pending + stats.rfqs.counts.open + 
-                   stats.purchaseOrders.counts.pending + stats.invoices.counts.pending} 
-                   items are pending action (${Math.round(
-                     ((stats.requisitions.counts.pending + stats.rfqs.counts.open + 
-                       stats.purchaseOrders.counts.pending + stats.invoices.counts.pending) / 
-                      (stats.requisitions.counts.total + stats.rfqs.counts.total + 
-                       stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
-                   )}%)`}
-              </span>
-            </li>
-
-            {/* Insight 3: Largest process volume */}
-            <li className="flex items-start">
-              <div className="flex-shrink-0 mt-1 w-2.5 h-2.5 rounded-full bg-indigo-500 mr-2.5"></div>
-              <span className="text-sm text-gray-700">
-                {(() => {
-                  const processTotals = {
-                    'Requisitions': stats.requisitions.counts.total,
-                    'RFQs': stats.rfqs.counts.total,
-                    'Purchase Orders': stats.purchaseOrders.counts.total,
-                    'Invoices': stats.invoices.counts.total
-                  };
-                  
-                  const largestProcess = Object.keys(processTotals).reduce((a, b) => 
-                    processTotals[a] > processTotals[b] ? a : b
-                  );
-                  
-                  const total = Object.values(processTotals).reduce((a, b) => a + b, 0);
-                  const percentage = Math.round((processTotals[largestProcess] / total) * 100);
-                  
-                  return `${largestProcess} represent the largest process volume (${percentage}%)`;
-                })()}
-              </span>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </CardContent>
-</Card>
-              {/* Pending Approvals */}
-              <Card sx={{ 
-  borderRadius: 3,
-  boxShadow: theme.shadows[1],
-}}>
-  <CardHeader
-    title="Pending Approvals"
-    subheader="Items requiring your attention"
-    titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-    subheaderTypographyProps={{ variant: 'body2' }}
-  />
-  <CardContent sx={{ p: 0 }}>
-    <List>
-      {/* Pending Requisitions */}
-      {stats.requisitions.pendingRequisitions.map((req) => (
-        <ApprovalItemComponent
-          key={req._id}
-          title={req.itemName}
-          type="requisition"
-          requester={req.employee.name}
-          date={new Date(req.createdAt).toLocaleDateString()}
-          amount={`Quantity: ${req.quantity}`}
-        />
-      ))}
-
-      {/* Open RFQs */}
-      {stats.rfqs.openRFQs.map((rfq) => (
-        <ApprovalItemComponent
-          key={rfq._id}
-          title={rfq.itemName}
-          type="rfq" // or create a new type "rfq" if you prefer
-          requester={rfq.procurementOfficer.name}
-          date={new Date(rfq.createdAt).toLocaleDateString()}
-          amount={`Quantity: ${rfq.quantity}`}
-        />
-      ))}
-
-      {/* Pending Purchase Orders */}
-      {stats.purchaseOrders.pendingPOs.map((po) => (
-        <ApprovalItemComponent
-          key={po._id}
-          title="Purchase Order"
-          type="purchase-order"
-          requester={po.vendor.name}
-          date={new Date(po.createdAt).toLocaleDateString()}
-          amount="Pending Approval"
-        />
-      ))}
-
-
-      {/* Pending Invoices */}
-      {stats.invoices.pendingInvoices.map((inv) => (
-        <ApprovalItemComponent
-          key={inv._id}
-          title="Invoice"
-          type="invoice"
-          requester={inv.vendor.name}
-          date={new Date(inv.createdAt).toLocaleDateString()}
-          amount= {inv.amountDue}
-        />
-      ))}
-
-      {/* Fallback if no pending items */}
-      {stats.requisitions.pendingRequisitions.length === 0 && 
-       stats.rfqs.openRFQs.length === 0 && 
-       stats.purchaseOrders.pendingPOs.length === 0 && (
-        <ListItem>
-          <ListItemText 
-            primary="No pending approvals" 
-            sx={{ textAlign: 'center', py: 2 }} 
-          />
-        </ListItem>
-      )}
-    </List>
-  </CardContent>
-  <Box sx={{ 
-    p: 2, 
-    borderTop: '1px solid', 
-    borderColor: 'divider',
-    display: 'flex',
-    justifyContent: 'center'
-  }}>
-    <Button 
-      fullWidth 
-      variant="text"
+              <Card
       sx={{
-        borderRadius: 20,
-        textTransform: 'none',
-        color: theme.palette.text.secondary,
+        borderRadius: 4,
+        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.08)',
+        border: '1px solid rgba(0, 0, 0, 0.05)',
+        background: 'white',
+        overflow: 'hidden',
+        position: 'relative',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         '&:hover': {
-          backgroundColor: theme.palette.action.hover,
-        }
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 4,
+          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
+        },
       }}
+      component={motion.div}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
     >
-      View All Pending Items
-    </Button>
-  </Box>
-</Card>
+      <CardHeader
+        title="Procurement Status"
+        subheader="Current status of procurement activities"
+        titleTypographyProps={{
+          variant: 'h6',
+          fontWeight: 700,
+          color: 'text.primary',
+          letterSpacing: 0.5,
+        }}
+        subheaderTypographyProps={{
+          variant: 'body2',
+          color: 'text.secondary',
+        }}
+        sx={{
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          px: 3,
+          py: 2,
+        }}
+      />
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {/* PieChart Section */}
+          <Box sx={{ width: '100%', height: 300 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={summaryData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={70}
+                  outerRadius={activeIndex !== null ? 120 : 110}
+                  paddingAngle={4}
+                  dataKey="value"
+                  onMouseEnter={onPieEnter}
+                  onMouseLeave={onPieLeave}
+                  stroke="#ffffff"
+                  strokeWidth={2}
+                >
+                  {summaryData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={colors[entry.status.toLowerCase()]}
+                      fillOpacity={activeIndex === index ? 1 : 0.85}
+                      style={{
+                        filter: activeIndex === index ? 'drop-shadow(0 0 12px rgba(0,0,0,0.2))' : 'none',
+                        transition: 'all 0.3s ease',
+                      }}
+                    />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  verticalAlign="bottom"
+                  layout="horizontal"
+                  wrapperStyle={{ paddingTop: 20 }}
+                  formatter={(value) => (
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+                    >
+                      {value}
+                    </Typography>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </Box>
+
+          {/* Process Breakdown and Quick Insights */}
+          <Box sx={{ display: { xs: 'flex', lg: 'row' }, flexDirection: { xs: 'column', lg: 'row' }, gap: 4 }}>
+            {/* Process Breakdown */}
+            <Box
+              sx={{
+                width: { xs: '100%', lg: '50%' },
+                background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.8))',
+                borderRadius: 3,
+                p: 3,
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+              }}
+              component={motion.div}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <svg
+                  className="w-5 h-5 mr-2 text-indigo-500"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <Typography variant="h6" fontWeight={600} color="text.primary">
+                  Process Breakdown
+                </Typography>
+              </Box>
+              {Object.entries(totals).map(([category, total]) => (
+                <Box key={category} sx={{ mb: 3, '&:last-child': { mb: 0 } }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" fontWeight={500} color="text.secondary">
+                      {category}
+                    </Typography>
+                    <Typography variant="body2" fontWeight={600} color="text.primary">
+                      {total}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ width: '100%', backgroundColor: theme.palette.grey[100], borderRadius: 2, height: 8 }}>
+                    <Box
+                      sx={{
+                        width: `${Math.round((total / 160) * 100)}%`,
+                        height: '100%',
+                        borderRadius: 2,
+                        background:
+                          category === 'Requisitions'
+                            ? 'linear-gradient(to right, #60a5fa, #4f46e5)'
+                            : category === 'RFQs'
+                            ? 'linear-gradient(to right, #a78bfa, #4f46e5)'
+                            : category === 'Purchase Orders'
+                            ? 'linear-gradient(to right, #34d399, #047857)'
+                            : 'linear-gradient(to right, #fb7185, #e11d48)',
+                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                        transition: 'width 0.5s ease',
+                      }}
+                      component={motion.div}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.round((total / 160) * 100)}%` }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                    />
+                  </Box>
+                </Box>
+              ))}
+            </Box>
+
+            {/* Quick Insights */}
+            <Box
+              sx={{
+                width: { xs: '100%', lg: '50%' },
+                background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.8))',
+                borderRadius: 3,
+                p: 3,
+                border: '1px solid rgba(0, 0, 0, 0.05)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+              }}
+              component={motion.div}
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <svg
+                  className="w-5 h-5 mr-2 text-amber-500"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <Typography variant="h6" fontWeight={600} color="text.primary">
+                  Quick Insights
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {/* Insight 1: Approved/Paid status percentage */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <Box
+                    sx={{
+                      flexShrink: 0,
+                      mt: 0.5,
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: theme.palette.success.main,
+                      mr: 1.5,
+                    }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {`Most items are in approved or paid status (${Math.round(
+                      ((stats.requisitions.counts.approved + stats.invoices.counts.paid) /
+                        (stats.requisitions.counts.total +
+                          stats.rfqs.counts.total +
+                          stats.purchaseOrders.counts.total +
+                          stats.invoices.counts.total)) *
+                        100
+                    )}%)`}
+                  </Typography>
+                </Box>
+
+                {/* Insight 2: Pending items count */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <Box
+                    sx={{
+                      flexShrink: 0,
+                      mt: 0.5,
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: theme.palette.warning.main,
+                      mr: 1.5,
+                    }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {`${
+                      stats.requisitions.counts.pending +
+                      stats.rfqs.counts.open +
+                      stats.purchaseOrders.counts.pending +
+                      stats.invoices.counts.pending
+                    } items are pending action (${Math.round(
+                      ((stats.requisitions.counts.pending +
+                        stats.rfqs.counts.open +
+                        stats.purchaseOrders.counts.pending +
+                        stats.invoices.counts.pending) /
+                        (stats.requisitions.counts.total +
+                          stats.rfqs.counts.total +
+                          stats.purchaseOrders.counts.total +
+                          stats.invoices.counts.total)) *
+                        100
+                    )}%)`}
+                  </Typography>
+                </Box>
+
+                {/* Insight 3: Largest process volume */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                  <Box
+                    sx={{
+                      flexShrink: 0,
+                      mt: 0.5,
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: theme.palette.info.main,
+                      mr: 1.5,
+                    }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    {(() => {
+                      const processTotals = {
+                        Requisitions: stats.requisitions.counts.total,
+                        RFQs: stats.rfqs.counts.total,
+                        'Purchase Orders': stats.purchaseOrders.counts.total,
+                        Invoices: stats.invoices.counts.total,
+                      };
+                      const largestProcess = Object.keys(processTotals).reduce(
+                        (a, b) => (processTotals[a] > processTotals[b] ? a : b)
+                      );
+                      const total = Object.values(processTotals).reduce((a, b) => a + b, 0);
+                      const percentage = Math.round((processTotals[largestProcess] / total) * 100);
+                      return `${largestProcess} represent the largest process volume (${percentage}%)`;
+                    })()}
+                  </Typography>
+                </Box>
+              </Box>
+            </Box>
+          </Box>
+        </Box>
+      </CardContent>
+    </Card>
+                {/* Pending Approvals */}
+                <Card
+      sx={{
+        borderRadius: 4,
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+        background: 'white',
+        overflow: 'hidden',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 4,
+          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
+        },
+      }}
+      component={motion.div}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <CardHeader
+        title="Pending Approvals"
+        subheader="Items requiring your attention"
+        titleTypographyProps={{
+          variant: 'h6',
+          fontWeight: 700,
+          color: theme.palette.text.primary,
+        }}
+        subheaderTypographyProps={{
+          variant: 'body2',
+          color: theme.palette.text.secondary,
+        }}
+        sx={{
+          pb: 1,
+          px: 3,
+          background: 'rgba(255, 255, 255, 0.95)',
+        }}
+      />
+      <Divider />
+      <CardContent sx={{ p: 0, maxHeight: 400, overflowY: 'auto' }}>
+        <List disablePadding>
+          {stats.requisitions.pendingRequisitions.map((req) => (
+            <ApprovalItemComponent
+              key={req._id}
+              title={req.itemName}
+              type="requisition"
+              requester={req.employee.name}
+              date={new Date(req.createdAt).toLocaleDateString()}
+              amount={`Quantity: ${req.quantity}`}
+            />
+          ))}
+          {stats.rfqs.openRFQs.map((rfq) => (
+            <ApprovalItemComponent
+              key={rfq._id}
+              title={rfq.itemName}
+              type="rfq"
+              requester={rfq.procurementOfficer.name}
+              date={new Date(rfq.createdAt).toLocaleDateString()}
+              amount={`Quantity: ${rfq.quantity}`}
+            />
+          ))}
+          {stats.purchaseOrders.pendingPOs.map((po) => (
+            <ApprovalItemComponent
+              key={po._id}
+              title="Purchase Order"
+              type="purchase-order"
+              requester={po.vendor.name}
+              date={new Date(po.createdAt).toLocaleDateString()}
+              amount="Pending Approval"
+            />
+          ))}
+          {stats.invoices.pendingInvoices.map((inv) => (
+            <ApprovalItemComponent
+              key={inv._id}
+              title="Invoice"
+              type="invoice"
+              requester={inv.vendor.name}
+              date={new Date(inv.createdAt).toLocaleDateString()}
+              amount={inv.amountDue}
+            />
+          ))}
+          {stats.requisitions.pendingRequisitions.length === 0 &&
+            stats.rfqs.openRFQs.length === 0 &&
+            stats.purchaseOrders.pendingPOs.length === 0 && (
+              <ListItem sx={{ justifyContent: 'center', py: 3 }}>
+                <ListItemText
+                  primary={
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      textAlign="center"
+                    >
+                      No pending approvals
+                    </Typography>
+                  }
+                />
+              </ListItem>
+            )}
+        </List>
+      </CardContent>
+      <Box
+        sx={{
+          p: 2,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          background: 'white',
+        }}
+      >
+        <Button
+          fullWidth
+          variant="contained"
+          component={motion.button}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          sx={{
+            borderRadius: 20,
+            textTransform: 'none',
+            fontWeight: 600,
+            py: 1.5,
+            background: 'linear-gradient(90deg, #3b82f6, #10b981)',
+            color: 'white',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #2563eb, #059669)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+            },
+          }}
+        >
+          View All Pending Items
+        </Button>
+      </Box>
+    </Card> 
             </Box>
 
             {/* Recent Activity */}

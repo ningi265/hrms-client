@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [currentProcess, setCurrentProcess] = useState(0);
   
-  // HRMS processes to showcase in the animation
   const hrmsProcesses = [
     { 
       icon: FileText, 
@@ -42,7 +41,6 @@ export default function LoginPage() {
     }
   ];
   
-  // Auto-rotate through the HRMS processes
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentProcess(prev => (prev + 1) % hrmsProcesses.length);
@@ -56,30 +54,29 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      await login(email, password); // This updates the `user` state in AuthProvider
-      const user = JSON.parse(localStorage.getItem("user")); // Retrieve user data from localStorage
+      await login(email, password);
+      const user = JSON.parse(localStorage.getItem("user"));
 
       if (!user) {
         throw new Error("User data not found");
       }
 
-      // Redirect based on role
       switch (user.role) {
         case "admin":
         case "procurement_officer":
-          navigate("/dashboard"); // Redirect to the main dashboard
+          navigate("/dashboard");
           break;
         case "vendor":
-          navigate("/vendor-dash"); // Redirect to the vendor dashboard
+          navigate("/vendor-dash");
           break;
         case "employee":
-          navigate("/employee-dash"); // Redirect to the employee dashboard
+          navigate("/employee-dash");
           break;
         default:
-          navigate("/"); // Fallback for unknown roles
+          navigate("/");
       }
     } catch (error) {
-      alert("Login failed. Invalid credentials."); // Replace with a toast/snackbar
+      alert("Login failed. Invalid credentials.");
       console.error("Login error:", error.message);
     } finally {
       setIsLoading(false);
@@ -88,8 +85,8 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Left panel with branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-blue-700 flex-col justify-center items-center text-white p-12 relative overflow-hidden">
+      {/* Left panel with branding - now with improved padding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-blue-700 flex-col justify-center items-center text-white p-16 relative overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute w-96 h-96 bg-blue-500 rounded-full opacity-10 -top-20 -left-20 animate-pulse"></div>
@@ -97,12 +94,12 @@ export default function LoginPage() {
           <div className="absolute w-64 h-64 bg-blue-300 rounded-full opacity-10 bottom-1/4 left-1/3 animate-pulse" style={{animationDelay: '0.5s', animationDuration: '7s'}}></div>
         </div>
         
-        <div className="max-w-md z-10">
-          <h1 className="text-4xl font-bold mb-6">Welcome Back</h1>
-          <p className="text-xl mb-8">Access your account to manage procurement requests, track orders, and more.</p>
+        <div className="max-w-md z-10 space-y-8">
+          <h1 className="text-4xl font-bold">Welcome Back</h1>
+          <p className="text-xl text-white/90">Access your account to manage procurement requests, track orders, and more.</p>
           
           {/* HRMS Process Animation */}
-          <div className="mt-12 mb-12">
+          <div className="py-8">
             <div className="relative h-64">
               {hrmsProcesses.map((process, index) => {
                 const ProcessIcon = process.icon;
@@ -117,11 +114,11 @@ export default function LoginPage() {
                         : "opacity-0 translate-x-full"
                     }`}
                   >
-                    <div className="flex flex-col items-center p-6 bg-white/10 backdrop-blur-sm rounded-xl">
-                      <div className="p-4 bg-white/20 rounded-full mb-4">
+                    <div className="flex flex-col items-center p-8 bg-white/10 backdrop-blur-sm rounded-xl space-y-4">
+                      <div className="p-4 bg-white/20 rounded-full">
                         <ProcessIcon size={40} className="text-white" />
                       </div>
-                      <h3 className="text-xl font-bold mb-2">{process.title}</h3>
+                      <h3 className="text-xl font-bold">{process.title}</h3>
                       <p className="text-center text-white/90">{process.description}</p>
                     </div>
                   </div>
@@ -130,7 +127,7 @@ export default function LoginPage() {
             </div>
             
             {/* Progress indicators */}
-            <div className="flex justify-center space-x-2 mt-4">
+            <div className="flex justify-center space-x-2 mt-6">
               {hrmsProcesses.map((_, index) => (
                 <div 
                   key={index}
@@ -142,81 +139,91 @@ export default function LoginPage() {
             </div>
           </div>
           
-          <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm mt-6">
+          <div className="bg-white/10 p-6 rounded-lg backdrop-blur-sm">
             <p className="italic text-lg">"This platform has streamlined our entire procurement process, saving us countless hours every month."</p>
             <p className="mt-4 font-semibold">— Sarah Johnson, Procurement Manager</p>
           </div>
         </div>
       </div>
       
-      {/* Right panel with login form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-10">
-            <div className="inline-block mb-6">
-              <div className="flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mx-auto">
-                <CheckCircle className="h-8 w-8 text-blue-600" />
+      {/* Right panel with login form - improved spacing */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center space-y-4">
+            <div className="inline-block">
+              <div className="inline-flex items-center">
+                <img
+                  src="/Logo.png"
+                  className="h-48 w-auto mx-auto"  // Adjusted logo size
+                />
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-gray-900">Login to Your Account</h2>
-            <p className="mt-2 text-gray-600">Enter your credentials to access the platform</p>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold text-gray-900">Login to Your Account</h2>
+              <p className="text-gray-600">Enter your credentials to access the platform</p>
+            </div>
           </div>
           
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center text-red-700">
-              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0" />
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start text-red-700 space-x-2">
+              <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
           
-          <div className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300 hover:border-blue-300"
-                placeholder="name@company.com"
-              />
-            </div>
-            
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
                 </label>
-                <a href="#" className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
-                  Forgot password?
-                </a>
-              </div>
-              <div className="relative">
                 <input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300 hover:border-blue-300"
-                  placeholder="••••••••"
+                  placeholder="name@company.com"
+                  required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+              </div>
+              
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                    Password
+                  </label>
+                  <a href="#" className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                    Forgot password?
+                  </a>
+                </div>
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-300 hover:border-blue-300"
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
             </div>
             
             <button
-              onClick={handleSubmit}
+              type="submit"
               disabled={isLoading}
-              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 transform hover:scale-[1.02] ${
-                isLoading ? "opacity-80 cursor-not-allowed" : ""
+              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ${
+                isLoading ? "opacity-80 cursor-not-allowed" : "hover:scale-[1.02]"
               }`}
             >
               {isLoading ? (
@@ -231,28 +238,28 @@ export default function LoginPage() {
                 "Sign In"
               )}
             </button>
-          </div>
+          </form>
           
-          <div className="mt-8 text-center">
+          <div className="text-center space-y-6">
             <p className="text-gray-600">
               Don't have an account?{" "}
-              <a href="#" className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+              <a href="/register" className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
                 Register now
               </a>
             </p>
-          </div>
-          
-          <div className="mt-10 pt-6 border-t border-gray-200">
-            <p className="text-center text-sm text-gray-500">
-              By signing in, you agree to our{" "}
-              <a href="#" className="text-blue-600 hover:underline">
-                Terms of Service
-              </a>{" "}
-              and{" "}
-              <a href="#" className="text-blue-600 hover:underline">
-                Privacy Policy
-              </a>
-            </p>
+            
+            <div className="pt-6 border-t border-gray-200">
+              <p className="text-sm text-gray-500">
+                By signing in, you agree to our{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  Terms of Service
+                </a>{" "}
+                and{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  Privacy Policy
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
