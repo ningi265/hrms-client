@@ -187,7 +187,7 @@ export default function RegisterPage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
-                    placeholder="John"
+                    
                   />
                 </div>
               </div>
@@ -205,7 +205,6 @@ export default function RegisterPage() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
-                    placeholder="Doe"
                   />
                 </div>
               </div>
@@ -390,12 +389,16 @@ export default function RegisterPage() {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
         <div className="w-full max-w-md">
           <div className="bg-white rounded-xl">
-            {/* Logo placeholder - replace with your actual logo */}
-            <div className="mb-8 text-center">
+            {/* Logo placeholder - replace with your actual logo
+            
+              <div className="mb-8 text-center">
               <div className="inline-flex items-center">
                 <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xl mr-2">LOGO</div>
               </div>
             </div>
+            
+            */}
+          
             
             {/* Progress bar */}
             <div className="mb-8">
