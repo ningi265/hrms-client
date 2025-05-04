@@ -1472,7 +1472,7 @@ const [stats, setStats] = useState({
                   ((stats.requisitions.counts.approved + stats.invoices.counts.paid) / 
                    (stats.requisitions.counts.total + stats.rfqs.counts.total + 
                     stats.purchaseOrders.counts.total + stats.invoices.counts.total)) * 100
-                )}%)`} 
+                )}%)`}
               </span>
             </li>
 

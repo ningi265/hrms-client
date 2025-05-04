@@ -19,7 +19,6 @@ export default function RegisterPage() {
   
   const steps = ["Email", "Personal Info", "Company", "Review"];
 
-  // HRMS processes to showcase in the animation
   const hrmsProcesses = [
     { 
       icon: Mail, 
@@ -43,7 +42,6 @@ export default function RegisterPage() {
     }
   ];
   
-  // Auto-rotate through the HRMS processes
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentProcess(prev => (prev + 1) % hrmsProcesses.length);
@@ -77,7 +75,6 @@ export default function RegisterPage() {
   const handleNext = () => {
     setError("");
     
-    // Validation for each step
     if (activeStep === 0 && !email) {
       setError("Please enter your email address");
       return;
@@ -108,14 +105,11 @@ export default function RegisterPage() {
     setIsLoading(true);
     setError("");
 
-    // Simulate API call
     setTimeout(() => {
       try {
-        // Mock registration success
         setSuccess(true);
         setTimeout(() => {
           console.log("Registration successful - would redirect to dashboard");
-          // Would navigate to dashboard in real implementation
         }, 2000);
       } catch (err) {
         setError(err.message || "Registration failed. Please try again.");
@@ -124,20 +118,19 @@ export default function RegisterPage() {
     }, 1500);
   };
 
-  // Success screen
   if (success) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
-          <div className="mx-auto mb-6 flex items-center justify-center w-20 h-20 bg-green-100 text-green-600 rounded-full">
-            <CheckCircle size={40} />
+      <div className="min-h-screen bg-white flex items-center justify-center p-8">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-10 text-center">
+          <div className="mx-auto mb-8 flex items-center justify-center w-24 h-24 bg-green-100 text-green-600 rounded-full">
+            <CheckCircle size={48} />
           </div>
           
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Registration Successful!</h2>
-          <p className="text-gray-600 mb-6">Welcome to our platform. You're being redirected to your dashboard...</p>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">Registration Successful!</h2>
+          <p className="text-gray-600 mb-8">Welcome to our platform. You're being redirected to your dashboard...</p>
           
           <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
           </div>
         </div>
       </div>
@@ -150,7 +143,7 @@ export default function RegisterPage() {
         return (
           <div className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Email Address
               </label>
               <div className="relative">
@@ -164,6 +157,7 @@ export default function RegisterPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
                   placeholder="you@company.com"
+                  required
                 />
               </div>
             </div>
@@ -172,9 +166,9 @@ export default function RegisterPage() {
       case 1:
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
                   First Name
                 </label>
                 <div className="relative">
@@ -187,12 +181,13 @@ export default function RegisterPage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
-                    
+                    placeholder="John"
+                    required
                   />
                 </div>
               </div>
               <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
                   Last Name
                 </label>
                 <div className="relative">
@@ -205,13 +200,15 @@ export default function RegisterPage() {
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
+                    placeholder="Doe"
+                    required
                   />
                 </div>
               </div>
             </div>
             
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -225,16 +222,18 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
                   placeholder="••••••••"
+                  required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">Password must be at least 8 characters</p>
+              <p className="mt-2 text-xs text-gray-500">Password must be at least 8 characters</p>
             </div>
           </div>
         );
@@ -242,7 +241,7 @@ export default function RegisterPage() {
         return (
           <div className="space-y-6">
             <div>
-              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
                 Company Name
               </label>
               <div className="relative">
@@ -256,12 +255,13 @@ export default function RegisterPage() {
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
                   placeholder="Acme Inc."
+                  required
                 />
               </div>
             </div>
             
             <div>
-              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
                 Industry
               </label>
               <div className="relative">
@@ -273,6 +273,7 @@ export default function RegisterPage() {
                   value={industry}
                   onChange={(e) => setIndustry(e.target.value)}
                   className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300 appearance-none bg-white"
+                  required
                 >
                   <option value="" disabled>Select your industry</option>
                   {industries.map((option) => (
@@ -290,7 +291,7 @@ export default function RegisterPage() {
             </div>
             
             <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
                 Your Role
               </label>
               <div className="relative">
@@ -302,6 +303,7 @@ export default function RegisterPage() {
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300 appearance-none bg-white"
+                  required
                 >
                   <option value="" disabled>Select your role</option>
                   {roles.map((option) => (
@@ -322,10 +324,10 @@ export default function RegisterPage() {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Review Your Information</h3>
+            <div className="bg-gray-50 p-8 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900 mb-6">Review Your Information</h3>
               
-              <div className="space-y-4">
+              <div className="space-y-5">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Email:</span>
                   <span className="font-medium">{email}</span>
@@ -358,7 +360,7 @@ export default function RegisterPage() {
             </div>
             
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                 Phone Number
               </label>
               <div className="relative">
@@ -371,10 +373,11 @@ export default function RegisterPage() {
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="w-full pl-10 px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 hover:border-blue-300"
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+265 (999) 000-000"
+                  required
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-500">We'll send a verification code to this number</p>
+              <p className="mt-2 text-xs text-gray-500">We'll send a verification code to this number</p>
             </div>
           </div>
         );
@@ -386,129 +389,129 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen bg-white">
       {/* Left panel - form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-xl">
-            {/* Logo placeholder - replace with your actual logo
-            
-              <div className="mb-8 text-center">
-              <div className="inline-flex items-center">
-                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-xl mr-2">LOGO</div>
-              </div>
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo */}
+          <div className="text-center">
+            <div className="inline-flex items-center">
+              <img
+                src="/hrms-logo.png"
+                className="h-48 w-auto mx-auto"
+                alt="Company Logo"
+              />
             </div>
-            
-            */}
+          </div>
           
-            
-            {/* Progress bar */}
-            <div className="mb-8">
-              <div className="flex justify-between items-center mb-4">
-                {steps.map((step, index) => (
-                  <div key={index} className="flex flex-col items-center">
-                    <div 
-                      className={`w-8 h-8 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300
-                      ${index < activeStep 
-                        ? "bg-blue-600 text-white" 
-                        : index === activeStep 
-                        ? "bg-blue-600 text-white ring-4 ring-blue-100" 
-                        : "bg-gray-100 text-gray-500"}`}
-                    >
-                      {index < activeStep ? (
-                        <CheckCircle size={16} />
-                      ) : (
-                        index + 1
-                      )}
-                    </div>
-                    <span className={`text-xs mt-2 font-medium ${index === activeStep ? "text-gray-900" : "text-gray-500"}`}>
-                      {step}
-                    </span>
+          {/* Progress bar */}
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              {steps.map((step, index) => (
+                <div key={index} className="flex flex-col items-center">
+                  <div 
+                    className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-300
+                    ${index < activeStep 
+                      ? "bg-blue-600 text-white" 
+                      : index === activeStep 
+                      ? "bg-blue-600 text-white ring-4 ring-blue-100" 
+                      : "bg-gray-100 text-gray-500"}`}
+                  >
+                    {index < activeStep ? (
+                      <CheckCircle size={16} />
+                    ) : (
+                      index + 1
+                    )}
                   </div>
-                ))}
-              </div>
-              
-              <div className="relative h-1 bg-gray-100 rounded-full">
-                <div 
-                  className="absolute top-0 left-0 h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${(activeStep / (steps.length - 1)) * 100}%` }}
-                ></div>
-              </div>
+                  <span className={`text-xs mt-2 font-medium ${index === activeStep ? "text-gray-900" : "text-gray-500"}`}>
+                    {step}
+                  </span>
+                </div>
+              ))}
             </div>
             
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
+            <div className="relative h-2 bg-gray-100 rounded-full">
+              <div 
+                className="absolute top-0 left-0 h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${(activeStep / (steps.length - 1)) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+          
+          <div className="text-center space-y-2">
+            <h2 className="text-2xl font-bold text-gray-900">
               {activeStep === 0 ? "Create your account" : 
                activeStep === 1 ? "Tell us about yourself" : 
                activeStep === 2 ? "Company information" : 
                "Review your details"}
             </h2>
-            <p className="text-gray-500 mb-6 text-center">
+            <p className="text-gray-500">
               {activeStep === 0 ? "Start your 14-day free trial" : 
                activeStep === 1 ? "We'll use this to personalize your experience" : 
                activeStep === 2 ? "Let us know about your organization" : 
                "Make sure everything looks correct"}
             </p>
-            
-            <div className="mb-6">
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg flex items-start text-red-700">
-                  <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm">{error}</span>
-                </div>
-              )}
-              
-              {renderStepContent(activeStep)}
-            </div>
-            
-            <div className="flex space-x-4">
-              {activeStep > 0 && (
-                <button
-                  onClick={handleBack}
-                  className="flex items-center justify-center px-4 py-3 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 w-1/3"
-                >
-                  <ArrowLeft size={18} className="mr-2" />
-                  Back
-                </button>
-              )}
-              
-              <button
-                onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
-                disabled={isLoading}
-                className={`flex items-center justify-center px-4 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
-                  activeStep === 0 ? "w-full" : "w-2/3"
-                } ${isLoading ? "opacity-80 cursor-not-allowed" : ""}`}
-              >
-                {isLoading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                    Processing...
-                  </>
-                ) : activeStep === steps.length - 1 ? (
-                  "Complete Registration"
-                ) : (
-                  "Continue"
-                )}
-              </button>
-            </div>
-            
-            {activeStep === 0 && (
-              <div className="mt-6 text-center">
-                <div className="relative flex items-center justify-center mt-4 mb-4">
-                  <div className="border-t border-gray-200 absolute w-full"></div>
-                  <div className="bg-white px-4 relative text-sm text-gray-500">or</div>
-                </div>
-                <p className="text-gray-500 text-sm">
-                  Already have an account?{" "}
-                  <a href="#" className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
-                    Sign in
-                  </a>
-                </p>
+          </div>
+          
+          <div className="space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-lg flex items-start text-red-700">
+                <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+                <span className="text-sm">{error}</span>
               </div>
             )}
+            
+            {renderStepContent(activeStep)}
           </div>
+          
+          <div className="flex space-x-4">
+            {activeStep > 0 && (
+              <button
+                onClick={handleBack}
+                className="flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 bg-white rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 flex-1"
+              >
+                <ArrowLeft size={18} className="mr-2" />
+                Back
+              </button>
+            )}
+            
+            <button
+              onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
+              disabled={isLoading}
+              className={`flex items-center justify-center px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 ${
+                activeStep === 0 ? "w-full" : "flex-1"
+              } ${isLoading ? "opacity-80 cursor-not-allowed" : ""}`}
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Processing...
+                </>
+              ) : activeStep === steps.length - 1 ? (
+                "Complete Registration"
+              ) : (
+                "Continue"
+              )}
+            </button>
+          </div>
+          
+          {activeStep === 0 && (
+            <div className="text-center space-y-4">
+              <div className="relative flex items-center justify-center">
+                <div className="border-t border-gray-200 absolute w-full"></div>
+                <div className="bg-white px-4 relative text-sm text-gray-500">or</div>
+              </div>
+              <p className="text-gray-500 text-sm">
+                Already have an account?{" "}
+                <a href="#" className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+                  Sign in
+                </a>
+              </p>
+            </div>
+          )}
         </div>
       </div>
       
       {/* Right panel - branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 flex-col justify-center items-center text-white p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 flex-col justify-center items-center text-white p-16 relative overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute w-96 h-96 bg-white/5 rounded-full -top-20 -right-20 animate-pulse"></div>
@@ -516,14 +519,14 @@ export default function RegisterPage() {
           <div className="absolute w-64 h-64 bg-white/5 rounded-full bottom-1/4 right-1/3 animate-pulse" style={{animationDelay: '0.5s', animationDuration: '7s'}}></div>
         </div>
         
-        <div className="max-w-md z-10">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-4">Streamline Your Procurement</h1>
+        <div className="max-w-md z-10 space-y-10">
+          <div>
+            <h1 className="text-4xl font-bold mb-6">Streamline Your Procurement</h1>
             <p className="text-xl opacity-90">Join thousands of companies managing their procurement process efficiently with our platform.</p>
           </div>
           
           {/* HRMS Process Animation */}
-          <div className="mb-10">
+          <div className="space-y-8">
             <div className="relative h-96">
               {hrmsProcesses.map((process, index) => {
                 const ProcessIcon = process.icon;
@@ -561,7 +564,7 @@ export default function RegisterPage() {
             </div>
             
             {/* Progress indicators */}
-            <div className="flex justify-center space-x-2 mt-4">
+            <div className="flex justify-center space-x-2">
               {hrmsProcesses.map((_, index) => (
                 <div 
                   key={index}
@@ -573,7 +576,7 @@ export default function RegisterPage() {
             </div>
           </div>
           
-          <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm border border-white/20">
+          <div className="bg-white/10 p-8 rounded-xl backdrop-blur-sm border border-white/20">
             <div className="flex items-center mb-4">
               <div className="flex -space-x-4">
                 <div className="w-10 h-10 rounded-full bg-blue-400 border-2 border-white flex items-center justify-center text-xs font-medium">JD</div>
