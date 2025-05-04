@@ -396,11 +396,9 @@ const [stats, setStats] = useState({
           gap: 2,
         }}
       >
-        <Loop sx={{ 
-          fontSize: 32, 
-          color: "primary.main", 
-          animation: "spin 1s linear infinite" 
-        }} />
+        <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
         <Typography variant="body2" color="text.secondary">
           Loading dashboard data...
         </Typography>

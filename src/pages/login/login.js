@@ -153,7 +153,7 @@ export default function LoginPage() {
             <div className="inline-block">
               <div className="inline-flex items-center">
                 <img
-                  src="/Logo.png"
+                  src="/hrms-logo.png"
                   className="h-48 w-auto mx-auto"  // Adjusted logo size
                 />
               </div>
