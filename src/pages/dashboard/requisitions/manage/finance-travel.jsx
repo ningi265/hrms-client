@@ -485,7 +485,9 @@ export default function FinanceProcessing() {
         <Box component="main" sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
           {isLoading ? (
             <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh" }}>
-              <Loader2 size={32} className="animate-spin" />
+               <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
             </Box>
           ) : (
             <Box sx={{ display: "grid", gridTemplateColumns: { lg: "1fr 2fr" }, gap: 3 }}>

@@ -190,7 +190,9 @@ export default function ManageRequisitionsPage() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <CircularProgress size={60} thickness={5} />
+           <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          </div>
         </motion.div>
       </Box>
     );

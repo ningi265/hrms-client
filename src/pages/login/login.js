@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle, CheckCircle, FileText, Calendar, Users, ClipboardCheck, TrendingUp } from "lucide-react";
 import { useAuth } from "../../authcontext/authcontext";
+import { PRIVILEGE_ROLES, SPECIAL_ROLES } from '../login/roles';
+
+
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -52,29 +56,41 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-
+  
     try {
       await login(email, password);
       const user = JSON.parse(localStorage.getItem("user"));
-
+  
       if (!user) {
         throw new Error("User data not found");
       }
-
-      switch (user.role) {
-        case "admin":
-        case "procurement_officer":
-          navigate("/dashboard");
-          break;
-        case "vendor":
-          navigate("/vendor-dash");
-          break;
-        case "employee":
-          navigate("/employee-dash");
-          break;
-        default:
-          navigate("/");
+  
+      // Define role categories
+      const elevatedRoles = [
+        "admin",
+        "procurement_officer",
+        "IT/Technical",
+        "Executive (CEO, CFO, etc.)",
+        "Management",
+        "Human Resources",
+        "Accounting/Finance"
+      ];
+  
+      // Special case for vendor
+      if (user.role === "vendor") {
+        navigate("/vendor-dash");
+        return;
       }
+  
+      // Check for elevated privileges
+      if (elevatedRoles.includes(user.role)) {
+        navigate("/dashboard");
+      } 
+      // Default for all other roles (Sales/Marketing, Operations, Other, etc.)
+      else {
+        navigate("/employee-dash");
+      }
+  
     } catch (error) {
       alert("Login failed. Invalid credentials.");
       console.error("Login error:", error.message);
