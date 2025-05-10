@@ -94,7 +94,8 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
     "Operations",
     "Human Resources",
     "Accounting/Finance",
-    "Other"
+    "Other",
+    "vendor"
   ];
 
   const handleNext = () => {
@@ -124,12 +125,14 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
   const handleResendCode = async () => {
     setIsSendingSMS(true);
     setError("");
+    const token = localStorage.getItem("token");  
     
     try {
       const response = await fetch(`${backendUrl}/api/auth/resend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ phoneNumber }),
       });
@@ -193,19 +196,24 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
           phoneNumber
         }),
       });
-      
-  
+      const registrationData = await registrationResponse.json();
       if (!registrationResponse.ok) {
         const errorData = await registrationResponse.json();
         throw new Error(errorData.message || 'Registration failed');
       }
 
-      const registrationData = await registrationResponse.json();
-localStorage.setItem("token", registrationData.token);
+     
+      console.log('Registration response:', registrationData); // Debug
+      const token = registrationData.token;
+      if (!token) {
+        throw new Error('No token received from server');
+      }
+      localStorage.setItem("token", token);
 
   
       // Then send verification SMS
       setIsSendingSMS(true);
+      
       const smsResponse = await fetch(`${backendUrl}/api/auth/send`, {
         method: 'POST',
         headers: {
@@ -238,6 +246,9 @@ localStorage.setItem("token", registrationData.token);
   
     setIsLoading(true);
     setError("");
+
+
+    const token = localStorage.getItem("token");  
   
     try {
       const response = await fetch(`${backendUrl}/api/auth/verify`, {
@@ -269,11 +280,37 @@ localStorage.setItem("token", registrationData.token);
   };
 
   const handleCompleteOnboarding = () => {
-    // Here you would typically upload the logo and signature to your backend
-    // For now, we'll just mark onboarding as complete
+    // Mark onboarding as complete
     setHasCompletedOnboarding(true);
-    // Redirect to dashboard - in a real app you would use react-router or similar
-    window.location.href = '/dashboard';
+    
+    // Define role categories
+    const elevatedRoles = [
+      "admin",
+      "procurement_officer", 
+      "IT/Technical",
+      "Executive (CEO, CFO, etc.)",
+      "Management",
+      "Human Resources",
+      "Accounting/Finance"
+    ];
+  
+    // Use the role from component state
+    const userRole = role;
+  
+    // Special case for vendor
+    if (userRole === "vendor") {
+      window.location.href = '/vendor-dash';
+      return;
+    }
+  
+    // Check for elevated privileges
+    if (elevatedRoles.includes(userRole)) {
+      window.location.href = '/dashboard';
+    } 
+    // Default for all other roles (Sales/Marketing, Operations, Other, etc.)
+    else {
+      window.location.href = '/employee-dash';
+    }
   };
 
   if (showVerification) {

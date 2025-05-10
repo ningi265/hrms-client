@@ -4,13 +4,10 @@ import { Eye, EyeOff, AlertCircle, CheckCircle, FileText, Calendar, Users, Clipb
 import { useAuth } from "../../authcontext/authcontext";
 import { PRIVILEGE_ROLES, SPECIAL_ROLES } from '../login/roles';
 
-
-
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { login, user, token, isTokenExpired } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -46,6 +43,18 @@ export default function LoginPage() {
   ];
   
   useEffect(() => {
+    console.log('Login page mounted');
+    console.log('Current user:', user);
+    console.log('Current token:', token);
+    
+    // Check if user is already logged in and token is valid
+    if (user && token && !isTokenExpired(token)) {
+      console.log('User already logged in, redirecting...');
+      redirectBasedOnRole(user);
+    }
+  }, [user, token]);
+
+  useEffect(() => {
     const interval = setInterval(() => {
       setCurrentProcess(prev => (prev + 1) % hrmsProcesses.length);
     }, 4000);
@@ -53,47 +62,62 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, []);
 
+  const redirectBasedOnRole = (user) => {
+    console.log('Redirecting user with role:', user.role);
+    
+    const elevatedRoles = [
+      "admin",
+      "procurement_officer",
+      "IT/Technical",
+      "Executive (CEO, CFO, etc.)",
+      "Management",
+      "Human Resources",
+      "Accounting/Finance"
+    ];
+
+    if (user.role === "vendor") {
+      console.log('Redirecting to vendor dashboard');
+      navigate("/vendor-dash");
+    } else if (elevatedRoles.includes(user.role)) {
+      console.log('Redirecting to admin dashboard');
+      navigate("/dashboard");
+    } else {
+      console.log('Redirecting to employee dashboard');
+      navigate("/employee-dash");
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
+    
+    console.log('Login form submitted');
+    console.log('Email:', email);
+    console.log('Password length:', password.length);
   
     try {
-      await login(email, password);
-      const user = JSON.parse(localStorage.getItem("user"));
-  
-      if (!user) {
-        throw new Error("User data not found");
+      console.log('Attempting login...');
+      const response = await login(email, password);
+      console.log('Login response:', response);
+      
+      if (!response.user || !response.token) {
+        console.error('Missing user or token in response');
+        throw new Error("Authentication failed. Please try again.");
       }
-  
-      // Define role categories
-      const elevatedRoles = [
-        "admin",
-        "procurement_officer",
-        "IT/Technical",
-        "Executive (CEO, CFO, etc.)",
-        "Management",
-        "Human Resources",
-        "Accounting/Finance"
-      ];
-  
-      // Special case for vendor
-      if (user.role === "vendor") {
-        navigate("/vendor-dash");
-        return;
-      }
-  
-      // Check for elevated privileges
-      if (elevatedRoles.includes(user.role)) {
-        navigate("/dashboard");
-      } 
-      // Default for all other roles (Sales/Marketing, Operations, Other, etc.)
-      else {
-        navigate("/employee-dash");
-      }
+
+      console.log('Login successful, redirecting...');
+      // Redirect based on role
+      redirectBasedOnRole(response.user);
   
     } catch (error) {
-      alert("Login failed. Invalid credentials.");
-      console.error("Login error:", error.message);
+      console.error('Login failed:', error);
+      const errorMessage = error.message || "Login failed. Please check your credentials and try again.";
+      setError(errorMessage);
+      
+      // Clear any stale tokens if login fails
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +125,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Left panel with branding - now with improved padding */}
+      {/* Left panel with branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-blue-700 flex-col justify-center items-center text-white p-16 relative overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
@@ -162,7 +186,7 @@ export default function LoginPage() {
         </div>
       </div>
       
-      {/* Right panel with login form - improved spacing */}
+      {/* Right panel with login form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center space-y-4">
@@ -170,7 +194,7 @@ export default function LoginPage() {
               <div className="inline-flex items-center">
                 <img
                   src="/hrms-logo.png"
-                  className="h-48 w-auto mx-auto"  // Adjusted logo size
+                  className="h-48 w-auto mx-auto"
                 />
               </div>
             </div>
@@ -183,7 +207,16 @@ export default function LoginPage() {
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start text-red-700 space-x-2">
               <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
+              <div>
+                <span>{error}</span>
+                <div className="mt-1 text-sm">
+                  <p>Debug Info:</p>
+                  <ul className="text-xs">
+                    <li>Backend URL: {process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}</li>
+                    <li>Check console for more details</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
           

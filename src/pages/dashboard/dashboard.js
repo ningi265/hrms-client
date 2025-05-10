@@ -197,7 +197,6 @@ console.log(backendUrl);
 export default function ProcurementDashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { user } = useAuth();
   const [activeIndex, setActiveIndex] = useState(null);
 const [stats, setStats] = useState({
   requisitions: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingRequisitions: [] },
@@ -214,7 +213,7 @@ const [stats, setStats] = useState({
   const [activeSection, setActiveSection] = useState(() => {
     return searchParams.get('section') || 'dashboard';
   });
-
+  const { user: authUser, loading: authLoading } = useAuth();
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const colors = {
@@ -225,7 +224,12 @@ const [stats, setStats] = useState({
     closed: '#3A0CA3',     // deep purple
     paid: '#7209B7'        // vibrant purple
   };
-
+  const user = authUser || {
+    name: 'Guest User',
+    avatar: null,
+    email: '',
+    role: 'guest'
+  };
   const allData = [
     { name: 'Pending Requisitions', value: stats.requisitions.counts.pending, category: 'Requisitions', status: 'pending' },
     { name: 'Approved Requisitions', value: stats.requisitions.counts.approved, category: 'Requisitions', status: 'approved' },
@@ -1193,7 +1197,7 @@ const [stats, setStats] = useState({
           }
         }} src={user.avatar}>
           <Typography variant="h6" sx={{ fontWeight: 500 }}>
-            {user.name.split(" ").map(n => n[0]).join("")}
+            {user.name ? user.name.split(" ").map(n => n[0]).join("") : "GU"}
           </Typography>
         </Avatar>
       </Button>
@@ -1709,7 +1713,7 @@ const [stats, setStats] = useState({
               key={req._id}
               title={req.itemName}
               type="requisition"
-              requester={req.employee.name}
+              requester={req.employee?.name || "New Account"}
               date={new Date(req.createdAt).toLocaleDateString()}
               amount={`Quantity: ${req.quantity}`}
             />
@@ -1719,7 +1723,7 @@ const [stats, setStats] = useState({
               key={rfq._id}
               title={rfq.itemName}
               type="rfq"
-              requester={rfq.procurementOfficer.name}
+              requester={rfq.procurementOfficer?.name || "New Account"}
               date={new Date(rfq.createdAt).toLocaleDateString()}
               amount={`Quantity: ${rfq.quantity}`}
             />
@@ -1729,7 +1733,7 @@ const [stats, setStats] = useState({
               key={po._id}
               title="Purchase Order"
               type="purchase-order"
-              requester={po.vendor.name}
+              requester={po.vendor?.name || "New Account"}
               date={new Date(po.createdAt).toLocaleDateString()}
               amount="Pending Approval"
             />
@@ -2003,7 +2007,7 @@ function ApprovalItemComponent({ title, id, type, requester, date, amount }) {
         primary={
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: 'center' }}>
             <Typography variant="body1" sx={{ fontWeight: 500, fontSize: '0.875rem'  }}>
-              {title}
+              {title || "New Item"}
             </Typography>
             <Badge 
               badgeContent={id} 
@@ -2023,11 +2027,13 @@ function ApprovalItemComponent({ title, id, type, requester, date, amount }) {
         secondary={
           <Box sx={{ display: "flex", justifyContent: "space-between", mt: 0.25 }}>
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-              By {requester} • {date}
+            {requester ? `By ${requester} • ${date}` : date}
             </Typography>
-            <Typography variant="body2" fontWeight="medium" sx={{ fontSize: '0.75rem' }}>
-              {amount}
-            </Typography>
+            {amount && (
+              <Typography variant="body2" fontWeight="medium" sx={{ fontSize: '0.75rem' }}>
+                {amount}
+              </Typography>
+            )}
           </Box>
         }
         sx={{ my: 0 }}

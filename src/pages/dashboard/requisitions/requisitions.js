@@ -157,7 +157,6 @@ export default function NewRequisition() {
   return (
     <Container maxWidth="lg" sx={{ py: 4,backgroundColor: "", minHeight: "100vh" }}>
       {/* Page Title */}
-     
       <Grid container spacing={4} justifyContent="center">
         <Grid item xs={12} md={6}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: "bold", color: "black", display: "flex", alignItems: "center" }}>
@@ -169,8 +168,7 @@ export default function NewRequisition() {
       <Typography variant="body1" color="black" sx={{ mb: 4 }}>
         Submit a new requisition request for approval
       </Typography>
-
-          {/* Stepper */}
+          {/*Stepper*/}
           <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
             {steps.map((label) => (
               <Step key={label}>
@@ -179,10 +177,9 @@ export default function NewRequisition() {
             ))}
           </Stepper>
           <Box sx={{ width: "100%", mt: 2 }}>
-  <LinearProgress variant="determinate" value={(activeStep + 1) * (100 / steps.length)} />
-</Box>
-
-          {/* Form Card */}
+            <LinearProgress variant="determinate" value={(activeStep + 1) * (100 / steps.length)} />
+          </Box>
+          {/*Form Card*/}
           <Card elevation={3} sx={{ borderRadius: 3, boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)", p: 3 }}>
             <form onSubmit={handleSubmit}>
               <CardHeader
@@ -205,10 +202,8 @@ export default function NewRequisition() {
                           label="Use custom item"
                         />
                       </Grid>
-
                       {useCustomItem ? (
-                        <Grid item xs={12}>
-                          
+                        <Grid item xs={12}>                          
                           <TextField
                             fullWidth
                             label="Custom Item Name"
@@ -226,7 +221,6 @@ export default function NewRequisition() {
                             }}
                           />
                         </Grid>
-                        
                       ) : (
                         <>
                           <Grid item xs={12}>
@@ -260,7 +254,6 @@ export default function NewRequisition() {
                               ))}
                             </TextField>
                           </Grid>
-
                           {formData.category && (
                             <Grid item xs={12}>
                               <TextField
@@ -292,31 +285,29 @@ export default function NewRequisition() {
                           )}
                         </>
                       )}
-
                       <Grid item xs={12}>
                       <TextField
-  fullWidth
-  label="Quantity"
-  name="quantity"
-  type="number"
-  value={formData.quantity}
-  onChange={handleChange}
-  required
-  margin="normal"
-  error={formData.quantity <= 0}
-  helperText={formData.quantity <= 0 ? "Quantity must be greater than 0" : ""}
-  InputProps={{
-    startAdornment: (
-      <InputAdornment position="start">
-        <Inventory color="primary" />
-      </InputAdornment>
-    ),
-  }}
-/>
+                          fullWidth
+                          label="Quantity"
+                          name="quantity"
+                          type="number"
+                          value={formData.quantity}
+                          onChange={handleChange}
+                          required
+                          margin="normal"
+                          error={formData.quantity <= 0}
+                          helperText={formData.quantity <= 0 ? "Quantity must be greater than 0" : ""}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Inventory color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                        />
                       </Grid>
                     </>
                   )}
-
                   {activeStep === 1 && (
                     <>
                       <Grid item xs={12}>
@@ -337,7 +328,6 @@ export default function NewRequisition() {
                           }}
                         />
                       </Grid>
-
                       <Grid item xs={12}>
                         <TextField
                           select
@@ -360,7 +350,6 @@ export default function NewRequisition() {
                           <MenuItem value="high">High</MenuItem>
                         </TextField>
                       </Grid>
-
                       <Grid item xs={12}>
                         <TextField
                           fullWidth
@@ -378,7 +367,6 @@ export default function NewRequisition() {
                           }}
                         />
                       </Grid>
-
                       <Grid item xs={12}>
                         <TextField
                           fullWidth
@@ -399,7 +387,6 @@ export default function NewRequisition() {
                           }}
                         />
                       </Grid>
-
                       {/* Attachment Upload */}
                       <Grid item xs={12}>
                         <input
@@ -416,14 +403,11 @@ export default function NewRequisition() {
                             sx={{ mb: 2 }}
                           >
                             Upload Attachment
-                          </Button>
-                          
-                          
-<div {...getRootProps()} style={{ border: "2px dashed #ccc", padding: 20, textAlign: "center" }}>
-  <input {...getInputProps()} />
-  <Typography>Drag & drop a file here, or click to select one</Typography>
-</div>
-
+                          </Button>                    
+                              <div {...getRootProps()} style={{ border: "2px dashed #ccc", padding: 20, textAlign: "center" }}>
+                                 <input {...getInputProps()} />
+                       <Typography>Drag & drop a file here, or click to select one</Typography>
+                              </div>
                         </label>
                         {formData.attachment && (
                           <Typography variant="body2" sx={{ mb: 2 }}>
@@ -433,7 +417,6 @@ export default function NewRequisition() {
                       </Grid>
                     </>
                   )}
-
                   {activeStep === 2 && (
                     <Grid item xs={12}>
                       <Typography variant="h6" sx={{ mb: 2 }}>
@@ -468,7 +451,6 @@ export default function NewRequisition() {
             </form>
           </Card>
         </Grid>
-
         <Grid item xs={12} md={6}>
         <Button
           variant="contained"
@@ -478,9 +460,6 @@ export default function NewRequisition() {
         >
           View History
         </Button>
-       
-       
-
           {/* Download Forms Card */}
           <Card elevation={3} sx={{ borderRadius: 3, p: 3 }}>
             <CardHeader title="Download Forms" titleTypographyProps={{ fontWeight: "bold", color: "primary.main" }} />
@@ -540,7 +519,6 @@ export default function NewRequisition() {
           </Card>
         </Grid>
       </Grid>
-
       {/* History Modal */}
       <Dialog open={openHistoryModal} onClose={handleCloseHistoryModal} fullWidth maxWidth="md">
         <DialogTitle>Requisition History</DialogTitle>
@@ -564,7 +542,6 @@ export default function NewRequisition() {
           <Button onClick={handleCloseHistoryModal}>Close</Button>
         </DialogActions>
       </Dialog>
-
       {/* PDF Forms Modal */}
       <Dialog open={openFormsModal} onClose={handleCloseFormsModal} fullWidth maxWidth="md">
         <DialogTitle>Download Forms</DialogTitle>
@@ -625,7 +602,6 @@ export default function NewRequisition() {
           <Button onClick={handleCloseFormsModal}>Close</Button>
         </DialogActions>
       </Dialog>
-
       <Dialog open={openConfirmation} onClose={() => setOpenConfirmation(false)}>
   <DialogTitle>Confirm Submission</DialogTitle>
   <DialogContent>
@@ -635,9 +611,8 @@ export default function NewRequisition() {
     <Button onClick={() => setOpenConfirmation(false)}>Cancel</Button>
     <Button onClick={handleSubmit} color="primary">Submit</Button>
   </DialogActions>
-</Dialog>
-
-      {/* Notifications */}
+      </Dialog>
+     {/* Notifications */}
       <Snackbar
         open={isDraftSaved}
         autoHideDuration={3000}
