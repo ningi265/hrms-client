@@ -25,11 +25,15 @@ import {
   Tune, 
   RocketLaunch, 
   SettingsApplications, 
-  MenuOpen 
+  MenuOpen,
+  PieChart as PieChartIcon,
+  Timeline,
+  BarChart as BarChartIcon
 } from "@mui/icons-material";
 import Tooltip from '@mui/material/Tooltip';
 import MenuIcon from '@mui/icons-material/Menu';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, 
+  LineChart, Line, BarChart as RechartsBar, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from 'recharts';
 import {
   Avatar,
   Badge,
@@ -58,8 +62,11 @@ import {
   useTheme,
   styled,
   alpha,
+  ButtonGroup,
+  Tabs,
+  Tab,
 } from "@mui/material";
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
 import PurchaseOrdersSection  from '../../pages/dashboard/purchase-orders/purchase-order';
@@ -193,17 +200,483 @@ const ActivityCard = styled(Card)(({ theme }) => ({
 const backendUrl = process.env.REACT_APP_BACKEND_URL;
 console.log(backendUrl);
 
+// Enhanced Procurement Status Card Component
+const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPieEnter, onPieLeave, stats }) => {
+  const theme = useTheme();
+  const [chartType, setChartType] = useState('pie'); // 'pie', 'line', 'bar'
+  const [activeCategory, setActiveCategory] = useState('Overall');
+
+  // Prepare data for different chart types
+  const categories = ['Overall', 'Requisitions', 'RFQs', 'Purchase Orders', 'Invoices'];
+  
+  const getChartData = () => {
+    if (activeCategory === 'Overall') {
+      return summaryData;
+    }
+    
+    // Filter data by category
+    return allData
+      .filter(item => item.category === activeCategory)
+      .map(item => ({
+        name: item.name.split(' ')[0], // Get status (Pending, Approved, etc.)
+        value: item.value,
+        status: item.status,
+      }));
+  };
+
+  const chartData = getChartData();
+
+  // Animation variants
+  const chartVariants = {
+    hidden: { 
+      opacity: 0, 
+      scale: 0.8,
+      transition: { 
+        duration: 0.3,
+        ease: "easeOut"
+      }
+    },
+    visible: { 
+      opacity: 1, 
+      scale: 1,
+      transition: { 
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      scale: 0.8,
+      transition: { 
+        duration: 0.3,
+        ease: "easeIn"
+      }
+    },
+  };
+
+  // Custom Tooltip Component
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 8,
+            padding: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <Typography variant="subtitle2" fontWeight={600}>
+            {payload[0].name || label}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 0.5 }}>
+            Count: <span style={{ fontWeight: 600, color: theme.palette.primary.main }}>{payload[0].value}</span>
+          </Typography>
+          {chartType === 'pie' && (
+            <Typography variant="caption" color="text.secondary">
+              {Math.round((payload[0].value / chartData.reduce((sum, item) => sum + item.value, 0)) * 100)}% of total
+            </Typography>
+          )}
+        </motion.div>
+      );
+    }
+    return null;
+  };
+
+  // Bar shape component for animations
+  const AnimatedBar = (props) => {
+    const { fill, ...rest } = props;
+    return (
+      <motion.g
+        initial={{ scaleY: 0, translateY: rest.height }}
+        animate={{ scaleY: 1, translateY: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: rest.index * 0.05 }}
+        style={{ transformOrigin: `${rest.x + rest.width / 2}px ${rest.y + rest.height}px` }}
+      >
+        <rect {...rest} fill={fill} />
+      </motion.g>
+    );
+  };
+
+  // Render Chart based on type
+  const renderChart = () => {
+    const chartComponents = {
+      pie: (
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={activeIndex !== null ? 120 : 110}
+              paddingAngle={4}
+              dataKey="value"
+              onMouseEnter={onPieEnter}
+              onMouseLeave={onPieLeave}
+              stroke={theme.palette.background.paper}
+              strokeWidth={2}
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={colors[entry.status?.toLowerCase()] || theme.palette.primary.main}
+                  fillOpacity={activeIndex === index ? 1 : 0.85}
+                  style={{
+                    filter: activeIndex === index ? 'drop-shadow(0 0 12px rgba(0,0,0,0.2))' : 'none',
+                    transition: 'all 0.3s ease',
+                  }}
+                />
+              ))}
+            </Pie>
+            <RechartsTooltip content={<CustomTooltip />} />
+            <Legend
+              verticalAlign="bottom"
+              layout="horizontal"
+              wrapperStyle={{ paddingTop: 20 }}
+              formatter={(value) => (
+                <Typography
+                  component="span"
+                  variant="body2"
+                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+                >
+                  {value}
+                </Typography>
+              )}
+            />
+          </PieChart>
+        </ResponsiveContainer>
+      ),
+      
+      line: (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+            <XAxis 
+              dataKey="name" 
+              stroke={theme.palette.text.secondary}
+              fontSize={12}
+              angle={-45}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis 
+              stroke={theme.palette.text.secondary}
+              fontSize={12}
+            />
+            <RechartsTooltip content={<CustomTooltip />} />
+            <Legend 
+              wrapperStyle={{ paddingTop: '20px' }}
+              formatter={(value) => (
+                <Typography
+                  component="span"
+                  variant="body2"
+                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+                >
+                  {value}
+                </Typography>
+              )}
+            />
+            <Line
+              type="monotone"
+              dataKey="value"
+              stroke={theme.palette.primary.main}
+              strokeWidth={3}
+              dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: 6 }}
+              activeDot={{ r: 8, stroke: theme.palette.primary.main, strokeWidth: 2 }}
+              animationBegin={0}
+              animationDuration={800}
+              animationEasing="ease-out"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      ),
+      
+      bar: (
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsBar data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
+            <XAxis 
+              dataKey="name" 
+              stroke={theme.palette.text.secondary}
+              fontSize={12}
+              angle={-45}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis 
+              stroke={theme.palette.text.secondary}
+              fontSize={12}
+            />
+            <RechartsTooltip content={<CustomTooltip />} />
+            <Legend 
+              wrapperStyle={{ paddingTop: '20px' }}
+              formatter={(value) => (
+                <Typography
+                  component="span"
+                  variant="body2"
+                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
+                >
+                  {value}
+                </Typography>
+              )}
+            />
+            <Bar
+              dataKey="value"
+              fill={theme.palette.primary.main}
+              shape={(props) => <AnimatedBar {...props} />}
+            />
+          </RechartsBar>
+        </ResponsiveContainer>
+      ),
+    };
+
+    return chartComponents[chartType];
+  };
+
+  // Quick Stats Section
+  const QuickStats = () => {
+    const totals = {
+      Requisitions: stats.requisitions.counts.total,
+      RFQs: stats.rfqs.counts.total,
+      'Purchase Orders': stats.purchaseOrders.counts.total,
+      Invoices: stats.invoices.counts.total
+    };
+
+    return (
+      <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {/* Process Breakdown */}
+        <Box
+          sx={{
+            background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.8))',
+            borderRadius: 3,
+            p: 3,
+            border: '1px solid rgba(0, 0, 0, 0.05)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+          }}
+          component={motion.div}
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.3 }}
+        >
+          <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 3 }}>
+            Process Breakdown
+          </Typography>
+          {Object.entries(totals).map(([category, total]) => (
+            <Box key={category} sx={{ mb: 3, '&:last-child': { mb: 0 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" fontWeight={500} color="text.secondary">
+                  {category}
+                </Typography>
+                <Typography variant="body2" fontWeight={600} color="text.primary">
+                  {total}
+                </Typography>
+              </Box>
+              <Box sx={{ width: '100%', backgroundColor: theme.palette.grey[100], borderRadius: 2, height: 8 }}>
+                <Box
+                  sx={{
+                    width: `${Math.round((total / 160) * 100)}%`,
+                    height: '100%',
+                    borderRadius: 2,
+                    background:
+                      category === 'Requisitions'
+                        ? 'linear-gradient(to right, #60a5fa, #4f46e5)'
+                        : category === 'RFQs'
+                        ? 'linear-gradient(to right, #a78bfa, #4f46e5)'
+                        : category === 'Purchase Orders'
+                        ? 'linear-gradient(to right, #34d399, #047857)'
+                        : 'linear-gradient(to right, #fb7185, #e11d48)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                  }}
+                  component={motion.div}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${Math.round((total / 160) * 100)}%` }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                />
+              </Box>
+            </Box>
+          ))}
+        </Box>
+
+        {/* Quick Insights */}
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
+          {summaryData.map((item, index) => (
+            <motion.div
+              key={item.name}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.5 }}
+            >
+              <Paper
+                sx={{
+                  p: 2,
+                  borderRadius: 2,
+                  background: `linear-gradient(135deg, ${colors[item.status.toLowerCase()]}15, ${colors[item.status.toLowerCase()]}05)`,
+                  border: `1px solid ${colors[item.status.toLowerCase()]}30`,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                  <Box
+                    sx={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      backgroundColor: colors[item.status.toLowerCase()],
+                    }}
+                  />
+                  <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                    {item.name}
+                  </Typography>
+                </Box>
+                <Typography variant="h6" fontWeight={700}>
+                  {item.value}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {Math.round((item.value / summaryData.reduce((sum, i) => sum + i.value, 0)) * 100)}% of total
+                </Typography>
+              </Paper>
+            </motion.div>
+          ))}
+        </Box>
+      </Box>
+    );
+  };
+
+  return (
+    <Card
+      sx={{
+        borderRadius: 4,
+        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.08)',
+        border: '1px solid rgba(0, 0, 0, 0.05)',
+        background: 'white',
+        overflow: 'hidden',
+        position: 'relative',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 4,
+          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
+        },
+      }}
+      component={motion.div}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <CardHeader
+        title="Procurement Status"
+        subheader="Current status of procurement activities"
+        titleTypographyProps={{
+          variant: 'h6',
+          fontWeight: 700,
+          color: 'text.primary',
+          letterSpacing: 0.5,
+        }}
+        subheaderTypographyProps={{
+          variant: 'body2',
+          color: 'text.secondary',
+        }}
+        action={
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            {/* Chart Type Selector */}
+            <ButtonGroup variant="outlined" size="small" sx={{ mr: 2 }}>
+              <Button
+                onClick={() => setChartType('pie')}
+                variant={chartType === 'pie' ? 'contained' : 'outlined'}
+                sx={{ px: 1.5, minWidth: 'auto' }}
+              >
+                <PieChartIcon sx={{ fontSize: 18 }} />
+              </Button>
+              <Button
+                onClick={() => setChartType('line')}
+                variant={chartType === 'line' ? 'contained' : 'outlined'}
+                sx={{ px: 1.5, minWidth: 'auto' }}
+              >
+                <Timeline sx={{ fontSize: 18 }} />
+              </Button>
+              <Button
+                onClick={() => setChartType('bar')}
+                variant={chartType === 'bar' ? 'contained' : 'outlined'}
+                sx={{ px: 1.5, minWidth: 'auto' }}
+              >
+                <BarChartIcon sx={{ fontSize: 18 }} />
+              </Button>
+            </ButtonGroup>
+          </Box>
+        }
+        sx={{
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          px: 3,
+          py: 2,
+        }}
+      />
+      
+      {/* Category Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
+        <Tabs 
+          value={activeCategory} 
+          onChange={(e, newValue) => setActiveCategory(newValue)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontSize: '0.875rem',
+              fontWeight: 500,
+            },
+          }}
+        >
+          {categories.map((category) => (
+            <Tab key={category} label={category} value={category} />
+          ))}
+        </Tabs>
+      </Box>
+      
+      <CardContent sx={{ p: 4 }}>
+        <Box sx={{ width: '100%', height: 400, position: 'relative' }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={chartType}
+              variants={chartVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              style={{ width: '100%', height: '100%', position: 'absolute' }}
+            >
+              {renderChart()}
+            </motion.div>
+          </AnimatePresence>
+        </Box>
+        
+        {/* Quick Stats */}
+        <QuickStats />
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function ProcurementDashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
   const [activeIndex, setActiveIndex] = useState(null);
-const [stats, setStats] = useState({
-  requisitions: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingRequisitions: [] },
-  rfqs: { counts: { open: 0, closed: 0, total: 0 }, openRFQs: [] },
-  purchaseOrders: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingPOs: [] },
-  invoices: { counts: { pending: 0, approved: 0, paid: 0, total: 0 }, pendingInvoices: [] }
-});
+  const [stats, setStats] = useState({
+    requisitions: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingRequisitions: [] },
+    rfqs: { counts: { open: 0, closed: 0, total: 0 }, openRFQs: [] },
+    purchaseOrders: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingPOs: [] },
+    invoices: { counts: { pending: 0, approved: 0, paid: 0, total: 0 }, pendingInvoices: [] }
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -230,6 +703,7 @@ const [stats, setStats] = useState({
     email: '',
     role: 'guest'
   };
+  
   const allData = [
     { name: 'Pending Requisitions', value: stats.requisitions.counts.pending, category: 'Requisitions', status: 'pending' },
     { name: 'Approved Requisitions', value: stats.requisitions.counts.approved, category: 'Requisitions', status: 'approved' },
@@ -272,22 +746,6 @@ const [stats, setStats] = useState({
   const onPieLeave = () => {
     setActiveIndex(null);
   };
-  
-  const CustomTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-900 bg-opacity-80 p-4 rounded-lg text-white border border-gray-700">
-          <p className="font-bold text-lg">{payload[0].name}</p>
-          <p className="text-md">Count: <span className="font-bold">{payload[0].value}</span></p>
-          <p className="text-sm text-gray-300">
-            {Math.round((payload[0].value / 160) * 100)}% of total procurement items
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-  
 
   const handleSectionChange = (section) => {
     setActiveSection(section);
@@ -319,8 +777,6 @@ const [stats, setStats] = useState({
     setAnchorEl(event.currentTarget);
   };
 
-  
-
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
@@ -328,8 +784,6 @@ const [stats, setStats] = useState({
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
-
- 
 
   useEffect(() => {
     const getStats = async () => {
@@ -1197,7 +1651,7 @@ const [stats, setStats] = useState({
           }
         }} src={user.avatar}>
           <Typography variant="h6" sx={{ fontWeight: 500 }}>
-            {user.name ? user.name.split(" ").map(n => n[0]).join("") : "GU"}
+            {user.firstName ? user.firstName.split(" ").map(n => n[0]).join("") : "GU"}
           </Typography>
         </Avatar>
       </Button>
@@ -1368,302 +1822,17 @@ const [stats, setStats] = useState({
               },
               mb: 4
             }}>
-              {/* Procurement Status */}
-              <Card
-      sx={{
-        borderRadius: 4,
-        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.08)',
-        border: '1px solid rgba(0, 0, 0, 0.05)',
-        background: 'white',
-        overflow: 'hidden',
-        position: 'relative',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-        },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 4,
-          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
-        },
-      }}
-      component={motion.div}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <CardHeader
-        title="Procurement Status"
-        subheader="Current status of procurement activities"
-        titleTypographyProps={{
-          variant: 'h6',
-          fontWeight: 700,
-          color: 'text.primary',
-          letterSpacing: 0.5,
-        }}
-        subheaderTypographyProps={{
-          variant: 'body2',
-          color: 'text.secondary',
-        }}
-        sx={{
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
-          px: 3,
-          py: 2,
-        }}
-      />
-      <CardContent sx={{ p: 4 }}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {/* PieChart Section */}
-          <Box sx={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={summaryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={70}
-                  outerRadius={activeIndex !== null ? 120 : 110}
-                  paddingAngle={4}
-                  dataKey="value"
-                  onMouseEnter={onPieEnter}
-                  onMouseLeave={onPieLeave}
-                  stroke="#ffffff"
-                  strokeWidth={2}
-                >
-                  {summaryData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={colors[entry.status.toLowerCase()]}
-                      fillOpacity={activeIndex === index ? 1 : 0.85}
-                      style={{
-                        filter: activeIndex === index ? 'drop-shadow(0 0 12px rgba(0,0,0,0.2))' : 'none',
-                        transition: 'all 0.3s ease',
-                      }}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-                <Legend
-                  verticalAlign="bottom"
-                  layout="horizontal"
-                  wrapperStyle={{ paddingTop: 20 }}
-                  formatter={(value) => (
-                    <Typography
-                      component="span"
-                      variant="body2"
-                      sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
-                    >
-                      {value}
-                    </Typography>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </Box>
+              {/* Enhanced Procurement Status */}
+              <ProcurementStatusCard
+                summaryData={summaryData}
+                colors={colors}
+                allData={allData}
+                activeIndex={activeIndex}
+                onPieEnter={onPieEnter}
+                onPieLeave={onPieLeave}
+                stats={stats}
+              />
 
-          {/* Process Breakdown and Quick Insights */}
-          <Box sx={{ display: { xs: 'flex', lg: 'row' }, flexDirection: { xs: 'column', lg: 'row' }, gap: 4 }}>
-            {/* Process Breakdown */}
-            <Box
-              sx={{
-                width: { xs: '100%', lg: '50%' },
-                background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.8))',
-                borderRadius: 3,
-                p: 3,
-                border: '1px solid rgba(0, 0, 0, 0.05)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-              }}
-              component={motion.div}
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <svg
-                  className="w-5 h-5 mr-2 text-indigo-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm11 1H6v8l4-2 4 2V6z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <Typography variant="h6" fontWeight={600} color="text.primary">
-                  Process Breakdown
-                </Typography>
-              </Box>
-              {Object.entries(totals).map(([category, total]) => (
-                <Box key={category} sx={{ mb: 3, '&:last-child': { mb: 0 } }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body2" fontWeight={500} color="text.secondary">
-                      {category}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600} color="text.primary">
-                      {total}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ width: '100%', backgroundColor: theme.palette.grey[100], borderRadius: 2, height: 8 }}>
-                    <Box
-                      sx={{
-                        width: `${Math.round((total / 160) * 100)}%`,
-                        height: '100%',
-                        borderRadius: 2,
-                        background:
-                          category === 'Requisitions'
-                            ? 'linear-gradient(to right, #60a5fa, #4f46e5)'
-                            : category === 'RFQs'
-                            ? 'linear-gradient(to right, #a78bfa, #4f46e5)'
-                            : category === 'Purchase Orders'
-                            ? 'linear-gradient(to right, #34d399, #047857)'
-                            : 'linear-gradient(to right, #fb7185, #e11d48)',
-                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                        transition: 'width 0.5s ease',
-                      }}
-                      component={motion.div}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.round((total / 160) * 100)}%` }}
-                      transition={{ duration: 0.8, ease: 'easeOut' }}
-                    />
-                  </Box>
-                </Box>
-              ))}
-            </Box>
-
-            {/* Quick Insights */}
-            <Box
-              sx={{
-                width: { xs: '100%', lg: '50%' },
-                background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.8))',
-                borderRadius: 3,
-                p: 3,
-                border: '1px solid rgba(0, 0, 0, 0.05)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-              }}
-              component={motion.div}
-              whileHover={{ scale: 1.02 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <svg
-                  className="w-5 h-5 mr-2 text-amber-500"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                  aria-hidden="true"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <Typography variant="h6" fontWeight={600} color="text.primary">
-                  Quick Insights
-                </Typography>
-              </Box>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {/* Insight 1: Approved/Paid status percentage */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <Box
-                    sx={{
-                      flexShrink: 0,
-                      mt: 0.5,
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      backgroundColor: theme.palette.success.main,
-                      mr: 1.5,
-                    }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    {`Most items are in approved or paid status (${Math.round(
-                      ((stats.requisitions.counts.approved + stats.invoices.counts.paid) /
-                        (stats.requisitions.counts.total +
-                          stats.rfqs.counts.total +
-                          stats.purchaseOrders.counts.total +
-                          stats.invoices.counts.total)) *
-                        100
-                    )}%)`}
-                  </Typography>
-                </Box>
-
-                {/* Insight 2: Pending items count */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <Box
-                    sx={{
-                      flexShrink: 0,
-                      mt: 0.5,
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      backgroundColor: theme.palette.warning.main,
-                      mr: 1.5,
-                    }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    {`${
-                      stats.requisitions.counts.pending +
-                      stats.rfqs.counts.open +
-                      stats.purchaseOrders.counts.pending +
-                      stats.invoices.counts.pending
-                    } items are pending action (${Math.round(
-                      ((stats.requisitions.counts.pending +
-                        stats.rfqs.counts.open +
-                        stats.purchaseOrders.counts.pending +
-                        stats.invoices.counts.pending) /
-                        (stats.requisitions.counts.total +
-                          stats.rfqs.counts.total +
-                          stats.purchaseOrders.counts.total +
-                          stats.invoices.counts.total)) *
-                        100
-                    )}%)`}
-                  </Typography>
-                </Box>
-
-                {/* Insight 3: Largest process volume */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <Box
-                    sx={{
-                      flexShrink: 0,
-                      mt: 0.5,
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      backgroundColor: theme.palette.info.main,
-                      mr: 1.5,
-                    }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    {(() => {
-                      const processTotals = {
-                        Requisitions: stats.requisitions.counts.total,
-                        RFQs: stats.rfqs.counts.total,
-                        'Purchase Orders': stats.purchaseOrders.counts.total,
-                        Invoices: stats.invoices.counts.total,
-                      };
-                      const largestProcess = Object.keys(processTotals).reduce(
-                        (a, b) => (processTotals[a] > processTotals[b] ? a : b)
-                      );
-                      const total = Object.values(processTotals).reduce((a, b) => a + b, 0);
-                      const percentage = Math.round((processTotals[largestProcess] / total) * 100);
-                      return `${largestProcess} represent the largest process volume (${percentage}%)`;
-                    })()}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
                 {/* Pending Approvals */}
                 <Card
       sx={{
