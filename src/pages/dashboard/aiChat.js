@@ -33,6 +33,7 @@ import {
   DeleteOutline,
   ChatBubbleOutline
 } from "@mui/icons-material";
+import { useAuth } from "../../authcontext/authcontext"; 
 
 // Styled components
 const ChatFab = styled(Fab)(({ theme }) => ({
@@ -136,14 +137,16 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }));
 
 // Initial welcome message from AI
-const initialMessages = [
-  {
-    id: 1,
-    text: "Hi there! 👋 I'm your AI assistant. How can I help you with your procurement tasks today?",
-    sender: 'ai',
-    timestamp: new Date().toISOString(),
-  }
-];
+const createInitialMessage = (firstName) => {
+  return [
+    {
+      id: 1,
+      text: `Hi ${firstName || 'there'}! 👋 I'm your AI assistant. How can I help you with your procurement tasks today?`,
+      sender: 'ai',
+      timestamp: new Date().toISOString(),
+    }
+  ];
+};
 
 // Suggestions for quick replies
 const suggestions = [
@@ -154,10 +157,10 @@ const suggestions = [
 ];
 
 // Main Component
-const AIChatButton = () => {
+const AIChatButton = ({ user }) => {
   const theme = useTheme();
   const [anchorEl, setAnchorEl] = useState(null);
-  const [messages, setMessages] = useState(initialMessages);
+   const [messages, setMessages] = useState(() => createInitialMessage(user?.firstName));
   const [inputText, setInputText] = useState('');
   const [typing, setTyping] = useState(false);
   const [expanded, setExpanded] = useState(true);
@@ -166,6 +169,7 @@ const AIChatButton = () => {
   const inputRef = useRef(null);
   const fabRef = useRef(null);
   const open = Boolean(anchorEl);
+  const { user: authUser, loading: authLoading } = useAuth();
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -380,7 +384,7 @@ const AIChatButton = () => {
                   }}
                 >
                   {/* First letter of the user's name, can be replaced with actual data */}
-                  U
+                   {user.firstName ? user.firstName.split(" ").map(n => n[0]).join("") : "GU"}
                 </Avatar>
               )}
             </MessageContainer>

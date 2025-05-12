@@ -1684,7 +1684,7 @@ export default function ProcurementDashboard() {
   )}
 </Box>
       </Box>
-        <AIChatButton />
+        <AIChatButton user={user} />
     </Box>
   );
 }
