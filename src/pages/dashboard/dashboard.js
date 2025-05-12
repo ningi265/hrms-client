@@ -66,6 +66,11 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
+import './dashboard.css';
+import RevenueChart from './revenueChart';
+import DateComponent from './date';
+import ProcurementStatusCard from './procurementStatus';
+import ProductReviewsAnalysis from './productProcurement';
 import { motion, AnimatePresence } from 'framer-motion';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
@@ -98,7 +103,32 @@ import axios from 'axios';
 import AddVendorPage from "../../pages/dashboard/vendors/add/add";
 
 
+// Sample data for RevenueChart
+const salesData = [
+  { month: 'Jan', revenue: 65000, target: 60000, growth: 8 },
+  { month: 'Feb', revenue: 59000, target: 65000, growth: -5 },
+  { month: 'Mar', revenue: 80000, target: 70000, growth: 12 },
+  { month: 'Apr', revenue: 81000, target: 75000, growth: 10 },
+  { month: 'May', revenue: 56000, target: 80000, growth: -15 },
+  { month: 'Jun', revenue: 95000, target: 85000, growth: 20 },
+  { month: 'Jul', revenue: 100000, target: 90000, growth: 18 }
+];
 
+const revenueBreakdown = [
+  { name: 'Product A', value: 35, color: '#3f51b5' },
+  { name: 'Product B', value: 25, color: '#00acc1' },
+  { name: 'Product C', value: 20, color: '#4caf50' },
+  { name: 'Product D', value: 15, color: '#ff9800' },
+  { name: 'Other', value: 5, color: '#9e9e9e' }
+];
+
+const regionalMapData = [
+  { region: 'North', value: 45000 },
+  { region: 'South', value: 35000 },
+  { region: 'East', value: 30000 },
+  { region: 'West', value: 40000 },
+  { region: 'Central', value: 25000 }
+];
 
 // Styled components
 const Sidebar = styled(Drawer)(({ theme }) => ({
@@ -143,7 +173,7 @@ const StatsCard = styled(Card)(({ theme }) => ({
     boxShadow: theme.shadows[3],
   },
   "& .MuiCardContent-root": {
-    padding: theme.spacing(2),
+    padding: theme.spacing(1.5),
   },
 }));
 
@@ -200,472 +230,7 @@ const ActivityCard = styled(Card)(({ theme }) => ({
 const backendUrl = process.env.REACT_APP_BACKEND_URL;
 console.log(backendUrl);
 
-// Enhanced Procurement Status Card Component
-const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPieEnter, onPieLeave, stats }) => {
-  const theme = useTheme();
-  const [chartType, setChartType] = useState('pie'); // 'pie', 'line', 'bar'
-  const [activeCategory, setActiveCategory] = useState('Overall');
 
-  // Prepare data for different chart types
-  const categories = ['Overall', 'Requisitions', 'RFQs', 'Purchase Orders', 'Invoices'];
-  
-  const getChartData = () => {
-    if (activeCategory === 'Overall') {
-      return summaryData;
-    }
-    
-    // Filter data by category
-    return allData
-      .filter(item => item.category === activeCategory)
-      .map(item => ({
-        name: item.name.split(' ')[0], // Get status (Pending, Approved, etc.)
-        value: item.value,
-        status: item.status,
-      }));
-  };
-
-  const chartData = getChartData();
-
-  // Animation variants
-  const chartVariants = {
-    hidden: { 
-      opacity: 0, 
-      scale: 0.8,
-      transition: { 
-        duration: 0.3,
-        ease: "easeOut"
-      }
-    },
-    visible: { 
-      opacity: 1, 
-      scale: 1,
-      transition: { 
-        duration: 0.5,
-        ease: "easeOut"
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      scale: 0.8,
-      transition: { 
-        duration: 0.3,
-        ease: "easeIn"
-      }
-    },
-  };
-
-  // Custom Tooltip Component
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            backgroundColor: theme.palette.background.paper,
-            border: `1px solid ${theme.palette.divider}`,
-            borderRadius: 8,
-            padding: '12px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}
-        >
-          <Typography variant="subtitle2" fontWeight={600}>
-            {payload[0].name || label}
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 0.5 }}>
-            Count: <span style={{ fontWeight: 600, color: theme.palette.primary.main }}>{payload[0].value}</span>
-          </Typography>
-          {chartType === 'pie' && (
-            <Typography variant="caption" color="text.secondary">
-              {Math.round((payload[0].value / chartData.reduce((sum, item) => sum + item.value, 0)) * 100)}% of total
-            </Typography>
-          )}
-        </motion.div>
-      );
-    }
-    return null;
-  };
-
-  // Bar shape component for animations
-  const AnimatedBar = (props) => {
-    const { fill, ...rest } = props;
-    return (
-      <motion.g
-        initial={{ scaleY: 0, translateY: rest.height }}
-        animate={{ scaleY: 1, translateY: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut", delay: rest.index * 0.05 }}
-        style={{ transformOrigin: `${rest.x + rest.width / 2}px ${rest.y + rest.height}px` }}
-      >
-        <rect {...rest} fill={fill} />
-      </motion.g>
-    );
-  };
-
-  // Render Chart based on type
-  const renderChart = () => {
-    const chartComponents = {
-      pie: (
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={activeIndex !== null ? 120 : 110}
-              paddingAngle={4}
-              dataKey="value"
-              onMouseEnter={onPieEnter}
-              onMouseLeave={onPieLeave}
-              stroke={theme.palette.background.paper}
-              strokeWidth={2}
-            >
-              {chartData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={colors[entry.status?.toLowerCase()] || theme.palette.primary.main}
-                  fillOpacity={activeIndex === index ? 1 : 0.85}
-                  style={{
-                    filter: activeIndex === index ? 'drop-shadow(0 0 12px rgba(0,0,0,0.2))' : 'none',
-                    transition: 'all 0.3s ease',
-                  }}
-                />
-              ))}
-            </Pie>
-            <RechartsTooltip content={<CustomTooltip />} />
-            <Legend
-              verticalAlign="bottom"
-              layout="horizontal"
-              wrapperStyle={{ paddingTop: 20 }}
-              formatter={(value) => (
-                <Typography
-                  component="span"
-                  variant="body2"
-                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
-                >
-                  {value}
-                </Typography>
-              )}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      ),
-      
-      line: (
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-            <XAxis 
-              dataKey="name" 
-              stroke={theme.palette.text.secondary}
-              fontSize={12}
-              angle={-45}
-              textAnchor="end"
-              height={60}
-            />
-            <YAxis 
-              stroke={theme.palette.text.secondary}
-              fontSize={12}
-            />
-            <RechartsTooltip content={<CustomTooltip />} />
-            <Legend 
-              wrapperStyle={{ paddingTop: '20px' }}
-              formatter={(value) => (
-                <Typography
-                  component="span"
-                  variant="body2"
-                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
-                >
-                  {value}
-                </Typography>
-              )}
-            />
-            <Line
-              type="monotone"
-              dataKey="value"
-              stroke={theme.palette.primary.main}
-              strokeWidth={3}
-              dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: 6 }}
-              activeDot={{ r: 8, stroke: theme.palette.primary.main, strokeWidth: 2 }}
-              animationBegin={0}
-              animationDuration={800}
-              animationEasing="ease-out"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      ),
-      
-      bar: (
-        <ResponsiveContainer width="100%" height="100%">
-          <RechartsBar data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
-            <XAxis 
-              dataKey="name" 
-              stroke={theme.palette.text.secondary}
-              fontSize={12}
-              angle={-45}
-              textAnchor="end"
-              height={60}
-            />
-            <YAxis 
-              stroke={theme.palette.text.secondary}
-              fontSize={12}
-            />
-            <RechartsTooltip content={<CustomTooltip />} />
-            <Legend 
-              wrapperStyle={{ paddingTop: '20px' }}
-              formatter={(value) => (
-                <Typography
-                  component="span"
-                  variant="body2"
-                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
-                >
-                  {value}
-                </Typography>
-              )}
-            />
-            <Bar
-              dataKey="value"
-              fill={theme.palette.primary.main}
-              shape={(props) => <AnimatedBar {...props} />}
-            />
-          </RechartsBar>
-        </ResponsiveContainer>
-      ),
-    };
-
-    return chartComponents[chartType];
-  };
-
-  // Quick Stats Section
-  const QuickStats = () => {
-    const totals = {
-      Requisitions: stats.requisitions.counts.total,
-      RFQs: stats.rfqs.counts.total,
-      'Purchase Orders': stats.purchaseOrders.counts.total,
-      Invoices: stats.invoices.counts.total
-    };
-
-    return (
-      <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
-        {/* Process Breakdown */}
-        <Box
-          sx={{
-            background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.8))',
-            borderRadius: 3,
-            p: 3,
-            border: '1px solid rgba(0, 0, 0, 0.05)',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-          }}
-          component={motion.div}
-          whileHover={{ scale: 1.02 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 3 }}>
-            Process Breakdown
-          </Typography>
-          {Object.entries(totals).map(([category, total]) => (
-            <Box key={category} sx={{ mb: 3, '&:last-child': { mb: 0 } }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                <Typography variant="body2" fontWeight={500} color="text.secondary">
-                  {category}
-                </Typography>
-                <Typography variant="body2" fontWeight={600} color="text.primary">
-                  {total}
-                </Typography>
-              </Box>
-              <Box sx={{ width: '100%', backgroundColor: theme.palette.grey[100], borderRadius: 2, height: 8 }}>
-                <Box
-                  sx={{
-                    width: `${Math.round((total / 160) * 100)}%`,
-                    height: '100%',
-                    borderRadius: 2,
-                    background:
-                      category === 'Requisitions'
-                        ? 'linear-gradient(to right, #60a5fa, #4f46e5)'
-                        : category === 'RFQs'
-                        ? 'linear-gradient(to right, #a78bfa, #4f46e5)'
-                        : category === 'Purchase Orders'
-                        ? 'linear-gradient(to right, #34d399, #047857)'
-                        : 'linear-gradient(to right, #fb7185, #e11d48)',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                  }}
-                  component={motion.div}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.round((total / 160) * 100)}%` }}
-                  transition={{ duration: 0.8, ease: 'easeOut' }}
-                />
-              </Box>
-            </Box>
-          ))}
-        </Box>
-
-        {/* Quick Insights */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
-          {summaryData.map((item, index) => (
-            <motion.div
-              key={item.name}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-            >
-              <Paper
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  background: `linear-gradient(135deg, ${colors[item.status.toLowerCase()]}15, ${colors[item.status.toLowerCase()]}05)`,
-                  border: `1px solid ${colors[item.status.toLowerCase()]}30`,
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                  <Box
-                    sx={{
-                      width: 10,
-                      height: 10,
-                      borderRadius: '50%',
-                      backgroundColor: colors[item.status.toLowerCase()],
-                    }}
-                  />
-                  <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                    {item.name}
-                  </Typography>
-                </Box>
-                <Typography variant="h6" fontWeight={700}>
-                  {item.value}
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {Math.round((item.value / summaryData.reduce((sum, i) => sum + i.value, 0)) * 100)}% of total
-                </Typography>
-              </Paper>
-            </motion.div>
-          ))}
-        </Box>
-      </Box>
-    );
-  };
-
-  return (
-    <Card
-      sx={{
-        borderRadius: 4,
-        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.08)',
-        border: '1px solid rgba(0, 0, 0, 0.05)',
-        background: 'white',
-        overflow: 'hidden',
-        position: 'relative',
-        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
-        },
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 4,
-          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
-        },
-      }}
-      component={motion.div}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <CardHeader
-        title="Procurement Status"
-        subheader="Current status of procurement activities"
-        titleTypographyProps={{
-          variant: 'h6',
-          fontWeight: 700,
-          color: 'text.primary',
-          letterSpacing: 0.5,
-        }}
-        subheaderTypographyProps={{
-          variant: 'body2',
-          color: 'text.secondary',
-        }}
-        action={
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            {/* Chart Type Selector */}
-            <ButtonGroup variant="outlined" size="small" sx={{ mr: 2 }}>
-              <Button
-                onClick={() => setChartType('pie')}
-                variant={chartType === 'pie' ? 'contained' : 'outlined'}
-                sx={{ px: 1.5, minWidth: 'auto' }}
-              >
-                <PieChartIcon sx={{ fontSize: 18 }} />
-              </Button>
-              <Button
-                onClick={() => setChartType('line')}
-                variant={chartType === 'line' ? 'contained' : 'outlined'}
-                sx={{ px: 1.5, minWidth: 'auto' }}
-              >
-                <Timeline sx={{ fontSize: 18 }} />
-              </Button>
-              <Button
-                onClick={() => setChartType('bar')}
-                variant={chartType === 'bar' ? 'contained' : 'outlined'}
-                sx={{ px: 1.5, minWidth: 'auto' }}
-              >
-                <BarChartIcon sx={{ fontSize: 18 }} />
-              </Button>
-            </ButtonGroup>
-          </Box>
-        }
-        sx={{
-          borderBottom: `1px solid ${theme.palette.divider}`,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(10px)',
-          px: 3,
-          py: 2,
-        }}
-      />
-      
-      {/* Category Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
-        <Tabs 
-          value={activeCategory} 
-          onChange={(e, newValue) => setActiveCategory(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            '& .MuiTab-root': {
-              textTransform: 'none',
-              fontSize: '0.875rem',
-              fontWeight: 500,
-            },
-          }}
-        >
-          {categories.map((category) => (
-            <Tab key={category} label={category} value={category} />
-          ))}
-        </Tabs>
-      </Box>
-      
-      <CardContent sx={{ p: 4 }}>
-        <Box sx={{ width: '100%', height: 400, position: 'relative' }}>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={chartType}
-              variants={chartVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-              style={{ width: '100%', height: '100%', position: 'absolute' }}
-            >
-              {renderChart()}
-            </motion.div>
-          </AnimatePresence>
-        </Box>
-        
-        {/* Quick Stats */}
-        <QuickStats />
-      </CardContent>
-    </Card>
-  );
-};
 
 export default function ProcurementDashboard() {
   const navigate = useNavigate();
@@ -687,6 +252,32 @@ export default function ProcurementDashboard() {
     return searchParams.get('section') || 'dashboard';
   });
   const { user: authUser, loading: authLoading } = useAuth();
+  const [recentReports, setRecentReports] = useState([
+  {
+    name: "Procurement Summary",
+    type: "Analytics",
+    created_at: "2 days ago",
+    thumbnail: "graph-bar"
+  },
+ {
+    name: "Vendor Performance",
+    type: "Report", 
+    created_at: "1 week ago",
+    thumbnail: "trending-up"
+  },
+  {
+    name: "Inventory Levels",
+    type: "Report",
+    created_at: "3 days ago", 
+    thumbnail: "box"
+  },
+{
+    name: "User Activity",
+    type: "Analytics",
+    created_at: "5 days ago",
+    thumbnail: "users"
+  }
+]);
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const colors = {
@@ -762,6 +353,15 @@ export default function ProcurementDashboard() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+  const rows = document.querySelectorAll('.report-row');
+  rows.forEach((row, index) => {
+    setTimeout(() => {
+      row.classList.add('row-visible');
+    }, 100 * index);
+  });
+}, [recentReports]);
 
   // Calculate opacity (0 when at top, 1 when scrolled down a bit)
   const opacity = Math.min(scrollPosition / 100, 1); 
@@ -1485,7 +1085,7 @@ export default function ProcurementDashboard() {
       }}>
         {/* Header */}
         <Paper elevation={0} sx={{ 
-  p: 1.5,
+  p: 1,
   border: 'none',
   height: 75,
   backdropFilter: `blur(${opacity * 12}px) saturate(180%)`,
@@ -1499,7 +1099,7 @@ export default function ProcurementDashboard() {
     backdropFilter: `blur(${opacity * 16}px) saturate(200%)`
   }
 }}>
-  <Toolbar sx={{ px: { sm: 2 }, gap: 1 }}>
+  <Toolbar sx={{ px: { sm: 1.5 }, gap: 1 }}>
     {/* Left-aligned items */}
     <Box sx={{ 
       display: "flex", 
@@ -1541,7 +1141,36 @@ export default function ProcurementDashboard() {
           }} />
         </Badge>
       </IconButton>
+
+      {/* Date display */}
+    <Box sx={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1,
+      px: 2,
+      py: 1,
+      borderRadius: 1,
+      bgcolor: alpha(theme.palette.primary.main, 0.08),
+      color: theme.palette.text.primary,
+      '& svg': {
+        width: 20,
+        height: 20,
+        color: theme.palette.primary.main
+      }
+    }}>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+        {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+      </Typography>
     </Box>
+    </Box>
+
+    
 
     {/* Right-aligned items */}
     <Box sx={{ 
@@ -1590,33 +1219,6 @@ export default function ProcurementDashboard() {
             }
           }} />
         </IconButton>
-      </Tooltip>
-
-      {/* Upgrade button with gradient */}
-      <Tooltip title="Go Premium">
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<RocketLaunch sx={{ fontSize: 18 }} />}
-          sx={{
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-            color: theme.palette.common.white,
-            borderRadius: 4,
-            px: 2.5,
-            py: 0.8,
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            letterSpacing: 0.5,
-            boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            '&:hover': {
-              transform: 'translateY(-1px)',
-              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`
-            }
-          }}
-        >
-          Premium
-        </Button>
       </Tooltip>
     </Box>
 
@@ -1731,10 +1333,8 @@ export default function ProcurementDashboard() {
     </IconButton>
   </Toolbar>
 </Paper>
-
         {/* Main Content Area */}
-
-<Box sx={{ p: 2 }}>
+<Box sx={{ p: 1.5 }}>
   {activeSection === "dashboard" ? (
     <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
       {/* All the current dashboard content */}
@@ -1744,7 +1344,7 @@ export default function ProcurementDashboard() {
               display: "flex", 
               justifyContent: "space-between", 
               alignItems: 'center',
-              mb: 3,
+              mb: 2,
               flexDirection: { xs: 'column', sm: 'row' },
               gap: { xs: 1, sm: 0 },
               textAlign: { xs: 'center', sm: 'left' }
@@ -1754,22 +1354,21 @@ export default function ProcurementDashboard() {
                   Dashboard Overview
                 </Typography>
                 <Typography variant="body" color="text.secondary" sx={{ fontSize: '0.875rem'}} >
-                  Welcome back, here's what's happening with your procurement activities.
+                  Welcome back {user.firstName}, here's what's happening with your procurement activities.
                 </Typography>
               </Box>
-             
             </Box>
 
             {/* Stats Cards */}
             <Box sx={{ 
               display: "grid", 
-              gap: 2, 
+              gap: 1.5, 
               gridTemplateColumns: { 
                 xs: "1fr", 
                 sm: "repeat(2, 1fr)", 
                 lg: "repeat(4, 1fr)" 
               }, 
-              mb: 3 
+              mb: 2.5 
             }}>
               <StatsCardComponent
                 title="Requisitions"
@@ -1817,10 +1416,10 @@ export default function ProcurementDashboard() {
               display: "grid", 
               gap: 3, 
               gridTemplateColumns: { 
-                xs: "1fr", 
-                lg: "2fr 1fr" 
+                xs:  "1fr 1fr",
               },
-              mb: 4
+              mb: 4,
+              minWidth: "600px"
             }}>
               {/* Enhanced Procurement Status */}
               <ProcurementStatusCard
@@ -1834,143 +1433,15 @@ export default function ProcurementDashboard() {
               />
 
                 {/* Pending Approvals */}
-                <Card
-      sx={{
-        borderRadius: 4,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-        background: 'white',
-        overflow: 'hidden',
-        position: 'relative',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 4,
-          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
-        },
-      }}
-      component={motion.div}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <CardHeader
-        title="Pending Approvals"
-        subheader="Items requiring your attention"
-        titleTypographyProps={{
-          variant: 'h6',
-          fontWeight: 700,
-          color: theme.palette.text.primary,
-        }}
-        subheaderTypographyProps={{
-          variant: 'body2',
-          color: theme.palette.text.secondary,
-        }}
-        sx={{
-          pb: 1,
-          px: 3,
-          background: 'rgba(255, 255, 255, 0.95)',
-        }}
-      />
-      <Divider />
-      <CardContent sx={{ p: 0, maxHeight: 400, overflowY: 'auto' }}>
-        <List disablePadding>
-          {stats.requisitions.pendingRequisitions.map((req) => (
-            <ApprovalItemComponent
-              key={req._id}
-              title={req.itemName}
-              type="requisition"
-              requester={req.employee?.name || "New Account"}
-              date={new Date(req.createdAt).toLocaleDateString()}
-              amount={`Quantity: ${req.quantity}`}
-            />
-          ))}
-          {stats.rfqs.openRFQs.map((rfq) => (
-            <ApprovalItemComponent
-              key={rfq._id}
-              title={rfq.itemName}
-              type="rfq"
-              requester={rfq.procurementOfficer?.name || "New Account"}
-              date={new Date(rfq.createdAt).toLocaleDateString()}
-              amount={`Quantity: ${rfq.quantity}`}
-            />
-          ))}
-          {stats.purchaseOrders.pendingPOs.map((po) => (
-            <ApprovalItemComponent
-              key={po._id}
-              title="Purchase Order"
-              type="purchase-order"
-              requester={po.vendor?.name || "New Account"}
-              date={new Date(po.createdAt).toLocaleDateString()}
-              amount="Pending Approval"
-            />
-          ))}
-          {stats.invoices.pendingInvoices.map((inv) => (
-            <ApprovalItemComponent
-              key={inv._id}
-              title="Invoice"
-              type="invoice"
-              requester={inv.vendor.name}
-              date={new Date(inv.createdAt).toLocaleDateString()}
-              amount={inv.amountDue}
-            />
-          ))}
-          {stats.requisitions.pendingRequisitions.length === 0 &&
-            stats.rfqs.openRFQs.length === 0 &&
-            stats.purchaseOrders.pendingPOs.length === 0 && (
-              <ListItem sx={{ justifyContent: 'center', py: 3 }}>
-                <ListItemText
-                  primary={
-                    <Typography
-                      variant="body1"
-                      color="text.secondary"
-                      textAlign="center"
-                    >
-                      No pending approvals
-                    </Typography>
-                  }
-                />
-              </ListItem>
-            )}
-        </List>
-      </CardContent>
-      <Box
-        sx={{
-          p: 2,
-          borderTop: `1px solid ${theme.palette.divider}`,
-          background: 'white',
-        }}
-      >
-        <Button
-          fullWidth
-          variant="contained"
-          component={motion.button}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          sx={{
-            borderRadius: 20,
-            textTransform: 'none',
-            fontWeight: 600,
-            py: 1.5,
-            background: 'linear-gradient(90deg, #3b82f6, #10b981)',
-            color: 'white',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-            '&:hover': {
-              background: 'linear-gradient(90deg, #2563eb, #059669)',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
-            },
-          }}
-        >
-          View All Pending Items
-        </Button>
-      </Box>
-    </Card> 
+                  <RevenueChart 
+  salesData={salesData} 
+  revenueBreakdown={revenueBreakdown} 
+  regionalMapData={regionalMapData} 
+/> 
             </Box>
 
             {/* Recent Activity */}
-            <Card sx={{ 
+             {/*    <Card sx={{ 
               mt: 3,
               borderRadius: 3,
               boxShadow: theme.shadows[1],
@@ -2029,7 +1500,152 @@ export default function ProcurementDashboard() {
                   />
                 </Box>
               </CardContent>
-            </Card>
+            </Card>*/}
+         
+             {/*Recent Reports */}
+               <div className="recent-reports">
+      <div className="section-header">
+        <h2 className="section-title">Recent Reports</h2>
+        <div className="section-actions">
+          <button className="btn-outline">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            Export All
+          </button>
+          
+          <button className="btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            New Report
+          </button>
+        </div>
+      </div>
+      
+      <div className="reports-table-container">
+        <table className="reports-table">
+          <thead>
+            <tr>
+              <th>Report Name</th>
+              <th>Type</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recentReports.map((report, index) => (
+              <tr className="report-row" key={index}>
+                <td>
+                  <div className="report-info">
+                    <div className={`report-thumbnail ${report.thumbnail}`}>
+                      {report.thumbnail === 'graph-bar' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="20" x2="18" y2="10"></line>
+                          <line x1="12" y1="20" x2="12" y2="4"></line>
+                          <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                      )}
+                      {report.thumbnail === 'box' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                      )}
+                      {report.thumbnail === 'users' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="9" cy="7" r="4"></circle>
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                      )}
+                      {report.thumbnail === 'trending-up' && (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                          <polyline points="17 6 23 6 23 12"></polyline>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="report-name">{report.name}</div>
+                  </div>
+                </td>
+                <td>{report.type}</td>
+                <td>{report.created_at}</td>
+                <td>
+                  <div className="report-actions">
+                    <button className="action-btn view">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg>
+                    </button>
+                    
+                    <button className="action-btn download">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                    </button>
+                    
+                    <button className="action-btn favorite">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                    </button>
+                    
+                    <button className="action-btn favorite">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                      </svg>
+                    </button>
+                    
+                    <button className="action-btn more">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="1"></circle>
+                        <circle cx="19" cy="12" r="1"></circle>
+                        <circle cx="5" cy="12" r="1"></circle>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="pagination">
+        <button className="pagination-btn prev disabled">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Previous
+        </button>
+        
+        <div className="pagination-info">
+          Showing <span>1-4</span> of <span>4</span>
+        </div>
+        
+        <button className="pagination-btn next disabled">
+          Next
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+               </div>
+
+                   <Box sx={{ mb: 4 }}>
+      <ProductReviewsAnalysis />
+    </Box>
+
+
           </Box>
     </Box>
   ) : (
@@ -2082,36 +1698,37 @@ function StatsCardComponent({ title, value, description, trend, trendDirection, 
           <Avatar sx={{ 
             bgcolor: alpha(theme.palette[color].main, 0.1), 
             color: theme.palette[color].main,
-            width: 40,
-            height: 40
+            width: 30,
+            height: 30
           }}>
-            {React.cloneElement(icon, { sx: { fontSize: 18 } })}
+            {React.cloneElement(icon, { sx: { fontSize: 12 } })}
           </Avatar>
           <Badge
             color={trendDirection === "up" ? "success" : "error"}
             badgeContent={trend}
             sx={{ 
               '& .MuiBadge-badge': { 
-                fontSize: "0.65rem", 
-                height: 18,
-                borderRadius: 9,
-                padding: '0 6px',
+                fontSize: "0.6rem", 
+                height: 12,
+                borderRadius: 6,
+                padding: '0 3px',
               } 
             }}
           />
         </Box>
-        <Box sx={{ mt: 1.5 }}>
-          <Typography variant="h4" component="div" sx={{ fontWeight: 700 }}>
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="h5" component="div" sx={{ fontWeight: 700 }}>
             {value}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25,fontSize:'0.875rem' }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25,fontSize:'0.8rem' }}>
             {title}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ 
             display: 'block',
-            mt: 0.5,
+            mt: 0.25,
             color: theme.palette.text.secondary,
-            fontSize: '0.75rem',
+            fontSize: '0.7rem',
+            lineHeight: 1.4
           }}>
             {description}
           </Typography>
