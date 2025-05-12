@@ -32,6 +32,7 @@ import {
 } from "@mui/icons-material";
 import Tooltip from '@mui/material/Tooltip';
 import MenuIcon from '@mui/icons-material/Menu';
+import AIChatButton from './aiChat';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, 
   LineChart, Line, BarChart as RechartsBar, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from 'recharts';
 import {
@@ -524,7 +525,7 @@ export default function ProcurementDashboard() {
       }}>
         <div className="inline-flex items-center">
     <img
-      src="/Logo.png"
+      src="hrms-logo.png"
       className="h-16 w-auto mx-auto"  // Increased the height to 64
     />
   </div>
@@ -552,8 +553,7 @@ export default function ProcurementDashboard() {
 
     {/* Main Section */}
     <List>
-      <SidebarGroupLabel sx={{  color: 'inherit', }}>Main</SidebarGroupLabel>
-      
+      <SidebarGroupLabel sx={{  color: 'inherit', }}>Main</SidebarGroupLabel>      
       <StyledListItemButton
         selected={activeSection === "dashboard"}
         onClick={() => handleSectionChange("dashboard")}
@@ -1684,6 +1684,7 @@ export default function ProcurementDashboard() {
   )}
 </Box>
       </Box>
+        <AIChatButton />
     </Box>
   );
 }
