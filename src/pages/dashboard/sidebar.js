@@ -19,36 +19,149 @@ import {
   alpha,
   Avatar
 } from '@mui/material';
-import {
-  Home,
-  People,
-  ShoppingCart,
-  Inventory,
-  CreditCard,
-  CalendarToday,
-  LocalShipping,
-  Description,
-  BarChart,
-  PieChart,
-  Settings,
-  ExitToApp,
-  Menu as MenuIcon,
-  ChevronLeft,
-  ChevronRight
-} from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Menu as MenuIcon } from '@mui/icons-material';
 
-// Clean, modern color palette with no separations
+// Modern color palette with a professional look
 const sidebarColors = {
-  background: '#18181b', // Dark background (Zinc 900 from Tailwind)
-  itemHover: 'rgba(255, 255, 255, 0.07)',
-  itemSelected: 'rgba(94, 104, 255, 0.15)',
-  itemSelectedText: '#5e68ff',
-  itemSelectedHover: 'rgba(94, 104, 255, 0.2)',
-  text: '#f4f4f5', // Zinc 100
-  textSecondary: 'rgba(244, 244, 245, 0.6)',
-  iconColor: '#a1a1aa', // Zinc 400
-  iconSelectedColor: '#5e68ff',
-  divider: 'rgba(63, 63, 70, 0.5)', // Zinc 700
+  background: '#141b2d', // Rich dark blue
+  headerBg: '#1f2940',
+  itemHover: 'rgba(145, 158, 171, 0.08)',
+  itemSelected: 'rgba(85, 105, 255, 0.16)',
+  itemSelectedText: '#5569ff',
+  itemSelectedHover: 'rgba(85, 105, 255, 0.24)',
+  text: '#e0e0e0',
+  textSecondary: 'rgba(224, 224, 224, 0.6)',
+  iconColor: '#90a0b7',
+  iconSelectedColor: '#5569ff',
+  divider: 'rgba(145, 158, 171, 0.16)',
+};
+
+// Modern SVG Icons
+const ModernIcons = {
+  Dashboard: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="3" y="3" width="7" height="9" rx="1" />
+      <rect x="14" y="3" width="7" height="5" rx="1" />
+      <rect x="14" y="12" width="7" height="9" rx="1" />
+      <rect x="3" y="16" width="7" height="5" rx="1" />
+    </svg>
+  ),
+  Employees: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  Vendors: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  Requisitions: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  ),
+  RFQs: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10 9 9 9 8 9" />
+    </svg>
+  ),
+  PurchaseOrders: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  ),
+  Invoices: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M7 15h0M2 9.5h20" />
+      <path d="M12 15h5" />
+    </svg>
+  ),
+  TravelRequests: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M15 11h.01M11 15h.01M16 16h.01M10 12h.01M3 7l2.5 3 4-5 2.5 3 3-4 2.5 3L20.5 5" />
+      <path d="M20 22h-2a2 2 0 0 1-2-2v-8.5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5V20h3a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1ZM15.4 22H8.6c-.5 0-.9-.4-.9-.9V10.1c0-.5.4-.9.9-.9h6.8c.5 0 .9.4.9.9v10.9c0 .6-.4 1-.9 1Z" />
+      <path d="M4 22H2a1 1 0 0 1-1-1v0a1 1 0 0 1 1-1h3v-8.5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5V20a2 2 0 0 1-2 2Z" />
+    </svg>
+  ),
+  FinalApproval: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <polyline points="9 11 12 14 22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
+  ),
+  FleetManagement: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11" />
+      <path d="M14 9h4l4 4v4c0 .6-.4 1-1 1h-2" />
+      <circle cx="7" cy="18" r="2" />
+      <path d="M15 18H9" />
+      <circle cx="17" cy="18" r="2" />
+    </svg>
+  ),
+  Processing: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="2" y="5" width="20" height="14" rx="2" />
+      <line x1="2" y1="10" x2="22" y2="10" />
+      <line x1="7" y1="15" x2="7" y2="15" />
+      <line x1="12" y1="15" x2="12" y2="15" />
+      <line x1="17" y1="15" x2="17" y2="15" />
+    </svg>
+  ),
+  Reconciliation: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.5 10-10 10Z" />
+      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
+    </svg>
+  ),
+  Analytics: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 3v18h18" />
+      <path d="M18 17V9" />
+      <path d="M13 17V5" />
+      <path d="M8 17v-3" />
+    </svg>
+  ),
+  Reports: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 2v4" />
+      <path d="M12 18v4" />
+      <path d="m4.93 10.93 2.83-2.83" />
+      <path d="M16.24 16.24 19.07 19.07" />
+      <path d="M2 12h4" />
+      <path d="M18 12h4" />
+      <path d="m10.93 4.93-2.83 2.83" />
+      <path d="M16.24 7.76 19.07 4.93" />
+    </svg>
+  ),
+  Settings: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  Logout: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  ),
 };
 
 // Styled components with seamless design
@@ -115,13 +228,13 @@ const MenuItemIcon = styled(ListItemIcon)(({ theme, selected }) => ({
   marginRight: 16,
   justifyContent: 'center',
   color: selected ? sidebarColors.iconSelectedColor : sidebarColors.iconColor,
-  transition: 'color 0.15s ease',
-  '& svg': {
-    fontSize: 20,
+  transition: 'color 0.15s ease, transform 0.2s ease',
+  '&:hover': {
+    transform: 'scale(1.05)'
   }
 }));
 
-// Drawer Header - now seamless with the rest of the sidebar
+// Drawer Header - seamless with the rest of the sidebar
 const DrawerHeader = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
@@ -163,6 +276,42 @@ const StyledBadge = styled(Badge)(({ theme }) => ({
   }
 }));
 
+// Animated badge dot
+const PulseBadge = styled('span')(({ theme }) => ({
+  position: 'absolute',
+  top: 8,
+  right: 8,
+  width: 8,
+  height: 8,
+  borderRadius: '50%',
+  backgroundColor: '#ef4444',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    animation: 'pulse 2s infinite',
+    backgroundColor: 'rgba(239, 68, 68, 0.7)',
+  },
+  '@keyframes pulse': {
+    '0%': {
+      transform: 'scale(1)',
+      opacity: 1,
+    },
+    '70%': {
+      transform: 'scale(2)',
+      opacity: 0,
+    },
+    '100%': {
+      transform: 'scale(2.5)',
+      opacity: 0,
+    },
+  },
+}));
+
 // Main component
 const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange }) => {
   const theme = useTheme();
@@ -192,7 +341,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
     }
   };
 
-  // Menu data structure with grouping and icons
+  // Menu data structure with grouping and modern icons
   const menuSections = [
     {
       id: 'main',
@@ -201,43 +350,43 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
         { 
           id: 'dashboard', 
           label: 'Dashboard', 
-          icon: <Home />,
+          icon: <ModernIcons.Dashboard />,
           badge: null
         },
         { 
           id: 'employees', 
           label: 'Employees', 
-          icon: <People />,
+          icon: <ModernIcons.Employees />,
           badge: stats.employees?.counts?.pending || null
         },
         { 
           id: 'vendors', 
           label: 'Vendors', 
-          icon: <People />,
+          icon: <ModernIcons.Vendors />,
           badge: stats.vendors?.counts?.open || null
         },
         { 
           id: 'requisitions', 
           label: 'Requisitions', 
-          icon: <ShoppingCart />,
+          icon: <ModernIcons.Requisitions />,
           badge: stats.requisitions?.counts?.pending || null
         },
         { 
           id: 'rfqs', 
           label: 'RFQs', 
-          icon: <Description />,
+          icon: <ModernIcons.RFQs />,
           badge: stats.rfqs?.counts?.open || null
         },
         { 
           id: 'purchase-orders', 
           label: 'Purchase Orders', 
-          icon: <Inventory />,
+          icon: <ModernIcons.PurchaseOrders />,
           badge: stats.purchaseOrders?.counts?.pending || null
         },
         { 
           id: 'invoices', 
           label: 'Invoices', 
-          icon: <CreditCard />,
+          icon: <ModernIcons.Invoices />,
           badge: stats.invoices?.counts?.pending || null
         },
       ]
@@ -249,19 +398,19 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
         { 
           id: 'travel-requests', 
           label: 'Travel Requests', 
-          icon: <CalendarToday />,
+          icon: <ModernIcons.TravelRequests />,
           badge: null
         },
         { 
           id: 'final-approval', 
           label: 'Final Approval', 
-          icon: <Description />,
+          icon: <ModernIcons.FinalApproval />,
           badge: null
         },
         { 
           id: 'fleet-management', 
           label: 'Fleet Management', 
-          icon: <LocalShipping />,
+          icon: <ModernIcons.FleetManagement />,
           badge: null
         },
       ]
@@ -273,13 +422,13 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
         { 
           id: 'finance-processing', 
           label: 'Processing', 
-          icon: <CreditCard />,
+          icon: <ModernIcons.Processing />,
           badge: null
         },
         { 
           id: 'reconciliation', 
           label: 'Reconciliation', 
-          icon: <Description />,
+          icon: <ModernIcons.Reconciliation />,
           badge: null
         },
       ]
@@ -291,13 +440,13 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
         { 
           id: 'analytics', 
           label: 'Analytics', 
-          icon: <BarChart />,
+          icon: <ModernIcons.Analytics />,
           badge: null
         },
         { 
           id: 'reports', 
           label: 'Reports', 
-          icon: <PieChart />,
+          icon: <ModernIcons.Reports />,
           badge: null
         },
       ]
@@ -309,13 +458,13 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
     { 
       id: 'settings', 
       label: 'Settings', 
-      icon: <Settings />,
+      icon: <ModernIcons.Settings />,
       onClick: () => navigate('/settings')
     },
     { 
       id: 'logout', 
       label: 'Logout', 
-      icon: <ExitToApp />,
+      icon: <ModernIcons.Logout />,
       onClick: () => console.log('Logout')
     },
   ];
@@ -323,6 +472,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
   // Render menu item with or without tooltip based on drawer state
   const renderMenuItem = (item) => {
     const isActive = activeSection === item.id;
+    const isHovered = hovered === item.id;
     
     const menuItem = (
       <StyledListItemButton
@@ -336,10 +486,28 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           px: 2,
           py: 1,
           minHeight: 44,
+          position: 'relative',
+          overflow: 'hidden',
+          '&::after': isActive ? {
+            content: '""',
+            position: 'absolute',
+            top: '50%',
+            left: 0,
+            transform: 'translateY(-50%)',
+            width: '3px',
+            height: '50%',
+            backgroundColor: sidebarColors.itemSelectedText,
+            borderRadius: '0 3px 3px 0',
+          } : {}
         }}
       >
         <MenuItemIcon selected={isActive}>
-          {item.icon}
+          {React.cloneElement(item.icon, {
+            style: { 
+              transform: isHovered && !isActive ? 'scale(1.1)' : 'scale(1)',
+              transition: 'transform 0.2s ease'
+            }
+          })}
         </MenuItemIcon>
         
         {open && (
@@ -370,14 +538,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
         
         {/* Show badge differently when sidebar is collapsed */}
         {!open && item.badge && (
-          <StyledBadge 
-            badgeContent={item.badge} 
-            sx={{ 
-              position: 'absolute',
-              top: 8,
-              right: 8,
-            }} 
-          />
+          <PulseBadge />
         )}
       </StyledListItemButton>
     );
@@ -388,16 +549,24 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
         title={item.label} 
         placement="right" 
         key={item.id}
+        arrow
         componentsProps={{
           tooltip: {
             sx: {
-              backgroundColor: alpha('#18181b', 0.9),
-              color: '#f4f4f5',
+              backgroundColor: alpha(sidebarColors.background, 0.9),
+              color: sidebarColors.text,
               backdropFilter: 'blur(8px)',
               fontSize: '0.75rem',
-              padding: '5px 10px',
-              borderRadius: '4px',
+              padding: '6px 12px',
+              borderRadius: '6px',
               marginLeft: '8px',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+              border: `1px solid ${alpha(sidebarColors.divider, 0.5)}`,
+            }
+          },
+          arrow: {
+            sx: {
+              color: alpha(sidebarColors.background, 0.9),
             }
           }
         }}
@@ -431,7 +600,23 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
       {/* Seamless Header */}
       <DrawerHeader>
         <LogoContainer open={open}>
-          {open ? (
+          <Box sx={{ 
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 36,
+            height: 36,
+            borderRadius: '8px',
+            backgroundColor: 'rgba(85, 105, 255, 0.8)',
+            backgroundImage: 'linear-gradient(135deg, #5569ff 0%, #6b8aff 100%)',
+            boxShadow: '0 2px 10px rgba(85, 105, 255, 0.4)',
+            color: '#ffffff',
+            fontWeight: 700,
+            fontSize: '1.2rem',
+          }}>
+            H
+          </Box>
+          {open && (
             <Typography 
               variant="h6" 
               sx={{ 
@@ -442,17 +627,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
               }}
             >
               HRMS
-            </Typography>
-          ) : (
-            <Typography 
-              variant="h6" 
-              sx={{ 
-                fontWeight: 700,
-                color: sidebarColors.text,
-                fontSize: '1.25rem',
-              }}
-            >
-              H
             </Typography>
           )}
         </LogoContainer>
@@ -501,6 +675,8 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           )}
           <List disablePadding>
             {bottomMenuItems.map((item) => {
+              const isHovered = hovered === item.id;
+              
               const menuItem = (
                 <StyledListItemButton 
                   key={item.id}
@@ -515,7 +691,12 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
                   }}
                 >
                   <MenuItemIcon selected={false}>
-                    {item.icon}
+                    {React.cloneElement(item.icon, {
+                      style: { 
+                        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+                        transition: 'transform 0.2s ease'
+                      }
+                    })}
                   </MenuItemIcon>
                   
                   {open && (
@@ -544,16 +725,24 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
                   title={item.label} 
                   placement="right" 
                   key={item.id}
+                  arrow
                   componentsProps={{
                     tooltip: {
                       sx: {
-                        backgroundColor: alpha('#18181b', 0.9),
-                        color: '#f4f4f5',
+                        backgroundColor: alpha(sidebarColors.background, 0.9),
+                        color: sidebarColors.text,
                         backdropFilter: 'blur(8px)',
                         fontSize: '0.75rem',
-                        padding: '5px 10px',
-                        borderRadius: '4px',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
                         marginLeft: '8px',
+                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+                        border: `1px solid ${alpha(sidebarColors.divider, 0.5)}`,
+                      }
+                    },
+                    arrow: {
+                      sx: {
+                        color: alpha(sidebarColors.background, 0.9),
                       }
                     }
                   }}
@@ -569,6 +758,9 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
             <Box sx={{ 
               mt: 3, 
               mx: 3,
+              p: 1.5,
+              borderRadius: '10px',
+              backgroundColor: alpha(sidebarColors.itemSelectedText, 0.08),
               display: 'flex',
               alignItems: 'center',
               gap: 1.5,
@@ -581,6 +773,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
                   color: sidebarColors.itemSelectedText,
                   fontSize: '0.75rem',
                   fontWeight: 600,
+                  boxShadow: `0 0 0 2px ${alpha(sidebarColors.itemSelectedText, 0.1)}`,
                 }}
               >
                 A
@@ -596,6 +789,17 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
                   }}
                 >
                   Admin User
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: sidebarColors.textSecondary,
+                    fontSize: '0.6875rem',
+                    display: 'block',
+                    mt: 0.2,
+                  }}
+                >
+                  System Administrator
                 </Typography>
               </Box>
             </Box>
