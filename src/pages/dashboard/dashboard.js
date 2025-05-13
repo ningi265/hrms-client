@@ -36,7 +36,7 @@ import {
   Dashboard as DashboardIcon
 } from "@mui/icons-material";
 import Tooltip from '@mui/material/Tooltip';
-import MenuIcon from '@mui/material/Menu';
+import MenuIcon from '@mui/icons-material/Menu';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, 
   LineChart, Line, BarChart as RechartsBar, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from 'recharts';
 import {
@@ -73,6 +73,11 @@ import {
   CircularProgress,
   Grid,
 } from "@mui/material";
+import './dashboard.css';
+import RevenueChart from './revenueChart';
+import DateComponent from './date';
+import ProcurementStatusCard from './procurementStatus';
+import ProductReviewsAnalysis from './productProcurement';
 import { motion, AnimatePresence } from 'framer-motion';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
@@ -104,238 +109,10 @@ import { useAuth } from "../../authcontext/authcontext";
 import axios from 'axios';
 import AddVendorPage from "../../pages/dashboard/vendors/add/add";
 
-// Enhanced professional color palette
-const professionalColors = {
-  primary: '#1E40AF',      // Deep blue
-  primaryLight: '#3B82F6', // Lighter blue
-  secondary: '#059669',    // Emerald green
-  secondaryLight: '#10B981', // Lighter emerald
-  tertiary: '#DC2626',     // Red
-  quaternary: '#EA580C',   // Orange
-  success: '#22C55E',      // Success green
-  warning: '#F59E0B',      // Amber
-  error: '#EF4444',        // Error red
-  info: '#3B82F6',         // Info blue
-  text: {
-    primary: '#111827',    // Dark gray
-    secondary: '#4B5563', // Medium gray
-    tertiary: '#9CA3AF'   // Light gray
-  },
-  background: {
-    primary: '#FAFAFA',   // Light gray
-    secondary: '#F3F4F6', // Slightly darker
-    paper: '#FFFFFF'      // Pure white
-  },
-  gradients: {
-    primary: 'linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%)',
-    secondary: 'linear-gradient(135deg, #059669 0%, #10B981 100%)',
-    tertiary: 'linear-gradient(135deg, #DC2626 0%, #EF4444 100%)',
-    warning: 'linear-gradient(135deg, #EA580C 0%, #F59E0B 100%)',
-    rainbow: 'linear-gradient(90deg, #1E40AF 0%, #059669 33%, #EA580C 66%, #DC2626 100%)',
-  }
-};
 
-// Sample data for charts
-const procurementData = [
-  { month: 'Jan', value: 12000, gradient: 65000 },
-  { month: 'Feb', value: 19000, gradient: 59000 },
-  { month: 'Mar', value: 15000, gradient: 80000 },
-  { month: 'Apr', value: 25000, gradient: 81000 },
-  { month: 'May', value: 22000, gradient: 56000 },
-  { month: 'Jun', value: 30000, gradient: 55000 },
-  { month: 'Jul', value: 35000, gradient: 40000 },
-];
 
-const approvalsData = [
-  { date: '1/5', pending: 14, completed: 8 },
-  { date: '8/5', pending: 16, completed: 12 },
-  { date: '15/5', pending: 12, completed: 18 },
-  { date: '22/5', pending: 18, completed: 14 },
-  { date: '29/5', pending: 15, completed: 22 },
-];
 
-// Data for Travel Requests
-const travelData = [
-  { 
-    date: '1/5', 
-    pending: 14, 
-    completed: 8,
-    urgentApprovals: 3 
-  },
-  { 
-    date: '8/5', 
-    pending: 16, 
-    completed: 12,
-    urgentApprovals: 5 
-  },
-  { 
-    date: '15/5', 
-    pending: 12, 
-    completed: 18,
-    urgentApprovals: 2 
-  },
-  { 
-    date: '22/5', 
-    pending: 18, 
-    completed: 14,
-    urgentApprovals: 4 
-  },
-  { 
-    date: '29/5', 
-    pending: 15, 
-    completed: 22,
-    urgentApprovals: 1 
-  },
-];
-
-// Professional gradient definitions
-const ProfessionalGradientDefs = () => (
-  <defs>
-    <linearGradient id="procurementGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="#1E40AF" stopOpacity={0.8}/>
-      <stop offset="100%" stopColor="#3B82F6" stopOpacity={0.15}/>
-    </linearGradient>
-    <linearGradient id="pendingGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="#EA580C" stopOpacity={0.8}/>
-      <stop offset="100%" stopColor="#F59E0B" stopOpacity={0.15}/>
-    </linearGradient>
-    <linearGradient id="completedGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="#059669" stopOpacity={0.8}/>
-      <stop offset="100%" stopColor="#10B981" stopOpacity={0.15}/>
-    </linearGradient>
-    <linearGradient id="urgentGradient" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor="#DC2626" stopOpacity={0.8}/>
-      <stop offset="100%" stopColor="#EF4444" stopOpacity={0.15}/>
-    </linearGradient>
-    
-    {/* Enhanced glow effects */}
-    <filter id="elegantGlow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    
-    {/* Enhanced shadow */}
-    <filter id="elegantShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="8" floodOpacity="0.15"/>
-    </filter>
-  </defs>
-);
-
-// Professional animated bar component
-const ProfessionalAnimatedBar = (props) => {
-  const { fill, x, y, width, height, index } = props;
-  
-  return (
-    <motion.g
-      initial={{ scaleY: 0, opacity: 0 }}
-      animate={{ scaleY: 1, opacity: 1 }}
-      transition={{ 
-        duration: 0.8, 
-        delay: index * 0.1,
-        ease: [0.4, 0, 0.2, 1]
-      }}
-      style={{ 
-        transformOrigin: `${x + width / 2}px ${y + height}px`
-      }}
-    >
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        fill={fill}
-        rx={4}
-      />
-      
-      {/* Enhanced highlight effect */}
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={Math.max(height * 0.15, 2)}
-        fill="rgba(255, 255, 255, 0.25)"
-        rx={4}
-      />
-    </motion.g>
-  );
-};
-
-// Professional tooltip component
-const ProfessionalTooltip = ({ active, payload, label }) => {
-  const theme = useTheme();
-  
-  if (active && payload && payload.length) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.98)',
-          border: '1px solid rgba(0, 0, 0, 0.05)',
-          borderRadius: '12px',
-          padding: '12px 16px',
-          boxShadow: '0 8px 28px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04)',
-          backdropFilter: 'blur(8px)',
-        }}
-      >
-        <Typography 
-          variant="subtitle2" 
-          sx={{ 
-            color: '#1F2937',
-            fontWeight: 600,
-            mb: 1,
-            fontSize: '0.875rem',
-            letterSpacing: '0.3px'
-          }}
-        >
-          {label}
-        </Typography>
-        
-        {payload.map((entry, index) => (
-          <Box 
-            key={index}
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              gap: 1.5,
-              mb: 0.5
-            }}
-          >
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: entry.color,
-                boxShadow: `0 0 12px ${alpha(entry.color, 0.3)}`,
-              }}
-            />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: '#6B7280',
-                fontSize: '0.8125rem'
-              }}
-            >
-              {entry.name}: <span style={{ 
-                fontWeight: 600, 
-                color: '#1F2937',
-                marginLeft: '4px'
-              }}>{entry.value}</span>
-            </Typography>
-          </Box>
-        ))}
-      </motion.div>
-    );
-  }
-  
-  return null;
-};
-
-// Enhanced styled components
+// Styled components
 const Sidebar = styled(Drawer)(({ theme }) => ({
   width: 280,
   flexShrink: 0,
@@ -398,7 +175,7 @@ const StatsCard = styled(Card)(({ theme }) => ({
     borderColor: 'rgba(59, 130, 246, 0.1)',
   },
   "& .MuiCardContent-root": {
-    padding: '20px 24px !important',
+    padding: theme.spacing(2),
   },
 }));
 
@@ -496,9 +273,10 @@ console.log(backendUrl);
 // Enhanced Procurement Status Card Component
 const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPieEnter, onPieLeave, stats }) => {
   const theme = useTheme();
-  const [chartType, setChartType] = useState('pie');
+  const [chartType, setChartType] = useState('pie'); // 'pie', 'line', 'bar'
   const [activeCategory, setActiveCategory] = useState('Overall');
 
+  // Prepare data for different chart types
   const categories = ['Overall', 'Requisitions', 'RFQs', 'Purchase Orders', 'Invoices'];
   
   const getChartData = () => {
@@ -506,10 +284,11 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
       return summaryData;
     }
     
+    // Filter data by category
     return allData
       .filter(item => item.category === activeCategory)
       .map(item => ({
-        name: item.name.split(' ')[0],
+        name: item.name.split(' ')[0], // Get status (Pending, Approved, etc.)
         value: item.value,
         status: item.status,
       }));
@@ -517,13 +296,14 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
 
   const chartData = getChartData();
 
+  // Animation variants
   const chartVariants = {
     hidden: { 
       opacity: 0, 
       scale: 0.8,
       transition: { 
         duration: 0.3,
-        ease: [0.4, 0, 0.2, 1]
+        ease: "easeOut"
       }
     },
     visible: { 
@@ -531,7 +311,7 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
       scale: 1,
       transition: { 
         duration: 0.5,
-        ease: [0.4, 0, 0.2, 1]
+        ease: "easeOut"
       }
     },
     exit: { 
@@ -539,11 +319,59 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
       scale: 0.8,
       transition: { 
         duration: 0.3,
-        ease: [0.4, 0, 0.2, 1]
+        ease: "easeIn"
       }
     },
   };
 
+  // Custom Tooltip Component
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            backgroundColor: theme.palette.background.paper,
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 8,
+            padding: '12px',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          }}
+        >
+          <Typography variant="subtitle2" fontWeight={600}>
+            {payload[0].name || label}
+          </Typography>
+          <Typography variant="body2" sx={{ mt: 0.5 }}>
+            Count: <span style={{ fontWeight: 600, color: theme.palette.primary.main }}>{payload[0].value}</span>
+          </Typography>
+          {chartType === 'pie' && (
+            <Typography variant="caption" color="text.secondary">
+              {Math.round((payload[0].value / chartData.reduce((sum, item) => sum + item.value, 0)) * 100)}% of total
+            </Typography>
+          )}
+        </motion.div>
+      );
+    }
+    return null;
+  };
+
+  // Bar shape component for animations
+  const AnimatedBar = (props) => {
+    const { fill, ...rest } = props;
+    return (
+      <motion.g
+        initial={{ scaleY: 0, translateY: rest.height }}
+        animate={{ scaleY: 1, translateY: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut", delay: rest.index * 0.05 }}
+        style={{ transformOrigin: `${rest.x + rest.width / 2}px ${rest.y + rest.height}px` }}
+      >
+        <rect {...rest} fill={fill} />
+      </motion.g>
+    );
+  };
+
+  // Render Chart based on type
   const renderChart = () => {
     const chartComponents = {
       pie: (
@@ -553,43 +381,37 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
               data={chartData}
               cx="50%"
               cy="50%"
-              innerRadius={75}
-              outerRadius={activeIndex !== null ? 140 : 130}
-              paddingAngle={2}
+              innerRadius={60}
+              outerRadius={activeIndex !== null ? 120 : 110}
+              paddingAngle={4}
               dataKey="value"
               onMouseEnter={onPieEnter}
               onMouseLeave={onPieLeave}
-              stroke="none"
+              stroke={theme.palette.background.paper}
+              strokeWidth={2}
             >
               {chartData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
-                  fill={colors[entry.status?.toLowerCase()] || professionalColors.primary}
+                  fill={colors[entry.status?.toLowerCase()] || theme.palette.primary.main}
+                  fillOpacity={activeIndex === index ? 1 : 0.85}
                   style={{
-                    filter: activeIndex === index ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.15))' : 'none',
+                    filter: activeIndex === index ? 'drop-shadow(0 0 12px rgba(0,0,0,0.2))' : 'none',
                     transition: 'all 0.3s ease',
                   }}
                 />
               ))}
             </Pie>
-            <RechartsTooltip content={<ProfessionalTooltip />} />
+            <RechartsTooltip content={<CustomTooltip />} />
             <Legend
               verticalAlign="bottom"
               layout="horizontal"
-              wrapperStyle={{ 
-                paddingTop: 30,
-                fontSize: '14px',
-                fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-              }}
+              wrapperStyle={{ paddingTop: 20 }}
               formatter={(value) => (
                 <Typography
                   component="span"
                   variant="body2"
-                  sx={{ 
-                    color: '#6B7280', 
-                    fontWeight: 500,
-                    fontSize: '0.8125rem'
-                  }}
+                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
                 >
                   {value}
                 </Typography>
@@ -601,30 +423,28 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
       
       line: (
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 80 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
             <XAxis 
               dataKey="name" 
-              stroke="#9CA3AF"
+              stroke={theme.palette.text.secondary}
               fontSize={12}
               angle={-45}
               textAnchor="end"
-              height={80}
-              tick={{ fontFamily: '"Inter", sans-serif' }}
+              height={60}
             />
             <YAxis 
-              stroke="#9CA3AF"
+              stroke={theme.palette.text.secondary}
               fontSize={12}
-              tick={{ fontFamily: '"Inter", sans-serif' }}
             />
-            <RechartsTooltip content={<ProfessionalTooltip />} />
+            <RechartsTooltip content={<CustomTooltip />} />
             <Legend 
               wrapperStyle={{ paddingTop: '20px' }}
               formatter={(value) => (
                 <Typography
                   component="span"
                   variant="body2"
-                  sx={{ color: '#6B7280', fontWeight: 500 }}
+                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
                 >
                   {value}
                 </Typography>
@@ -633,13 +453,13 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
             <Line
               type="monotone"
               dataKey="value"
-              stroke="#3B82F6"
+              stroke={theme.palette.primary.main}
               strokeWidth={3}
-              dot={{ fill: '#3B82F6', strokeWidth: 2, r: 6 }}
-              activeDot={{ r: 8, stroke: '#3B82F6', strokeWidth: 2 }}
+              dot={{ fill: theme.palette.primary.main, strokeWidth: 2, r: 6 }}
+              activeDot={{ r: 8, stroke: theme.palette.primary.main, strokeWidth: 2 }}
               animationBegin={0}
-              animationDuration={1000}
-              animationEasing="ease"
+              animationDuration={800}
+              animationEasing="ease-out"
             />
           </LineChart>
         </ResponsiveContainer>
@@ -647,30 +467,28 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
       
       bar: (
         <ResponsiveContainer width="100%" height="100%">
-          <RechartsBar data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 80 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+          <RechartsBar data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 60 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
             <XAxis 
               dataKey="name" 
-              stroke="#9CA3AF"
+              stroke={theme.palette.text.secondary}
               fontSize={12}
               angle={-45}
               textAnchor="end"
-              height={80}
-              tick={{ fontFamily: '"Inter", sans-serif' }}
+              height={60}
             />
             <YAxis 
-              stroke="#9CA3AF"
+              stroke={theme.palette.text.secondary}
               fontSize={12}
-              tick={{ fontFamily: '"Inter", sans-serif' }}
             />
-            <RechartsTooltip content={<ProfessionalTooltip />} />
+            <RechartsTooltip content={<CustomTooltip />} />
             <Legend 
               wrapperStyle={{ paddingTop: '20px' }}
               formatter={(value) => (
                 <Typography
                   component="span"
                   variant="body2"
-                  sx={{ color: '#6B7280', fontWeight: 500 }}
+                  sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}
                 >
                   {value}
                 </Typography>
@@ -678,9 +496,8 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
             />
             <Bar
               dataKey="value"
-              fill="#3B82F6"
-              radius={[6, 6, 0, 0]}
-              shape={(props) => <ProfessionalAnimatedBar {...props} />}
+              fill={theme.palette.primary.main}
+              shape={(props) => <AnimatedBar {...props} />}
             />
           </RechartsBar>
         </ResponsiveContainer>
@@ -690,6 +507,7 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
     return chartComponents[chartType];
   };
 
+  // Quick Stats Section
   const QuickStats = () => {
     const totals = {
       Requisitions: stats.requisitions.counts.total,
@@ -699,53 +517,53 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
     };
 
     return (
-      <Box sx={{ mt: 5, display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', gap: 4 }}>
         {/* Process Breakdown */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #F9FAFB 0%, #FFFFFF 100%)',
-            borderRadius: 16,
-            p: 4,
-            border: '1px solid rgba(0, 0, 0, 0.03)',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.04)',
+            background: 'linear-gradient(135deg, rgba(245, 245, 245, 0.8), rgba(255, 255, 255, 0.8))',
+            borderRadius: 3,
+            p: 3,
+            border: '1px solid rgba(0, 0, 0, 0.05)',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
           }}
           component={motion.div}
-          whileHover={{ scale: 1.01 }}
-          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.3 }}
         >
-          <Typography variant="h6" fontWeight={700} color="#111827" sx={{ mb: 4, fontSize: '1.125rem', letterSpacing: '0.5px' }}>
+          <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ mb: 3 }}>
             Process Breakdown
           </Typography>
           {Object.entries(totals).map(([category, total]) => (
-            <Box key={category} sx={{ mb: 4, '&:last-child': { mb: 0 } }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                <Typography variant="body1" fontWeight={600} color="#374151" sx={{ fontSize: '0.9375rem' }}>
+            <Box key={category} sx={{ mb: 3, '&:last-child': { mb: 0 } }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                <Typography variant="body2" fontWeight={500} color="text.secondary">
                   {category}
                 </Typography>
-                <Typography variant="body1" fontWeight={700} color="#111827" sx={{ fontSize: '0.9375rem' }}>
+                <Typography variant="body2" fontWeight={600} color="text.primary">
                   {total}
                 </Typography>
               </Box>
-              <Box sx={{ width: '100%', backgroundColor: '#F3F4F6', borderRadius: 6, height: 8, overflow: 'hidden' }}>
+              <Box sx={{ width: '100%', backgroundColor: theme.palette.grey[100], borderRadius: 2, height: 8 }}>
                 <Box
                   sx={{
                     width: `${Math.round((total / 160) * 100)}%`,
                     height: '100%',
-                    borderRadius: 6,
+                    borderRadius: 2,
                     background:
                       category === 'Requisitions'
-                        ? professionalColors.gradients.primary
+                        ? 'linear-gradient(to right, #60a5fa, #4f46e5)'
                         : category === 'RFQs'
-                        ? professionalColors.gradients.secondary
+                        ? 'linear-gradient(to right, #a78bfa, #4f46e5)'
                         : category === 'Purchase Orders'
-                        ? professionalColors.gradients.tertiary
-                        : professionalColors.gradients.warning,
-                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+                        ? 'linear-gradient(to right, #34d399, #047857)'
+                        : 'linear-gradient(to right, #fb7185, #e11d48)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
                   }}
                   component={motion.div}
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.round((total / 160) * 100)}%` }}
-                  transition={{ duration: 1, ease: [0.4, 0, 0.2, 1] }}
+                  transition={{ duration: 0.8, ease: 'easeOut' }}
                 />
               </Box>
             </Box>
@@ -753,46 +571,39 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
         </Box>
 
         {/* Quick Insights */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3 }}>
           {summaryData.map((item, index) => (
             <motion.div
               key={item.name}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1, duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ delay: index * 0.1, duration: 0.5 }}
             >
               <Paper
                 sx={{
-                  p: 3,
-                  borderRadius: 16,
-                  background: 'rgba(255, 255, 255, 0.98)',
-                  border: `1px solid ${alpha(colors[item.status.toLowerCase()], 0.1)}`,
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: `0 8px 24px ${alpha(colors[item.status.toLowerCase()], 0.12)}`,
-                    borderColor: alpha(colors[item.status.toLowerCase()], 0.2),
-                  },
+                  p: 2,
+                  borderRadius: 2,
+                  background: `linear-gradient(135deg, ${colors[item.status.toLowerCase()]}15, ${colors[item.status.toLowerCase()]}05)`,
+                  border: `1px solid ${colors[item.status.toLowerCase()]}30`,
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                   <Box
                     sx={{
-                      width: 12,
-                      height: 12,
+                      width: 10,
+                      height: 10,
                       borderRadius: '50%',
                       backgroundColor: colors[item.status.toLowerCase()],
-                      boxShadow: `0 0 16px ${alpha(colors[item.status.toLowerCase()], 0.4)}`,
                     }}
                   />
-                  <Typography variant="caption" color="#6B7280" fontWeight={600} sx={{ letterSpacing: '0.5px' }}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={500}>
                     {item.name}
                   </Typography>
                 </Box>
-                <Typography variant="h5" fontWeight={700} sx={{ color: '#111827', mb: 1 }}>
+                <Typography variant="h6" fontWeight={700}>
                   {item.value}
                 </Typography>
-                <Typography variant="caption" color="#9CA3AF" sx={{ fontSize: '0.8125rem' }}>
+                <Typography variant="caption" color="text.secondary">
                   {Math.round((item.value / summaryData.reduce((sum, i) => sum + i.value, 0)) * 100)}% of total
                 </Typography>
               </Paper>
@@ -806,98 +617,67 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
   return (
     <Card
       sx={{
-        borderRadius: 20,
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.03)',
-        border: '1px solid rgba(0, 0, 0, 0.03)',
-        background: 'linear-gradient(135deg, #FFFFFF 0%, #FAFAFA 100%)',
+        borderRadius: 4,
+        boxShadow: '0 6px 20px rgba(0, 0, 0, 0.08)',
+        border: '1px solid rgba(0, 0, 0, 0.05)',
+        background: 'white',
         overflow: 'hidden',
         position: 'relative',
-        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
         '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 12px 32px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.04)',
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+        },
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 4,
+          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
         },
       }}
       component={motion.div}
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+      transition={{ duration: 0.5 }}
     >
       <CardHeader
-        title={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <DashboardIcon sx={{ fontSize: 24, color: professionalColors.primary }} />
-            Procurement Status
-          </Box>
-        }
+        title="Procurement Status"
         subheader="Current status of procurement activities"
         titleTypographyProps={{
           variant: 'h6',
           fontWeight: 700,
-          color: professionalColors.text.primary,
-          letterSpacing: '0.5px',
-          fontSize: '1.125rem',
+          color: 'text.primary',
+          letterSpacing: 0.5,
         }}
         subheaderTypographyProps={{
           variant: 'body2',
-          color: professionalColors.text.secondary,
-          fontSize: '0.875rem',
+          color: 'text.secondary',
         }}
         action={
-          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
-            <ButtonGroup 
-              variant="outlined" 
-              size="small" 
-              sx={{ 
-                borderRadius: 10,
-                '& .MuiButton-root': {
-                  borderColor: 'rgba(0, 0, 0, 0.06)',
-                  color: '#6B7280',
-                  '&:hover': {
-                    borderColor: '#3B82F6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.04)',
-                  },
-                  '&.Mui-disabled': {
-                    borderColor: 'rgba(0, 0, 0, 0.06)',
-                  },
-                  '&:not(:last-child)': {
-                    borderRightColor: 'rgba(0, 0, 0, 0.06)',
-                  },
-                },
-                '& .MuiButtonGroup-grouped': {
-                  '&:not(:last-child)': {
-                    borderRightColor: 'rgba(0, 0, 0, 0.06)',
-                  },
-                },
-                '& .MuiButton-contained': {
-                  backgroundColor: '#3B82F6',
-                  borderColor: '#3B82F6',
-                  color: 'white',
-                  '&:hover': {
-                    backgroundColor: '#2563EB',
-                    borderColor: '#2563EB',
-                  },
-                },
-              }}
-            >
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            {/* Chart Type Selector */}
+            <ButtonGroup variant="outlined" size="small" sx={{ mr: 2 }}>
               <Button
                 onClick={() => setChartType('pie')}
                 variant={chartType === 'pie' ? 'contained' : 'outlined'}
-                sx={{ px: 2, minWidth: 'auto' }}
+                sx={{ px: 1.5, minWidth: 'auto' }}
               >
                 <PieChartIcon sx={{ fontSize: 18 }} />
               </Button>
               <Button
                 onClick={() => setChartType('line')}
                 variant={chartType === 'line' ? 'contained' : 'outlined'}
-                sx={{ px: 2, minWidth: 'auto' }}
+                sx={{ px: 1.5, minWidth: 'auto' }}
               >
                 <Timeline sx={{ fontSize: 18 }} />
               </Button>
               <Button
                 onClick={() => setChartType('bar')}
                 variant={chartType === 'bar' ? 'contained' : 'outlined'}
-                sx={{ px: 2, minWidth: 'auto' }}
+                sx={{ px: 1.5, minWidth: 'auto' }}
               >
                 <BarChartIcon sx={{ fontSize: 18 }} />
               </Button>
@@ -905,16 +685,16 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
           </Box>
         }
         sx={{
-          borderBottom: `1px solid ${alpha('#E5E7EB', 0.8)}`,
-          background: 'linear-gradient(135deg, #FAFAFA 0%, #FFFFFF 100%)',
+          borderBottom: `1px solid ${theme.palette.divider}`,
+          background: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(10px)',
-          px: 4,
-          py: 3,
+          px: 3,
+          py: 2,
         }}
       />
       
       {/* Category Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 4, backgroundColor: 'rgba(250, 250, 250, 0.5)' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
         <Tabs 
           value={activeCategory} 
           onChange={(e, newValue) => setActiveCategory(newValue)}
@@ -923,18 +703,8 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
           sx={{
             '& .MuiTab-root': {
               textTransform: 'none',
-              fontSize: '0.9375rem',
+              fontSize: '0.875rem',
               fontWeight: 500,
-              color: '#6B7280',
-              '&.Mui-selected': {
-                color: '#1F2937',
-                fontWeight: 600,
-              },
-            },
-            '& .MuiTabs-indicator': {
-              backgroundColor: '#3B82F6',
-              height: 3,
-              borderRadius: '1.5px',
             },
           }}
         >
@@ -945,7 +715,7 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
       </Box>
       
       <CardContent sx={{ p: 4 }}>
-        <Box sx={{ width: '100%', height: 450, position: 'relative' }}>
+        <Box sx={{ width: '100%', height: 400, position: 'relative' }}>
           <AnimatePresence mode="wait">
             <motion.div
               key={chartType}
@@ -960,6 +730,7 @@ const ProcurementStatusCard = ({ summaryData, colors, allData, activeIndex, onPi
           </AnimatePresence>
         </Box>
         
+        {/* Quick Stats */}
         <QuickStats />
       </CardContent>
     </Card>
@@ -986,6 +757,32 @@ export default function ProcurementDashboard() {
     return searchParams.get('section') || 'dashboard';
   });
   const { user: authUser, loading: authLoading } = useAuth();
+  const [recentReports, setRecentReports] = useState([
+  {
+    name: "Procurement Summary",
+    type: "Analytics",
+    created_at: "2 days ago",
+    thumbnail: "graph-bar"
+  },
+ {
+    name: "Vendor Performance",
+    type: "Report", 
+    created_at: "1 week ago",
+    thumbnail: "trending-up"
+  },
+  {
+    name: "Inventory Levels",
+    type: "Report",
+    created_at: "3 days ago", 
+    thumbnail: "box"
+  },
+{
+    name: "User Activity",
+    type: "Analytics",
+    created_at: "5 days ago",
+    thumbnail: "users"
+  }
+]);
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const colors = {
@@ -1062,6 +859,15 @@ export default function ProcurementDashboard() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+  const rows = document.querySelectorAll('.report-row');
+  rows.forEach((row, index) => {
+    setTimeout(() => {
+      row.classList.add('row-visible');
+    }, 100 * index);
+  });
+}, [recentReports]);
 
   const opacity = Math.min(scrollPosition / 100, 1);
 
@@ -1240,140 +1046,254 @@ export default function ProcurementDashboard() {
       overflow: "hidden",
       backgroundColor: '#FAFAFA',
     }}>
-      {/* Professional Sidebar */}
-      <Sidebar variant="permanent" open>
-        {/* Fixed Header */}
-        <Box sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 1200,
-          backgroundColor: '#0B1426',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          height: 72,
-          display: 'flex',
-          alignItems: 'center'
+      {/* Sidebar */}
+    <Sidebar variant="permanent" open sx={{
+  backgroundColor: '#121212',
+  borderRight:'1px solid rgba(255, 255, 255, 0.12)',
+  width: 290,
+  color: '#ffffff'
+
+}}>
+  {/* Fixed Header */}
+  <Box sx={{
+    position: 'sticky',
+    top: 0,
+    zIndex: 1200,
+    backgroundColor: '#292929 ',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
+    height: 64,
+    display: 'flex',
+    alignItems: 'center'
+  }}>
+     <Box sx={{ 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 2, 
+        px: 2,
+        width: '100%'
+      }}>
+        <div className="inline-flex items-center">
+    <img
+      src="/Logo.png"
+      className="h-16 w-auto mx-auto"  // Increased the height to 64
+    />
+  </div>
+        <Typography variant="subtitle1" sx={{ 
+          fontWeight: 600, 
+          color: "#ffffff"
         }}>
-          <SidebarHeader sx={{ width: '100%', borderBottom: 'none' }}>
-            <Box sx={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 3,
-              width: '100%'
-            }}>
-              <Box sx={{
-                width: 44,
-                height: 44,
-                borderRadius: 12,
-                background: professionalColors.gradients.primary,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 16px rgba(59, 130, 246, 0.4)',
-              }}>
-                <img
-                  src="/Logo.png"
-                  className="h-8 w-auto filter brightness-0 invert"
-                />
-              </Box>
-              <Box>
-                <Typography variant="h6" sx={{ 
-                  fontWeight: 700, 
-                  color: "#FFFFFF",
-                  fontSize: '1.125rem',
-                  letterSpacing: '0.5px'
-                }}>
-                  HRMS Pro
-                </Typography>
-                <Typography variant="caption" sx={{ 
-                  color: "rgba(255, 255, 255, 0.6)",
-                  fontSize: '0.75rem'
-                }}>
-                  Enterprise Edition
-                </Typography>
-              </Box>
-            </Box>
-          </SidebarHeader>
+          HRMS
+        </Typography>
+      </Box>
+  </Box>
+
+  {/* Scrollable Content */}
+  <Box sx={{
+    overflowY: 'auto',
+    height: 'calc(100vh - 64px)',
+    '&::-webkit-scrollbar': { width: 6 },
+    '&::-webkit-scrollbar-track': { background: 'transparent' },
+    '&::-webkit-scrollbar-thumb': { 
+      backgroundColor: '#bdbdbd',
+      borderRadius: 3
+    }
+  }}>
+
+
+    {/* Main Section */}
+    <List>
+      <SidebarGroupLabel sx={{  color: 'inherit', }}>Main</SidebarGroupLabel>
+      
+      <StyledListItemButton
+        selected={activeSection === "dashboard"}
+        onClick={() => handleSectionChange("dashboard")}
+        sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
+        }}
+      >
+        <ListItemIcon>
+          <Home sx={{ fontSize: 20,   color: '#f9f9f9', }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Dashboard" 
+          primaryTypographyProps={{ 
+            color: 'inherit',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+      </StyledListItemButton>
+
+      <StyledListItemButton
+        selected={activeSection === "rfqs"}
+        onClick={() => handleSectionChange("rfqs")}
+        sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
+        }}
+      >
+        <ListItemIcon>
+          <People sx={{ fontSize: 20,   color: '#f9f9f9', }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Employees" 
+          primaryTypographyProps={{ 
+            color: 'inherit',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.rfqs.counts.open} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
         </Box>
+      </StyledListItemButton>
 
-        {/* Scrollable Content */}
-        <Box sx={{
-          overflowY: 'auto',
-          height: 'calc(100vh - 72px)',
-          '&::-webkit-scrollbar': { width: 6 },
-          '&::-webkit-scrollbar-track': { background: 'rgba(255, 255, 255, 0.05)' },
-          '&::-webkit-scrollbar-thumb': { 
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            borderRadius: 3,
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            },
-          }
-        }}>
-          {/* Main Section */}
-          <List sx={{ pt: 2 }}>
-            <SidebarGroupLabel>MAIN</SidebarGroupLabel>
-            
-            <StyledListItemButton
-              selected={activeSection === "dashboard"}
-              onClick={() => handleSectionChange("dashboard")}
-            >
-              <ListItemIcon>
-                <DashboardIcon sx={{ fontSize: 22 }} />
-              </ListItemIcon>
-              <ListItemText primary="Dashboard" />
-            </StyledListItemButton>
+      <StyledListItemButton
+        selected={activeSection === "vendors"}
+        onClick={() => handleSectionChange("vendors")}
+        sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
+        }}
+      >
+        <ListItemIcon>
+          <People sx={{ fontSize: 20,   color: '#f9f9f9', }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Vendors" 
+          primaryTypographyProps={{ 
+            color: 'inherit',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.rfqs.counts.open} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
 
-            <StyledListItemButton
-              selected={activeSection === "requisitions"}
-              onClick={() => handleSectionChange("requisitions")}
-            >
-              <ListItemIcon>
-                <ShoppingCart sx={{ fontSize: 22 }} />
-              </ListItemIcon>
-              <ListItemText primary="Requisitions" />
-              <Badge 
-                badgeContent={stats.requisitions.counts.pending} 
-                color="error"
-                sx={{ 
-                  '& .MuiBadge-badge': { 
-                    right: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    minWidth: 20,
-                    height: 20,
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    borderRadius: 10,
-                  } 
-                }} 
-              />
-            </StyledListItemButton>
-
-            <StyledListItemButton
-              selected={activeSection === "rfqs"}
-              onClick={() => handleSectionChange("rfqs")}
-            >
-              <ListItemIcon>
-                <Description sx={{ fontSize: 22 }} />
-              </ListItemIcon>
-              <ListItemText primary="RFQs" />
-              <Badge 
-                badgeContent={stats.rfqs.counts.open} 
-                color="error"
-                sx={{ 
-                  '& .MuiBadge-badge': { 
-                    right: 0,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    minWidth: 20,
-                    height: 20,
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    borderRadius: 10,
-                  } 
-                }} 
-              />
-            </StyledListItemButton>
+     
+      <StyledListItemButton
+        selected={activeSection === "requisitions"}
+        onClick={() => handleSectionChange("requisitions")}
+        sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
+        }}
+      >
+        <ListItemIcon>
+          <ShoppingCart sx={{ fontSize: 20,  color: '#f9f9f9', }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="Requisitions" 
+          primaryTypographyProps={{ 
+            color: 'inherit',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.requisitions.counts.pending} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
+      <StyledListItemButton
+        selected={activeSection === "rfqs"}
+        onClick={() => handleSectionChange("rfqs")}
+        sx={{
+          color: 'rgba(255, 255, 255, 0.7)',
+          '&.Mui-selected': { 
+            backgroundColor: 'rgba(25, 118, 210, 0.16)',
+            color: '#ffffff',
+            '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.24)' }
+          },
+          '&:hover': { backgroundColor: 'rgba(255, 255, 255, 0.08)' }
+        }}
+      >
+        <ListItemIcon>
+          <People sx={{ fontSize: 20,   color: '#f9f9f9', }} />
+        </ListItemIcon>
+        <ListItemText 
+          primary="RFQs" 
+          primaryTypographyProps={{ 
+            color: 'inherit',
+            fontSize: '0.875rem',
+            fontWeight: 500
+          }} 
+        />
+        <Box sx={{ mr: 2 }}>
+          <Badge 
+            badgeContent={stats.rfqs.counts.open} 
+            color="error"
+            sx={{ 
+              '& .MuiBadge-badge': { 
+                right: -4,
+                top: 4,
+                minWidth: 20,
+                height: 20,
+                fontSize: '0.7rem'
+              } 
+            }} 
+          />
+        </Box>
+      </StyledListItemButton>
+    
 
             <StyledListItemButton
               selected={activeSection === "purchase-orders"}
@@ -1559,51 +1479,63 @@ export default function ProcurementDashboard() {
       }}>
         {/* Professional Header */}
         <Paper elevation={0} sx={{ 
-          p: 2,
-          border: 'none',
-          height: 80,
-          backdropFilter: `blur(${opacity * 12}px) saturate(180%)`,
-          position: 'sticky',
-          top: 0,
-          zIndex: theme => theme.zIndex.appBar,
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          background: alpha('#FFFFFF', 0.85),
-          borderBottom: '1px solid rgba(0, 0, 0, 0.04)',
-          boxShadow: `0 1px 8px ${alpha('#000000', 0.04)}`,
+  p: 1.5,
+  border: 'none',
+  height: 75,
+  backdropFilter: `blur(${opacity * 12}px) saturate(180%)`,
+  position: 'sticky',
+  top: 0,
+  zIndex: theme => theme.zIndex.appBar,
+  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+  background: alpha(theme.palette.background.default, 0.8),
+  boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`,
+  '&:hover': {
+    backdropFilter: `blur(${opacity * 16}px) saturate(200%)`
+  }
+}}>
+  <Toolbar sx={{ px: { sm: 2 }, gap: 1 }}>
+    {/* Left-aligned items */}
+    <Box sx={{ 
+      display: "flex", 
+      alignItems: "center", 
+      gap: 2,
+      mr: 'auto' 
+    }}>
+      {/* Modern Notification icon with pulse animation */}
+      <IconButton 
+        color="inherit"
+        sx={{
+          position: 'relative',
+          transition: 'all 0.3s ease',
           '&:hover': {
-            backdropFilter: `blur(${opacity * 16}px) saturate(200%)`
+            transform: 'translateY(-1px)',
+            backgroundColor: alpha(theme.palette.primary.main, 0.15),
+          },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            animation: 'pulse 2s infinite',
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
           }
-        }}>
-          <Toolbar sx={{ px: 3, gap: 2, height: '100%' }}>
-            {/* Left-aligned items */}
-            <Box sx={{ 
-              display: "flex", 
-              alignItems: "center", 
-              gap: 2,
-              mr: 'auto' 
-            }}>
-              {/* Professional Notification icon */}
-              <IconButton 
-                color="inherit"
-                sx={{
-                  position: 'relative',
-                  transition: 'all 0.3s ease',
-                  borderRadius: 3,
-                  p: 1,
-                  '&:hover': {
-                    backgroundColor: alpha('#3B82F6', 0.08),
-                    transform: 'translateY(-1px)',
-                  },
-                }}
-              >
-                <Badge badgeContent={3} color="error" variant="standard" overlap="circular">
-                  <NotificationsActive sx={{ 
-                    color: '#374151',
-                    fontSize: 24,
-                  }} />
-                </Badge>
-              </IconButton>
-            </Box>
+        }}
+      >
+        <Badge badgeContent={3} color="error" variant="dot" overlap="circular">
+          <NotificationsActive sx={{ 
+            color: theme.palette.text.primary,
+            transform: 'rotate(-20deg)',
+            transition: 'transform 0.3s ease',
+            '&:hover': {
+              transform: 'rotate(0deg)'
+            }
+          }} />
+        </Badge>
+      </IconButton>
+    </Box>
 
             {/* Right-aligned items */}
             <Box sx={{ 
@@ -1643,36 +1575,47 @@ export default function ProcurementDashboard() {
                 </IconButton>
               </Tooltip>
 
-              {/* Premium button with professional design */}
-              <Tooltip title="Upgrade to Premium" placement="bottom">
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<Star sx={{ fontSize: 18 }} />}
-                  sx={{
-                    background: 'linear-gradient(135deg, #1E293B 0%, #06162E 100%)',
-                    color: '#FFFFFF',
-                    borderRadius: 10,
-                    px: 3,
-                    py: 1,
-                    fontSize: '0.875rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.3px',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    '&:hover': {
-                      transform: 'translateY(-1px)',
-                      background: 'linear-gradient(135deg, #334155 0%, #0f172a 100%)',
-                      boxShadow: '0 6px 16px rgba(0, 0, 0, 0.2)',
-                      borderColor: 'rgba(255, 255, 255, 0.15)',
-                    }
-                  }}
-                >
-                  Go Pro
-                </Button>
-              </Tooltip>
-            </Box>
+      <Tooltip title="Preferences">
+        <IconButton color="inherit" sx={{ p: 1.2 }}>
+          <Tune sx={{
+            fontSize: 22,
+            color: theme.palette.text.secondary,
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              color: theme.palette.success.main,
+              transform: 'rotate(90deg)'
+            }
+          }} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Upgrade button with gradient */}
+      <Tooltip title="Go Premium">
+        <Button
+          variant="contained"
+          size="small"
+          startIcon={<RocketLaunch sx={{ fontSize: 18 }} />}
+          sx={{
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+            color: theme.palette.common.white,
+            borderRadius: 4,
+            px: 2.5,
+            py: 0.8,
+            fontSize: '0.8rem',
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            '&:hover': {
+              transform: 'translateY(-1px)',
+              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.4)}`
+            }
+          }}
+        >
+          Premium
+        </Button>
+      </Tooltip>
+    </Box>
 
             {/* User profile with professional dropdown */}
             <Box sx={{ position: 'relative' }}>
@@ -1785,72 +1728,77 @@ export default function ProcurementDashboard() {
               </Menu>
             </Box>
 
-            {/* Professional Mobile menu button */}
-            <IconButton
-              onClick={() => setMobileOpen(!mobileOpen)}
-              sx={{ 
-                display: { sm: 'none' },
-                p: 1,
-                borderRadius: 3,
-                '&:hover': {
-                  backgroundColor: alpha('#3B82F6', 0.08)
-                }
-              }}
-            >
-              <MenuOpen sx={{ 
-                fontSize: 26,
-                color: '#374151',
-              }} />
-            </IconButton>
-          </Toolbar>
-        </Paper>
+    {/* Modern Mobile menu button */}
+    <IconButton
+      onClick={() => setMobileOpen(!mobileOpen)}
+      sx={{ 
+        display: { sm: 'none' },
+        p: 1.2,
+        '&:hover': {
+          backgroundColor: alpha(theme.palette.primary.main, 0.1)
+        }
+      }}
+    >
+      <MenuOpen sx={{ 
+        fontSize: 26,
+        color: theme.palette.text.primary,
+        transition: 'transform 0.3s ease',
+        '&:hover': {
+          transform: 'rotate(90deg)'
+        }
+      }} />
+    </IconButton>
+  </Toolbar>
+</Paper>
 
         {/* Main Content Area */}
-        <Box sx={{ p: 4 }}>
-          {activeSection === "dashboard" ? (
-            <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
-              {/* Professional Page Title */}
-              <Box sx={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: 'center',
-                mb: 5,
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: { xs: 2, sm: 0 },
-                textAlign: { xs: 'center', sm: 'left' }
-              }}>
-                <Box>
-                  <Typography variant="h4" component="h1" gutterBottom sx={{ 
-                    fontWeight: 700,
-                    color: professionalColors.text.primary,
-                    fontSize: { xs: '1.75rem', sm: '2rem' },
-                    letterSpacing: '-0.025em',
-                    mb: 0.5
-                  }}>
-                    Dashboard Overview
-                  </Typography>
-                  <Typography variant="body1" color="#6B7280" sx={{ fontSize: '1rem' }}>
-                    Welcome back, <span style={{ fontWeight: 600, color: '#374151' }}>{user.firstName}</span>. Here's your procurement activity summary.
-                  </Typography>
-                </Box>
-              </Box>
 
-              {/* Professional Stats Cards */}
-              <Box sx={{ 
-                display: "grid",
-                gap: 3,
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
-                mb: 5,
-              }}>
-                <ProfessionalStatsCardComponent
-                  title="Requisitions"
-                  value={stats.requisitions.counts.total}
-                  description={`${stats.requisitions.counts.pending} pending`}
-                  trend="+12.5%"
-                  trendDirection="up"
-                  icon={<ShoppingCart />}
-                  color="primary"
-                />
+<Box sx={{ p: 2 }}>
+  {activeSection === "dashboard" ? (
+    <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
+      {/* All the current dashboard content */}
+      <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
+            {/* Page Title */}
+            <Box sx={{ 
+              display: "flex", 
+              justifyContent: "space-between", 
+              alignItems: 'center',
+              mb: 3,
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1, sm: 0 },
+              textAlign: { xs: 'center', sm: 'left' }
+            }}>
+              <Box>
+                <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+                  Dashboard Overview
+                </Typography>
+                <Typography variant="body" color="text.secondary" sx={{ fontSize: '0.875rem'}} >
+                  Welcome back, here's what's happening with your procurement activities.
+                </Typography>
+              </Box>
+             
+            </Box>
+
+            {/* Stats Cards */}
+            <Box sx={{ 
+              display: "grid", 
+              gap: 2, 
+              gridTemplateColumns: { 
+                xs: "1fr", 
+                sm: "repeat(2, 1fr)", 
+                lg: "repeat(4, 1fr)" 
+              }, 
+              mb: 3 
+            }}>
+              <StatsCardComponent
+                title="Requisitions"
+                value={stats.requisitions.counts.total}
+                description={`${stats.requisitions.counts.pending} pending approval`}
+                trend="+12.5%"
+                trendDirection="up"
+                icon={<ShoppingCart />}
+                color="primary"
+              />
 
                 <ProfessionalStatsCardComponent
                   title="RFQs"
@@ -1883,32 +1831,18 @@ export default function ProcurementDashboard() {
                 />
               </Box>
 
-              {/* Main Content Grid */}
-              <Box sx={{ 
-                display: "grid", 
-                gap: 4, 
-                gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
-                mb: 5
-              }}>
-                {/* Enhanced Procurement Status with Chart */}
-                <ProfessionalChartCard 
-                  title="Procurement Trend" 
-                  subtitle="Monthly overview"
-                  data={procurementData}
-                  icon={<Timeline />}
-                />
-
-                {/* Professional Approvals Chart */}
-                <ProfessionalApprovalsChart 
-                  title="Travel Requests" 
-                  subtitle="Weekly approval trends"
-                  data={travelData}
-                  icon={<CalendarToday />}
-                />
-              </Box>
-
-              {/* Professional Procurement Status */}
-              <ProcurementStatusCard 
+            {/* Main Content Grid */}
+            <Box sx={{ 
+              display: "grid", 
+              gap: 3, 
+              gridTemplateColumns: { 
+                xs: "1fr", 
+                lg: "2fr 1fr" 
+              },
+              mb: 4
+            }}>
+              {/* Enhanced Procurement Status */}
+              <ProcurementStatusCard
                 summaryData={summaryData}
                 colors={colors}
                 allData={allData}
@@ -1918,43 +1852,242 @@ export default function ProcurementDashboard() {
                 stats={stats}
               />
 
-              {/* Professional Recent Activity */}
-              <ProfessionalRecentActivity />
-            </Box>
-          ) : (
-            <Box>
-              {activeSection === "requisitions" && <RequisitionsSection />}
-              {activeSection === "reconciliation" && <ReconciliationSection />}
-              {activeSection === "rfqs" && <RFQsSection/>}
-              {activeSection === "purchase-orders" && <PurchaseOrdersSection/>}
-              {activeSection === "invoices" && <InvoicesSection/>}
-              {activeSection === "fleet-management" && <FleetCoordinatorSection/>}
-              {activeSection === "travel-requests" && <SupervisorApprovalSection/>}
-              {activeSection === "new-requisition" && <NewRequisitionSection />}
-              {activeSection === "vendors" && <VendorsSection/>}
-              {activeSection === "manage-rfq" && <ManageRequisitionsSection/>}
-              {activeSection === "rfq-details" && <RFQDetailsSection/>}
-              {activeSection === "create-rfq" && <CreateRFQSection/>}
-              {activeSection === "add-vendor" && <AddVendorSection/>}
-              {activeSection === "vendor-rfq" && <VendorRFQsSection/>}
-              {activeSection === "select-vendor" && <SelectVendorSection/>}
-              {activeSection === "vendor-purchase-orders" && <VendorPODetailsSection/>}
-              {activeSection === "track-deliveries" && <TrackDeliveriesSection/>}
-              {activeSection === "invoice" && <InvoicesSection/>}
-              {activeSection === "invoice-manage" && <InvoiceManagementSection/>}
-              {activeSection === "payment" && <PaymentSection/>}
-              {activeSection === "supervisor-approval" && <SupervisorApprovalSection/>}
-              {activeSection === "final-approval" && <FinalApproverSection/>}
-              {activeSection === "finance-processing" && <FinanceProcessingSection/>}
-              {activeSection === "travel" && <TravelSection/>}
-              {activeSection === "international-travel" && <InternationalTravelRequestSection/>}
-              {activeSection === "recon-review" && <FinanceReconciliationReviewSection/>}
-              {activeSection === "fleet-cordination" && <FleetCoordinatorSection/>}
-              {activeSection === "vendors" && <VendorsPage/>}
-            </Box>
-          )}
-        </Box>
+                {/* Pending Approvals */}
+                <Card
+      sx={{
+        borderRadius: 4,
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+        background: 'white',
+        overflow: 'hidden',
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: 4,
+          background: 'linear-gradient(90deg, #3b82f6, #10b981)',
+        },
+      }}
+      component={motion.div}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <CardHeader
+        title="Pending Approvals"
+        subheader="Items requiring your attention"
+        titleTypographyProps={{
+          variant: 'h6',
+          fontWeight: 700,
+          color: theme.palette.text.primary,
+        }}
+        subheaderTypographyProps={{
+          variant: 'body2',
+          color: theme.palette.text.secondary,
+        }}
+        sx={{
+          pb: 1,
+          px: 3,
+          background: 'rgba(255, 255, 255, 0.95)',
+        }}
+      />
+      <Divider />
+      <CardContent sx={{ p: 0, maxHeight: 400, overflowY: 'auto' }}>
+        <List disablePadding>
+          {stats.requisitions.pendingRequisitions.map((req) => (
+            <ApprovalItemComponent
+              key={req._id}
+              title={req.itemName}
+              type="requisition"
+              requester={req.employee?.name || "New Account"}
+              date={new Date(req.createdAt).toLocaleDateString()}
+              amount={`Quantity: ${req.quantity}`}
+            />
+          ))}
+          {stats.rfqs.openRFQs.map((rfq) => (
+            <ApprovalItemComponent
+              key={rfq._id}
+              title={rfq.itemName}
+              type="rfq"
+              requester={rfq.procurementOfficer?.name || "New Account"}
+              date={new Date(rfq.createdAt).toLocaleDateString()}
+              amount={`Quantity: ${rfq.quantity}`}
+            />
+          ))}
+          {stats.purchaseOrders.pendingPOs.map((po) => (
+            <ApprovalItemComponent
+              key={po._id}
+              title="Purchase Order"
+              type="purchase-order"
+              requester={po.vendor?.name || "New Account"}
+              date={new Date(po.createdAt).toLocaleDateString()}
+              amount="Pending Approval"
+            />
+          ))}
+          {stats.invoices.pendingInvoices.map((inv) => (
+            <ApprovalItemComponent
+              key={inv._id}
+              title="Invoice"
+              type="invoice"
+              requester={inv.vendor.name}
+              date={new Date(inv.createdAt).toLocaleDateString()}
+              amount={inv.amountDue}
+            />
+          ))}
+          {stats.requisitions.pendingRequisitions.length === 0 &&
+            stats.rfqs.openRFQs.length === 0 &&
+            stats.purchaseOrders.pendingPOs.length === 0 && (
+              <ListItem sx={{ justifyContent: 'center', py: 3 }}>
+                <ListItemText
+                  primary={
+                    <Typography
+                      variant="body1"
+                      color="text.secondary"
+                      textAlign="center"
+                    >
+                      No pending approvals
+                    </Typography>
+                  }
+                />
+              </ListItem>
+            )}
+        </List>
+      </CardContent>
+      <Box
+        sx={{
+          p: 2,
+          borderTop: `1px solid ${theme.palette.divider}`,
+          background: 'white',
+        }}
+      >
+        <Button
+          fullWidth
+          variant="contained"
+          component={motion.button}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          sx={{
+            borderRadius: 20,
+            textTransform: 'none',
+            fontWeight: 600,
+            py: 1.5,
+            background: 'linear-gradient(90deg, #3b82f6, #10b981)',
+            color: 'white',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+            '&:hover': {
+              background: 'linear-gradient(90deg, #2563eb, #059669)',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+            },
+          }}
+        >
+          View All Pending Items
+        </Button>
       </Box>
+    </Card> 
+            </Box>
+
+            {/* Recent Activity */}
+            <Card sx={{ 
+              mt: 3,
+              borderRadius: 3,
+              boxShadow: theme.shadows[1],
+            }}>
+              <CardHeader
+                title="Recent Activity"
+                subheader="Latest procurement activities"
+                titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
+                subheaderTypographyProps={{ variant: 'body2' }}
+                action={
+                  <Button 
+                    variant="outlined" 
+                    size="small"
+                    sx={{
+                      borderRadius: 20,
+                      textTransform: 'none',
+                      px: 2,
+                    }}
+                  >
+                    View All
+                  </Button>
+                }
+              />
+              <CardContent>
+                <Box sx={{ 
+                  display: "grid", 
+                  gap: 3, 
+                  gridTemplateColumns: { 
+                    xs: "1fr", 
+                    sm: "repeat(2, 1fr)", 
+                    lg: "repeat(3, 1fr)" 
+                  } 
+                }}>
+                  <ActivityCardComponent
+                    title="New Requisition Submitted"
+                    description="Office supplies requisition #REQ-2023-042 submitted by Sarah Johnson"
+                    time="2 hours ago"
+                    icon={<ShoppingCart />}
+                    color="primary"
+                  />
+
+                  <ActivityCardComponent
+                    title="Purchase Order Approved"
+                    description="IT Equipment PO #PO-2023-028 approved by Michael Chen"
+                    time="4 hours ago"
+                    icon={<Check />}
+                    color="success"
+                  />
+
+                  <ActivityCardComponent
+                    title="Invoice Paid"
+                    description="Marketing Services invoice #INV-2023-103 for $3,750.00 paid"
+                    time="Yesterday"
+                    icon={<CreditCard />}
+                    color="error"
+                  />
+                </Box>
+              </CardContent>
+            </Card>
+          </Box>
+    </Box>
+  ) : (
+    <Box>
+      {activeSection === "requisitions" && <RequisitionsSection />}
+      {activeSection === "reconciliation" && <ReconciliationSection />}
+      {activeSection === "rfqs" && <RFQsSection/>}
+      {activeSection === "purchase-orders" && <PurchaseOrdersSection/>}
+      {activeSection === "invoices" && <InvoicesSection/>}
+      {activeSection === "fleet-management" && <FleetCoordinatorSection/>}
+      {activeSection === "travel-requests" && <SupervisorApprovalSection/>}
+      {activeSection === "new-requisition" && <NewRequisitionSection />}
+      {activeSection === "vendors" && <VendorsSection/>}
+      {activeSection === "manage-rfq" && <ManageRequisitionsSection/>}
+      {activeSection === "rfq-details" && <RFQDetailsSection/>}
+      {activeSection === "create-rfq" && <CreateRFQSection/>}
+      {activeSection === "add-vendor" && <AddVendorSection/>}
+      {activeSection === "vendor-rfq" && <VendorRFQsSection/>}
+      {activeSection === "select-vendor" && <SelectVendorSection/>}
+      {activeSection === "vendor-purchase-orders" && <VendorPODetailsSection/>}
+      {activeSection === "track-deliveries" && <TrackDeliveriesSection/>}
+      {activeSection === "invoice" && <InvoicesSection/>}
+      {activeSection === "invoice-manage" && <InvoiceManagementSection/>}
+      {activeSection === "payment" && <PaymentSection/>}
+      {activeSection === "supervisor-approval" && <SupervisorApprovalSection/>}
+      {activeSection === "final-approval" && <FinalApproverSection/>}
+      {activeSection === "finance-processing" && <FinanceProcessingSection/>}
+      {activeSection === "travel" && <TravelSection/>}
+      {activeSection === "international-travel" && <InternationalTravelRequestSection/>}
+      {activeSection === "recon-review" && <FinanceReconciliationReviewSection/>}
+      {activeSection === "fleet-cordination" && <FleetCoordinatorSection/>}
+      {activeSection === "vendors" && <VendorsPage/>}
+
+      {/* other sections */}
+    </Box>
+  )}
+</Box>
+      </Box>
+        <AIChatButton user={user} />
     </Box>
   );
 }
@@ -1971,118 +2104,83 @@ function ProfessionalStatsCardComponent({ title, value, description, trend, tren
   const cardColor = colorMapping[color] || professionalColors.primary;
   
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-    >
-      <StatsCard>
-        <CardContent>
-          <Box sx={{ 
-            display: "flex", 
-            alignItems: "center",
-            gap: 2,
-            mb: 2.5
+    <StatsCard>
+      <CardContent>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <Avatar sx={{ 
+            bgcolor: alpha(theme.palette[color].main, 0.1), 
+            color: theme.palette[color].main,
+            width: 40,
+            height: 40
           }}>
-            {/* Professional Icon container */}
-            <Box sx={{
-              width: 48,
-              height: 48,
-              borderRadius: 3,
-              backgroundColor: alpha(cardColor, 0.1),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              border: `1px solid ${alpha(cardColor, 0.1)}`,
-            }}>
-              {React.cloneElement(icon, { 
-                sx: { 
-                  fontSize: 24,
-                  color: cardColor
-                } 
-              })}
-            </Box>
-            
-            {/* Professional Title */}
-            <Typography variant="h6" 
-              sx={{ 
-                color: '#6B7280',
-                fontWeight: 600,
-                fontSize: '0.9375rem',
-                lineHeight: 1.3,
-                letterSpacing: '0.3px'
-              }}
-            >
-              {title}
-            </Typography>
-          </Box>
-          
-          {/* Professional Main value */}
-          <Typography 
-            variant="h3" 
-            component="div" 
+            {React.cloneElement(icon, { sx: { fontSize: 18 } })}
+          </Avatar>
+          <Badge
+            color={trendDirection === "up" ? "success" : "error"}
+            badgeContent={trend}
             sx={{ 
-              fontWeight: 700,
-              fontSize: '2rem',
-              color: '#111827',
-              mb: 1.5,
-              lineHeight: 1.1
+              '& .MuiBadge-badge': { 
+                fontSize: "0.65rem", 
+                height: 18,
+                borderRadius: 9,
+                padding: '0 6px',
+              } 
             }}
-          >
+          />
+        </Box>
+        <Box sx={{ mt: 1.5 }}>
+          <Typography variant="h4" component="div" sx={{ fontWeight: 700 }}>
             {value}
           </Typography>
-          
-          {/* Professional Bottom info bar */}
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center',
-            gap: 1.5
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25,fontSize:'0.875rem' }}>
+            {title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ 
+            display: 'block',
+            mt: 0.5,
+            color: theme.palette.text.secondary,
+            fontSize: '0.75rem',
           }}>
-            {/* Trend indicator */}
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              px: 1,
-              py: 0.5,
-              borderRadius: 2,
-              backgroundColor: alpha(trendDirection === 'up' ? professionalColors.success : professionalColors.error, 0.1),
-            }}>
-              <Typography 
-                variant="caption" 
-                sx={{ 
-                  color: trendDirection === 'up' ? professionalColors.success : professionalColors.error,
-                  fontWeight: 700,
-                  fontSize: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 0.25
-                }}
-              >
-                {trendDirection === 'up' ? '↑' : '↓'} {trend}
-              </Typography>
-            </Box>
-            
-            {/* Description text */}
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                color: '#9CA3AF',
-                fontSize: '0.8125rem',
-                fontWeight: 500
-              }}
-            >
-              {description}
-            </Typography>
-          </Box>
-        </CardContent>
-      </StatsCard>
-    </motion.div>
+            {description}
+          </Typography>
+        </Box>
+      </CardContent>
+    </StatsCard>
   );
 }
 
-// Professional Chart Card Component
-function ProfessionalChartCard({ title, subtitle, data, icon }) {
+function ApprovalItemComponent({ title, id, type, requester, date, amount }) {
+  const theme = useTheme();
+  const getTypeColor = (type) => {
+    switch (type) {
+      case "requisition":
+        return "primary";
+      case "purchase-order":
+        return "secondary";
+      case "invoice":
+        return "error";
+      case "travel":
+        return "warning";
+      default:
+        return "primary";
+    }
+  };
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case "requisition":
+        return <ShoppingCart />;
+      case "purchase-order":
+        return <Inventory />;
+      case "invoice":
+        return <CreditCard />;
+      case "travel":
+        return <LocalShipping />;
+      default:
+        return <Description />;
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
