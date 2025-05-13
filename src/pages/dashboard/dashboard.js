@@ -72,6 +72,7 @@ import RevenueChart from './revenueChart';
 import DateComponent from './date';
 import ProcurementStatusCard from './procurementStatus';
 import ProductReviewsAnalysis from './productProcurement';
+import StatsCardsGrid from './statsCard';
 import { motion, AnimatePresence } from 'framer-motion';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
@@ -133,10 +134,10 @@ const regionalMapData = [
 
 // Styled components
 const Sidebar = styled(Drawer)(({ theme }) => ({
-  width: 290,
+  width: 240,
   flexShrink: 0,
   "& .MuiDrawer-paper": {
-    width: 290,
+    width: 240,
     boxSizing: "border-box",
     backgroundColor: '#292929 ', // Dark background
     borderRight: `1px solid ${theme.palette.divider}`,
@@ -501,7 +502,7 @@ export default function ProcurementDashboard() {
     <Sidebar variant="permanent" open sx={{
   backgroundColor: '#121212',
   borderRight:'1px solid rgba(255, 255, 255, 0.12)',
-  width: 290,
+  width: 240,
   color: '#ffffff'
 
 }}>
@@ -1360,56 +1361,7 @@ export default function ProcurementDashboard() {
             </Box>
 
             {/* Stats Cards */}
-            <Box sx={{ 
-              display: "grid", 
-              gap: 1.5, 
-              gridTemplateColumns: { 
-                xs: "1fr", 
-                sm: "repeat(2, 1fr)", 
-                lg: "repeat(4, 1fr)" 
-              }, 
-              mb: 2.5 
-            }}>
-              <StatsCardComponent
-                title="Requisitions"
-                value={stats.requisitions.counts.total}
-                description={`${stats.requisitions.counts.pending} pending approval`}
-                trend="+12.5%"
-                trendDirection="up"
-                icon={<ShoppingCart />}
-                color="primary"
-              />
-
-              <StatsCardComponent
-                title="RFQs"
-                value={stats.rfqs.counts.total}
-                description={`${stats.rfqs.counts.open} open requests`}
-                trend="+5.2%"
-                trendDirection="up"
-                icon={<People />}
-                color="info"
-              />
-
-              <StatsCardComponent
-                title="Purchase Orders"
-                value={stats.purchaseOrders.counts.total}
-                description={`${stats.purchaseOrders.counts.pending} pending approval`}
-                trend="-3.1%"
-                trendDirection="down"
-                icon={<Inventory />}
-                color="secondary"
-              />
-
-              <StatsCardComponent
-                title="Invoices"
-                value={stats.invoices.counts.total}
-                description={`${stats.invoices.counts.pending} pending payment`}
-                trend="+8.7%"
-                trendDirection="up"
-                icon={<CreditCard />}
-                color="error"
-              />
-            </Box>
+            <StatsCardsGrid stats={stats} />
 
             {/* Main Content Grid */}
             <Box sx={{ 
