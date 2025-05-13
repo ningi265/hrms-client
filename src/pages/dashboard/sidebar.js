@@ -19,7 +19,7 @@ import {
   alpha,
   Avatar
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Menu as MenuIcon } from '@mui/icons-material';
+import { Menu as MenuIcon } from '@mui/icons-material';
 
 // Modern color palette with a professional look
 const sidebarColors = {
@@ -203,6 +203,7 @@ const SidebarGroupLabel = styled(Typography)(({ theme, open }) => ({
   transition: 'opacity 0.2s ease, height 0.2s ease, margin 0.2s ease',
 }));
 
+// Improved drawer with smooth transitions
 const SeamlessSidebarDrawer = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'isMobile'
 })(({ theme, open, isMobile }) => ({
@@ -217,8 +218,8 @@ const SeamlessSidebarDrawer = styled(Drawer, {
     width: open ? 256 : (isMobile ? 0 : 70),
     overflowX: 'hidden',
     transition: theme.transitions.create('width', {
-      easing: theme.transitions.easing.sharp,
-      duration: theme.transitions.duration.shorter,
+      easing: theme.transitions.easing.easeInOut,
+      duration: theme.transitions.duration.standard,
     }),
   },
 }));
@@ -238,27 +239,48 @@ const MenuItemIcon = styled(ListItemIcon)(({ theme, selected }) => ({
 const DrawerHeader = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '20px 20px 10px',
+  justifyContent: 'center', // Center for collapsed mode
+  padding: '20px 12px 10px',
   backgroundColor: 'transparent',
 }));
 
 const LogoContainer = styled(Box)(({ theme, open }) => ({
+  width: '100%',
   display: 'flex',
   alignItems: 'center',
-  gap: 12,
+  justifyContent: open ? 'space-between' : 'center',
+  transition: 'all 0.3s ease',
 }));
 
-const MenuToggleButton = styled(IconButton)(({ theme }) => ({
+// Logo Box - conditionally used for H or toggle icon
+const LogoBox = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: 36,
+  height: 36,
+  borderRadius: '8px',
+  backgroundColor: 'rgba(85, 105, 255, 0.8)',
+  backgroundImage: 'linear-gradient(135deg, #5569ff 0%, #6b8aff 100%)',
+  boxShadow: '0 2px 10px rgba(85, 105, 255, 0.4)',
+  color: '#ffffff',
+  fontWeight: 700,
+  fontSize: '1.2rem',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    transform: 'scale(1.05)',
+  }
+}));
+
+// Custom Toggle Button that looks like the logo
+const ToggleButton = styled(IconButton)(({ theme }) => ({
   color: sidebarColors.textSecondary,
   '&:hover': {
-    backgroundColor: sidebarColors.itemHover,
-    color: sidebarColors.text,
+    backgroundColor: 'transparent',
   },
   transition: 'all 0.15s ease',
-  padding: '8px',
-  borderRadius: '4px',
-  marginRight: '4px',
+  padding: 0,
 }));
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
@@ -322,6 +344,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
   const [open, setOpen] = useState(!isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hovered, setHovered] = useState('');
+  const [isAnimating, setIsAnimating] = useState(false);
 
   // Remember sidebar state in localStorage
   useEffect(() => {
@@ -331,13 +354,22 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
     }
   }, [isMobile]);
 
+  // Improved toggle behavior with animation lock
   const toggleDrawer = () => {
+    if (isAnimating) return;
+    
+    setIsAnimating(true);
+    
     if (isMobile) {
       setMobileOpen(!mobileOpen);
+      setTimeout(() => setIsAnimating(false), 300);
     } else {
       const newOpenState = !open;
       setOpen(newOpenState);
       localStorage.setItem('sidebarOpen', JSON.stringify(newOpenState));
+      
+      // Wait for animation to complete before allowing another toggle
+      setTimeout(() => setIsAnimating(false), 300);
     }
   };
 
@@ -597,50 +629,75 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
 
   const drawer = (
     <>
-      {/* Seamless Header */}
+      {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
       <DrawerHeader>
         <LogoContainer open={open}>
-          <Box sx={{ 
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 36,
-            height: 36,
-            borderRadius: '8px',
-            backgroundColor: 'rgba(85, 105, 255, 0.8)',
-            backgroundImage: 'linear-gradient(135deg, #5569ff 0%, #6b8aff 100%)',
-            boxShadow: '0 2px 10px rgba(85, 105, 255, 0.4)',
-            color: '#ffffff',
-            fontWeight: 700,
-            fontSize: '1.2rem',
-          }}>
-            H
-          </Box>
-          {open && (
-            <Typography 
-              variant="h6" 
+          {open ? (
+            <>
+              {/* When open, show logo and title on left, toggle button on right */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <LogoBox>
+                  H
+                </LogoBox>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontWeight: 600,
+                    color: sidebarColors.text,
+                    letterSpacing: '0.5px',
+                    fontSize: '1.125rem',
+                  }}
+                >
+                NYASA PROC
+                </Typography>
+              </Box>
+              
+              <ToggleButton 
+                onClick={toggleDrawer}
+                disabled={isAnimating}
+                aria-label="close drawer"
+              >
+                <img 
+                  src="/sidebar1.png" 
+                  alt="Toggle sidebar" 
+                  style={{ 
+                    width: '20px', 
+                    height: '20px', 
+                    objectFit: 'contain',
+                    transform: 'rotate(0deg)',
+                    transition: 'transform 0.3s ease' 
+                  }} 
+                />
+              </ToggleButton>
+            </>
+          ) : (
+            // When collapsed, only show toggle icon in the H logo's place
+            <LogoBox 
+              onClick={toggleDrawer} 
               sx={{ 
-                fontWeight: 600,
-                color: sidebarColors.text,
-                letterSpacing: '0.5px',
-                fontSize: '1.125rem',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
-              HRMS
-            </Typography>
+              <img 
+                src="/sidebar.svg" 
+                alt="Toggle sidebar" 
+                style={{ 
+                  width: '20px', 
+                  height: '20px', 
+                  objectFit: 'contain',
+                  transform: 'rotate(180deg)',
+                  transition: 'transform 0.3s ease'
+                }} 
+              />
+            </LogoBox>
           )}
         </LogoContainer>
-        
-        <MenuToggleButton 
-          onClick={toggleDrawer}
-          size="small"
-          aria-label={open ? 'close drawer' : 'open drawer'}
-        >
-          {open ? <ChevronLeft /> : <ChevronRight />}
-        </MenuToggleButton>
       </DrawerHeader>
 
-      {/* Scrollable Content - continuous with header */}
+      {/* Scrollable Content */}
       <Box sx={{
         overflowY: 'auto',
         overflowX: 'hidden',
@@ -753,7 +810,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
             })}
           </List>
           
-          {/* User profile mini badge - simplified */}
+          {/* User profile mini badge - only visible when sidebar is open */}
           {open && (
             <Box sx={{ 
               mt: 3, 
@@ -818,6 +875,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           aria-label="open drawer"
           onClick={toggleDrawer}
           edge="start"
+          disabled={isAnimating}
           sx={{
             position: 'fixed',
             top: 12,
