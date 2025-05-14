@@ -94,7 +94,8 @@ export default function RegisterPage() {
     "Operations",
     "Human Resources",
     "Accounting/Finance",
-    "Other"
+    "Other",
+    "Driver"
   ];
 
   const handleNext = () => {

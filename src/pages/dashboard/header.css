@@ -1,0 +1,143 @@
+/* Add this CSS to your dashboard.css file */
+
+/* Calendar styling */
+.MuiPickersDay-root {
+    font-size: 0.85rem !important;
+    margin: 1px !important;
+    width: 36px !important;
+    height: 36px !important;
+  }
+  
+  .MuiPickersDay-root.Mui-selected {
+    background-color: #3f51b5 !important;
+    color: white !important;
+    font-weight: bold !important;
+  }
+  
+  .calendar-event-dot {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  
+  /* Event types */
+  .event-deadline {
+    background-color: #f44336;
+  }
+  
+  .event-meeting {
+    background-color: #3f51b5;
+  }
+  
+  .event-contract {
+    background-color: #9c27b0;
+  }
+  
+  .event-review {
+    background-color: #ff9800;
+  }
+  
+  .event-approval {
+    background-color: #4caf50;
+  }
+  
+  /* Animation keyframes */
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    50% {
+      transform: scale(1.2);
+      opacity: 0.3;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+  
+  @keyframes ripple {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
+  
+  /* Calendar tooltip */
+  .calendar-tooltip {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    position: absolute;
+    z-index: 1000;
+  }
+  
+  /* Calendar popover animations */
+  .calendar-popover-enter {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  
+  .calendar-popover-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 300ms, transform 300ms;
+  }
+  
+  .calendar-popover-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  
+  .calendar-popover-exit-active {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 300ms, transform 300ms;
+  }
+  
+  /* Event badge */
+  .event-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-right: 8px;
+  }
+  
+  .event-badge-deadline {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #f44336;
+  }
+  
+  .event-badge-meeting {
+    background-color: rgba(63, 81, 181, 0.1);
+    color: #3f51b5;
+  }
+  
+  .event-badge-contract {
+    background-color: rgba(156, 39, 176, 0.1);
+    color: #9c27b0;
+  }
+  
+  .event-badge-review {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: #ff9800;
+  }
+  
+  .event-badge-approval {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: #4caf50;
+  }

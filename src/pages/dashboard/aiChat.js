@@ -269,7 +269,7 @@ const AIChatButton = ({ user }) => {
         onClick={handleClickOpen}
         ref={fabRef}
       >
-        <SmartToy />
+        <img src="message.png" alt="AI Icon" style={{ width: 24, height: 24 }} />
       </ChatFab>
       
       {/* Chat Popover */}

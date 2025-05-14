@@ -1068,17 +1068,17 @@ export default function FleetCoordinator() {
                                     },
                                     borderRadius: "8px",
                                   }}
-                                  aria-label={`Select driver ${driver.name}`}
+                                  aria-label={`Select driver ${driver.firstName}`}
                                 >
                                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                    <Avatar src={driver.photo} alt={driver.name}>
-                                      {driver.name
+                                    <Avatar src={driver.photo} alt={driver.firstName}>
+                                      {driver.firstName
                                         .split(" ")
                                         .map((n) => n[0])
                                         .join("")}
                                     </Avatar>
                                     <Box>
-                                      <Typography fontWeight="medium">{driver.name}</Typography>
+                                      <Typography fontWeight="medium">{driver.firstName}</Typography>
                                       <Box sx={{ display: "flex", alignItems: "center" }}>
                                         <Place fontSize="small" sx={{ mr: 0.5, color: "text.disabled" }} />
                                         <Typography variant="body2" color="text.secondary">
