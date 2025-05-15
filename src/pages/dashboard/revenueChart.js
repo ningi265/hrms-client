@@ -542,7 +542,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [], regionalMapData =
       value={category}
     />
   ))}
-</Tabs>
+</Tabs> 
       </Box>
       
       <CardContent sx={{ p: 3, background: 'var(--card, #fefefe)' }}>

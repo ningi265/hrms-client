@@ -33,7 +33,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [currentProcess, setCurrentProcess] = useState(0);
   const [success, setSuccess] = useState(false);
-  const [verificationCode, setVerificationCode] = useState("");
+  const [emailVerificationCode, setVerificationCode] = useState("");
   const [showVerification, setShowVerification] = useState(false);
   const [isSendingSMS, setIsSendingSMS] = useState(false);
   const [logo, setLogo] = useState(null);
@@ -201,12 +201,12 @@ export default function RegisterPage() {
       localStorage.setItem("token", registrationData.token);
   
       setIsSendingSMS(true);
-      const smsResponse = await fetch(`${backendUrl}/api/auth/send`, {
+      const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({email}),
       });
   
       if (!smsResponse.ok) {
@@ -224,7 +224,7 @@ export default function RegisterPage() {
   };
 
   const handleVerify = async () => {
-    if (!verificationCode || verificationCode.length !== 6) {
+    if (!emailVerificationCode || emailVerificationCode.length !== 6) {
       setError("Please enter a valid 6-digit code");
       return;
     }
@@ -233,14 +233,14 @@ export default function RegisterPage() {
     setError("");
   
     try {
-      const response = await fetch(`${backendUrl}/api/auth/verify`, {
+      const response = await fetch(`${backendUrl}/api/auth/email/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          phoneNumber,
-          code: verificationCode
+          email,
+          code: emailVerificationCode
         }),
       });
   
@@ -258,10 +258,186 @@ export default function RegisterPage() {
     }
   };
 
-  const handleCompleteOnboarding = () => {
+
+const uploadLogoToServer = async () => {
+  if (!logo) return null;
+  
+  const formData = new FormData();
+  formData.append('logo', logo);
+  
+  // Make sure email is defined and add it to the form data
+  if (!email) {
+    setError("User email is missing. Please try logging in again.");
+    return null;
+  }
+  
+  formData.append('email', email);
+  console.log("Sending email in request:", email); // Debug log
+  
+  try {
+    const response = await fetch(`${backendUrl}/api/auth/onboarding/logo`, {
+      method: 'PUT',
+      body: formData,
+      // Note: Don't set Content-Type header when using FormData - the browser will set it correctly with boundary
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Logo upload error response:", errorData); // Debug log
+      throw new Error(errorData.message || 'Failed to upload logo');
+    }
+    
+    const data = await response.json();
+    return data.logoUrl;
+  } catch (error) {
+    console.error("Error uploading logo:", error);
+    setError("Failed to upload company logo. Please try again.");
+    return null;
+  }
+};
+
+const uploadSignatureToServer = async () => {
+  if (!signature) return null;
+  
+  console.log("Signature file to upload:", signature);
+  console.log("Signature file type:", signature.type);
+  console.log("Signature file size:", signature.size);
+  
+  // Create a fresh FormData instance
+  const formData = new FormData();
+  
+  // Make sure to use exactly the same field name as expected by the server
+  formData.append('signature', signature);
+  
+  if (!email) {
+    setError("User email is missing. Please try logging in again.");
+    return null;
+  }
+  
+  formData.append('email', email);
+  
+  // Log what's being sent in the FormData
+  for (let [key, value] of formData.entries()) {
+    console.log(`FormData contains - ${key}: ${value instanceof File ? value.name : value}`);
+  }
+  
+  try {
+    console.log("Sending request to:", `${backendUrl}/api/auth/onboarding/signature`);
+    
+    // Don't set Content-Type header - browser will set it correctly with boundary
+    const response = await fetch(`${backendUrl}/api/auth/onboarding/signature`, {
+      method: 'PUT',
+      body: formData,
+      // Include token if authentication is required
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}` 
+      }
+    });
+    
+    console.log("Response status:", response.status);
+    
+    // Check for specific error status codes
+    if (response.status === 400) {
+      const errorData = await response.json();
+      console.error("Bad request error:", errorData);
+      throw new Error(errorData.message || 'Bad request when uploading signature');
+    }
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Signature upload error:", errorData);
+      throw new Error(errorData.message || 'Failed to upload signature');
+    }
+    
+    const data = await response.json();
+    console.log("Successful upload response:", data);
+    return data.signatureUrl;
+  } catch (error) {
+    console.error("Error uploading signature:", error);
+    setError(`Failed to upload signature: ${error.message}`);
+    return null;
+  }
+};
+
+ const handleCompleteOnboarding = async () => {
+  setIsLoading(true);
+  setError("");
+  
+  try {
+    // Handle logo upload
+    if (logo) {
+      // Create a separate FormData just for the logo
+      const logoFormData = new FormData();
+      logoFormData.append('logo', logo); // This must match exactly what backend expects
+      logoFormData.append('email', email.trim().toLowerCase());
+      
+      console.log("Sending logo upload with fields:");
+      for (let pair of logoFormData.entries()) {
+        console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+      }
+
+      const logoResponse = await fetch(`${backendUrl}/api/auth/onboarding/logo`, {
+        method: 'PUT',
+        body: logoFormData,
+        // Don't set Content-Type header - browser will set it correctly with boundary
+      });
+      
+      console.log("Logo upload response status:", logoResponse.status);
+      
+      if (!logoResponse.ok) {
+        const errorData = await logoResponse.json();
+        console.error("Logo upload error:", errorData);
+        setError(errorData.message || "Failed to upload logo");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Logo uploaded successfully");
+    }
+    
+    // Handle signature upload separately
+    if (signature) {
+      // Create a separate FormData just for the signature
+      const signatureFormData = new FormData();
+      signatureFormData.append('signature', signature); // This must match exactly what backend expects
+      signatureFormData.append('email', email.trim().toLowerCase());
+      
+      console.log("Sending signature upload with fields:");
+      for (let pair of signatureFormData.entries()) {
+        console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+      }
+
+      const signatureResponse = await fetch(`${backendUrl}/api/auth/onboarding/signature`, {
+        method: 'PUT',
+        body: signatureFormData,
+        // Don't set Content-Type header - browser will set it correctly with boundary
+      });
+      
+      console.log("Signature upload response status:", signatureResponse.status);
+      
+      if (!signatureResponse.ok) {
+        const errorData = await signatureResponse.json();
+        console.error("Signature upload error:", errorData);
+        setError(errorData.message || "Failed to upload signature");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("Signature uploaded successfully");
+    }
+    
+    // If we got here, uploads were successful or not needed
     setHasCompletedOnboarding(true);
+    
+    // Redirect to dashboard
     window.location.href = '/dashboard';
-  };
+  } catch (error) {
+    console.error("Error during onboarding completion:", error);
+    setError("An error occurred while completing onboarding. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   if (showVerification) {
     if (success) {
@@ -396,20 +572,27 @@ export default function RegisterPage() {
                 )}
                 
                 <button
-                  onClick={() => {
-                    if (onboardingStep < 2) {
-                      setOnboardingStep(onboardingStep + 1);
-                    } else {
-                      handleCompleteOnboarding();
-                    }
-                  }}
-                  disabled={(onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature)}
-                  className={`ml-auto flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 ${
-                    (onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature) ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {onboardingStep < 2 ? "Continue" : "Go to Dashboard"}
-                </button>
+  onClick={() => {
+    if (onboardingStep < 2) {
+      setOnboardingStep(onboardingStep + 1);
+    } else {
+      handleCompleteOnboarding();
+    }
+  }}
+  disabled={(onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature) || isLoading}
+  className={`ml-auto flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 ${
+    (onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature) || isLoading 
+      ? "opacity-50 cursor-not-allowed" 
+      : ""
+  }`}
+>
+  {isLoading ? (
+    <>
+      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-3"></div>
+      Saving...
+    </>
+  ) : onboardingStep < 2 ? "Continue" : "Go to Dashboard"}
+</button>
               </div>
             </div>
           </div>
@@ -424,9 +607,9 @@ export default function RegisterPage() {
               <Phone size={24} />
             </div>
             
-            <h2 className="text-xl font-bold text-gray-900 mb-1">Verify Your Phone Number</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Verify Your email</h2>
             <p className="text-sm text-gray-600">
-              We've sent a 6-digit code to <span className="font-medium">{phoneNumber}</span>
+              We've sent a 6-digit code to <span className="font-medium">{email}</span>
             </p>
           </div>
           
@@ -445,7 +628,7 @@ export default function RegisterPage() {
               <input
                 id="verificationCode"
                 type="text"
-                value={verificationCode}
+                value={emailVerificationCode}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                   setVerificationCode(value);
