@@ -688,7 +688,8 @@ const ModernHeaderComponent = ({
               }
             }} src={user?.avatar}>
               <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                {user?.firstName ? user.firstName.split(" ").map(n => n[0]).join("") : "GU"}
+                 {user?.firstName ? user.firstName.charAt(0) : 
+     user?.name ? user.name.charAt(0) : "G"}
               </Typography>
             </Avatar>
           </Button>

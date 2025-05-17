@@ -119,9 +119,12 @@ const GradientContainer = styled(Box)(({ theme }) => ({
   background: "linear-gradient(135deg, #f9fafb, #e5e7eb)",
   borderRadius: "16px",
   padding: theme.spacing(4),
-  minHeight: "100vh",
+  height: "100vh", // Changed from minHeight
   position: "relative",
   overflow: "hidden",
+  boxSizing: "border-box",
+  display: "flex", // Optional: to help with internal layout
+  flexDirection: "column", // Optional: adapt layout
   "&::before": {
     content: '""',
     position: "absolute",
@@ -131,7 +134,8 @@ const GradientContainer = styled(Box)(({ theme }) => ({
     height: "4px",
     background: "linear-gradient(90deg, #4f46e5, #ec4899)",
   },
-}))
+}));
+
 
 export default function FleetCoordinator() {
   const navigate = useNavigate()
@@ -169,55 +173,67 @@ export default function FleetCoordinator() {
   })
   const backendUrl = process.env.REACT_APP_BACKEND_URL
 
-  const transformRequestData = (data) => {
-    return data.map((request) => {
-      const parseDate = (dateString) => {
-        if (!dateString) return new Date()
-        const date = new Date(dateString)
-        return isNaN(date.getTime()) ? new Date() : date
-      }
-      return {
-        id: request._id || request.id || "",
-        employeeName: request.employee?.name || "Unknown",
-        fleetNotification: request.fleetNotification || {
-          sent: false,
-          sentAt: null,
-          recipients: [],
-          subject: "",
-          message: "",
-          includeItinerary: false,
-          sentBy: null,
-        },
-        employeeId: request.employee?._id || "",
-        department: request.fundingCodes || "Not specified",
-        email: request.employee?.email || "",
-        purpose: request.purpose || "",
-        country: request.location || "Not specified",
-        city: request.location || "Not specified",
-        departureDate: parseDate(request.departureDate),
-        returnDate: parseDate(request.returnDate),
-        status: request.financeStatus || "pending",
-        financialStatus: request.financeStatus || "pending",
-        perDiemAmount: request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000),
-        currency: request.currency || "USD",
-        cardDetails: {
-          lastFour: "1234",
-          type: "VISA",
-          holder: request.employee?.name || "Unknown",
-        },
-        documents: request.documents || [],
-        approvedBy: request.finalApprover || "System",
-        approvedAt: parseDate(request.finalApprovalDate || request.updatedAt),
-        priority: "medium",
-        travelType: request.travelType || "local",
-        requiresDriver: request.meansOfTravel === "company",
-        requiresFlight: request.travelType === "international",
-        submittedAt: parseDate(request.createdAt),
-        supervisorApproval: request.supervisorApproval,
-        finalApproval: request.finalApproval,
-      }
-    })
-  }
+ const transformRequestData = (data) => {
+  return data.map((request) => {
+    const parseDate = (dateString) => {
+      if (!dateString) return new Date()
+      const date = new Date(dateString)
+      return isNaN(date.getTime()) ? new Date() : date
+    }
+    
+    // Ensure we have a proper employee object with fallbacks
+    const employee = request.employee || { 
+      _id: "", 
+      firstName: "Unknown", 
+      lastName: "", 
+      email: "",
+      name: "Unknown Employee" // Add a fallback name property
+    }
+
+    return {
+      id: request._id || request.id || "",
+      employeeName: employee.firstName ? `${employee.firstName} ${employee.lastName}` : employee.name || "Unknown",
+      fleetNotification: request.fleetNotification || {
+        sent: false,
+        sentAt: null,
+        recipients: [],
+        subject: "",
+        message: "",
+        includeItinerary: false,
+        sentBy: null,
+      },
+      employee: employee, // Use the properly structured employee object
+      employeeId: employee._id,
+      department: request.fundingCodes || "Not specified",
+      email: employee.email || "",
+      purpose: request.purpose || "",
+      country: request.location || "Not specified",
+      city: request.location || "Not specified",
+      departureDate: parseDate(request.departureDate),
+      returnDate: parseDate(request.returnDate),
+      status: request.financeStatus || "pending",
+      financialStatus: request.financeStatus || "pending",
+      perDiemAmount: request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000),
+      currency: request.currency || "USD",
+      cardDetails: {
+        lastFour: "1234",
+        type: "VISA",
+        holder: employee.name || "Unknown",
+      },
+      documents: request.documents || [],
+      approvedBy: request.finalApprover || "System",
+      approvedAt: parseDate(request.finalApprovalDate || request.updatedAt),
+      priority: "medium",
+      travelType: request.travelType || "local",
+      requiresDriver: request.meansOfTravel === "company",
+      requiresFlight: request.travelType === "international",
+      submittedAt: parseDate(request.createdAt),
+      supervisorApproval: request.supervisorApproval,
+      finalApproval: request.finalApproval,
+      assignedDriver: request.assignedDriver || null,
+    }
+  })
+}
 
   useEffect(() => {
     const fetchDrivers = async () => {
@@ -262,6 +278,36 @@ export default function FleetCoordinator() {
     }
     fetchTravelRequests()
   }, [backendUrl])
+
+  useEffect(() => {
+  const fetchLatestRequest = async () => {
+    if (!showNotification || !selectedRequest?.id) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch updated travel request");
+
+      const data = await response.json();
+      const updated = transformRequestData([data])[0]; // transform single request
+      setSelectedRequest(updated);
+
+    } catch (error) {
+      console.error("Error fetching latest request data:", error);
+      setSnackbarMessage("Failed to refresh request data");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  fetchLatestRequest();
+}, [showNotification, selectedRequest?.id, backendUrl]);
+
 
   const filteredRequests = travelRequests.filter((request) => {
     const employeeName = request.employeeName || ""
@@ -453,50 +499,79 @@ export default function FleetCoordinator() {
     }
   }
 
-  const handleSendNotifications = async () => {
-    try {
-      setIsSendingNotification(true)
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/send-notifications`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(notificationDetails),
-      })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.message || "Failed to send notifications")
-      const updatedRequest = {
-        ...selectedRequest,
-        status: "completed",
-        fleetNotification: {
-          sent: true,
-          sentAt: new Date().toISOString(),
-          recipients: notificationDetails.recipients,
-          subject: notificationDetails.subject,
-          message: notificationDetails.message,
-          includeItinerary: notificationDetails.includeItinerary,
-          sentBy: "currentUserId",
-        },
+ const handleSendNotifications = async () => {
+  try {
+    setIsSendingNotification(true);
+    const token = localStorage.getItem("token");
+
+    // Prepare recipients array with actual IDs
+    const recipients = notificationDetails.recipients.map(recipientType => {
+      if (recipientType === "employee") {
+        return selectedRequest.employee._id;
+      } else if (recipientType === "driver" && selectedRequest.assignedDriver) {
+        return selectedRequest.assignedDriver._id;
+      } else if (recipientType === "manager") {
+        return selectedRequest.supervisor; // Assuming supervisor is the manager ID
       }
-      setSelectedRequest(updatedRequest)
-      setTravelRequests((prevRequests) =>
-        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
-      )
-      setShowNotification(false)
-      setSnackbarMessage("Notifications sent successfully")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-    } catch (error) {
-      console.error("Error sending notifications:", error)
-      setSnackbarMessage(error.message || "Failed to send notifications")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    } finally {
-      setIsSendingNotification(false)
+      return null;
+    }).filter(id => id); // Remove any null values
+
+    const requestBody = {
+      subject: notificationDetails.subject,
+      message: notificationDetails.message,
+      includeItinerary: notificationDetails.includeItinerary,
+      recipients: recipients
+    };
+
+    const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/send-notifications`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Server returned ${response.status}: ${response.statusText}`);
     }
+    
+    const data = await response.json();
+    
+    // Update the UI state
+    const updatedRequest = {
+      ...selectedRequest,
+      status: "completed",
+      fleetNotification: {
+        sent: true,
+        sentAt: new Date().toISOString(),
+        recipients: notificationDetails.recipients,
+        subject: notificationDetails.subject,
+        message: notificationDetails.message,
+        includeItinerary: notificationDetails.includeItinerary,
+        sentBy: "currentUserId",
+      },
+    };
+    
+    setSelectedRequest(updatedRequest);
+    setTravelRequests((prevRequests) =>
+      prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
+    );
+    
+    setShowNotification(false);
+    setSnackbarMessage("Notifications sent successfully");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+  } catch (error) {
+    console.error("Error sending notifications:", error);
+    setSnackbarMessage(error.message || "Failed to send notifications");
+    setSnackbarSeverity("error");
+    setSnackbarOpen(true);
+  } finally {
+    setIsSendingNotification(false);
   }
+};
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -542,8 +617,7 @@ export default function FleetCoordinator() {
 
   return (
     <ThemeProvider theme={theme}>
-      <GradientContainer>
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 4 }}>
             <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
               <LocalShipping />
@@ -555,463 +629,472 @@ export default function FleetCoordinator() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" }, gap: 3 }}>
-            {/* Left Column - Travel Requests */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="h6">Travel Requests</Typography>
-                <Select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  size="small"
-                  sx={{ minWidth: 120, borderRadius: "8px" }}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <FilterList fontSize="small" />
-                      <span>{selected === "all" ? "All" : selected.charAt(0).toUpperCase() + selected.slice(1)}</span>
-                    </Box>
-                  )}
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" }, gap: 3 }}>
+  {/* Left Column - Travel Requests */}
+  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+    <TextField
+      placeholder="Search requests..."
+      size="small"
+      fullWidth
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      InputProps={{
+        startAdornment: <Search fontSize="small" sx={{ mr: 1, color: "text.disabled" }} />,
+        sx: { borderRadius: "8px" },
+      }}
+      aria-label="Search travel requests"
+    />
+
+    <Tabs
+      value={activeTab}
+      onChange={(e, newValue) => setActiveTab(newValue)}
+      sx={{ mb: 2, "& .MuiTabs-indicator": { backgroundColor: "primary.main", height: 3 } }}
+      variant="fullWidth"
+    >
+      <Tab label="Pending" value="pending" />
+      <Tab label="Completed" value="completed" />
+    </Tabs>
+
+    {/* Scrollable container for requests */}
+    <Box 
+      sx={{ 
+        display: "flex", 
+        flexDirection: "column", 
+        gap: 2,
+        maxHeight: "calc(100vh - 230px)", // Adjust 230px based on the height of elements above
+        overflowY: "auto",
+        pr: 1, // Add padding right to account for scrollbar
+        // Add custom scrollbar styling
+        "&::-webkit-scrollbar": {
+          width: "8px",
+        },
+        "&::-webkit-scrollbar-track": {
+          background: "#f1f1f1",
+          borderRadius: "10px",
+        },
+        "&::-webkit-scrollbar-thumb": {
+          background: "#c1c1c1",
+          borderRadius: "10px",
+          "&:hover": {
+            background: "#a1a1a1",
+          },
+        },
+        // Make the container sticky if needed
+        position: "sticky",
+        top: 0,
+      }}
+    >
+      {activeTab === "pending" && (
+        <>
+          {filteredRequests.filter(
+            (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
+          ).length === 0 ? (
+            <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
+              No pending requests found
+            </Typography>
+          ) : (
+            filteredRequests
+              .filter(
+                (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
+              )
+              .map((request) => (
+                <motion.div
+                  key={request.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <MenuItem value="all">All Requests</MenuItem>
-                  <MenuItem value="pending">Pending</MenuItem>
-                  <MenuItem value="completed">Completed</MenuItem>
-                </Select>
+                  <Card
+                    onClick={() => handleSelectRequest(request)}
+                    sx={{
+                      cursor: "pointer",
+                      border: selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
+                      borderColor: selectedRequest?.id === request.id ? "primary.main" : "divider",
+                    }}
+                    aria-label={`Select request for ${request.employeeName}`}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={500}>
+                            {request.employeeName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {request.id}
+                          </Typography>
+                        </Box>
+                        {getPriorityBadge(request.priority)}
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                        <Language fontSize="small" sx={{ color: "text.disabled" }} />
+                        <Typography variant="body2">{request.city}, {request.country}</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <CalendarToday fontSize="small" sx={{ color: "text.disabled" }} />
+                        <Typography variant="body2">
+                          {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          {request.requiresDriver && (
+                            <Tooltip title="Requires Driver">
+                              <Avatar sx={{ bgcolor: "info.light", width: 24, height: 24 }}>
+                                <LocalShipping fontSize="small" color="info" />
+                              </Avatar>
+                            </Tooltip>
+                          )}
+                          {request.requiresFlight && (
+                            <Tooltip title="Requires Flight">
+                              <Avatar sx={{ bgcolor: "secondary.light", width: 24, height: 24 }}>
+                                <Flight fontSize="small" color="secondary" />
+                              </Avatar>
+                            </Tooltip>
+                          )}
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {format(request.submittedAt, "MMM d, yyyy")}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+          )}
+        </>
+      )}
+
+      {activeTab === "completed" && (
+        <>
+          {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent).length === 0 ? (
+            <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
+              No completed requests found
+            </Typography>
+          ) : (
+            filteredRequests
+              .filter((request) => request.fleetNotification && request.fleetNotification.sent)
+              .map((request) => (
+                <motion.div
+                  key={request.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card
+                    onClick={() => handleSelectRequest(request)}
+                    sx={{
+                      cursor: "pointer",
+                      border: selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
+                      borderColor: selectedRequest?.id === request.id ? "primary.main" : "divider",
+                    }}
+                    aria-label={`Select request for ${request.employeeName}`}
+                  >
+                    <CardContent>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                        <Box>
+                          <Typography variant="subtitle1" fontWeight={500}>
+                            {request.employee.lastName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {request.id}
+                          </Typography>
+                        </Box>
+                        {getPriorityBadge(request.priority)}
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                        <Language fontSize="small" sx={{ color: "text.disabled" }} />
+                        <Typography variant="body2">{request.city}, {request.country}</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <CalendarToday fontSize="small" sx={{ color: "text.disabled" }} />
+                        <Typography variant="body2">
+                          {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          {request.requiresDriver && (
+                            <Tooltip title="Requires Driver">
+                              <Avatar sx={{ bgcolor: "info.light", width: 24, height: 24 }}>
+                                <LocalShipping fontSize="small" color="info" />
+                              </Avatar>
+                            </Tooltip>
+                          )}
+                          {request.requiresFlight && (
+                            <Tooltip title="Requires Flight">
+                              <Avatar sx={{ bgcolor: "secondary.light", width: 24, height: 24 }}>
+                                <Flight fontSize="small" color="secondary" />
+                              </Avatar>
+                            </Tooltip>
+                          )}
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {format(request.submittedAt, "MMM d, yyyy")}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+          )}
+        </>
+      )}
+    </Box>
+  </Box>
+
+  {/* Right Column - Request Details and Actions */}
+  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+    {selectedRequest ? (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <Card>
+          <CardHeader
+            title={
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
+                  <Description />
+                </Avatar>
+                <Box>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Typography variant="h6">{selectedRequest.employee.lastName}</Typography>
+                    {getStatusBadge(selectedRequest.status)}
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedRequest.id} • {selectedRequest.department}
+                  </Typography>
+                </Box>
               </Box>
-
-              <TextField
-                placeholder="Search requests..."
-                size="small"
-                fullWidth
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                InputProps={{
-                  startAdornment: <Search fontSize="small" sx={{ mr: 1, color: "text.disabled" }} />,
-                  sx: { borderRadius: "8px" },
-                }}
-                aria-label="Search travel requests"
-              />
-
-              <Tabs
-                value={activeTab}
-                onChange={(e, newValue) => setActiveTab(newValue)}
-                sx={{ mb: 2, "& .MuiTabs-indicator": { backgroundColor: "primary.main", height: 3 } }}
-                variant="fullWidth"
-              >
-                <Tab label="Pending" value="pending" />
-                <Tab label="Completed" value="completed" />
-              </Tabs>
-
-              {activeTab === "pending" && (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {filteredRequests.filter(
-                    (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
-                  ).length === 0 ? (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
-                      No pending requests found
-                    </Typography>
-                  ) : (
-                    filteredRequests
-                      .filter(
-                        (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
-                      )
-                      .map((request) => (
-                        <motion.div
-                          key={request.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Card
-                            onClick={() => handleSelectRequest(request)}
-                            sx={{
-                              cursor: "pointer",
-                              border: selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
-                              borderColor: selectedRequest?.id === request.id ? "primary.main" : "divider",
-                            }}
-                            aria-label={`Select request for ${request.employeeName}`}
-                          >
-                            <CardContent>
-                              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                                <Box>
-                                  <Typography variant="subtitle1" fontWeight={500}>
-                                    {request.employeeName}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {request.id}
-                                  </Typography>
-                                </Box>
-                                {getPriorityBadge(request.priority)}
-                              </Box>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                                <Language fontSize="small" sx={{ color: "text.disabled" }} />
-                                <Typography variant="body2">{request.city}, {request.country}</Typography>
-                              </Box>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <CalendarToday fontSize="small" sx={{ color: "text.disabled" }} />
-                                <Typography variant="body2">
-                                  {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  {request.requiresDriver && (
-                                    <Tooltip title="Requires Driver">
-                                      <Avatar sx={{ bgcolor: "info.light", width: 24, height: 24 }}>
-                                        <LocalShipping fontSize="small" color="info" />
-                                      </Avatar>
-                                    </Tooltip>
-                                  )}
-                                  {request.requiresFlight && (
-                                    <Tooltip title="Requires Flight">
-                                      <Avatar sx={{ bgcolor: "secondary.light", width: 24, height: 24 }}>
-                                        <Flight fontSize="small" color="secondary" />
-                                      </Avatar>
-                                    </Tooltip>
-                                  )}
-                                </Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  {format(request.submittedAt, "MMM d, yyyy")}
-                                </Typography>
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))
-                  )}
+            }
+            action={
+              <IconButton aria-label="More options">
+                <MoreHoriz />
+              </IconButton>
+            }
+            sx={{ bgcolor: "#f3f4f6", borderBottom: "1px solid #e5e7eb" }}
+          />
+          <CardContent>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Purpose of Travel
+                  </Typography>
+                  <Typography>{selectedRequest.purpose || "N/A"}</Typography>
                 </Box>
-              )}
-
-              {activeTab === "completed" && (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent).length ===
-                  0 ? (
-                    <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>
-                      No completed requests found
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Destination
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Place color="primary" fontSize="small" />
+                    <Typography>
+                      {selectedRequest.city}, {selectedRequest.country}
                     </Typography>
-                  ) : (
-                    filteredRequests
-                      .filter((request) => request.fleetNotification && request.fleetNotification.sent)
-                      .map((request) => (
-                        <motion.div
-                          key={request.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          <Card
-                            onClick={() => handleSelectRequest(request)}
-                            sx={{
-                              cursor: "pointer",
-                              border: selectedRequest?.id === request.id ? "2px solid" : "1px solid transparent",
-                              borderColor: selectedRequest?.id === request.id ? "primary.main" : "divider",
-                            }}
-                            aria-label={`Select request for ${request.employeeName}`}
-                          >
-                            <CardContent>
-                              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-                                <Box>
-                                  <Typography variant="subtitle1" fontWeight={500}>
-                                    {request.employeeName}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {request.id}
-                                  </Typography>
-                                </Box>
-                                {getPriorityBadge(request.priority)}
-                              </Box>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                                <Language fontSize="small" sx={{ color: "text.disabled" }} />
-                                <Typography variant="body2">{request.city}, {request.country}</Typography>
-                              </Box>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <CalendarToday fontSize="small" sx={{ color: "text.disabled" }} />
-                                <Typography variant="body2">
-                                  {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
-                                </Typography>
-                              </Box>
-                              <Box sx={{ display: "flex", justifyContent: "space-between", mt: 2 }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  {request.requiresDriver && (
-                                    <Tooltip title="Requires Driver">
-                                      <Avatar sx={{ bgcolor: "info.light", width: 24, height: 24 }}>
-                                        <LocalShipping fontSize="small" color="info" />
-                                      </Avatar>
-                                    </Tooltip>
-                                  )}
-                                  {request.requiresFlight && (
-                                    <Tooltip title="Requires Flight">
-                                      <Avatar sx={{ bgcolor: "secondary.light", width: 24, height: 24 }}>
-                                        <Flight fontSize="small" color="secondary" />
-                                      </Avatar>
-                                    </Tooltip>
-                                  )}
-                                </Box>
-                                <Typography variant="body2" color="text.secondary">
-                                  {format(request.submittedAt, "MMM d, yyyy")}
-                                </Typography>
-                              </Box>
-                            </CardContent>
-                          </Card>
-                        </motion.div>
-                      ))
-                  )}
+                  </Box>
                 </Box>
-              )}
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Travel Period
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <CalendarToday color="primary" fontSize="small" />
+                    <Typography>
+                      {format(selectedRequest.departureDate, "MMM d, yyyy")} -{" "}
+                      {format(selectedRequest.returnDate, "MMM d, yyyy")}
+                      <Chip
+                        label={`${
+                          Math.ceil(
+                            (selectedRequest.returnDate - selectedRequest.departureDate) /
+                              (1000 * 60 * 60 * 24)
+                          ) + 1
+                        } days`}
+                        size="small"
+                        sx={{ ml: 1 }}
+                      />
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Requirements
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <FormControlLabel
+                      control={<Checkbox checked={selectedRequest.requiresDriver} disabled />}
+                      label="Driver Required"
+                    />
+                    <FormControlLabel
+                      control={<Checkbox checked={selectedRequest.requiresFlight} disabled />}
+                      label="Flight Booking Required"
+                    />
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Documents
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {selectedRequest.documents.length > 0 ? (
+                      selectedRequest.documents.map((doc, index) => (
+                        <Chip
+                          key={index}
+                          label={doc}
+                          variant="outlined"
+                          size="small"
+                          icon={<Description fontSize="small" />}
+                        />
+                      ))
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        No documents
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" gutterBottom>
+                    Submitted
+                  </Typography>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <AccessTime color="primary" fontSize="small" />
+                    <Typography>{format(selectedRequest.submittedAt, "MMM d, yyyy")}</Typography>
+                  </Box>
+                </Box>
+              </Box>
             </Box>
 
-            {/* Right Column - Request Details and Actions */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              {selectedRequest ? (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-                  <Card>
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                          <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
-                            <Description />
-                          </Avatar>
-                          <Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Typography variant="h6">{selectedRequest.employeeName}</Typography>
-                              {getStatusBadge(selectedRequest.status)}
-                            </Box>
-                            <Typography variant="body2" color="text.secondary">
-                              {selectedRequest.id} • {selectedRequest.department}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      }
-                      action={
-                        <IconButton aria-label="More options">
-                          <MoreHoriz />
-                        </IconButton>
-                      }
-                      sx={{ bgcolor: "#f3f4f6", borderBottom: "1px solid #e5e7eb" }}
-                    />
-                    <CardContent>
-                      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Purpose of Travel
-                            </Typography>
-                            <Typography>{selectedRequest.purpose || "N/A"}</Typography>
-                          </Box>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Destination
-                            </Typography>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <Place color="primary" fontSize="small" />
-                              <Typography>
-                                {selectedRequest.city}, {selectedRequest.country}
-                              </Typography>
-                            </Box>
-                          </Box>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Travel Period
-                            </Typography>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <CalendarToday color="primary" fontSize="small" />
-                              <Typography>
-                                {format(selectedRequest.departureDate, "MMM d, yyyy")} -{" "}
-                                {format(selectedRequest.returnDate, "MMM d, yyyy")}
-                                <Chip
-                                  label={`${
-                                    Math.ceil(
-                                      (selectedRequest.returnDate - selectedRequest.departureDate) /
-                                        (1000 * 60 * 60 * 24)
-                                    ) + 1
-                                  } days`}
-                                  size="small"
-                                  sx={{ ml: 1 }}
-                                />
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Requirements
-                            </Typography>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                              <FormControlLabel
-                                control={<Checkbox checked={selectedRequest.requiresDriver} disabled />}
-                                label="Driver Required"
-                              />
-                              <FormControlLabel
-                                control={<Checkbox checked={selectedRequest.requiresFlight} disabled />}
-                                label="Flight Booking Required"
-                              />
-                            </Box>
-                          </Box>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Documents
-                            </Typography>
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                              {selectedRequest.documents.length > 0 ? (
-                                selectedRequest.documents.map((doc, index) => (
-                                  <Chip
-                                    key={index}
-                                    label={doc}
-                                    variant="outlined"
-                                    size="small"
-                                    icon={<Description fontSize="small" />}
-                                  />
-                                ))
-                              ) : (
-                                <Typography variant="body2" color="text.secondary">
-                                  No documents
-                                </Typography>
-                              )}
-                            </Box>
-                          </Box>
-                          <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              Submitted
-                            </Typography>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                              <AccessTime color="primary" fontSize="small" />
-                              <Typography>{format(selectedRequest.submittedAt, "MMM d, yyyy")}</Typography>
-                            </Box>
-                          </Box>
-                        </Box>
+            {selectedRequest.status === "pending" && (
+              <Alert severity="warning" sx={{ mt: 2, borderRadius: "8px" }}>
+                <AlertTitle>Action Required</AlertTitle>
+                This request requires your attention. Please assign a driver (if needed) and initiate the flight
+                booking process.
+              </Alert>
+            )}
+
+            {selectedRequest.status === "in-progress" && (
+              <Alert severity="info" sx={{ mt: 2, borderRadius: "8px" }}>
+                <AlertTitle>In Progress</AlertTitle>
+                This request is being processed. Complete the remaining steps to finalize the travel
+                arrangements.
+              </Alert>
+            )}
+
+            {selectedRequest.status === "completed" && (
+              <Alert severity="success" sx={{ mt: 2, borderRadius: "8px" }}>
+                <AlertTitle>Completed</AlertTitle>
+                All travel arrangements have been completed for this request.
+              </Alert>
+            )}
+          </CardContent>
+          <Box sx={{ p: 2, bgcolor: "#f9fafb", display: "flex", justifyContent: "space-between" }}>
+            {selectedRequest.status === "pending" && (
+              <>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate("/travel-dashboard")}
+                  sx={{ borderRadius: "8px" }}
+                  aria-label="Back to dashboard"
+                >
+                  Back to Dashboard
+                </Button>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  {selectedRequest.requiresDriver && (
+                    <Button
+                      variant="outlined"
+                      onClick={() => setShowDrivers(true)}
+                      startIcon={<People />}
+                      sx={{ borderRadius: "8px", borderColor: "info.main", color: "info.dark" }}
+                      aria-label="Assign driver"
+                    >
+                      Assign Driver
+                    </Button>
+                  )}
+                  <Button
+                    variant="contained"
+                    onClick={handleProcessRequest}
+                    disabled={isProcessing}
+                    sx={{ borderRadius: "8px" }}
+                    aria-label="Process request"
+                  >
+                    {isProcessing ? (
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <CircularProgress size={16} sx={{ mr: 1 }} />
+                        Processing...
                       </Box>
+                    ) : (
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Check sx={{ mr: 1 }} />
+                        Process Request
+                      </Box>
+                    )}
+                  </Button>
+                </Box>
+              </>
+            )}
 
-                      {selectedRequest.status === "pending" && (
-                        <Alert severity="warning" sx={{ mt: 2, borderRadius: "8px" }}>
-                          <AlertTitle>Action Required</AlertTitle>
-                          This request requires your attention. Please assign a driver (if needed) and initiate the flight
-                          booking process.
-                        </Alert>
-                      )}
+            {selectedRequest.status === "in-progress" && (
+              <>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate("/travel-dashboard")}
+                  sx={{ borderRadius: "8px" }}
+                  aria-label="Back to dashboard"
+                >
+                  Back to Dashboard
+                </Button>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  {selectedRequest.requiresFlight && !showTicketBooking && !showNotification && (
+                    <Button
+                      variant="contained"
+                      onClick={() => setShowTicketBooking(true)}
+                      startIcon={<Flight />}
+                      sx={{ borderRadius: "8px" }}
+                      aria-label="Book flight"
+                    >
+                      Book Flight
+                    </Button>
+                  )}
+                  {!showTicketBooking && !showNotification && (
+                    <Button
+                      variant="contained"
+                      onClick={() => setShowNotification(true)}
+                      startIcon={<Send />}
+                      sx={{ borderRadius: "8px" }}
+                      aria-label="Send notifications"
+                    >
+                      Send Notifications
+                    </Button>
+                  )}
+                </Box>
+              </>
+            )}
 
-                      {selectedRequest.status === "in-progress" && (
-                        <Alert severity="info" sx={{ mt: 2, borderRadius: "8px" }}>
-                          <AlertTitle>In Progress</AlertTitle>
-                          This request is being processed. Complete the remaining steps to finalize the travel
-                          arrangements.
-                        </Alert>
-                      )}
+            {selectedRequest.status === "completed" && (
+              <>
+                <Button
+                  variant="outlined"
+                  onClick={() => navigate("/travel-dashboard")}
+                  sx={{ borderRadius: "8px" }}
+                  aria-label="Back to dashboard"
+                >
+                  Back to Dashboard
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<Description />}
+                  onClick={generateAndDownloadItinerary}
+                  sx={{ borderRadius: "8px", borderColor: "success.main", color: "success.dark" }}
+                  aria-label="View itinerary"
+                >
+                  View Itinerary
+                </Button>
+              </>
+            )}
+          </Box>
+        </Card>
 
-                      {selectedRequest.status === "completed" && (
-                        <Alert severity="success" sx={{ mt: 2, borderRadius: "8px" }}>
-                          <AlertTitle>Completed</AlertTitle>
-                          All travel arrangements have been completed for this request.
-                        </Alert>
-                      )}
-                    </CardContent>
-                    <Box sx={{ p: 2, bgcolor: "#f9fafb", display: "flex", justifyContent: "space-between" }}>
-                      {selectedRequest.status === "pending" && (
-                        <>
-                          <Button
-                            variant="outlined"
-                            onClick={() => navigate("/travel-dashboard")}
-                            sx={{ borderRadius: "8px" }}
-                            aria-label="Back to dashboard"
-                          >
-                            Back to Dashboard
-                          </Button>
-                          <Box sx={{ display: "flex", gap: 2 }}>
-                            {selectedRequest.requiresDriver && (
-                              <Button
-                                variant="outlined"
-                                onClick={() => setShowDrivers(true)}
-                                startIcon={<People />}
-                                sx={{ borderRadius: "8px", borderColor: "info.main", color: "info.dark" }}
-                                aria-label="Assign driver"
-                              >
-                                Assign Driver
-                              </Button>
-                            )}
-                            <Button
-                              variant="contained"
-                              onClick={handleProcessRequest}
-                              disabled={isProcessing}
-                              sx={{ borderRadius: "8px" }}
-                              aria-label="Process request"
-                            >
-                              {isProcessing ? (
-                                <Box sx={{ display: "flex", alignItems: "center" }}>
-                                  <CircularProgress size={16} sx={{ mr: 1 }} />
-                                  Processing...
-                                </Box>
-                              ) : (
-                                <Box sx={{ display: "flex", alignItems: "center" }}>
-                                  <Check sx={{ mr: 1 }} />
-                                  Process Request
-                                </Box>
-                              )}
-                            </Button>
-                          </Box>
-                        </>
-                      )}
-
-                      {selectedRequest.status === "in-progress" && (
-                        <>
-                          <Button
-                            variant="outlined"
-                            onClick={() => navigate("/travel-dashboard")}
-                            sx={{ borderRadius: "8px" }}
-                            aria-label="Back to dashboard"
-                          >
-                            Back to Dashboard
-                          </Button>
-                          <Box sx={{ display: "flex", gap: 2 }}>
-                            {selectedRequest.requiresFlight && !showTicketBooking && !showNotification && (
-                              <Button
-                                variant="contained"
-                                onClick={() => setShowTicketBooking(true)}
-                                startIcon={<Flight />}
-                                sx={{ borderRadius: "8px" }}
-                                aria-label="Book flight"
-                              >
-                                Book Flight
-                              </Button>
-                            )}
-                            {!showTicketBooking && !showNotification && (
-                              <Button
-                                variant="contained"
-                                onClick={() => setShowNotification(true)}
-                                startIcon={<Send />}
-                                sx={{ borderRadius: "8px" }}
-                                aria-label="Send notifications"
-                              >
-                                Send Notifications
-                              </Button>
-                            )}
-                          </Box>
-                        </>
-                      )}
-
-                      {selectedRequest.status === "completed" && (
-                        <>
-                          <Button
-                            variant="outlined"
-                            onClick={() => navigate("/travel-dashboard")}
-                            sx={{ borderRadius: "8px" }}
-                            aria-label="Back to dashboard"
-                          >
-                            Back to Dashboard
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            startIcon={<Description />}
-                            onClick={generateAndDownloadItinerary}
-                            sx={{ borderRadius: "8px", borderColor: "success.main", color: "success.dark" }}
-                            aria-label="View itinerary"
-                          >
-                            View Itinerary
-                          </Button>
-                        </>
-                      )}
-                    </Box>
-                  </Card>
-
-                  {/* Driver Assignment Dialog */}
+         {/* Driver Assignment Dialog */}
                   <Dialog open={showDrivers} onClose={() => setShowDrivers(false)} maxWidth="md" fullWidth>
                     <motion.div
                       initial={{ opacity: 0, scale: 0.95 }}
@@ -1357,78 +1440,78 @@ export default function FleetCoordinator() {
                         </Box>
                         <DialogContent sx={{ p: 0 }}>
                           <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                            <Box>
-                              <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Recipients
-                              </Typography>
-                              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox
-                                      checked={notificationDetails.recipients.includes("employee")}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          setNotificationDetails({
-                                            ...notificationDetails,
-                                            recipients: [...notificationDetails.recipients, "employee"],
-                                          })
-                                        } else {
-                                          setNotificationDetails({
-                                            ...notificationDetails,
-                                            recipients: notificationDetails.recipients.filter((r) => r !== "employee"),
-                                          })
-                                        }
-                                      }}
-                                    />
-                                  }
-                                  label={`Employee (${selectedRequest.employeeName})`}
-                                />
-                                {selectedDriver && (
-                                  <FormControlLabel
-                                    control={
-                                      <Checkbox
-                                        checked={notificationDetails.recipients.includes("driver")}
-                                        onChange={(e) => {
-                                          if (e.target.checked) {
-                                            setNotificationDetails({
-                                              ...notificationDetails,
-                                              recipients: [...notificationDetails.recipients, "driver"],
-                                            })
-                                          } else {
-                                            setNotificationDetails({
-                                              ...notificationDetails,
-                                              recipients: notificationDetails.recipients.filter((r) => r !== "driver"),
-                                            })
-                                          }
-                                        }}
-                                      />
-                                    }
-                                    label={`Driver (${selectedDriver.name})`}
-                                  />
-                                )}
-                                <FormControlLabel
-                                  control={
-                                    <Checkbox
-                                      checked={notificationDetails.recipients.includes("manager")}
-                                      onChange={(e) => {
-                                        if (e.target.checked) {
-                                          setNotificationDetails({
-                                            ...notificationDetails,
-                                            recipients: [...notificationDetails.recipients, "manager"],
-                                          })
-                                        } else {
-                                          setNotificationDetails({
-                                            ...notificationDetails,
-                                            recipients: notificationDetails.recipients.filter((r) => r !== "manager"),
-                                          })
-                                        }
-                                      }}
-                                    />
-                                  }
-                                  label="Department Manager"
-                                />
-                              </Box>
-                            </Box>
+                         <Box>
+  <Typography variant="body2" color="text.secondary" gutterBottom>
+    Recipients
+  </Typography>
+  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={notificationDetails.recipients.includes("employee")}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setNotificationDetails({
+                ...notificationDetails,
+                recipients: [...notificationDetails.recipients, "employee"],
+              })
+            } else {
+              setNotificationDetails({
+                ...notificationDetails,
+                recipients: notificationDetails.recipients.filter((r) => r !== "employee"),
+              })
+            }
+          }}
+        />
+      }
+      label={`Employee (${selectedRequest.employee.email})`}
+    />
+    {selectedRequest.assignedDriver && (
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={notificationDetails.recipients.includes("driver")}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setNotificationDetails({
+                  ...notificationDetails,
+                  recipients: [...notificationDetails.recipients, "driver"],
+                })
+              } else {
+                setNotificationDetails({
+                  ...notificationDetails,
+                  recipients: notificationDetails.recipients.filter((r) => r !== "driver"),
+                })
+              }
+            }}
+          />
+        }
+        label={`Driver (${selectedRequest.assignedDriver.email})`}
+      />
+    )}
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={notificationDetails.recipients.includes("manager")}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setNotificationDetails({
+                ...notificationDetails,
+                recipients: [...notificationDetails.recipients, "manager"],
+              })
+            } else {
+              setNotificationDetails({
+                ...notificationDetails,
+                recipients: notificationDetails.recipients.filter((r) => r !== "manager"),
+              })
+            }
+          }}
+        />
+      }
+      label="Department Manager"
+    />
+  </Box>
+</Box>
                             <TextField
                               label="Subject"
                               placeholder="Notification subject"
@@ -1503,29 +1586,28 @@ export default function FleetCoordinator() {
                       </Box>
                     </motion.div>
                   </Dialog>
-                </motion.div>
-              ) : (
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    height: 256,
-                    textAlign: "center",
-                  }}
-                >
-                  <Description sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
-                  <Typography variant="h6">No Request Selected</Typography>
-                  <Typography variant="body2" color="text.secondary" mt={1}>
-                    Select a travel request from the list to view details
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Box>
+      </motion.div>
+    ) : (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: 256,
+          textAlign: "center",
+        }}
+      >
+        <Description sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
+        <Typography variant="h6">No Request Selected</Typography>
+        <Typography variant="body2" color="text.secondary" mt={1}>
+          Select a travel request from the list to view details
+        </Typography>
+      </Box>
+    )}
+  </Box>
+</Box>
         </motion.div>
-
         {/* Snackbar for notifications */}
         <Snackbar
           open={snackbarOpen}
@@ -1541,7 +1623,6 @@ export default function FleetCoordinator() {
             {snackbarMessage}
           </Alert>
         </Snackbar>
-      </GradientContainer>
     </ThemeProvider>
   )
 }

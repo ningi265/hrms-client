@@ -73,6 +73,7 @@ import DateComponent from './date';
 import ProcurementStatusCard from './procurementStatus';
 import ProductReviewsAnalysis from './productProcurement';
 import StatsCardsGrid from './statsCard';
+import FinancialDashboard from './financial';
 import HRMSSidebar from './sidebar';
 import DashboardHeader from './header'
 import { motion, AnimatePresence } from 'framer-motion';
@@ -292,12 +293,18 @@ export default function ProcurementDashboard() {
     closed: '#3A0CA3',     // deep purple
     paid: '#7209B7'        // vibrant purple
   };
-  const user = authUser || {
-    name: 'Guest User',
-    avatar: null,
-    email: '',
-    role: 'guest'
-  };
+const user = authUser ? {
+  ...authUser,
+  name: authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Guest User',
+  avatar: authUser.avatar || null,
+  email: authUser.email || '',
+  role: authUser.role || 'guest'
+} : {
+  name: 'Guest User',
+  avatar: null,
+  email: '',
+  role: 'guest'
+};
   
   const allData = [
     { name: 'Pending Requisitions', value: stats.requisitions.counts.pending, category: 'Requisitions', status: 'pending' },
@@ -526,38 +533,54 @@ export default function ProcurementDashboard() {
       {/* All the current dashboard content */}
       <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
             {/* Page Title */}
-            <Box sx={{ 
-              display: "flex", 
-              justifyContent: "space-between", 
-              alignItems: 'center',
-              mb: 2,
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 1, sm: 0 },
-              textAlign: { xs: 'center', sm: 'left' }
-            }}>
-              <Box>
-                <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
-                  Dashboard Overview
-                </Typography>
-                <Typography variant="body" color="text.secondary" sx={{ fontSize: '0.875rem'}} >
-                  Welcome back {user.firstName}, here's what's happening with your procurement activities.
-                </Typography>
-              </Box>
-            </Box>
+           <Box sx={{ 
+  display: "flex", 
+  justifyContent: "space-between", 
+  alignItems: 'center',
+  mb: 2,
+  flexDirection: { xs: 'column', sm: 'row' },
+  gap: { xs: 1, sm: 0 },
+  textAlign: { xs: 'center', sm: 'left' }
+}}>
+  <Box>
+    <Typography 
+      variant="h5" 
+      component="h1" 
+      gutterBottom 
+      sx={{ fontWeight: 700, color: 'black' }}
+    >
+      Dashboard Overview
+    </Typography>
+     <Typography 
+  variant="body1" 
+  sx={{ fontSize: '0.875rem', fontWeight: 400, color: 'black' }}
+>
+  Welcome back {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)}, here's what's happening with your procurement activities.
+</Typography>
 
+
+  </Box>
+</Box>
             {/* Stats Cards */}
             <StatsCardsGrid stats={stats} />
 
+              
             {/* Main Content Grid */}
             <Box sx={{ 
               display: "grid", 
               gap: 3, 
               gridTemplateColumns: { 
-                xs:  "1fr 1fr",
+                xs:  "3fr 2fr",
               },
               mb: 4,
               minWidth: "600px"
             }}>
+
+               <RevenueChart 
+  salesData={salesData} 
+  revenueBreakdown={revenueBreakdown} 
+  regionalMapData={regionalMapData} 
+/> 
               {/* Enhanced Procurement Status */}
               <ProcurementStatusCard
                 summaryData={summaryData}
@@ -567,15 +590,14 @@ export default function ProcurementDashboard() {
                 onPieEnter={onPieEnter}
                 onPieLeave={onPieLeave}
                 stats={stats}
-              />
-
-                {/* Pending Approvals */}
-                  <RevenueChart 
-  salesData={salesData} 
-  revenueBreakdown={revenueBreakdown} 
-  regionalMapData={regionalMapData} 
-/> 
+              /> 
             </Box>
+
+            <Box sx={{ mb: 4 }}>
+               
+         <FinancialDashboard/>
+    </Box>
+
 
             {/* Recent Activity */}
              {/*    <Card sx={{ 
@@ -777,10 +799,13 @@ export default function ProcurementDashboard() {
         </button>
       </div>
                </div>
+             
 
                    <Box sx={{ mb: 4 }}>
       <ProductReviewsAnalysis />
     </Box>
+
+    
 
 
           </Box>
