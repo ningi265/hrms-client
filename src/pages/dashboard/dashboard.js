@@ -570,7 +570,7 @@ const user = authUser ? {
               display: "grid", 
               gap: 3, 
               gridTemplateColumns: { 
-                xs:  "13fr 7fr",
+                xs:  "1fr 1fr",
               },
               mb: 4,
               minWidth: "600px"
