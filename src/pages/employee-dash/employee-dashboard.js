@@ -49,6 +49,13 @@ import {
   LinearProgress
 } from "@mui/material";
 import { useAuth } from "../../authcontext/authcontext";
+import HRMSSidebar from './sidebar';
+import DashboardHeader from './header';
+import StatsCardsGrid from './statsCard';
+import AIChatButton from '../dashboard/aiChat';
+import QuickActions from './quickActions';
+import BarChartComponent from './tasks';
+import ActivityChangelogComponent from './activity'
 import TravelExecutionReconciliation from '../../pages/dashboard/requisitions/manage/travel-exec-recon';
 import TravelDashboard from '../../pages/dashboard/requisitions/manage/travel-dash';
 import TravelReconciliation from '../../pages/dashboard/requisitions/recon';
@@ -296,16 +303,17 @@ export default function EmployeeDashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
   const { user } = useAuth();
-  const [stats, setStats] = useState({
-    requisitions: { counts: { pending: 0 } },
-    rfqs: { counts: { open: 0 } },
-    purchaseOrders: { counts: { pending: 0 } },
-    invoices: { counts: { pending: 0 } }
-  });
+ const [stats, setStats] = useState({
+  requisitions: { counts: { total: 0, pending: 0 } },
+  rfqs: { counts: { total: 0, open: 0 } },
+  purchaseOrders: { counts: { total: 0, pending: 0 } },
+  invoices: { counts: { total: 0, pending: 0 } }
+});
   const [anchorEl, setAnchorEl] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeSection, setActiveSection] = useState("dashboard");
   const open = Boolean(anchorEl);
+   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -320,262 +328,21 @@ export default function EmployeeDashboard() {
       overflow: "hidden",
     }}>
       {/* Sidebar */}
-       <Sidebar variant="permanent" open>
-              <SidebarHeader>
-                <Box sx={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 2, 
-                  px: 1,
-                  width: '100%',
-                  justifyContent: 'space-between',
-                }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        height: 34,
-                        width: 36,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        borderRadius: 1.5,
-                        bgcolor: "primary.main",
-                        color: "primary.contrastText",
-                      }}
-                    >
-                      <Layers sx={{ fontSize: 20 }} />
-                    </Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                      HRMS Dashboard
-                    </Typography>
-                  </Box>
-                  <IconButton onClick={toggleSidebar} size="small">
-                    {sidebarCollapsed ? <ChevronRight /> : <ChevronLeft />}
-                  </IconButton>
-                </Box>
-              </SidebarHeader>
-      
-              <Divider />
-      
-              <List>
-                <SidebarGroupLabel>Main</SidebarGroupLabel>
-                <StyledListItemButton
-                  selected={activeSection === "dashboard"}
-                  onClick={() =>handleSectionChange("dashboard")}
-                >
-                  <ListItemIcon>
-                    <Home sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Dashboard" />
-                </StyledListItemButton>
-      
-                <StyledListItemButton
-                  selected={activeSection === "requisitions"}
-                  onClick={() => handleSectionChange("requisitions")}
-                >
-                  <ListItemIcon>
-                    <ShoppingCart sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Requisitions" />
-                  <Badge badgeContent={stats.requisitions.counts.pending} color="primary" />
-                </StyledListItemButton>
-
-      
-                <StyledListItemButton
-                  selected={activeSection === "invoices"}
-                  onClick={() => handleSectionChange("invoices")}
-                >
-                  <ListItemIcon>
-                    <CreditCard sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Requisition review" />
-                  <Badge badgeContent={stats.invoices.counts.pending} color="primary" />
-                </StyledListItemButton>
-              </List>
-      
-              <Divider />
-      
-              <List>
-                <SidebarGroupLabel>Travel Management</SidebarGroupLabel>
-                <StyledListItemButton
-                  selected={activeSection === "travel-requests"}
-                  onClick={() => handleSectionChange("travel-requests")}
-                >
-                  <ListItemIcon>
-                    <CalendarToday sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Travel Requests" />
-                </StyledListItemButton>
-
-                <StyledListItemButton
-                  selected={activeSection === "travel-execution"}
-                  onClick={() => handleSectionChange("travel-execution")}
-                >
-                  <ListItemIcon>
-                    <CalendarToday sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Travel Execution" />
-                </StyledListItemButton>
-
-                <StyledListItemButton
-                  selected={activeSection === "travel-requests1"}
-                  onClick={() => handleSectionChange("travel-requests1")}
-                >
-                  <ListItemIcon>
-                    <CalendarToday sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Travel Reconciliation" />
-                </StyledListItemButton>
-              
-      
-            
-              </List>
-              <Divider />
-      
-              <List>
-                <SidebarGroupLabel>Reports</SidebarGroupLabel>
-                <StyledListItemButton
-                  selected={activeSection === "analytics"}
-                  onClick={() => setActiveSection("analytics")}
-                >
-                  <ListItemIcon>
-                    <BarChart sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Analytics" />
-                </StyledListItemButton>
-      
-                <StyledListItemButton
-                  selected={activeSection === "reports"}
-                  onClick={() => setActiveSection("reports")}
-                >
-                  <ListItemIcon>
-                    <PieChart sx={{ fontSize: 20 }} />
-                  </ListItemIcon>
-                  <ListItemText primary="Reports" />
-                </StyledListItemButton>
-              </List>
-      
-              <Box sx={{ mt: "auto" }}>
-                <Divider />
-                <List>
-                  <StyledListItemButton onClick={() => navigate("/settings")}>
-                    <ListItemIcon>
-                      <Settings sx={{ fontSize: 20 }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Settings" />
-                  </StyledListItemButton>
-      
-                  <StyledListItemButton onClick={() => console.log("Logout")}>
-                    <ListItemIcon>
-                      <ExitToApp sx={{ fontSize: 20 }} />
-                    </ListItemIcon>
-                    <ListItemText primary="Logout" />
-                  </StyledListItemButton>
-                </List>
-              </Box>
-            </Sidebar>
+        <HRMSSidebar 
+               stats={stats} 
+               activeSection={activeSection} 
+               handleSectionChange={handleSectionChange}
+             />
       
 
       {/* Main Content */}
       <Box component="main" sx={{ flexGrow: 1, overflow: "auto", backgroundColor: theme.palette.background.default }}>
         {/* Header */}
-        <Paper elevation={0} sx={{ 
-          p: 1.5, 
-          borderBottom: 1, 
-          borderColor: "divider",
-          backgroundColor: theme.palette.background.paper,
-          position: 'sticky',
-          top: 0,
-          zIndex: theme.zIndex.appBar,
-        }}>
-          <Toolbar sx={{ px: { sm: 2 } }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mr: 'auto' }}>
-              <IconButton 
-                color="inherit"
-                sx={{
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                  '&:hover': { backgroundColor: alpha(theme.palette.primary.main, 0.2) }
-                }}
-              >
-                <Badge badgeContent={3} color="error">
-                  <Notifications sx={{ color: theme.palette.text.primary }} />
-                </Badge>
-              </IconButton>
-
-              <Button
-                variant="text"
-                color="inherit"
-                onClick={handleMenuClick}
-                sx={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 1,
-                  borderRadius: 20,
-                  px: 1.5,
-                  py: 0.5,
-                  '&:hover': { backgroundColor: theme.palette.action.hover }
-                }}
-                id="user-menu-button"  
-                aria-controls={open ? 'user-menu' : undefined}
-                aria-haspopup="true"
-                aria-expanded={open ? 'true' : undefined}
-              >
-                <Avatar sx={{ width: 36, height: 36, bgcolor: theme.palette.primary.main }} src={user?.avatar}>
-                  {user?.name?.split(" ").map(n => n[0]).join("")}
-                </Avatar>
-                <Box sx={{ display: { xs: "none", md: "block" } }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{user?.name}</Typography>
-                  <Typography variant="caption" color="text.secondary">{user?.role}</Typography>
-                </Box>
-                <ExpandMore sx={{ fontSize: 16 }} />
-              </Button>
-
-              <Menu
-                id="user-menu"
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleMenuClose}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
-                PaperProps={{
-                  elevation: 4,
-                  sx: {
-                    mt: 1.5,
-                    minWidth: 200,
-                    borderRadius: 2,
-                    overflow: 'visible',
-                    '&:before': {
-                      content: '""',
-                      display: 'block',
-                      position: 'absolute',
-                      top: 0,
-                      right: 14,
-                      width: 10,
-                      height: 10,
-                      bgcolor: 'background.paper',
-                      transform: 'translateY(-50%) rotate(45deg)',
-                      zIndex: 0,
-                    }
-                  }
-                }}
-              >
-                <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-                  <ListItemIcon><Person fontSize="small" /></ListItemIcon>
-                  Profile
-                </MenuItem>
-                <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-                  <ListItemIcon><Settings fontSize="small" /></ListItemIcon>
-                  Settings
-                </MenuItem>
-                <Divider />
-                <MenuItem onClick={handleMenuClose} sx={{ py: 1 }}>
-                  <ListItemIcon><ExitToApp fontSize="small" /></ListItemIcon>
-                  Log out
-                </MenuItem>
-              </Menu>
-            </Box>
-          </Toolbar>
-        </Paper>
+             <DashboardHeader 
+            user={user}
+            onMobileMenuToggle={setMobileOpen}
+      
+          />
 
         {/* Main Content Area */}
         <Box sx={{ p: 2 }}>
@@ -592,189 +359,50 @@ export default function EmployeeDashboard() {
                 textAlign: { xs: 'center', sm: 'left' }
               }}>
                 <Box>
-                  <Typography variant="h5" component="h1" gutterBottom sx={{ fontWeight: 700 }}>
+                  <Typography variant="h5" component="h1" gutterBottom  sx={{ fontWeight: 700, color: 'black' }}>
                     Employee Dashboard
                   </Typography>
-                  <Typography variant="body" color="text.secondary" sx={{ fontSize: '0.875rem'}} >
-                    Welcome back, {user?.name}. Here's your current work status.
+                  <Typography variant="body1"  sx={{ fontSize: '0.875rem', fontWeight: 400, color: 'black' }} >
+                    Welcome back, {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)}. Here's your current work status.
                   </Typography>
                 </Box>
               </Box>
 
               {/* Stats Cards */}
-              <Box sx={{ 
-                display: "grid", 
-                gap: 2, 
-                gridTemplateColumns: { 
-                  xs: "1fr", 
-                  sm: "repeat(2, 1fr)", 
-                  lg: "repeat(4, 1fr)" 
-                }, 
-                mb: 3 
-              }}>
-                <StatsCardComponent
-                  title="My Requisitions"
-                  value={5}
-                  description="3 pending approval"
-                  trend="+2 this week"
-                  trendDirection="up"
-                  icon={<ShoppingCart />}
-                  color="primary"
-                />
-
-                <StatsCardComponent
-                  title="My Approvals"
-                  value={8}
-                  description="5 awaiting your review"
-                  trend="+3 today"
-                  trendDirection="up"
-                  icon={<Check />}
-                  color="success"
-                />
-
-                <StatsCardComponent
-                  title="Travel Requests"
-                  value={3}
-                  description="1 pending submission"
-                  trend="No change"
-                  trendDirection="neutral"
-                  icon={<LocalShipping />}
-                  color="info"
-                />
-
-                <StatsCardComponent
-                  title="Expense Reports"
-                  value={7}
-                  description="2 need reconciliation"
-                  trend="-1 yesterday"
-                  trendDirection="down"
-                  icon={<CreditCard />}
-                  color="warning"
-                />
-              </Box>
-
+             <StatsCardsGrid stats={stats} />
               {/* Main Content Grid */}
               <Box sx={{ 
-                display: "grid", 
-                gap: 3, 
-                gridTemplateColumns: { 
-                  xs: "1fr", 
-                  lg: "2fr 1fr" 
-                },
-                mb: 4
+                display: "flex", 
+                gap: 1,
+                mb: 4,
+                width: "100%",
+                height: "100%",
               }}>
-                {/* My Tasks */}
-                <Card sx={{ borderRadius: 3, boxShadow: theme.shadows[1] }}>
-                  <CardHeader
-                    title="My Current Tasks"
-                    subheader="Items requiring your action"
-                    titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-                    subheaderTypographyProps={{ variant: 'body2' }}
-                  />
-                  <CardContent>
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                      <StatusItemComponent
-                        title="Requisitions to Approve"
-                        total={8}
-                        items={[
-                          { label: "High Priority", value: 3, color: "error" },
-                          { label: "Medium Priority", value: 4, color: "warning" },
-                          { label: "Low Priority", value: 1, color: "success" },
-                        ]}
-                      />
+                 {/* My Tasks - Takes exactly half width */}
+  <Box sx={{ 
+    flex: 1, 
+    pr: 0, // Remove right padding
+    borderRight: `1px solid ${theme.palette.divider}` // Add subtle divider
+  }}>
+    <BarChartComponent/>
+  </Box>
 
-                      <StatusItemComponent
-                        title="My Pending Requests"
-                        total={5}
-                        items={[
-                          { label: "Awaiting Approval", value: 3, color: "warning" },
-                          { label: "In Progress", value: 2, color: "info" },
-                        ]}
-                      />
+                 {/* Quick Actions - Takes exactly half width */}
+  <Box sx={{ 
+    flex: 1,
+    pl: 0 // Remove left padding
+  }}>
+    <QuickActions handleSectionChange={handleSectionChange} />
+  </Box>
 
-                      <StatusItemComponent
-                        title="Travel Approvals"
-                        total={4}
-                        items={[
-                          { label: "Pending", value: 2, color: "warning" },
-                          { label: "Approved", value: 1, color: "success" },
-                          { label: "Rejected", value: 1, color: "error" },
-                        ]}
-                      />
-                    </Box>
-                  </CardContent>
-                </Card>
-
-                {/* Quick Actions */}
-                <Card sx={{ borderRadius: 3, boxShadow: theme.shadows[1] }}>
-                  <CardHeader
-                    title="Quick Actions"
-                    subheader="Common tasks you can perform"
-                    titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-                    subheaderTypographyProps={{ variant: 'body2' }}
-                  />
-                  <CardContent sx={{ p: 0 }}>
-                    <List>
-                      <ListItemButton 
-                        sx={{ px: 2, py: 1.5 }} 
-                        onClick={() => handleSectionChange("requisitions")}
-                      >
-                        <ListItemIcon><Add color="primary" /></ListItemIcon>
-                        <ListItemText primary="Create New Requisition" />
-                      </ListItemButton>
-                      <ListItemButton 
-                        sx={{ px: 2, py: 1.5 }} 
-                        onClick={() => handleSectionChange("travel-requests")}
-                      >
-                        <ListItemIcon><CalendarToday color="secondary" /></ListItemIcon>
-                        <ListItemText primary="Submit Travel Request" />
-                      </ListItemButton>
-                      <ListItemButton 
-                        sx={{ px: 2, py: 1.5 }} 
-                        onClick={() => handleSectionChange("expense-reports")}
-                      >
-                        <ListItemIcon><Description color="info" /></ListItemIcon>
-                        <ListItemText primary="Submit Expense Report" />
-                      </ListItemButton>
-                    </List>
-                  </CardContent>
-                </Card>
               </Box>
 
-              {/* Recent Activity */}
-              <Card sx={{ mt: 3, borderRadius: 3, boxShadow: theme.shadows[1] }}>
-                <CardHeader
-                  title="My Recent Activity"
-                  subheader="Your latest actions in the system"
-                  titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-                  subheaderTypographyProps={{ variant: 'body2' }}
-                />
-                <CardContent>
-                  <Box sx={{ display: "grid", gap: 3, gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" } }}>
-                    <ActivityCardComponent
-                      title="Requisition Approved"
-                      description="Office supplies #REQ-2023-042 approved"
-                      time="2 hours ago"
-                      icon={<Check />}
-                      color="success"
-                    />
-                    <ActivityCardComponent
-                      title="Travel Request Submitted"
-                      description="Conference trip to New York submitted"
-                      time="Yesterday"
-                      icon={<CalendarToday />}
-                      color="info"
-                    />
-                    <ActivityCardComponent
-                      title="Expense Report Rejected"
-                      description="Hotel expenses #EXP-2023-15 needs revision"
-                      time="3 days ago"
-                      icon={<Error />}
-                      color="error"
-                    />
-                  </Box>
-                </CardContent>
-              </Card>
+                {/* Recent Activity - Full width below with no top margin */}
+<Box sx={{ width: "100%" }}>
+  <ActivityChangelogComponent/>    
+</Box>
+
+              
             </Box>
           ) : (
             <Box>
@@ -786,6 +414,7 @@ export default function EmployeeDashboard() {
           )}
         </Box>
       </Box>
+       <AIChatButton user={user} />
     </Box>
   );
 }
