@@ -126,8 +126,7 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300 relative overflow-hidden">
-      {/* Decorative accent at top of card */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
+    
       {/* Header with title and chart type toggles */}
       <div className="flex justify-between mb-6 items-center">
         <div>

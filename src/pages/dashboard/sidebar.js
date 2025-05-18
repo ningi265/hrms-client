@@ -637,7 +637,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
               {/* When open, show logo and title on left, toggle button on right */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <LogoBox>
-                  H
+                  N
                 </LogoBox>
                 <Typography 
                   variant="h6" 
@@ -648,7 +648,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
                     fontSize: '1.125rem',
                   }}
                 >
-                NYASA PROC
+                NYASA SC
                 </Typography>
               </Box>
               
@@ -656,6 +656,11 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
                 onClick={toggleDrawer}
                 disabled={isAnimating}
                 aria-label="close drawer"
+                 sx={{
+    '& img': {
+      filter: 'brightness(0) invert(1)', // This will make black appear white
+    }
+  }}
               >
                 <img 
                   src="/sidebar1.png" 

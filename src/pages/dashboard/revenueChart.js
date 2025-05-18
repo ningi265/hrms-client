@@ -48,7 +48,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
   const formatCurrency = (value) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'MWK',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(value);
@@ -258,7 +258,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
           {/* Header Section with Title and Chart Type Toggle */}
           <div className="flex justify-between mb-6 items-center">
             <div className="flex items-center">
-              <span className="text-gray-800 font-bold text-xl">Revenue Overview</span>
+              <span className="text-gray-800 font-bold text-xl">Travel Requests Expenses</span>
               <div className="ml-3 text-xs px-2.5 py-1 bg-blue-50 text-blue-600 rounded-full font-medium">
                 {activeCategory}
               </div>
@@ -325,7 +325,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
           </div>
           
           {/* Revenue Total Section */}
-          <div className="text-gray-500 text-xs font-medium mb-1 uppercase tracking-wider">Revenue Total</div>
+          <div className="text-gray-500 text-xs font-medium mb-1 uppercase tracking-wider">Expense Total</div>
           <div className="text-gray-800 font-bold text-3xl mb-8 flex items-center">
             {formatCurrency(536000)}
             <div className="ml-3 text-xs px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full font-medium flex items-center">
@@ -489,7 +489,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
                   
                   <Bar 
                     dataKey="revenue" 
-                    name="Revenue"
+                    name="Expense"
                     barSize={24}
                     radius={[6, 6, 0, 0]}
                     shape={<CustomBar />}
@@ -500,7 +500,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
                   </Bar>
                   <Bar 
                     dataKey="target" 
-                    name="Target"
+                    name="Limit"
                     barSize={24}
                     radius={[6, 6, 0, 0]}
                     shape={<CustomBar />}
