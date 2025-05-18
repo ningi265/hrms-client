@@ -646,13 +646,6 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
               </div>
             )}
           </div>
-          
-          {/* Optional Badge - positioned at top right */}
-          <div className="absolute top-2 right-2">
-            <div className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-full font-medium">
-              Pro
-            </div>
-          </div>
         </>
       )}
     </div>

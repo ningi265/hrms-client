@@ -481,14 +481,7 @@ const transformRequestData = (data) => {
   }, []);
 
   return (
-    <Box sx={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      height: "100vh", // Fixed viewport height
-      overflow: "hidden", // Prevent page scrolling
-      background: "linear-gradient(to bottom, #f9fafb, #f3f4f6)" 
-    }}>
-      <Box sx={{ 
+  <Box sx={{ 
         display: "flex", 
         flexDirection: "column",
         height: "100%" // Take full height
@@ -520,28 +513,6 @@ const transformRequestData = (data) => {
                 height: "100%", // Full height
                 overflow: "hidden" // Prevent column scrolling
               }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Financial Requests Processing 
-                  </Typography>
-                  <Select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    size="small"
-                    sx={{ minWidth: 120 }}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Filter size={16} />
-                        <span>Filter</span>
-                      </Box>
-                    )}
-                  >
-                    <MenuItem value="all">All Requests</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                  </Select>
-                  </Box>
-
 <TextField
   placeholder="Search requests..."
   fullWidth
@@ -1945,6 +1916,5 @@ const transformRequestData = (data) => {
           )}
         </Box>
       </Box>
-    </Box>
   )
 }
