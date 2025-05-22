@@ -142,7 +142,7 @@ const QuickActions = ({ handleSectionChange }) => {
     : actionItems;
   
   return (
-    <div className="bg-white rounded-xl overflow-hidden border border-gray-200 w-full h-full">
+   <div className="bg-white rounded-xl overflow-hidden border border-gray-200 w-full h-full flex flex-col">
       {/* Header with subtle gradient border */}
       <div className="px-4 py-3 border-b border-gray-100 relative bg-white">
         <div className={`absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500`}></div>
@@ -336,15 +336,15 @@ const QuickActions = ({ handleSectionChange }) => {
         </div>
       </div>
       
-      {/* Notification Indicator */}
-      <div className="absolute top-3 right-16">
+      {/* Notification Indicator -      <div className="absolute top-3 right-16">
         <button className="relative">
           <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center text-xs font-bold text-white border-2 border-white">
             3
           </div>
           <AlertCircle size={20} className="text-gray-500" />
         </button>
-      </div>
+      </div> */}
+
       
       {/* Add custom scrollbar styles */}
       <style jsx>{`

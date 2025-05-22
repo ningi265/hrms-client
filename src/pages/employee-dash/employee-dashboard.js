@@ -371,31 +371,35 @@ export default function EmployeeDashboard() {
               {/* Stats Cards */}
              <StatsCardsGrid stats={stats} />
               {/* Main Content Grid */}
-              <Box sx={{ 
-                display: "flex", 
-                gap: 1,
-                mb: 4,
-                width: "100%",
-                height: "100%",
-              }}>
-                 {/* My Tasks - Takes exactly half width */}
+<Box sx={{ 
+  display: "flex", 
+  gap: 2,
+  mb: 4,
+  width: "100%",
+  height: "100%",
+}}>
+  {/* Tasks - Takes exactly half width */}
   <Box sx={{ 
     flex: 1, 
-    pr: 0, // Remove right padding
-    borderRight: `1px solid ${theme.palette.divider}` // Add subtle divider
+    minWidth: 0, // Prevent overflow
+    height: "100%",
+    display: "flex",
+    flexDirection: "column"
   }}>
     <BarChartComponent/>
   </Box>
 
-                 {/* Quick Actions - Takes exactly half width */}
+  {/* Quick Actions - Takes exactly half width */}
   <Box sx={{ 
     flex: 1,
-    pl: 0 // Remove left padding
+    minWidth: 0, // Prevent overflow
+    height: "100%",
+    display: "flex",
+    flexDirection: "column"
   }}>
     <QuickActions handleSectionChange={handleSectionChange} />
   </Box>
-
-              </Box>
+</Box>
 
                 {/* Recent Activity - Full width below with no top margin */}
 <Box sx={{ width: "100%" }}>

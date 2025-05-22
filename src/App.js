@@ -40,6 +40,8 @@ import ProcurementDashboardWithSidebar from './pages/dashboard/dashboard';
 import FoodBudgetPlanner from './pages/FoodBudgetPlanner';
 import ResetPassword from './pages/login/ResetPassword';
 import ForgotPassword from './pages/login/ForgotPassword';
+import TermsOfService from './pages/login/TermsOfService';
+import PrivacyPolicy from './pages/login/PrivacyPolicy';
 
 
 
@@ -55,6 +57,8 @@ function App() {
           <Route path="/register" element={<RegisterPage/>} />
            <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
            {/*PO,Finance and Admin Routes */}
           <Route path="/dash/new" element={<ProcurementDashboardWithSidebar/>}/>
           <Route path="/dashboard" element={<DashboardPage/>} />
