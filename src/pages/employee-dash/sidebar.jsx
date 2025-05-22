@@ -384,7 +384,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           badge: null
         },
         { 
-          id: 'fleet-management', 
+          id: 'travel-execution', 
           label: 'Fleet Management', 
           icon: <ModernIcons.FleetManagement />,
           badge: null
@@ -396,7 +396,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
       label: 'Finance Processing',
       items: [
         { 
-          id: 'reconciliation', 
+          id: 'new-recon', 
           label: 'Reconciliation', 
           icon: <ModernIcons.Reconciliation />,
           badge: null
