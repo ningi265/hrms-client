@@ -294,7 +294,7 @@ const StatsCardsGrid = ({ stats, testId }) => {
     >
       <Box sx={{ width: '25%', minWidth: 130 }}>
         <PremiumStatCard
-          title="Approve"
+          title="Approved"
           value={stats.requisitions.counts.total}
           color="primary"
           icon={<ShoppingCart />}
@@ -304,7 +304,7 @@ const StatsCardsGrid = ({ stats, testId }) => {
 
       <Box sx={{ width: '25%', minWidth: 130 }}>
         <PremiumStatCard
-          title="PO from Requisitions"
+          title="Travel Requisitions"
           value={stats.rfqs.counts.total}
           icon={<People />}
           color="info"

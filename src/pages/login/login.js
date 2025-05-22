@@ -154,7 +154,7 @@ export default function LoginPage() {
           
           <div className="bg-white/10 p-5 rounded-lg backdrop-blur-sm">
             <p className="italic text-sm">"This platform has streamlined our entire procurement process, saving us countless hours every month."</p>
-            <p className="mt-3 font-semibold text-sm">— Sarah Johnson, Procurement Manager</p>
+            <p className="mt-3 font-semibold text-sm">— Sarah Banda, Procurement Manager</p>
           </div>
         </div>
       </div>
@@ -206,7 +206,7 @@ export default function LoginPage() {
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                     Password
                   </label>
-                  <a href="#" className="text-xs text-blue-600 hover:text-blue-800 hover:underline">
+                  <a href="/forgot-password" className="text-xs text-blue-600 hover:text-blue-800 hover:underline">
                     Forgot password?
                   </a>
                 </div>
@@ -264,11 +264,11 @@ export default function LoginPage() {
             <div className="pt-4 border-t border-gray-200">
               <p className="text-xs text-gray-500">
                 By signing in, you agree to our{" "}
-                <a href="#" className="text-blue-600 hover:underline">
+                <a href="/terms-of-service" className="text-blue-600 hover:underline">
                   Terms of Service
                 </a>{" "}
                 and{" "}
-                <a href="#" className="text-blue-600 hover:underline">
+                <a href="/privacy-policy" className="text-blue-600 hover:underline">
                   Privacy Policy
                 </a>
               </p>

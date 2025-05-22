@@ -46,22 +46,8 @@ const ModernIcons = {
       <rect x="3" y="16" width="7" height="5" rx="1" />
     </svg>
   ),
-  Employees: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  ),
-  Vendors: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  ),
+
+
   Requisitions: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
@@ -85,13 +71,7 @@ const ModernIcons = {
       <line x1="12" y1="22.08" x2="12" y2="12" />
     </svg>
   ),
-  Invoices: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x="2" y="4" width="20" height="16" rx="2" />
-      <path d="M7 15h0M2 9.5h20" />
-      <path d="M12 15h5" />
-    </svg>
-  ),
+
   TravelRequests: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M15 11h.01M11 15h.01M16 16h.01M10 12h.01M3 7l2.5 3 4-5 2.5 3 3-4 2.5 3L20.5 5" />
@@ -99,12 +79,7 @@ const ModernIcons = {
       <path d="M4 22H2a1 1 0 0 1-1-1v0a1 1 0 0 1 1-1h3v-8.5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5V20a2 2 0 0 1-2 2Z" />
     </svg>
   ),
-  FinalApproval: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <polyline points="9 11 12 14 22 4" />
-      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-    </svg>
-  ),
+
   FleetManagement: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11" />
@@ -114,15 +89,7 @@ const ModernIcons = {
       <circle cx="17" cy="18" r="2" />
     </svg>
   ),
-  Processing: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <rect x="2" y="5" width="20" height="14" rx="2" />
-      <line x1="2" y1="10" x2="22" y2="10" />
-      <line x1="7" y1="15" x2="7" y2="15" />
-      <line x1="12" y1="15" x2="12" y2="15" />
-      <line x1="17" y1="15" x2="17" y2="15" />
-    </svg>
-  ),
+
   Reconciliation: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.5 10-10 10Z" />
@@ -385,18 +352,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           icon: <ModernIcons.Dashboard />,
           badge: null
         },
-        { 
-          id: 'employees', 
-          label: 'Employees', 
-          icon: <ModernIcons.Employees />,
-          badge: stats.employees?.counts?.pending || null
-        },
-        { 
-          id: 'vendors', 
-          label: 'Vendors', 
-          icon: <ModernIcons.Vendors />,
-          badge: stats.vendors?.counts?.open || null
-        },
+       
         { 
           id: 'requisitions', 
           label: 'Requisitions', 
@@ -415,12 +371,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           icon: <ModernIcons.PurchaseOrders />,
           badge: stats.purchaseOrders?.counts?.pending || null
         },
-        { 
-          id: 'invoices', 
-          label: 'Invoices', 
-          icon: <ModernIcons.Invoices />,
-          badge: stats.invoices?.counts?.pending || null
-        },
       ]
     },
     {
@@ -434,13 +384,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           badge: null
         },
         { 
-          id: 'final-approval', 
-          label: 'Final Approval', 
-          icon: <ModernIcons.FinalApproval />,
-          badge: null
-        },
-        { 
-          id: 'fleet-management', 
+          id: 'travel-execution', 
           label: 'Fleet Management', 
           icon: <ModernIcons.FleetManagement />,
           badge: null
@@ -452,13 +396,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
       label: 'Finance Processing',
       items: [
         { 
-          id: 'finance-processing', 
-          label: 'Processing', 
-          icon: <ModernIcons.Processing />,
-          badge: null
-        },
-        { 
-          id: 'reconciliation', 
+          id: 'new-recon', 
           label: 'Reconciliation', 
           icon: <ModernIcons.Reconciliation />,
           badge: null
@@ -840,30 +778,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
               >
                 A
               </Avatar>
-              <Box>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: sidebarColors.text,
-                    fontWeight: 500,
-                    lineHeight: 1.3,
-                    fontSize: '0.8125rem',
-                  }}
-                >
-                  Admin User
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: sidebarColors.textSecondary,
-                    fontSize: '0.6875rem',
-                    display: 'block',
-                    mt: 0.2,
-                  }}
-                >
-                  System Administrator
-                </Typography>
-              </Box>
             </Box>
           )}
         </Box>
