@@ -138,12 +138,12 @@ export default function Home() {
   const testimonials = [
     {
       quote: "This system has transformed our procurement processes, saving us countless hours and reducing errors by 95%.",
-      author: "Sarah Johnson",
+      author: "Sarah Banda",
       position: "Procurement Director, Global Tech Inc."
     },
     {
       quote: "The vendor management module has helped us identify our best suppliers and negotiate better terms.",
-      author: "Michael Chen",
+      author: "Michael Kaunda",
       position: "Supply Chain Manager, Nexus Manufacturing"
     },
     {
@@ -211,7 +211,7 @@ export default function Home() {
           src="/hrms-logo.png"
           className="h-20 w-auto mx-auto"
         />
-        <span className={`text-xl font-bold ${scrolled ? "text-white" : "text-gray-800"}`}>NYASA PROCURE</span>
+        <span className={`text-xl font-bold ${scrolled ? "text-white" : "text-gray-800"}`}>NYASA SUPPLY CHAIN</span>
       </div>
 
       {/* Desktop Navigation */}
@@ -485,7 +485,7 @@ export default function Home() {
             <div className="md:w-1/2 pl-0 md:pl-10">
               <div className="bg-white p-6 rounded-xl shadow-xl">
                 <img 
-                  src="/api/placeholder/500/400" 
+                  src="/admin-dashboard.png" 
                   alt="Procurement Analytics Dashboard" 
                   className="rounded-lg w-full"
                 />

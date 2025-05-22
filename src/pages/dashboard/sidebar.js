@@ -658,7 +658,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
                 aria-label="close drawer"
                  sx={{
     '& img': {
-      filter: 'brightness(0) invert(1)', // This will make black appear white
+      filter: 'brightness(0) invert(1)', 
     }
   }}
               >

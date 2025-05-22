@@ -1123,7 +1123,7 @@ const uploadSignatureToServer = async () => {
               <div className="ml-3 text-xs">Join 5,000+ companies using our platform</div>
             </div>
             <p className="italic text-sm">"Implementation was seamless and we saw immediate improvements in our procurement process efficiency."</p>
-            <p className="mt-3 font-semibold text-sm">— Michael Chen, Director of Operations</p>
+            <p className="mt-3 font-semibold text-sm">— Michael Kaunda, Director of Operations</p>
           </div>
         </div>
       </div>

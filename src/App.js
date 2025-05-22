@@ -38,6 +38,8 @@ import FinanceReconciliationReview from './pages/dashboard/requisitions/manage/f
 import FleetCoordinator from './pages/dashboard/requisitions/manage/fleet';
 import ProcurementDashboardWithSidebar from './pages/dashboard/dashboard';
 import FoodBudgetPlanner from './pages/FoodBudgetPlanner';
+import ResetPassword from './pages/login/ResetPassword';
+import ForgotPassword from './pages/login/ForgotPassword';
 
 
 
@@ -45,14 +47,14 @@ function App() {
   return (
     <div>
       <AuthProvider>
-      
       <BrowserRouter>
         <Routes>
           {/*Public Routes */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage/>} />
           <Route path="/register" element={<RegisterPage/>} />
-
+           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
            {/*PO,Finance and Admin Routes */}
           <Route path="/dash/new" element={<ProcurementDashboardWithSidebar/>}/>
           <Route path="/dashboard" element={<DashboardPage/>} />
