@@ -20,7 +20,8 @@ export default function AddVendorPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     phone: "",
     address: "",
@@ -107,10 +108,22 @@ export default function AddVendorPage() {
         <form onSubmit={handleSubmit}>
         {/* Name */}
         <TextField
+            label="firstName"
+            name="name"
+            type="name"
+            value={formData.firstName}
+            onChange={handleInputChange}
+            fullWidth
+            required
+            sx={{ mb: 2 }}
+          />
+
+          {/*Last Name */}
+          <TextField
             label="Name"
             name="name"
             type="name"
-            value={formData.name}
+            value={formData.lastName}
             onChange={handleInputChange}
             fullWidth
             required

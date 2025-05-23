@@ -2,161 +2,35 @@
 
 import React, { useState, useEffect } from "react"
 import {
-  Container,
-  Typography,
-  Box,
-  CircularProgress,
-  Snackbar,
-  Dialog,
-  DialogContent,
-  DialogActions,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Button,
-  Card,
-  Chip,
-  Avatar,
-  Divider,
-  IconButton,
-  Tooltip,
-  styled,
-  createTheme,
-  ThemeProvider,
-} from "@mui/material"
-import {
   Check,
-  Close,
-  Info as InfoIcon,
-  CalendarMonth,
-  LocationOn,
-  FlightTakeoff,
+  X,
+  AlertCircle,
+  Calendar,
+  MapPin,
+  Plane,
   CreditCard,
-  Warning,
-  VerifiedUser,
-  Refresh,
-  ArrowForward,
-} from "@mui/icons-material"
-import MuiAlert from "@mui/material/Alert"
+  AlertTriangle,
+  ShieldCheck,
+  RefreshCw,
+  ArrowRight,
+  User,
+  Search,
+  Filter,
+  Download,
+  Bell,
+  Settings,
+  Activity,
+  TrendingUp,
+  Users,
+  Package,
+  MoreVertical,
+  Eye,
+  FileText,
+  Car,
+  Train,
+  Bus
+} from "lucide-react"
 import { motion } from "framer-motion"
-
-// Custom theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#4f46e5",
-    },
-    secondary: {
-      main: "#ec4899",
-    },
-    background: {
-      default: "#f9fafb",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#111827",
-      secondary: "#6b7280",
-    },
-  },
-  typography: {
-    fontFamily: "'Inter', sans-serif",
-    h4: {
-      fontWeight: 700,
-      background: "linear-gradient(90deg, #4f46e5, #ec4899)",
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-    },
-    subtitle1: {
-      fontWeight: 400,
-      color: "#6b7280",
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: "8px",
-          textTransform: "none",
-          fontWeight: 500,
-          transition: "all 0.3s ease",
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-          },
-        },
-      },
-    },
-    MuiTableCell: {
-      styleOverrides: {
-        root: {
-          borderBottom: "1px solid #e5e7eb",
-        },
-        head: {
-          fontWeight: 600,
-          color: "#6b7280",
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: "12px",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.1)",
-          transition: "transform 0.3s ease",
-          "&:hover": {
-            transform: "translateY(-4px)",
-          },
-        },
-      },
-    },
-    MuiDialog: {
-      styleOverrides: {
-        paper: {
-          borderRadius: "16px",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.2)",
-          background: "#ffffff",
-        },
-      },
-    },
-    MuiSnackbar: {
-      styleOverrides: {
-        root: {
-          "& .MuiSnackbarContent-root": {
-            borderRadius: "8px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-          },
-        },
-      },
-    },
-  },
-});
-
-// Custom styled components
-const GradientContainer = styled(Container)(({ theme }) => ({
-  background: "linear-gradient(135deg, #f9fafb, #e5e7eb)",
-  borderRadius: "16px",
-  padding: theme.spacing(4),
-  minHeight: "100vh",
-  position: "relative",
-  overflow: "hidden",
-  "&::before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "4px",
-    background: "linear-gradient(90deg, #4f46e5, #ec4899)",
-  },
-}));
-
-// Snackbar Alert component
-const Alert = React.forwardRef(function Alert(props, ref) {
-  return <MuiAlert elevation={6} ref={ref} variant="filled" {...props} />
-})
 
 // Mock data for preview/development
 const MOCK_TRAVEL_REQUESTS = [
@@ -205,14 +79,17 @@ const MOCK_TRAVEL_REQUESTS = [
 const FinalApproverDashboard = () => {
   const [travelRequests, setTravelRequests] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [snackbarOpen, setSnackbarOpen] = useState(false)
-  const [snackbarMessage, setSnackbarMessage] = useState("")
-  const [snackbarSeverity, setSnackbarSeverity] = useState("success")
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState("")
+  const [notificationType, setNotificationType] = useState("success")
   const [openConfirmation, setOpenConfirmation] = useState(false)
   const [selectedRequestId, setSelectedRequestId] = useState(null)
   const [selectedDecision, setSelectedDecision] = useState(null)
   const [isPreviewMode, setIsPreviewMode] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [showMenuId, setShowMenuId] = useState(null)
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:3000"
 
@@ -242,9 +119,7 @@ const FinalApproverDashboard = () => {
         window.location.hostname !== "localhost" &&
         !window.location.hostname.includes("vercel.app")
       ) {
-        setSnackbarMessage("Failed to fetch supervisor-approved travel requests")
-        setSnackbarSeverity("error")
-        setSnackbarOpen(true)
+        showNotificationMessage("Failed to fetch supervisor-approved travel requests", "error")
       }
     } finally {
       setTimeout(() => {
@@ -258,22 +133,39 @@ const FinalApproverDashboard = () => {
     fetchApprovedRequests()
   }, [backendUrl])
 
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === "clickaway") {
-      return
-    }
-    setSnackbarOpen(false)
+  // Filter travel requests
+  const filteredTravelRequests = travelRequests.filter((request) => {
+    const matchesSearch = 
+      request.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      request.meansOfTravel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      false;
+    
+    const matchesStatus = statusFilter === "all" || request.meansOfTravel === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  // Calculate stats
+  const totalRequests = travelRequests?.length || 0;
+  const ownVehicleRequests = travelRequests?.filter(req => req.meansOfTravel === "own")?.length || 0;
+  const companyVehicleRequests = travelRequests?.filter(req => req.meansOfTravel === "company")?.length || 0;
+  const publicTransportRequests = travelRequests?.filter(req => req.meansOfTravel === "public_transport")?.length || 0;
+
+  const showNotificationMessage = (message, type = "success") => {
+    setNotificationMessage(message)
+    setNotificationType(type)
+    setShowNotification(true)
+    setTimeout(() => setShowNotification(false), 5000)
   }
 
   const handleFinalDecision = async (id, decision) => {
     try {
       if (isPreviewMode) {
         setTravelRequests((prev) => prev.filter((request) => request._id !== id))
-        setSnackbarMessage(
+        showNotificationMessage(
           `Travel request ${decision === "approve" ? "approved" : "rejected"} successfully! (Preview mode)`,
+          "info"
         )
-        setSnackbarSeverity("info")
-        setSnackbarOpen(true)
         return
       }
 
@@ -294,25 +186,22 @@ const FinalApproverDashboard = () => {
 
       if (response.ok) {
         setTravelRequests((prev) => prev.filter((request) => request._id !== id))
-        setSnackbarMessage(`Travel request ${decision === "approve" ? "approved" : "rejected"} successfully!`)
-        setSnackbarSeverity("success")
+        showNotificationMessage(`Travel request ${decision === "approve" ? "approved" : "rejected"} successfully!`, "success")
       } else {
         const errorData = await response.json()
-        setSnackbarMessage(errorData.message || "Failed to update travel request")
-        setSnackbarSeverity("error")
+        showNotificationMessage(errorData.message || "Failed to update travel request", "error")
       }
-      setSnackbarOpen(true)
     } catch (error) {
-      setSnackbarMessage("An error occurred while updating the travel request")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
+      showNotificationMessage("An error occurred while updating the travel request", "error")
     }
+    setShowMenuId(null)
   }
 
   const openConfirmationDialog = (id, decision) => {
     setSelectedRequestId(id)
     setSelectedDecision(decision)
     setOpenConfirmation(true)
+    setShowMenuId(null)
   }
 
   const closeConfirmationDialog = () => {
@@ -350,66 +239,32 @@ const FinalApproverDashboard = () => {
   }
 
   const getTravelMeansIcon = (meansCode) => {
-    return <FlightTakeoff fontSize="small" />
+    switch (meansCode) {
+      case "own":
+        return <Car size={14} />
+      case "company":
+        return <Car size={14} />
+      case "rental":
+        return <Car size={14} />
+      case "public_transport":
+        return <Bus size={14} />
+      default:
+        return <Package size={14} />
+    }
   }
 
-  const getStatusChip = (status) => {
-    switch (status) {
-      case "supervisor_approved":
-        return (
-          <Chip
-            icon={<VerifiedUser fontSize="small" />}
-            label="Supervisor Approved"
-            size="small"
-            sx={{
-              bgcolor: "#e5e7eb",
-              color: "#111827",
-              fontWeight: 500,
-              borderRadius: "6px",
-            }}
-          />
-        )
-      case "final_approved":
-        return (
-          <Chip
-            icon={<Check fontSize="small" />}
-            label="Final Approved"
-            size="small"
-            sx={{
-              bgcolor: "#e5e7eb",
-              color: "#111827",
-              fontWeight: 500,
-              borderRadius: "6px",
-            }}
-          />
-        )
-      case "rejected":
-        return (
-          <Chip
-            icon={<Close fontSize="small" />}
-            label="Rejected"
-            size="small"
-            sx={{
-              bgcolor: "#e5e7eb",
-              color: "#111827",
-              fontWeight: 500,
-              borderRadius: "6px",
-            }}
-          />
-        )
+  const getTravelMeansColor = (meansCode) => {
+    switch (meansCode) {
+      case "own":
+        return "text-blue-700 bg-blue-50 border-blue-200"
+      case "company":
+        return "text-purple-700 bg-purple-50 border-purple-200"
+      case "rental":
+        return "text-amber-700 bg-amber-50 border-amber-200"
+      case "public_transport":
+        return "text-green-700 bg-green-50 border-green-200"
       default:
-        return (
-          <Chip
-            label={status || "Unknown"}
-            size="small"
-            sx={{
-              bgcolor: "#e5e7eb",
-              color: "#111827",
-              fontWeight: 500,
-              borderRadius: "6px",
-            }}
-          />
-        )
+        return "text-gray-700 bg-gray-50 border-gray-200"
     }
   }
 
@@ -425,18 +280,18 @@ const FinalApproverDashboard = () => {
   }
 
   const getAvatarColor = (name) => {
-    if (!name) return "#6b7280"
+    if (!name) return "bg-gray-500"
     const colors = [
-      "#4f46e5",
-      "#ec4899",
-      "#10b981",
-      "#f59e0b",
-      "#ef4444",
-      "#8b5cf6",
-      "#06b6d4",
-      "#84cc16",
-      "#f97316",
-      "#3b82f6",
+      "bg-blue-500",
+      "bg-purple-500",
+      "bg-green-500",
+      "bg-amber-500",
+      "bg-red-500",
+      "bg-indigo-500",
+      "bg-cyan-500",
+      "bg-lime-500",
+      "bg-orange-500",
+      "bg-pink-500",
     ]
     const charCode = name.charCodeAt(0) || 0
     return colors[charCode % colors.length]
@@ -444,350 +299,538 @@ const FinalApproverDashboard = () => {
 
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5 }}
+          className="text-center"
         >
-           <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
           </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Travel Requests</h2>
+          <p className="text-gray-600">
+            Please wait while we fetch supervisor-approved requests...
+          </p>
         </motion.div>
-      </Box>
+      </div>
     )
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <GradientContainer maxWidth="lg">
-        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-            <Typography variant="h4" component="h1">
-              Final Approval Dashboard
-            </Typography>
-            <Tooltip title="Refresh requests">
-              <IconButton
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
+      {/* Enhanced Header */}
+      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
+                  <ShieldCheck size={32} />
+                </div>
+                Final Approval Dashboard
+              </h1>
+              <p className="text-gray-500 text-lg mt-2">
+                Review and finalize supervisor-approved travel requests
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <button
                 onClick={fetchApprovedRequests}
                 disabled={refreshing}
-                sx={{
-                  bgcolor: "#e5e7eb",
-                  "&:hover": { bgcolor: "#d1d5db" },
-                }}
+                className="px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Refresh />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        </motion.div>
+                <RefreshCw size={20} className={refreshing ? "animate-spin" : ""} />
+                Refresh
+              </button>
+              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+                <Bell size={20} />
+              </button>
+              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+                <Settings size={20} />
+              </button>
+            </div>
+          </div>
 
-        {isPreviewMode && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Alert severity="warning" sx={{ mb: 3, borderRadius: "8px" }} icon={<Warning />}>
-              Using mock data for preview. In production, this would connect to your backend API.
-            </Alert>
-          </motion.div>
-        )}
-
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-          <Card>
-            <Box
-              sx={{
-                background: "linear-gradient(135deg, #4f46e5, #ec4899)",
-                color: "white",
-                p: 3,
-                borderTopLeftRadius: "12px",
-                borderTopRightRadius: "12px",
-              }}
+          {/* Enhanced Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
             >
-              <Box display="flex" justifyContent="space-between" alignItems="center">
-                <Box>
-                  <Typography variant="h5" fontWeight="bold">
-                    Travel Requests
-                  </Typography>
-                  <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
-                    Review and finalize supervisor-approved travel requests
-                  </Typography>
-                </Box>
-                <Chip
-                  label={`${travelRequests.length} Pending`}
-                  sx={{
-                    bgcolor: "rgba(255, 255, 255, 0.2)",
-                    color: "white",
-                    fontWeight: "medium",
-                    border: "none",
-                    borderRadius: "8px",
-                  }}
-                />
-              </Box>
-            </Box>
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
+                  <ShieldCheck size={24} className="text-white" />
+                </div>
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {totalRequests}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Awaiting Final Approval</p>
+                <p className="text-2xl font-bold text-gray-900">{totalRequests}</p>
+              </div>
+            </motion.div>
 
-            {travelRequests.length === 0 ? (
-              <Box sx={{ p: 6, textAlign: "center" }}>
-                <Avatar
-                  sx={{
-                    bgcolor: "rgba(79, 70, 229, 0.1)",
-                    color: "primary.main",
-                    width: 56,
-                    height: 56,
-                    mb: 2,
-                    mx: "auto",
-                  }}
-                >
-                  <InfoIcon fontSize="large" />
-                </Avatar>
-                <Typography variant="h6" gutterBottom>
-                  No Pending Requests
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400, mx: "auto", mb: 3 }}>
-                  There are currently no supervisor-approved travel requests waiting for your final approval.
-                </Typography>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<Refresh />}
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
+                  <Car size={24} className="text-white" />
+                </div>
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {ownVehicleRequests}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Own Vehicle</p>
+                <p className="text-2xl font-bold text-gray-900">{ownVehicleRequests}</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
+                  <Car size={24} className="text-white" />
+                </div>
+                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {companyVehicleRequests}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Company Vehicle</p>
+                <p className="text-2xl font-bold text-gray-900">{companyVehicleRequests}</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                  <Bus size={24} className="text-white" />
+                </div>
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {publicTransportRequests}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Public Transport</p>
+                <p className="text-2xl font-bold text-gray-900">{publicTransportRequests}</p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="space-y-8"
+        >
+          {/* Preview Mode Warning */}
+          {isPreviewMode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 shadow-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <AlertTriangle size={24} className="text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-amber-800">Preview Mode Active</h3>
+                  <p className="text-amber-700 text-sm">
+                    Using mock data for preview. In production, this would connect to your backend API.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Enhanced Filter Section */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
+            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+              <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search travel requests..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                  />
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm font-medium"
+                  >
+                    <option value="all">All Vehicle Types</option>
+                    <option value="own">Own Vehicle</option>
+                    <option value="company">Company Vehicle</option>
+                    <option value="rental">Rental Vehicle</option>
+                    <option value="public_transport">Public Transport</option>
+                  </select>
+
+                  <button className="px-4 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium flex items-center gap-2">
+                    <Filter size={18} />
+                    More Filters
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-3">
+                <button className="px-4 py-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200 flex items-center gap-2">
+                  <Download size={16} />
+                  Export
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Travel Requests Content */}
+          {filteredTravelRequests.length === 0 ? (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-12 shadow-xl text-center">
+              <div className="flex flex-col items-center space-y-6">
+                <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
+                  <ShieldCheck size={40} className="text-gray-500" />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    {searchTerm || statusFilter !== "all" ? "No travel requests match your filters" : "No Pending Final Approvals"}
+                  </h3>
+                  <p className="text-gray-600 max-w-md mx-auto">
+                    {searchTerm || statusFilter !== "all" 
+                      ? "Try adjusting your search criteria or filters to find what you're looking for."
+                      : "There are currently no supervisor-approved travel requests waiting for your final approval."
+                    }
+                  </p>
+                </div>
+                <button
                   onClick={fetchApprovedRequests}
                   disabled={refreshing}
-                  sx={{ borderRadius: "8px" }}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50"
                 >
+                  <RefreshCw size={20} className={refreshing ? "animate-spin" : ""} />
                   Refresh
-                </Button>
-              </Box>
-            ) : (
-              <TableContainer>
-                <Table sx={{ minWidth: 650 }}>
-                  <TableHead>
-                    <TableRow sx={{ bgcolor: "#f3f4f6" }}>
-                      <TableCell>Employee</TableCell>
-                      <TableCell>Travel Period</TableCell>
-                      <TableCell>Location</TableCell>
-                      <TableCell>Details</TableCell>
-                      <TableCell>Status</TableCell>
-                      <TableCell align="right">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {travelRequests.map((request, index) => (
-                      <motion.tr
-                        key={request._id}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.3 }}
-                        whileHover={{ backgroundColor: "#f3f4f6" }}
-                      >
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                            <Avatar
-                              sx={{
-                                bgcolor: getAvatarColor(request.employee?.name),
-                                width: 40,
-                                height: 40,
-                                fontWeight: "bold",
-                                fontSize: "1rem",
-                              }}
-                            >
-                              {getEmployeeAvatar(request.employee?.name)}
-                            </Avatar>
-                            <Box>
-                              <Typography variant="body1" fontWeight={500}>
-                                {request.employee?.name || "N/A"}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                ID: {request.employee?._id?.substring(0, 8) || "N/A"}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <CalendarMonth fontSize="small" color="action" />
-                            <Box>
-                              <Typography variant="body2" fontWeight={500}>
-                                {formatDate(request.departureDate)}
-                              </Typography>
-                              <Box sx={{ display: "flex", alignItems: "center", mt: 0.5 }}>
-                                <Box
-                                  sx={{
-                                    height: 2,
-                                    width: 8,
-                                    bgcolor: "text.disabled",
-                                    borderRadius: 1,
-                                    mx: 0.5,
-                                  }}
-                                />
-                                <ArrowForward sx={{ fontSize: 12, color: "text.disabled", mx: 0.5 }} />
-                                <Box
-                                  sx={{
-                                    height: 2,
-                                    width: 8,
-                                    bgcolor: "text.disabled",
-                                    borderRadius: 1,
-                                    mx: 0.5,
-                                  }}
-                                />
-                              </Box>
-                              <Typography variant="body2" fontWeight={500}>
-                                {formatDate(request.returnDate)}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <LocationOn fontSize="small" color="action" />
-                            <Typography variant="body2" fontWeight={500}>
-                              {request.location || "N/A"}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                              {getTravelMeansIcon(request.meansOfTravel)}
-                              <Typography variant="body2" fontWeight={500}>
-                                {getTravelMeansText(request.meansOfTravel)}
-                              </Typography>
-                            </Box>
-                            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                              <CreditCard fontSize="small" color="action" />
-                              <Typography variant="body2" fontWeight={500}>
-                                {request.fundingCodes || "N/A"}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </TableCell>
-                        <TableCell sx={{ py: 2.5 }}>{getStatusChip(request.status)}</TableCell>
-                        <TableCell align="right" sx={{ py: 2.5 }}>
-                          <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1 }}>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              startIcon={<Check />}
-                              onClick={() => openConfirmationDialog(request._id, "approve")}
-                              sx={{
-                                bgcolor: "success.main",
-                                "&:hover": { bgcolor: "success.dark" },
-                              }}
-                            >
-                              Approve
-                            </Button>
-                            <Button
-                              variant="contained"
-                              size="small"
-                              startIcon={<Close />}
-                              onClick={() => openConfirmationDialog(request._id, "reject")}
-                              sx={{
-                                bgcolor: "error.main",
-                                "&:hover": { bgcolor: "error.dark" },
-                              }}
-                            >
-                              Deny
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            )}
-            <Divider />
-            <Box sx={{ p: 2, bgcolor: "#f9fafb", borderBottomLeftRadius: "12px", borderBottomRightRadius: "12px" }}>
-              <Typography variant="body2" color="text.secondary">
-                Showing all supervisor-approved travel requests that require your final approval.
-              </Typography>
-            </Box>
-          </Card>
-        </motion.div>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden">
+              {/* Header with gradient */}
+              <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold">Final Approval Required</h2>
+                    <p className="text-blue-100 text-sm">Review and finalize supervisor-approved travel requests</p>
+                  </div>
+                  <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                    {filteredTravelRequests.length} Pending
+                  </div>
+                </div>
+              </div>
 
-        {/* Confirmation Dialog */}
-        <Dialog
-          open={openConfirmation}
-          onClose={closeConfirmationDialog}
-          maxWidth="sm"
-          fullWidth
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Box sx={{ p: 3, background: "linear-gradient(135deg, #f9fafb, #e5e7eb)" }}>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 700,
-                  background: "linear-gradient(90deg, #4f46e5, #ec4899)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  mb: 2,
-                }}
-              >
-                {selectedDecision === "approve" ? "Confirm Approval" : "Confirm Denial"}
-              </Typography>
-              <DialogContent sx={{ p: 0 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
-                  <Avatar
-                    sx={{
-                      bgcolor: selectedDecision === "approve" ? "success.light" : "error.light",
-                      color: selectedDecision === "approve" ? "success.main" : "error.main",
-                    }}
+              {/* Table Header */}
+              <div className="bg-gradient-to-r from-gray-50/50 to-blue-50/30 border-b border-gray-100/50 px-6 py-4">
+                <div className="grid grid-cols-6 gap-4 items-center font-semibold text-gray-700 text-sm">
+                  <div className="flex items-center gap-2">
+                    <User size={16} />
+                    Employee
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} />
+                    Travel Period
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <MapPin size={16} />
+                    Location
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Car size={16} />
+                    Travel Details
+                  </div>
+                  <div>Status</div>
+                  <div className="text-center">Actions</div>
+                </div>
+              </div>
+
+              {/* Table Body */}
+              <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
+                {filteredTravelRequests.map((request, index) => (
+                  <motion.div
+                    key={request._id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
                   >
-                    {selectedDecision === "approve" ? <Check /> : <Close />}
-                  </Avatar>
-                  <Typography variant="body1">
-                    You are about to{" "}
-                    <Typography
-                      component="span"
-                      fontWeight="bold"
-                      color={selectedDecision === "approve" ? "success.main" : "error.main"}
-                    >
-                      {selectedDecision === "approve" ? "approve" : "deny"}
-                    </Typography>{" "}
-                    this travel request.
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  This action cannot be undone. The employee will be notified of your decision.
-                </Typography>
-              </DialogContent>
-              <DialogActions>
-                <Button
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${getAvatarColor(request.employee?.name)}`}>
+                          {getEmployeeAvatar(request.employee?.name)}
+                        </div>
+                        <div>
+                          <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                            {request.employee?.name || "N/A"}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            ID: {request.employee?._id?.substring(0, 8) || "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-gray-900">
+                          {formatDate(request.departureDate)}
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <ArrowRight size={12} />
+                          {formatDate(request.returnDate)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {request.location || "N/A"}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getTravelMeansColor(request.meansOfTravel)}`}>
+                          {getTravelMeansIcon(request.meansOfTravel)}
+                          <span className="ml-2">{getTravelMeansText(request.meansOfTravel)}</span>
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 font-mono">
+                        {request.fundingCodes || "N/A"}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border text-amber-700 bg-amber-50 border-amber-200">
+                        <ShieldCheck size={14} />
+                        <span className="ml-2">Supervisor Approved</span>
+                      </span>
+                    </div>
+
+                    <div className="text-center">
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowMenuId(showMenuId === request._id ? null : request._id)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                        
+                        {showMenuId === request._id && (
+                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
+                            <div className="py-2">
+                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+                                <Eye size={16} />
+                                <span>View Details</span>
+                              </button>
+                              <button
+                                onClick={() => openConfirmationDialog(request._id, "approve")}
+                                className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200"
+                              >
+                                <Check size={16} />
+                                <span>Final Approve</span>
+                              </button>
+                              <button
+                                onClick={() => openConfirmationDialog(request._id, "reject")}
+                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
+                              >
+                                <X size={16} />
+                                <span>Deny</span>
+                              </button>
+                              <div className="border-t border-gray-100 my-1"></div>
+                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
+                                <FileText size={16} />
+                                <span>Download PDF</span>
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gray-50/50 px-6 py-3 border-t border-gray-100">
+                <p className="text-gray-600 text-sm">
+                  Showing all supervisor-approved travel requests that require your final approval.
+                </p>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Confirmation Dialog */}
+      {openConfirmation && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                  {selectedDecision === "approve" ? (
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <Check size={20} className="text-green-600" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <X size={20} className="text-red-600" />
+                    </div>
+                  )}
+                  {selectedDecision === "approve" ? "Confirm Final Approval" : "Confirm Denial"}
+                </h2>
+                <button
                   onClick={closeConfirmationDialog}
-                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex items-start gap-4 mb-6">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  selectedDecision === "approve" ? "bg-green-100" : "bg-red-100"
+                }`}>
+                  {selectedDecision === "approve" ? (
+                    <Check size={24} className="text-green-600" />
+                  ) : (
+                    <X size={24} className="text-red-600" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-gray-700 mb-2">
+                    You are about to{" "}
+                    <span className={`font-semibold ${
+                      selectedDecision === "approve" ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {selectedDecision === "approve" ? "give final approval to" : "deny"}
+                    </span>{" "}
+                    this travel request.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    This action cannot be undone. The employee will be notified of your decision.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={closeConfirmationDialog}
+                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={confirmDecision}
-                  variant="contained"
-                  color={selectedDecision === "approve" ? "success" : "error"}
-                  sx={{ borderRadius: "8px", textTransform: "none" }}
+                  className={`px-6 py-3 rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 ${
+                    selectedDecision === "approve" 
+                      ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                      : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                  }`}
                 >
-                  {selectedDecision === "approve" ? "Confirm Approval" : "Confirm Denial"}
-                </Button>
-              </DialogActions>
-            </Box>
-          </motion.div>
-        </Dialog>
+                  {selectedDecision === "approve" ? (
+                    <>
+                      <Check size={20} />
+                      Confirm Final Approval
+                    </>
+                  ) : (
+                    <>
+                      <X size={20} />
+                      Confirm Denial
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Snackbar for Notifications */}
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={6000}
-          onClose={handleSnackbarClose}
-          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+      {/* Notification */}
+      {showNotification && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.3 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.5 }}
+          className="fixed bottom-4 right-4 z-50"
         >
-          <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: "100%", borderRadius: "8px" }}>
-            {snackbarMessage}
-          </Alert>
-        </Snackbar>
-      </GradientContainer>
-    </ThemeProvider>
+          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
+            notificationType === 'success' 
+              ? 'bg-green-50 text-green-800 border-green-200' 
+              : notificationType === 'error'
+              ? 'bg-red-50 text-red-800 border-red-200'
+              : 'bg-blue-50 text-blue-800 border-blue-200'
+          }`}>
+            <div className="flex items-center gap-3">
+              {notificationType === 'success' ? (
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              ) : notificationType === 'error' ? (
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              )}
+              <span className="font-medium">{notificationMessage}</span>
+              <button
+                onClick={() => setShowNotification(false)}
+                className="ml-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Click outside to close menu */}
+      {showMenuId && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setShowMenuId(null)}
+        ></div>
+      )}
+    </div>
   )
 }
 

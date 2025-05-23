@@ -79,7 +79,6 @@ function App() {
           <Route path="/track-deliveries" element={<TrackDeliveriesPage/>}/>
           <Route path="/requisitions/manage" element={<ManageRequisitionsPage/>} />
           <Route path="/vendors" element={<VendorsPage/>}/>
-          <Route path="/rfqs" element={<RFQsPage/>}/>
           <Route path="/food" element={<FoodBudgetPlanner/>}/>
    
            {/*Employee Routes */}

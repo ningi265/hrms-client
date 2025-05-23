@@ -333,6 +333,7 @@ export default function NewRequisition() {
   const [estimatedTotal, setEstimatedTotal] = useState(0);
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Enhanced auto-save with better UX
   useEffect(() => {
@@ -421,18 +422,129 @@ export default function NewRequisition() {
     },
     maxSize: 10 * 1024 * 1024, // 10MB
   });
+  const handleSubmit = async () => {
+  if (!validateStep(2)) return;
 
-  const handleSubmit = () => {
-    if (!validateStep(2)) return;
+  setIsSubmitting(true);
+  
+  try {
+    // Calculate the correct estimated cost
+    let calculatedEstimatedCost = 0;
     
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setShowConfirmation(false);
-      setShowSuccessModal(true);
-      localStorage.removeItem("requisitionDraft");
-    }, 3000);
-  };
+    if (useCustomItem) {
+      // For custom items, use the manually entered cost
+      if (formData.estimatedCost) {
+        calculatedEstimatedCost = parseFloat(formData.estimatedCost.toString().replace(/[$,]/g, '')) || 0;
+      }
+    } else {
+      // For catalog items, calculate from selected items
+      calculatedEstimatedCost = selectedItems.reduce((sum, item) => {
+        const cost = parseFloat(item.avgCost.replace(/[$,]/g, '')) || 0;
+        return sum + (cost * item.quantity);
+      }, 0);
+    }
+
+    // Prepare the data to match backend expectations
+    const submissionData = {
+      itemName: useCustomItem
+        ? formData.itemName
+        : selectedItems.map(item => item.name).join(', '),
+      quantity: useCustomItem
+        ? parseInt(formData.quantity) || 1
+        : selectedItems.reduce((sum, item) => sum + (item.quantity || 1), 0),
+      budgetCode: formData.budgetCode,
+      urgency: formData.urgency || 'medium',
+      preferredSupplier: formData.preferredSupplier || 'No preference',
+      reason: formData.reason,
+      category: useCustomItem 
+        ? formData.category 
+        : (selectedItems.length > 0 ? selectedItems[0].category : ''),
+      estimatedCost: calculatedEstimatedCost,
+      deliveryDate: formData.deliveryDate || null,
+      department: formData.department,
+      environmentalImpact: formData.environmentalImpact || 'No specific requirements'
+    };
+
+    // Validate required fields before sending
+    if (!submissionData.itemName) {
+      throw new Error('Item name is required');
+    }
+    if (!submissionData.budgetCode) {
+      throw new Error('Budget code is required');
+    }
+    if (!submissionData.reason) {
+      throw new Error('Business justification is required');
+    }
+    if (!submissionData.department) {
+      throw new Error('Department is required');
+    }
+    if (submissionData.estimatedCost <= 0) {
+      throw new Error('Estimated cost must be greater than 0');
+    }
+
+    console.log('Submitting data:', submissionData); // Debug log
+
+    // API call to backend
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+      throw new Error('No authentication token found. Please log in again.');
+    }
+
+    const response = await fetch(`${backendUrl}/api/requisitions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify(submissionData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Submission failed with status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Submission successful:', result); // Debug log
+    
+    // Handle successful submission
+    setShowConfirmation(false);
+    setShowSuccessModal(true);
+    localStorage.removeItem("requisitionDraft");
+    
+    // Reset form
+    setFormData({
+      itemName: "",
+      category: "",
+      selectedItem: "",
+      quantity: "",
+      budgetCode: "",
+      urgency: "",
+      preferredSupplier: "",
+      reason: "",
+      attachment: null,
+      estimatedCost: "",
+      deliveryDate: "",
+      department: "",
+      businessJustification: "",
+      alternativeOptions: "",
+      environmentalImpact: ""
+    });
+    setSelectedItems([]);
+    setActiveStep(0);
+    setUseCustomItem(false);
+
+  } catch (error) {
+    console.error('Submission error:', error);
+    setValidationErrors(prev => ({
+      ...prev,
+      submission: error.message || "Failed to submit requisition. Please try again."
+    }));
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleTemplateSelect = (template) => {
     setSelectedTemplate(template);

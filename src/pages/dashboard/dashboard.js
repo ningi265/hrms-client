@@ -66,6 +66,8 @@ import {
   ButtonGroup,
   Tabs,
   Tab,
+  ThemeProvider,
+  CircularProgress
 } from "@mui/material";
 import './dashboard.css';
 import RevenueChart from './revenueChart';
@@ -148,6 +150,14 @@ const Sidebar = styled(Drawer)(({ theme }) => ({
     boxShadow: 'none',
     color: '#ffffff', // White text
   },
+}));
+
+const PageContainer = styled(Box)(({ theme }) => ({
+  height: "100vh",
+  display: "flex",
+  flexDirection: "column",
+  backgroundColor: theme.palette.background.default,
+  overflow: "hidden",
 }));
 
 const SidebarHeader = styled("div")(({ theme }) => ({
@@ -452,29 +462,36 @@ const user = authUser ? {
     getStats();
   }, []);
  
-  if (isLoading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          height: "100vh",
-          width: "100%",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: 2,
-        }}
-      >
-        <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-          </div>
-        <Typography variant="body2" color="text.secondary">
-          Loading dashboard data...
-        </Typography>
-      </Box>
-    );
-  }
-
+ if (isLoading) {
+     return (
+       <ThemeProvider theme={theme}>
+         <PageContainer>
+           <Box
+             display="flex"
+             justifyContent="center"
+             alignItems="center"
+             height="100%"
+           >
+             <motion.div
+               initial={{ scale: 0.8, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               transition={{ duration: 0.5 }}
+             >
+               <Box textAlign="center" sx={{ color: "text.secondary" }}>
+                 <CircularProgress size={48} thickness={4} sx={{ mb: 2 }} />
+                 <Typography variant="h6" gutterBottom>
+                   Loading Dashboard...
+                 </Typography>
+                 <Typography variant="body2">
+                   Please wait while we fetch the latest data...
+                 </Typography>
+               </Box>
+             </motion.div>
+           </Box>
+         </PageContainer>
+       </ThemeProvider>
+     );
+   }
   if (!stats) {
     return (
       <Box

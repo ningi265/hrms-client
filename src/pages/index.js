@@ -682,7 +682,7 @@ export default function Home() {
             <div>
               <div className="flex items-center mb-4">
                 <ShoppingCart className="text-blue-400 mr-2 text-2xl" />
-                <span className="text-xl font-bold">Nyasa Procure</span>
+                <span className="text-xl font-bold">Nyasa Supply Chain</span>
               </div>
               <p className="text-gray-400 mb-4">
                 Streamlining procurement processes for modern enterprises.
@@ -739,10 +739,10 @@ export default function Home() {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">© {new Date().getFullYear()} Nyasa Procure System. All rights reserved.</p>
+            <p className="text-gray-400">© {new Date().getFullYear()} Nyasa Supply Chain System. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a>
+              <a href="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
+              <a href="/terms-of-service" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">Cookie Policy</a>
             </div>
           </div>

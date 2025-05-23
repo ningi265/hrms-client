@@ -74,7 +74,7 @@ export default function LoginPage() {
       ];
   
       // Special case for vendor
-      if (user.role === "vendor") {
+      if (user.role === "Vendor") {
         navigate("/vendor-dash");
         return;
       }
