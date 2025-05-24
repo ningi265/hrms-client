@@ -1,0 +1,1181 @@
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Building,
+  CreditCard,
+  Shield,
+  Bell,
+  Lock,
+  Eye,
+  EyeOff,
+  Edit3,
+  Save,
+  X,
+  Plus,
+  Trash2,
+  Camera,
+  Upload,
+  Globe,
+  Calendar,
+  DollarSign,
+  Settings,
+  LogOut,
+  Crown,
+  Star,
+  Award,
+  TrendingUp,
+  Activity,
+  CheckCircle,
+  AlertCircle,
+  Info,
+  ArrowRight,
+  Download,
+  RefreshCw,
+  Heart,
+  Bookmark,
+  Zap,
+  Target,
+  Sparkles,
+  PieChart,
+  BarChart3,
+  Wallet,
+  Key,
+  Fingerprint
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../authcontext/authcontext";
+
+export default function UserProfilePage() {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+  
+  // Profile State
+  const [profileData, setProfileData] = useState({
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+    city: user?.city || "",
+    state: user?.state || "",
+    zipCode: user?.zipCode || "",
+    country: user?.country || "",
+    company: user?.company || "",
+    jobTitle: user?.jobTitle || "",
+    bio: user?.bio || "",
+    website: user?.website || "",
+    linkedin: user?.linkedin || "",
+    twitter: user?.twitter || "",
+    avatar: user?.avatar || null
+  });
+
+  // Security State
+  const [securityData, setSecurityData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    twoFactorEnabled: user?.twoFactorEnabled || false,
+    loginNotifications: user?.loginNotifications || true,
+    activityNotifications: user?.activityNotifications || true
+  });
+
+  // Payment Methods State
+  const [paymentMethods, setPaymentMethods] = useState([
+    {
+      id: 1,
+      type: "visa",
+      lastFour: "4242",
+      expiryMonth: "12",
+      expiryYear: "2025",
+      cardHolder: "John Doe",
+      isDefault: true,
+      nickname: "Business Card"
+    },
+    {
+      id: 2,
+      type: "mastercard",
+      lastFour: "8888",
+      expiryMonth: "06",
+      expiryYear: "2026",
+      cardHolder: "John Doe",
+      isDefault: false,
+      nickname: "Personal Card"
+    }
+  ]);
+
+  // UI State
+  const [activeTab, setActiveTab] = useState("profile");
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
+  const [newCard, setNewCard] = useState({
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    cardHolder: "",
+    nickname: ""
+  });
+
+  // Stats (mock data - replace with real API calls)
+  const [userStats] = useState({
+    totalTransactions: 247,
+    totalSpent: 125420,
+    averageTransactionValue: 508,
+    accountAge: 18,
+    completedProjects: 32,
+    successRate: 98.5,
+    currentStreak: 45,
+    achievementPoints: 2840
+  });
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 5000);
+  };
+
+  const handleProfileSave = async () => {
+    setIsSaving(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      showNotification("Profile updated successfully!");
+      setIsEditing(false);
+    } catch (error) {
+      showNotification("Failed to update profile", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (securityData.newPassword !== securityData.confirmPassword) {
+      showNotification("Passwords don't match", "error");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      showNotification("Password changed successfully!");
+      setShowPasswordForm(false);
+      setSecurityData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
+    } catch (error) {
+      showNotification("Failed to change password", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleAddCard = async () => {
+    setIsSaving(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const cardType = detectCardType(newCard.cardNumber);
+      const newPaymentMethod = {
+        id: Date.now(),
+        type: cardType,
+        lastFour: newCard.cardNumber.slice(-4),
+        expiryMonth: newCard.expiryDate.split('/')[0],
+        expiryYear: newCard.expiryDate.split('/')[1],
+        cardHolder: newCard.cardHolder,
+        isDefault: paymentMethods.length === 0,
+        nickname: newCard.nickname || `${cardType.toUpperCase()} ending in ${newCard.cardNumber.slice(-4)}`
+      };
+      setPaymentMethods(prev => [...prev, newPaymentMethod]);
+      setNewCard({ cardNumber: "", expiryDate: "", cvv: "", cardHolder: "", nickname: "" });
+      setShowAddCard(false);
+      showNotification("Payment method added successfully!");
+    } catch (error) {
+      showNotification("Failed to add payment method", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const detectCardType = (number) => {
+    const cleaned = number.replace(/\s/g, '');
+    if (/^4/.test(cleaned)) return 'visa';
+    if (/^5[1-5]/.test(cleaned)) return 'mastercard';
+    if (/^3[47]/.test(cleaned)) return 'amex';
+    return 'visa';
+  };
+
+  const formatCardNumber = (value) => {
+    const cleaned = value.replace(/\s/g, '');
+    const formatted = cleaned.replace(/(.{4})/g, '$1 ').trim();
+    return formatted.slice(0, 19);
+  };
+
+  const formatExpiryDate = (value) => {
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length >= 2) {
+      return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
+    }
+    return cleaned;
+  };
+
+  const handleCardInput = (e) => {
+    const { name, value } = e.target;
+    let formattedValue = value;
+
+    if (name === 'cardNumber') {
+      formattedValue = formatCardNumber(value);
+    } else if (name === 'expiryDate') {
+      formattedValue = formatExpiryDate(value);
+    } else if (name === 'cvv') {
+      formattedValue = value.replace(/\D/g, '').slice(0, 4);
+    }
+
+    setNewCard(prev => ({ ...prev, [name]: formattedValue }));
+  };
+
+  const getCardIcon = (type) => {
+    const icons = {
+      visa: <div className="text-blue-600 font-bold text-xs">VISA</div>,
+      mastercard: <div className="text-red-600 font-bold text-xs">MC</div>,
+      amex: <div className="text-green-600 font-bold text-xs">AMEX</div>
+    };
+    return icons[type] || <CreditCard size={16} className="text-gray-400" />;
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
+  };
+
+  const tabs = [
+    { id: "profile", label: "Profile", icon: User },
+    { id: "security", label: "Security", icon: Shield },
+    { id: "payments", label: "Payment Methods", icon: CreditCard },
+    { id: "notifications", label: "Notifications", icon: Bell },
+    { id: "analytics", label: "Analytics", icon: BarChart3 }
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
+      {/* Enhanced Header */}
+      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl text-white">
+                  <User size={32} />
+                </div>
+                My Profile
+              </h1>
+              <p className="text-gray-500 text-lg mt-2">
+                Manage your account settings and preferences
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="px-4 py-2 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                <Edit3 size={16} />
+                {isEditing ? "Cancel" : "Edit Profile"}
+              </button>
+              <button
+                onClick={logout}
+                className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md"
+              >
+                <LogOut size={20} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Profile Summary Card */}
+          <div className="lg:col-span-1">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl sticky top-24">
+              {/* Avatar Section */}
+              <div className="text-center mb-6">
+                <div className="relative inline-block">
+                  <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                    {profileData.avatar ? (
+                      <img src={profileData.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      `${profileData.firstName?.[0] || 'U'}${profileData.lastName?.[0] || 'S'}`
+                    )}
+                  </div>
+                  {isEditing && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute -bottom-1 -right-1 p-2 bg-white rounded-full shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors duration-200"
+                    >
+                      <Camera size={14} className="text-gray-600" />
+                    </button>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      // Handle file upload
+                      console.log("File selected:", e.target.files[0]);
+                    }}
+                  />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mt-4">
+                  {profileData.firstName} {profileData.lastName}
+                </h3>
+                <p className="text-gray-600">{profileData.jobTitle || "User"}</p>
+                <p className="text-sm text-gray-500">{profileData.company}</p>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                  <div className="flex items-center gap-2">
+                    <Crown size={16} className="text-purple-600" />
+                    <span className="text-sm font-medium text-purple-900">Premium Member</span>
+                  </div>
+                  <Star size={16} className="text-yellow-500" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-100">
+                    <div className="text-lg font-bold text-blue-900">{userStats.totalTransactions}</div>
+                    <div className="text-xs text-blue-600">Transactions</div>
+                  </div>
+                  <div className="text-center p-3 bg-green-50 rounded-xl border border-green-100">
+                    <div className="text-lg font-bold text-green-900">{userStats.successRate}%</div>
+                    <div className="text-xs text-green-600">Success Rate</div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-100">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-medium text-orange-900">Achievement Points</div>
+                      <div className="text-lg font-bold text-orange-800">{userStats.achievementPoints.toLocaleString()}</div>
+                    </div>
+                    <Award size={20} className="text-orange-600" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation */}
+              <div className="mt-6 space-y-2">
+                {tabs.map((tab) => {
+                  const IconComponent = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                        activeTab === tab.id
+                          ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                          : 'text-gray-600 hover:bg-gray-50 border border-transparent'
+                      }`}
+                    >
+                      <IconComponent size={18} />
+                      <span className="font-medium">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden"
+            >
+              {/* Profile Tab */}
+              {activeTab === "profile" && (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
+                      <p className="text-gray-600 mt-1">Update your personal details and contact information</p>
+                    </div>
+                    {isEditing && (
+                      <button
+                        onClick={handleProfileSave}
+                        disabled={isSaving}
+                        className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
+                      >
+                        {isSaving ? (
+                          <>
+                            <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save size={16} />
+                            Save Changes
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {/* Personal Details */}
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                        <input
+                          type="text"
+                          value={profileData.firstName}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
+                          disabled={!isEditing}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                        <input
+                          type="text"
+                          value={profileData.lastName}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+                          disabled={!isEditing}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                        <div className="relative">
+                          <Mail size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                          <input
+                            type="email"
+                            value={profileData.email}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
+                        <div className="relative">
+                          <Phone size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                          <input
+                            type="tel"
+                            value={profileData.phone}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, phone: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Job Title</label>
+                        <input
+                          type="text"
+                          value={profileData.jobTitle}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, jobTitle: e.target.value }))}
+                          disabled={!isEditing}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Company</label>
+                        <div className="relative">
+                          <Building size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                          <input
+                            type="text"
+                            value={profileData.company}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, company: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Address & Social */}
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Address</label>
+                        <div className="relative">
+                          <MapPin size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                          <input
+                            type="text"
+                            value={profileData.address}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, address: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+                          <input
+                            type="text"
+                            value={profileData.city}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, city: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
+                          <input
+                            type="text"
+                            value={profileData.state}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, state: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">ZIP Code</label>
+                          <input
+                            type="text"
+                            value={profileData.zipCode}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, zipCode: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
+                          <input
+                            type="text"
+                            value={profileData.country}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, country: e.target.value }))}
+                            disabled={!isEditing}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Website</label>
+                        <div className="relative">
+                          <Globe size={18} className="absolute left-4 top-3.5 text-gray-400" />
+                          <input
+                            type="url"
+                            value={profileData.website}
+                            onChange={(e) => setProfileData(prev => ({ ...prev, website: e.target.value }))}
+                            disabled={!isEditing}
+                            placeholder="https://your-website.com"
+                            className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Bio</label>
+                        <textarea
+                          value={profileData.bio}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, bio: e.target.value }))}
+                          disabled={!isEditing}
+                          rows={4}
+                          placeholder="Tell us about yourself..."
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80 disabled:bg-gray-50 disabled:text-gray-500 resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Security Tab */}
+              {activeTab === "security" && (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Security Settings</h2>
+                      <p className="text-gray-600 mt-1">Manage your account security and privacy settings</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-8">
+                    {/* Password Section */}
+                    <div className="border border-gray-200 rounded-2xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <Lock size={20} />
+                            Password
+                          </h3>
+                          <p className="text-gray-600 text-sm">Last changed 3 months ago</p>
+                        </div>
+                        <button
+                          onClick={() => setShowPasswordForm(!showPasswordForm)}
+                          className="px-4 py-2 bg-purple-50 text-purple-700 rounded-xl hover:bg-purple-100 transition-colors duration-200 font-medium border border-purple-200"
+                        >
+                          Change Password
+                        </button>
+                      </div>
+
+                      <AnimatePresence>
+                        {showPasswordForm && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="grid md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100"
+                          >
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Current Password</label>
+                              <div className="relative">
+                                <input
+                                  type={showPassword ? "text" : "password"}
+                                  value={securityData.currentPassword}
+                                  onChange={(e) => setSecurityData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="absolute right-3 top-3 text-gray-400 hover:text-gray-600"
+                                >
+                                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                value={securityData.newPassword}
+                                onChange={(e) => setSecurityData(prev => ({ ...prev, newPassword: e.target.value }))}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                value={securityData.confirmPassword}
+                                onChange={(e) => setSecurityData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white/80"
+                              />
+                            </div>
+                            <div className="md:col-span-3 flex justify-end gap-3 pt-4">
+                              <button
+                                onClick={() => setShowPasswordForm(false)}
+                                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handlePasswordChange}
+                                disabled={isSaving}
+                                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
+                              >
+                                {isSaving ? (
+                                  <>
+                                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                                    Updating...
+                                  </>
+                                ) : (
+                                  "Update Password"
+                                )}
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Two-Factor Authentication */}
+                    <div className="border border-gray-200 rounded-2xl p-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                            <Fingerprint size={20} />
+                            Two-Factor Authentication
+                          </h3>
+                          <p className="text-gray-600 text-sm">Add an extra layer of security to your account</p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={securityData.twoFactorEnabled}
+                            onChange={(e) => setSecurityData(prev => ({ ...prev, twoFactorEnabled: e.target.checked }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Login Sessions */}
+                    <div className="border border-gray-200 rounded-2xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
+                        <Activity size={20} />
+                        Active Sessions
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl border border-green-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                              <CheckCircle size={20} className="text-white" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-green-900">Current Session</div>
+                              <div className="text-sm text-green-700">Chrome on MacOS • New York, US</div>
+                            </div>
+                          </div>
+                          <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">Active Now</span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center">
+                              <Phone size={20} className="text-white" />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-gray-900">Mobile App</div>
+                              <div className="text-sm text-gray-600">iPhone • 2 hours ago</div>
+                            </div>
+                          </div>
+                          <button className="text-red-600 hover:text-red-800 text-sm font-medium">Revoke</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Methods Tab */}
+              {activeTab === "payments" && (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Payment Methods</h2>
+                      <p className="text-gray-600 mt-1">Manage your saved payment methods for quick checkout</p>
+                    </div>
+                    <button
+                      onClick={() => setShowAddCard(true)}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                    >
+                      <Plus size={16} />
+                      Add New Card
+                    </button>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    {paymentMethods.map((method) => (
+                      <motion.div
+                        key={method.id}
+                        whileHover={{ y: -2, scale: 1.02 }}
+                        className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-xl border border-gray-700"
+                      >
+                        {method.isDefault && (
+                          <div className="absolute top-4 right-4">
+                            <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                              Default
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="flex items-center gap-3">
+                            {getCardIcon(method.type)}
+                            <div>
+                              <div className="font-semibold">{method.nickname}</div>
+                              <div className="text-gray-300 text-sm">{method.type.toUpperCase()}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mb-6">
+                          <div className="text-2xl font-mono tracking-wider mb-2">
+                            •••• •••• •••• {method.lastFour}
+                          </div>
+                          <div className="text-gray-300 text-sm">{method.cardHolder}</div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <div className="text-sm text-gray-300">
+                            Expires {method.expiryMonth}/{method.expiryYear}
+                          </div>
+                          <div className="flex gap-2">
+                            <button className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors duration-200">
+                              <Edit3 size={16} />
+                            </button>
+                            <button className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors duration-200">
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {/* Add Card Modal */}
+                  <AnimatePresence>
+                    {showAddCard && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+                      >
+                        <motion.div
+                          initial={{ scale: 0.9, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.9, opacity: 0 }}
+                          className="bg-white rounded-2xl max-w-md w-full shadow-2xl"
+                        >
+                          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-xl font-bold text-gray-900">Add New Card</h3>
+                              <button
+                                onClick={() => setShowAddCard(false)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                              >
+                                <X size={20} />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          <div className="p-6 space-y-4">
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Card Number</label>
+                              <input
+                                type="text"
+                                name="cardNumber"
+                                value={newCard.cardNumber}
+                                onChange={handleCardInput}
+                                placeholder="1234 5678 9012 3456"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Expiry Date</label>
+                                <input
+                                  type="text"
+                                  name="expiryDate"
+                                  value={newCard.expiryDate}
+                                  onChange={handleCardInput}
+                                  placeholder="MM/YY"
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">CVV</label>
+                                <input
+                                  type="text"
+                                  name="cvv"
+                                  value={newCard.cvv}
+                                  onChange={handleCardInput}
+                                  placeholder="123"
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Cardholder Name</label>
+                              <input
+                                type="text"
+                                name="cardHolder"
+                                value={newCard.cardHolder}
+                                onChange={handleCardInput}
+                                placeholder="JOHN DOE"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-semibold text-gray-700 mb-2">Nickname (Optional)</label>
+                              <input
+                                type="text"
+                                name="nickname"
+                                value={newCard.nickname}
+                                onChange={handleCardInput}
+                                placeholder="Business Card"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                              />
+                            </div>
+                            
+                            <div className="flex gap-3 pt-4">
+                              <button
+                                onClick={() => setShowAddCard(false)}
+                                className="flex-1 px-4 py-3 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleAddCard}
+                                disabled={isSaving}
+                                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                              >
+                                {isSaving ? (
+                                  <>
+                                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                                    Adding...
+                                  </>
+                                ) : (
+                                  "Add Card"
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {/* Notifications Tab */}
+              {activeTab === "notifications" && (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Notification Preferences</h2>
+                      <p className="text-gray-600 mt-1">Choose how you want to be notified about important events</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="border border-gray-200 rounded-2xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Notifications</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">Login Notifications</div>
+                            <div className="text-sm text-gray-600">Get notified when someone logs into your account</div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={securityData.loginNotifications}
+                              onChange={(e) => setSecurityData(prev => ({ ...prev, loginNotifications: e.target.checked }))}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                          </label>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">Account Activity</div>
+                            <div className="text-sm text-gray-600">Get notified about important account changes</div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={securityData.activityNotifications}
+                              onChange={(e) => setSecurityData(prev => ({ ...prev, activityNotifications: e.target.checked }))}
+                              className="sr-only peer"
+                            />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-2xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Email Preferences</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">Marketing Emails</div>
+                            <div className="text-sm text-gray-600">Receive updates about new features and promotions</div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                          </label>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-medium text-gray-900">Weekly Summary</div>
+                            <div className="text-sm text-gray-600">Get a weekly summary of your account activity</div>
+                          </div>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" defaultChecked className="sr-only peer" />
+                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Analytics Tab */}
+              {activeTab === "analytics" && (
+                <div className="p-8">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Account Analytics</h2>
+                      <p className="text-gray-600 mt-1">View your account performance and usage statistics</p>
+                    </div>
+                    <button className="px-4 py-2 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md flex items-center gap-2">
+                      <Download size={16} />
+                      Export Report
+                    </button>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <motion.div
+                      whileHover={{ y: -2, scale: 1.02 }}
+                      className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 text-white shadow-xl"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <DollarSign size={24} />
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{formatCurrency(userStats.totalSpent)}</div>
+                          <div className="text-blue-100 text-sm">Total Spent</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-blue-100">
+                        <TrendingUp size={16} />
+                        <span className="text-sm">+12.5% from last month</span>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -2, scale: 1.02 }}
+                      className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-xl"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <Activity size={24} />
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{userStats.totalTransactions}</div>
+                          <div className="text-green-100 text-sm">Transactions</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-green-100">
+                        <TrendingUp size={16} />
+                        <span className="text-sm">+8.2% from last month</span>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -2, scale: 1.02 }}
+                      className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 text-white shadow-xl"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <Target size={24} />
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{userStats.successRate}%</div>
+                          <div className="text-purple-100 text-sm">Success Rate</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-purple-100">
+                        <TrendingUp size={16} />
+                        <span className="text-sm">+2.1% from last month</span>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      whileHover={{ y: -2, scale: 1.02 }}
+                      className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <Zap size={24} />
+                        <div className="text-right">
+                          <div className="text-2xl font-bold">{userStats.currentStreak}</div>
+                          <div className="text-orange-100 text-sm">Day Streak</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-orange-100">
+                        <Sparkles size={16} />
+                        <span className="text-sm">Personal best!</span>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Charts would go here */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="border border-gray-200 rounded-2xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <PieChart size={20} />
+                        Spending by Category
+                      </h3>
+                      <div className="h-64 bg-gray-50 rounded-xl flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <BarChart3 size={40} className="mx-auto mb-2" />
+                          <p>Chart visualization would be here</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-2xl p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <Activity size={20} />
+                        Monthly Activity
+                      </h3>
+                      <div className="h-64 bg-gray-50 rounded-xl flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <TrendingUp size={40} className="mx-auto mb-2" />
+                          <p>Activity chart would be here</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Enhanced Notification */}
+      <AnimatePresence>
+        {notification.show && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.3 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.5 }}
+            className="fixed bottom-4 right-4 z-50"
+          >
+            <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-sm ${
+              notification.type === 'success' 
+                ? 'bg-green-50/90 text-green-800 border-green-200' 
+                : 'bg-red-50/90 text-red-800 border-red-200'
+            }`}>
+              <div className="flex items-center gap-3">
+                {notification.type === 'success' ? (
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle size={16} className="text-white" />
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <AlertCircle size={16} className="text-white" />
+                  </div>
+                )}
+                <span className="font-medium">{notification.message}</span>
+                <button
+                  onClick={() => setNotification({ show: false, message: "", type: "success" })}
+                  className="ml-4 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

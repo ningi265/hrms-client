@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   FileText,
   DollarSign,
@@ -22,7 +22,7 @@ import {
   Plus,
   MoreVertical
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { useNavigate } from "react-router-dom";
 
@@ -41,6 +41,8 @@ export default function InvoicesPage() {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
   const [showMenuId, setShowMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0, bottom: 'auto' });
+  const menuRef = useRef(null);
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
@@ -69,6 +71,58 @@ export default function InvoicesPage() {
 
     fetchInvoices();
   }, [token, backendUrl]);
+
+  // Handle menu positioning
+  const handleMenuToggle = (invoiceId, event) => {
+    const buttonRect = event.currentTarget.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    // Menu dimensions (approximate)
+    const menuHeight = 280; // Adjust based on menu content
+    const menuWidth = 200;
+    
+    // Calculate position
+    let position = {
+      right: Math.max(8, viewportWidth - buttonRect.right),
+      top: 'auto',
+      bottom: 'auto'
+    };
+    
+    // Check if menu would go below viewport
+    if (buttonRect.bottom + menuHeight > viewportHeight - 20) {
+      // Position above the button
+      position.bottom = viewportHeight - buttonRect.top + 8;
+      position.top = 'auto';
+    } else {
+      // Position below the button
+      position.top = buttonRect.bottom + 8;
+      position.bottom = 'auto';
+    }
+    
+    // Ensure menu doesn't go off the left edge
+    if (buttonRect.right - menuWidth < 8) {
+      position.right = 8;
+      position.left = 'auto';
+    }
+    
+    setMenuPosition(position);
+    setShowMenuId(showMenuId === invoiceId ? null : invoiceId);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenuId(null);
+      }
+    };
+
+    if (showMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenuId]);
 
   // Filter invoices
   const filteredInvoices = invoices.filter((invoice) => {
@@ -268,7 +322,7 @@ export default function InvoicesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
       {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
+      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-30">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -503,7 +557,7 @@ export default function InvoicesPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
+                    className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group relative"
                   >
                     <div>
                       <span className="font-bold text-blue-600 group-hover:text-blue-700 transition-colors duration-200">
@@ -541,70 +595,13 @@ export default function InvoicesPage() {
                       </span>
                     </div>
 
-                    <div className="text-center">
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowMenuId(showMenuId === invoice._id ? null : invoice._id)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
-                        
-                        {showMenuId === invoice._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              
-                              {invoice.status === "pending" && (
-                                <>
-                                  <button
-                                    onClick={() => openDialog(invoice, "approve")}
-                                    className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200"
-                                  >
-                                    <Check size={16} />
-                                    <span>Approve</span>
-                                  </button>
-                                  <button
-                                    onClick={() => openDialog(invoice, "reject")}
-                                    className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
-                                  >
-                                    <X size={16} />
-                                    <span>Reject</span>
-                                  </button>
-                                </>
-                              )}
-                              
-                              {invoice.status === "approved" && (
-                                <>
-                                  <button
-                                    onClick={() => handlePayInvoice(invoice)}
-                                    className="w-full flex items-center space-x-3 px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors duration-200"
-                                  >
-                                    <CreditCard size={16} />
-                                    <span>Pay Invoice</span>
-                                  </button>
-                                  <button
-                                    onClick={() => openDialog(invoice, "mark-as-paid")}
-                                    className="w-full flex items-center space-x-3 px-4 py-3 text-purple-600 hover:bg-purple-50 transition-colors duration-200"
-                                  >
-                                    <Check size={16} />
-                                    <span>Mark as Paid</span>
-                                  </button>
-                                </>
-                              )}
-                              
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <Download size={16} />
-                                <span>Download PDF</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                    <div className="text-center relative">
+                      <button
+                        onClick={(e) => handleMenuToggle(invoice._id, e)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
                     </div>
                   </motion.div>
                 ))}
@@ -614,113 +611,245 @@ export default function InvoicesPage() {
         </motion.div>
       </div>
 
-      {/* Confirmation Dialog */}
-      {isDialogOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
-                  {actionType === "approve" && <Check size={24} className="text-green-500" />}
-                  {actionType === "reject" && <X size={24} className="text-red-500" />}
-                  {actionType === "mark-as-paid" && <CreditCard size={24} className="text-blue-500" />}
-                  Confirm {actionType.replace("-", " ")}
-                </h2>
-                <button
-                  onClick={closeDialog}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-8">
-              <p className="text-gray-700 mb-6">
-                Are you sure you want to {actionType.replace("-", " ")} invoice{" "}
-                <span className="font-semibold text-gray-900">
-                  {selectedInvoice?.invoiceNumber || "N/A"}
-                </span>?
-              </p>
-              
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={closeDialog}
-                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleInvoiceAction}
-                  disabled={isProcessing}
-                  className={`px-6 py-3 rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    actionType === "approve" 
-                      ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
-                      : actionType === "reject"
-                      ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
-                      : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
-                  }`}
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      {actionType === "approve" && <Check size={20} />}
-                      {actionType === "reject" && <X size={20} />}
-                      {actionType === "mark-as-paid" && <CreditCard size={20} />}
-                      Confirm
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notification */}
-      {showNotification && (
-        <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.3 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.5 }}
-          className="fixed bottom-4 right-4 z-50"
-        >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
-            notificationType === 'success' 
-              ? 'bg-green-50 text-green-800 border-green-200' 
-              : 'bg-red-50 text-red-800 border-red-200'
-          }`}>
-            <div className="flex items-center gap-3">
-              {notificationType === 'success' ? (
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+      {/* Enhanced Dropdown Menu with Smart Positioning */}
+      <AnimatePresence>
+        {showMenuId && (
+          <motion.div
+            ref={menuRef}
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            transition={{ duration: 0.15 }}
+            className="fixed z-50 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 backdrop-blur-sm"
+            style={{
+              top: menuPosition.top,
+              bottom: menuPosition.bottom,
+              right: menuPosition.right,
+              left: menuPosition.left
+            }}
+          >
+            <div className="py-2">
+              {/* View Details */}
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 group">
+                <div className="w-8 h-8 bg-gray-100 group-hover:bg-blue-100 rounded-lg flex items-center justify-center transition-colors duration-200">
+                  <Eye size={16} />
                 </div>
-              ) : (
-                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                <div className="text-left">
+                  <span className="font-medium">View Details</span>
+                  <p className="text-xs text-gray-500">See full invoice information</p>
                 </div>
-              )}
-              <span className="font-medium">{notificationMessage}</span>
-              <button
-                onClick={() => setShowNotification(false)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
-              >
-                <X size={18} />
               </button>
-            </div>
-          </div>
-        </motion.div>
-      )}
+              
+              {/* Status-based actions */}
+              {(() => {
+                const invoice = invoices.find(inv => inv._id === showMenuId);
+                if (!invoice) return null;
 
-      {/* Click outside to close menu */}
+                return (
+                  <>
+                    {invoice.status === "pending" && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <button
+                          onClick={() => openDialog(invoice, "approve")}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 group"
+                        >
+                          <div className="w-8 h-8 bg-green-100 group-hover:bg-green-200 rounded-lg flex items-center justify-center transition-colors duration-200">
+                            <Check size={16} />
+                          </div>
+                          <div className="text-left">
+                            <span className="font-medium">Approve</span>
+                            <p className="text-xs text-gray-500">Approve this invoice</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => openDialog(invoice, "reject")}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 group"
+                        >
+                          <div className="w-8 h-8 bg-red-100 group-hover:bg-red-200 rounded-lg flex items-center justify-center transition-colors duration-200">
+                            <X size={16} />
+                          </div>
+                          <div className="text-left">
+                            <span className="font-medium">Reject</span>
+                            <p className="text-xs text-gray-500">Reject this invoice</p>
+                          </div>
+                        </button>
+                      </>
+                    )}
+                    
+                    {invoice.status === "approved" && (
+                      <>
+                        <div className="border-t border-gray-100 my-1"></div>
+                        <button
+                          onClick={() => handlePayInvoice(invoice)}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors duration-200 group"
+                        >
+                          <div className="w-8 h-8 bg-blue-100 group-hover:bg-blue-200 rounded-lg flex items-center justify-center transition-colors duration-200">
+                            <CreditCard size={16} />
+                          </div>
+                          <div className="text-left">
+                            <span className="font-medium">Pay Invoice</span>
+                            <p className="text-xs text-gray-500">Process payment</p>
+                          </div>
+                        </button>
+                        <button
+                          onClick={() => openDialog(invoice, "mark-as-paid")}
+                          className="w-full flex items-center space-x-3 px-4 py-3 text-purple-600 hover:bg-purple-50 transition-colors duration-200 group"
+                        >
+                          <div className="w-8 h-8 bg-purple-100 group-hover:bg-purple-200 rounded-lg flex items-center justify-center transition-colors duration-200">
+                            <Check size={16} />
+                          </div>
+                          <div className="text-left">
+                            <span className="font-medium">Mark as Paid</span>
+                            <p className="text-xs text-gray-500">Mark payment complete</p>
+                          </div>
+                        </button>
+                      </>
+                    )}
+                    
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button 
+                      onClick={() => setShowMenuId(null)}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 group"
+                    >
+                      <div className="w-8 h-8 bg-gray-100 group-hover:bg-blue-100 rounded-lg flex items-center justify-center transition-colors duration-200">
+                        <Download size={16} />
+                      </div>
+                      <div className="text-left">
+                        <span className="font-medium">Download PDF</span>
+                        <p className="text-xs text-gray-500">Export invoice</p>
+                      </div>
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Enhanced Confirmation Dialog */}
+      <AnimatePresence>
+        {isDialogOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl max-w-md w-full shadow-2xl"
+            >
+              <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                    {actionType === "approve" && <Check size={24} className="text-green-500" />}
+                    {actionType === "reject" && <X size={24} className="text-red-500" />}
+                    {actionType === "mark-as-paid" && <CreditCard size={24} className="text-blue-500" />}
+                    Confirm {actionType.replace("-", " ")}
+                  </h2>
+                  <button
+                    onClick={closeDialog}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="p-8">
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to {actionType.replace("-", " ")} invoice{" "}
+                  <span className="font-semibold text-gray-900">
+                    {selectedInvoice?.invoiceNumber || "N/A"}
+                  </span>?
+                </p>
+                
+                <div className="flex justify-end space-x-4">
+                  <button
+                    onClick={closeDialog}
+                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleInvoiceAction}
+                    disabled={isProcessing}
+                    className={`px-6 py-3 rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ${
+                      actionType === "approve" 
+                        ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
+                        : actionType === "reject"
+                        ? "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
+                        : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white"
+                    }`}
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        {actionType === "approve" && <Check size={20} />}
+                        {actionType === "reject" && <X size={20} />}
+                        {actionType === "mark-as-paid" && <CreditCard size={20} />}
+                        Confirm
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Enhanced Notification */}
+      <AnimatePresence>
+        {showNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.3 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.5 }}
+            className="fixed bottom-4 right-4 z-50"
+          >
+            <div className={`px-6 py-4 rounded-xl shadow-2xl border backdrop-blur-sm ${
+              notificationType === 'success' 
+                ? 'bg-green-50/90 text-green-800 border-green-200' 
+                : 'bg-red-50/90 text-red-800 border-red-200'
+            }`}>
+              <div className="flex items-center gap-3">
+                {notificationType === 'success' ? (
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                )}
+                <span className="font-medium">{notificationMessage}</span>
+                <button
+                  onClick={() => setShowNotification(false)}
+                  className="ml-4 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Background overlay to close menu */}
       {showMenuId && (
         <div
           className="fixed inset-0 z-40"

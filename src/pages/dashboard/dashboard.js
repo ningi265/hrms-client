@@ -538,11 +538,7 @@ const user = authUser ? {
         backgroundColor: theme.palette.background.default,
       }}>
         {/* Header */}
-        <DashboardHeader 
-  user={user}
-  onMobileMenuToggle={setMobileOpen}
-  scrollPosition={scrollPosition}
-/>
+        
         {/* Main Content Area */}
 <Box sx={{ p: 1.5 }}>
   {activeSection === "dashboard" ? (

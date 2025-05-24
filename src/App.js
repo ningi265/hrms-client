@@ -42,6 +42,7 @@ import ResetPassword from './pages/login/ResetPassword';
 import ForgotPassword from './pages/login/ForgotPassword';
 import TermsOfService from './pages/login/TermsOfService';
 import PrivacyPolicy from './pages/login/PrivacyPolicy';
+import UserProfilePage from './pages/User/user';
 
 
 
@@ -53,6 +54,7 @@ function App() {
         <Routes>
           {/*Public Routes */}
           <Route path="/" element={<Home />} />
+          <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/login" element={<LoginPage/>} />
           <Route path="/register" element={<RegisterPage/>} />
            <Route path="/reset-password" element={<ResetPassword />} />

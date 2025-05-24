@@ -1,175 +1,52 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  Fab,
-  Popover,
-  IconButton,
-  TextField,
-  Box,
-  Typography,
-  Avatar,
-  Paper,
-  InputAdornment,
-  Divider,
-  Zoom,
-  AppBar,
-  Toolbar,
-  useMediaQuery,
-  useTheme,
-  alpha,
-  styled
-} from "@mui/material";
-import {
-  SmartToy,
-  Close,
+  MessageCircle,
   Send,
-  ExpandMore,
-  ExpandLess,
-  MoreVert,
-  Star,
-  StarBorder,
-  Refresh,
-  Help,
-  Settings,
-  DeleteOutline,
-  ChatBubbleOutline
-} from "@mui/icons-material";
-import { useAuth } from "../../authcontext/authcontext"; 
-
-// Styled components
-const ChatFab = styled(Fab)(({ theme }) => ({
-  position: 'fixed',
-  bottom: 24,
-  right: 24,
-  zIndex: 1200,
-  boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: `0 10px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
-    background: theme.palette.primary.dark,
-  },
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    borderRadius: '50%',
-    opacity: 0,
-    backgroundColor: alpha(theme.palette.primary.main, 0.3),
-    animation: 'pulse 2s infinite',
-  },
-  '@keyframes pulse': {
-    '0%': {
-      transform: 'scale(0.95)',
-      opacity: 0.7,
-    },
-    '70%': {
-      transform: 'scale(1.1)',
-      opacity: 0.3,
-    },
-    '100%': {
-      transform: 'scale(0.95)',
-      opacity: 0,
-    },
-  },
-}));
-
-const MessageContainer = styled(Box)(({ theme, owner }) => ({
-  display: 'flex',
-  justifyContent: owner === 'user' ? 'flex-end' : 'flex-start',
-  marginBottom: theme.spacing(1.5),
-  width: '100%',
-}));
-
-const MessageBubble = styled(Paper)(({ theme, owner }) => ({
-  padding: theme.spacing(1.5, 2),
-  maxWidth: '80%',
-  borderRadius: owner === 'user' 
-    ? theme.spacing(2, 0, 2, 2) 
-    : theme.spacing(0, 2, 2, 2),
-  backgroundColor: owner === 'user' 
-    ? theme.palette.primary.main 
-    : theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.8) : alpha(theme.palette.grey[100], 1),
-  color: owner === 'user' ? theme.palette.primary.contrastText : theme.palette.text.primary,
-  boxShadow: owner === 'user'
-    ? `0 2px 8px ${alpha(theme.palette.primary.main, 0.25)}`
-    : theme.shadows[1],
-  position: 'relative',
-  '&:after': owner === 'user' ? {
-    content: '""',
-    position: 'absolute',
-    right: -10,
-    top: 0,
-    width: 0,
-    height: 0,
-    borderTop: `10px solid ${theme.palette.primary.main}`,
-    borderRight: '10px solid transparent',
-  } : owner === 'ai' ? {
-    content: '""',
-    position: 'absolute',
-    left: -10,
-    top: 0,
-    width: 0,
-    height: 0,
-    borderTop: `10px solid ${theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.8) : alpha(theme.palette.grey[100], 1)}`,
-    borderLeft: '10px solid transparent',
-  } : {},
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
-    borderRadius: theme.spacing(3),
-    backgroundColor: theme.palette.mode === 'dark' 
-      ? alpha(theme.palette.background.paper, 0.6) 
-      : alpha(theme.palette.background.paper, 1),
-    boxShadow: `0 2px 6px ${alpha(theme.palette.common.black, 0.08)}`,
-    transition: 'all 0.3s ease',
-    '&:hover': {
-      boxShadow: `0 4px 12px ${alpha(theme.palette.common.black, 0.12)}`,
-    },
-    '&.Mui-focused': {
-      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.2)}`,
-    },
-    '& .MuiOutlinedInput-notchedOutline': {
-      borderColor: alpha(theme.palette.divider, 0.3),
-    },
-  },
-}));
+  X,
+  Bot,
+  User,
+  Minus,
+  Square,
+  MoreHorizontal,
+  Copy,
+  ThumbsUp,
+  ThumbsDown
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../../authcontext/authcontext";
 
 // Initial welcome message from AI
 const createInitialMessage = (firstName) => {
   return [
     {
       id: 1,
-      text: `Hi ${firstName || 'there'}! 👋 I'm your AI assistant. How can I help you with your procurement tasks today?`,
+      text: `Hi ${firstName || 'there'}! I'm your AI Assistant. How can I help you today?`,
       sender: 'ai',
       timestamp: new Date().toISOString(),
     }
   ];
 };
 
-// Suggestions for quick replies
+// Clean suggestions
 const suggestions = [
-  "How do I create a new requisition?",
-  "Show me pending approvals",
-  "Explain procurement workflow",
-  "Help with vendor selection"
+  "Create new requisition",
+  "Pending approvals",
+  "Procurement workflow",
+  "Vendor selection",
+  "Generate report",
+  "Policy updates"
 ];
 
 // Main Component
 const AIChatButton = ({ user }) => {
-  const theme = useTheme();
-  const [anchorEl, setAnchorEl] = useState(null);
-   const [messages, setMessages] = useState(() => createInitialMessage(user?.firstName));
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState(() => createInitialMessage(user?.firstName));
   const [inputText, setInputText] = useState('');
-  const [typing, setTyping] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [isTyping, setIsTyping] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const messagesEndRef = useRef(null);
-  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const inputRef = useRef(null);
-  const fabRef = useRef(null);
-  const open = Boolean(anchorEl);
-  const { user: authUser, loading: authLoading } = useAuth();
+  const chatModalRef = useRef(null);
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -180,29 +57,46 @@ const AIChatButton = ({ user }) => {
     scrollToBottom();
   }, [messages]);
 
-  // Focus input when dialog opens
   useEffect(() => {
-    if (open) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 300);
+    if (isOpen && !isMinimized) {
+      setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [open]);
+  }, [isOpen, isMinimized]);
 
-  const handleClickOpen = (event) => {
-    setAnchorEl(event.currentTarget);
+  // Handle clicks outside the chat modal
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (chatModalRef.current && !chatModalRef.current.contains(event.target)) {
+        // Check if the click was not on the chat button itself
+        const chatButton = document.querySelector('.ai-chat-button');
+        if (!chatButton?.contains(event.target)) {
+          setIsOpen(false);
+        }
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    setIsMinimized(false);
   };
 
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const handleClose = () => setIsOpen(false);
+  const handleMinimize = () => setIsMinimized(!isMinimized);
 
   const handleSend = () => {
     if (inputText.trim() === '') return;
     
-    // Add user message
     const newUserMessage = {
-      id: messages.length + 1,
+      id: Date.now(),
       text: inputText,
       sender: 'user',
       timestamp: new Date().toISOString(),
@@ -210,20 +104,19 @@ const AIChatButton = ({ user }) => {
     
     setMessages((prev) => [...prev, newUserMessage]);
     setInputText('');
-    setTyping(true);
+    setIsTyping(true);
     
-    // Simulate AI response after a delay
     setTimeout(() => {
       const aiResponse = {
-        id: messages.length + 2,
+        id: Date.now() + 1,
         text: getAIResponse(inputText),
         sender: 'ai',
         timestamp: new Date().toISOString(),
       };
       
       setMessages((prev) => [...prev, aiResponse]);
-      setTyping(false);
-    }, 1000 + Math.random() * 2000); // Random delay between 1-3 seconds
+      setIsTyping(false);
+    }, 800);
   };
 
   const handleKeyPress = (e) => {
@@ -233,300 +126,197 @@ const AIChatButton = ({ user }) => {
     }
   };
 
-  // Simple mock AI response function
   const getAIResponse = (userInput) => {
     const input = userInput.toLowerCase();
     
-    if (input.includes('hello') || input.includes('hi ') || input.includes('hey')) {
-      return "Hello! How can I assist you with your procurement needs today?";
-    } else if (input.includes('requisition') || input.includes('create') || input.includes('new req')) {
-      return "To create a new requisition, go to the Requisitions section and click the '+ New Requisition' button. You'll need to fill out the item details, justification, and select a department budget code.";
+    if (input.includes('hello') || input.includes('hi')) {
+      return "Hello! I can help with requisitions, approvals, vendors, and reports. What do you need?";
+    } else if (input.includes('requisition') || input.includes('create')) {
+      return "To create a requisition:\n• Go to Requisitions → New\n• Add item details and budget\n• Submit for approval\n\nNeed specific help?";
     } else if (input.includes('approval') || input.includes('pending')) {
-      return "You currently have 8 items pending approval. Would you like me to show you the list or help prioritize them?";
+      return "You have 8 pending items:\n• 5 requisitions\n• 2 purchase orders\n• 1 invoice\n\nShall I prioritize them?";
     } else if (input.includes('vendor') || input.includes('supplier')) {
-      return "For vendor selection, you can review the vendor ratings in the Vendors section. Our system recommends suppliers based on past performance metrics like delivery time, quality, and cost.";
+      return "Vendor selection factors:\n• Performance history\n• Cost competitiveness\n• Reliability score\n• Compliance status\n\nNeed vendor analysis?";
     } else if (input.includes('workflow') || input.includes('process')) {
-      return "The procurement workflow follows these steps: 1) Requisition creation, 2) Manager approval, 3) RFQ generation, 4) Vendor bidding, 5) Purchase order creation, 6) Delivery confirmation, and 7) Invoice payment.";
-    } else if (input.includes('help') || input.includes('support')) {
-      return "I'm here to help! You can ask me about requisitions, purchase orders, invoices, vendor management, or any other procurement task you need assistance with.";
+      return "Procurement steps:\n• Create requisition\n• Manager approval\n• Vendor selection\n• Purchase order\n• Delivery & payment\n\nWhich step needs help?";
+    } else if (input.includes('report')) {
+      return "Available reports:\n• Spend analysis\n• Vendor performance\n• Budget status\n• Compliance metrics\n\nWhich report do you need?";
+    } else if (input.includes('policy')) {
+      return "Recent updates:\n• Travel limit: $750\n• Auto-approval: $1,000\n• Sustainability guidelines\n\nMore details needed?";
     } else {
-      return "Thanks for your question. I'll look into that for you. Is there anything specific about the procurement process you'd like to know?";
+      return `I can help you with "${userInput}". Would you like:\n• Step-by-step guidance\n• Related documentation\n• Process automation\n• Expert consultation`;
     }
   };
 
   const handleSuggestionClick = (suggestion) => {
     setInputText(suggestion);
-    // Focus the input after selecting a suggestion
     inputRef.current?.focus();
   };
 
   return (
     <>
-      {/* Floating AI Chat Button */}
-      <ChatFab 
-        color="primary" 
-        aria-label="ai chat" 
-        onClick={handleClickOpen}
-        ref={fabRef}
-      >
-        <img src="message.png" alt="AI Icon" style={{ width: 24, height: 24 }} />
-      </ChatFab>
-      
-      {/* Chat Popover */}
-      <Popover
-        open={open}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            width: fullScreen ? '100%' : 400,
-            maxHeight: fullScreen ? '100%' : '80vh',
-            height: fullScreen ? '100vh' : 600,
-            mb: 1, // Small margin from the button
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: theme.shadows[10],
-          },
-        }}
-        TransitionComponent={Zoom}
-      >
-        {/* Dialog Header */}
-        <AppBar position="static" color="transparent" elevation={0} sx={{ 
-          borderBottom: `1px solid ${theme.palette.divider}`,
-        }}>
-          <Toolbar sx={{ minHeight: 64, px: 2 }}>
-            <Box display="flex" alignItems="center" gap={1.5}>
-              <Avatar
-                sx={{ 
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main,
-                  width: 40, 
-                  height: 40,
-                }}
-              >
-                <SmartToy />
-              </Avatar>
-              <Box>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  AI Assistant
-                </Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {typing ? 'Typing...' : 'Online'}
-                </Typography>
-              </Box>
-            </Box>
-            
-            <Box sx={{ ml: 'auto', display: 'flex', gap: 0.5 }}>
-              <IconButton size="small" onClick={() => setExpanded(!expanded)}>
-                {expanded ? <ExpandLess /> : <ExpandMore />}
-              </IconButton>
-              <IconButton size="small" onClick={handleClose}>
-                <Close />
-              </IconButton>
-            </Box>
-          </Toolbar>
-        </AppBar>
-        
-        {/* Chat Messages Area */}
-        <Box sx={{ 
-          p: 2, 
-          flexGrow: 1, 
-          overflowY: 'auto',
-          display: expanded ? 'block' : 'none',
-          bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.default, 0.6) : alpha(theme.palette.grey[50], 0.8),
-        }}>
-          {messages.map((message) => (
-            <MessageContainer key={message.id} owner={message.sender}>
-              {message.sender === 'ai' && (
-                <Avatar
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    mr: 1,
-                    bgcolor: alpha(theme.palette.primary.main, 0.1),
-                    color: theme.palette.primary.main,
-                  }}
-                >
-                  <SmartToy fontSize="small" />
-                </Avatar>
-              )}
-              
-              <MessageBubble owner={message.sender} elevation={0}>
-                <Typography variant="body2">
-                  {message.text}
-                </Typography>
-                <Typography 
-                  variant="caption" 
-                  color={message.sender === 'user' ? alpha(theme.palette.primary.contrastText, 0.7) : "text.secondary"}
-                  sx={{ display: 'block', textAlign: 'right', mt: 0.5, fontSize: '0.7rem' }}
-                >
-                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Typography>
-              </MessageBubble>
-              
-              {message.sender === 'user' && (
-                <Avatar
-                  sx={{
-                    width: 36,
-                    height: 36,
-                    ml: 1,
-                    bgcolor: theme.palette.primary.dark,
-                  }}
-                >
-                  {/* First letter of the user's name, can be replaced with actual data */}
-                   {user.firstName ? user.firstName.split(" ").map(n => n[0]).join("") : "GU"}
-                </Avatar>
-              )}
-            </MessageContainer>
-          ))}
-          
-          {/* Typing indicator */}
-          {typing && (
-            <MessageContainer owner="ai">
-              <Avatar
-                sx={{
-                  width: 36,
-                  height: 36,
-                  mr: 1,
-                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                  color: theme.palette.primary.main,
-                }}
-              >
-                <SmartToy fontSize="small" />
-              </Avatar>
-              <MessageBubble owner="ai" elevation={0}>
-                <Box sx={{ display: 'flex', gap: 0.5, p: 0.5 }}>
-                  <span className="typing-dot" style={{ 
-                    width: 8, 
-                    height: 8, 
-                    borderRadius: '50%', 
-                    backgroundColor: theme.palette.text.secondary,
-                    opacity: 0.7,
-                    animation: 'typingAnimation 1.4s infinite ease-in-out',
-                    animationDelay: '0s',
-                  }} />
-                  <span className="typing-dot" style={{ 
-                    width: 8, 
-                    height: 8, 
-                    borderRadius: '50%', 
-                    backgroundColor: theme.palette.text.secondary,
-                    opacity: 0.7,
-                    animation: 'typingAnimation 1.4s infinite ease-in-out',
-                    animationDelay: '0.2s',
-                  }} />
-                  <span className="typing-dot" style={{ 
-                    width: 8, 
-                    height: 8, 
-                    borderRadius: '50%', 
-                    backgroundColor: theme.palette.text.secondary,
-                    opacity: 0.7,
-                    animation: 'typingAnimation 1.4s infinite ease-in-out',
-                    animationDelay: '0.4s',
-                  }} />
-                </Box>
-                <style jsx>{`
-                  @keyframes typingAnimation {
-                    0%, 100% {
-                      transform: translateY(0);
-                    }
-                    50% {
-                      transform: translateY(-5px);
-                    }
-                  }
-                `}</style>
-              </MessageBubble>
-            </MessageContainer>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </Box>
-        
-        {/* Quick suggestions */}
-        {expanded && (
-          <Box sx={{ 
-            p: 1.5, 
-            overflowX: 'auto',
-            display: 'flex',
-            gap: 1,
-            borderTop: `1px solid ${theme.palette.divider}`, 
-          }}>
-            {suggestions.map((suggestion, index) => (
-              <Box
-                key={index}
-                component="button"
-                onClick={() => handleSuggestionClick(suggestion)}
-                sx={{
-                  cursor: 'pointer',
-                  border: `1px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                  borderRadius: theme.spacing(2),
-                  py: 0.75,
-                  px: 1.5,
-                  backgroundColor: 'transparent',
-                  color: theme.palette.primary.main,
-                  fontSize: '0.75rem',
-                  fontFamily: theme.typography.fontFamily,
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s ease',
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                    borderColor: theme.palette.primary.main,
-                  },
-                }}
-              >
-                {suggestion}
-              </Box>
-            ))}
-          </Box>
+      {/* Ultra-clean floating button */}
+      <AnimatePresence>
+        {!isOpen && (
+          <motion.button
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleOpen}
+            className="ai-chat-button fixed bottom-5 right-5 w-12 h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-full shadow-lg z-50 flex items-center justify-center transition-all duration-150"
+          >
+            <MessageCircle size={18} strokeWidth={1.5} />
+          </motion.button>
         )}
-        
-        {/* Input Area */}
-        {expanded && (
-          <Box sx={{ 
-            p: 2, 
-            borderTop: `1px solid ${theme.palette.divider}`,
-            backgroundColor: theme.palette.background.paper,
-          }}>
-            <StyledTextField
-              fullWidth
-              placeholder="Type a message..."
-              variant="outlined"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyPress={handleKeyPress}
-              inputRef={inputRef}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton 
-                      color="primary" 
+      </AnimatePresence>
+
+      {/* Ultra-clean chat interface */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            ref={chatModalRef}
+            initial={{ opacity: 0, scale: 0.98, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 10 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className={`fixed bottom-5 right-5 z-50 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden ${
+              isMinimized ? 'w-72 h-12' : 'w-80 h-96'
+            } transition-all duration-200`}
+          >
+            {/* Minimal header */}
+            <div className="bg-white border-b border-gray-100 p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 bg-slate-100 rounded-full flex items-center justify-center">
+                  <Bot size={12} strokeWidth={2} className="text-slate-600" />
+                </div>
+                <span className="text-sm font-medium text-slate-800">AI Assistant</span>
+                {isTyping && <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>}
+              </div>
+              
+              <div className="flex items-center">
+                <button
+                  onClick={handleMinimize}
+                  className="p-1 hover:bg-gray-100 rounded transition-colors duration-150"
+                >
+                  {isMinimized ? <Square size={12} /> : <Minus size={12} />}
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="p-1 hover:bg-gray-100 rounded transition-colors duration-150 ml-1"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+
+            {!isMinimized && (
+              <>
+                {/* Clean messages area */}
+                <div className="h-64 overflow-y-auto bg-gray-50">
+                  <div className="p-3 space-y-3">
+                    {messages.map((message) => (
+                      <div
+                        key={message.id}
+                        className={`flex gap-2 ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}
+                      >
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          message.sender === 'user' 
+                            ? 'bg-slate-800 text-white' 
+                            : 'bg-white border border-gray-200 text-slate-600'
+                        }`}>
+                          {message.sender === 'user' ? 
+                            <User size={10} strokeWidth={2} /> : 
+                            <Bot size={10} strokeWidth={2} />
+                          }
+                        </div>
+
+                        <div className="flex-1 max-w-60">
+                          <div className={`inline-block px-3 py-2 rounded-lg text-sm leading-relaxed ${
+                            message.sender === 'user'
+                              ? 'bg-slate-800 text-white'
+                              : 'bg-white border border-gray-200 text-slate-700'
+                          }`}>
+                            {message.text}
+                          </div>
+                          
+                          {message.sender === 'ai' && (
+                            <div className="flex items-center gap-1 mt-1 opacity-0 hover:opacity-100 transition-opacity duration-200">
+                              <button className="p-1 hover:bg-gray-100 rounded">
+                                <ThumbsUp size={10} strokeWidth={1.5} className="text-gray-400" />
+                              </button>
+                              <button className="p-1 hover:bg-gray-100 rounded">
+                                <ThumbsDown size={10} strokeWidth={1.5} className="text-gray-400" />
+                              </button>
+                              <button className="p-1 hover:bg-gray-100 rounded">
+                                <Copy size={10} strokeWidth={1.5} className="text-gray-400" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {isTyping && (
+                      <div className="flex gap-2">
+                        <div className="w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center">
+                          <Bot size={10} strokeWidth={2} className="text-slate-600" />
+                        </div>
+                        <div className="bg-white border border-gray-200 rounded-lg px-3 py-2">
+                          <div className="flex gap-1">
+                            <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
+                            <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                            <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Minimal suggestions */}
+                <div className="border-t border-gray-100 p-2">
+                  <div className="grid grid-cols-2 gap-1">
+                    {suggestions.slice(0, 4).map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="px-2 py-1.5 text-xs text-slate-600 bg-gray-50 hover:bg-gray-100 rounded border-0 transition-colors duration-150 text-left"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Ultra-clean input */}
+                <div className="border-t border-gray-100 p-3">
+                  <div className="flex gap-2">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Type your message..."
+                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-400 focus:border-slate-400 text-sm placeholder-gray-400 transition-all duration-150"
+                    />
+                    <button
                       onClick={handleSend}
                       disabled={inputText.trim() === ''}
-                      sx={{
-                        transition: 'all 0.2s ease',
-                        transform: inputText.trim() === '' ? 'scale(0.9)' : 'scale(1)',
-                        opacity: inputText.trim() === '' ? 0.7 : 1,
-                      }}
+                      className="p-2 bg-slate-800 hover:bg-slate-700 disabled:bg-gray-200 text-white disabled:text-gray-400 rounded-lg transition-colors duration-150"
                     >
-                      <Send />
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ m: 0 }}
-            />
-          </Box>
+                      <Send size={14} strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </motion.div>
         )}
-      </Popover>
+      </AnimatePresence>
     </>
   );
 };
