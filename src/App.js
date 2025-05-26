@@ -44,6 +44,8 @@ import TermsOfService from './pages/login/TermsOfService';
 import PrivacyPolicy from './pages/login/PrivacyPolicy';
 import UserProfilePage from './pages/User/user';
 import VendorRegistration from './pages/vendor-dash/registration/registration';
+import EmployeesPage from './pages/dashboard/employee/employee';
+import DepartmentsPage from './pages/dashboard/departments/departments';
 
 
 
@@ -83,6 +85,10 @@ function App() {
           <Route path="/requisitions/manage" element={<ManageRequisitionsPage/>} />
           <Route path="/vendors" element={<VendorsPage/>}/>
           <Route path="/food" element={<FoodBudgetPlanner/>}/>
+          <Route path="/employee" element={<EmployeesPage/>}/>
+          <Route path="/departments" element={<DepartmentsPage/>}/>
+            
+
    
            {/*Employee Routes */}
           <Route path="/employee-dash" element={<EmployeeDashboard/>}/>

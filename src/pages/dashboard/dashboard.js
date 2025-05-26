@@ -106,6 +106,8 @@ import FinanceReconciliationReviewSection from '../../pages/dashboard/requisitio
 import FleetCoordinatorSection from '../../pages/dashboard/requisitions/manage/fleet';
 import VendorsPage from '../../pages/dashboard/vendors/vendors';
 import { useAuth } from "../../authcontext/authcontext"; 
+import EmployeesPage from "./employee/employee";
+import DepartmentsPage from "./departments/departments";
 
 
 
@@ -868,8 +870,6 @@ const user = authUser ? {
       <ProductReviewsAnalysis />
     </Box>
 
-    
-
 
           </Box>
     </Box>
@@ -902,8 +902,9 @@ const user = authUser ? {
       {activeSection === "recon-review" && <FinanceReconciliationReviewSection/>}
       {activeSection === "fleet-cordination" && <FleetCoordinatorSection/>}
       {activeSection === "vendors" && <VendorsPage/>}
+      {activeSection === "employees" && <EmployeesPage/>}
+      {activeSection === "departments" && <DepartmentsPage/>}
       {activeSection === "user-profile" && <UserProfilePage />}
-
       {/* other sections */}
     </Box>
   )}
