@@ -350,12 +350,12 @@ export default function PurchaseOrdersPage() {
                   <DollarSign size={24} className="text-white" />
                 </div>
                 <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                  ${totalAmount.toFixed(0)}
+                  MWK {totalAmount.toFixed(0)}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Total Amount</p>
-                <p className="text-2xl font-bold text-gray-900">${totalAmount.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{totalAmount.toLocaleString()}</p>
               </div>
             </motion.div>
           </div>
@@ -507,7 +507,7 @@ export default function PurchaseOrdersPage() {
 
                     <div>
                       <span className="font-semibold text-gray-900">
-                        ${po.totalAmount?.toFixed(2) || "0.00"}
+                        MWK {po.totalAmount?.toFixed(2) || "0.00"}
                       </span>
                     </div>
 
@@ -629,7 +629,7 @@ export default function PurchaseOrdersPage() {
                       <div>
                         <p className="text-sm font-medium text-gray-600">Price</p>
                         <p className="text-gray-900 font-semibold">
-                          ${selectedQuote.price?.toFixed(2) || "N/A"}
+                          MWK {selectedQuote.price?.toFixed(2) || "N/A"}
                         </p>
                       </div>
                       <div>

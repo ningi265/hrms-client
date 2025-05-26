@@ -85,7 +85,6 @@ import ReconciliationSection from "../dashboard/requisitions/manage/finance-reco
 import PurchaseOrdersSection  from '../../pages/dashboard/purchase-orders/purchase-order';
 import NewRequisitionSection  from '../../pages/dashboard/requisitions/requisitions';
 import RFQsSection  from '../../pages/dashboard/rfqs/view/view_rfqs';
-import VendorsSection  from '../../pages/dashboard/vendors/vendors';
 import ManageRequisitionsSection  from '../../pages/dashboard/requisitions/manage/manage';
 import RFQDetailsSection  from '../../pages/dashboard/rfqs/view/view_rfqs';
 import CreateRFQSection  from '../../pages/dashboard/rfqs/create/create';
@@ -107,8 +106,7 @@ import FinanceReconciliationReviewSection from '../../pages/dashboard/requisitio
 import FleetCoordinatorSection from '../../pages/dashboard/requisitions/manage/fleet';
 import VendorsPage from '../../pages/dashboard/vendors/vendors';
 import { useAuth } from "../../authcontext/authcontext"; 
-import axios from 'axios';
-import AddVendorPage from "../../pages/dashboard/vendors/add/add";
+
 
 
 // Sample data for RevenueChart
@@ -885,7 +883,6 @@ const user = authUser ? {
       {activeSection === "fleet-management" && <FleetCoordinatorSection/>}
       {activeSection === "travel-requests" && <SupervisorApprovalSection/>}
       {activeSection === "new-requisition" && <NewRequisitionSection />}
-      {activeSection === "vendors" && <VendorsSection/>}
       {activeSection === "manage-rfq" && <ManageRequisitionsSection/>}
       {activeSection === "rfq-details" && <RFQDetailsSection/>}
       {activeSection === "create-rfq" && <CreateRFQSection/>}
