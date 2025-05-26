@@ -335,7 +335,7 @@ const PulseBadge = styled('span')(({ theme }) => ({
 }));
 
 // Main component
-const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange }) => {
+const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange, onSidebarToggle }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -347,15 +347,17 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Remember sidebar state in localStorage
-  useEffect(() => {
+ useEffect(() => {
     const savedOpenState = localStorage.getItem('sidebarOpen');
     if (savedOpenState !== null && !isMobile) {
-      setOpen(JSON.parse(savedOpenState));
+      const parsedState = JSON.parse(savedOpenState);
+      setOpen(parsedState);
+      onSidebarToggle?.(parsedState); // Notify parent component
     }
-  }, [isMobile]);
+  }, [isMobile, onSidebarToggle]);
 
   // Improved toggle behavior with animation lock
-  const toggleDrawer = () => {
+ const toggleDrawer = () => {
     if (isAnimating) return;
     
     setIsAnimating(true);
@@ -367,6 +369,14 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
       const newOpenState = !open;
       setOpen(newOpenState);
       localStorage.setItem('sidebarOpen', JSON.stringify(newOpenState));
+      
+      // Notify parent component about sidebar state change
+      onSidebarToggle?.(newOpenState);
+      
+      // Dispatch custom event for components that might need to know about sidebar changes
+      window.dispatchEvent(new CustomEvent('sidebarToggle', { 
+        detail: { open: newOpenState } 
+      }));
       
       // Wait for animation to complete before allowing another toggle
       setTimeout(() => setIsAnimating(false), 300);
@@ -954,7 +964,8 @@ HRMSSidebar.propTypes = {
     invoices: PropTypes.object,
   }),
   activeSection: PropTypes.string.isRequired,
-  handleSectionChange: PropTypes.func.isRequired
+  handleSectionChange: PropTypes.func.isRequired,
+  onSidebarToggle: PropTypes.func
 };
 
 export default HRMSSidebar;

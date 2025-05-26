@@ -3365,3 +3365,336 @@
     }
 }
 
+
+/* Header Layout Fixes - Add to your dashboard.css */
+
+/* Ensure proper z-index layering */
+.header-container {
+  position: fixed;
+  top: 0;
+  z-index: 1200; /* Higher than sidebar but lower than modals */
+  transition: all 0.3s ease;
+}
+
+/* Sidebar z-index */
+.sidebar-container {
+  z-index: 1100; /* Lower than header */
+}
+
+/* Main content area adjustments */
+.main-content-area {
+  /* Ensure content starts below the header */
+  padding-top: 64px; /* Header height */
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+}
+
+/* Responsive header positioning */
+@media (min-width: 768px) {
+  .main-content-area {
+    /* Account for sidebar width on desktop */
+    margin-left: 0; /* Will be set dynamically */
+  }
+}
+
+@media (max-width: 767px) {
+  .main-content-area {
+    /* Full width on mobile */
+    margin-left: 0;
+  }
+  
+  .header-container {
+    /* Full width header on mobile */
+    left: 0 !important;
+    width: 100% !important;
+  }
+}
+
+/* Prevent content overlap */
+.dashboard-content {
+  position: relative;
+  z-index: 1;
+  background-color: #ffffff;
+  min-height: calc(100vh - 64px);
+}
+
+/* Ensure proper spacing for scroll position */
+.page-content {
+  padding: 1.5rem;
+  margin-top: 0;
+}
+
+/* Header backdrop blur enhancement */
+.header-blur {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.85);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+}
+
+/* Smooth transitions for layout changes */
+.layout-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fix for calendar dropdown positioning */
+.calendar-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 1300; /* Higher than header to show above */
+  margin-top: 0.5rem;
+}
+
+/* User menu dropdown positioning */
+.user-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1300; /* Higher than header to show above */
+  margin-top: 0.5rem;
+}
+
+/* Mobile menu positioning */
+.mobile-menu {
+  position: relative;
+  z-index: 1250;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Ensure proper stacking context */
+.app-container {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1050;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Animation for smooth transitions */
+@keyframes slideInFromLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToLeft {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+.sidebar-animate-in {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+.sidebar-animate-out {
+  animation: slideOutToLeft 0.3s ease-in;
+}
+
+/* Header responsiveness */
+.header-responsive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 1rem;
+}
+
+@media (min-width: 640px) {
+  .header-responsive {
+    padding: 0 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .header-responsive {
+    padding: 0 2rem;
+  }
+}
+
+/* Fix for notification and calendar positioning */
+.header-left-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  z-index: 1;
+}
+
+.header-right-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 1;
+}
+
+/* Ensure proper button spacing on mobile */
+@media (max-width: 767px) {
+  .header-left-section {
+    gap: 0.5rem;
+  }
+  
+  .header-right-section {
+    gap: 0.5rem;
+  }
+  
+  /* Hide some elements on very small screens */
+  .hide-on-small {
+    display: none;
+  }
+}
+
+@media (min-width: 480px) {
+  .hide-on-small {
+    display: flex;
+  }
+}
+
+/* Content area proper spacing */
+.content-wrapper {
+  padding: 1.5rem;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Prevent horizontal scroll */
+.no-horizontal-scroll {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+/* Ensure charts and tables are responsive */
+.responsive-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Fix for Material-UI components */
+.MuiDrawer-root {
+  z-index: 1100 !important;
+}
+
+.MuiAppBar-root {
+  z-index: 1200 !important;
+}
+
+.MuiModal-root {
+  z-index: 1300 !important;
+}
+
+.MuiTooltip-tooltip {
+  z-index: 1400 !important;
+}
+
+/* Smooth scroll behavior */
+.smooth-scroll {
+  scroll-behavior: smooth;
+}
+
+/* Focus management for accessibility */
+.focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Loading state styles */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Ensure proper content spacing for all pages */
+.main-content-wrapper {
+  padding-top: 80px !important; /* Space for fixed header */
+  min-height: calc(100vh - 64px);
+  position: relative;
+  z-index: 1;
+  background-color: #ffffff;
+}
+
+/* Header positioning fixes */
+.header-container {
+  position: fixed !important;
+  top: 0;
+  z-index: 1200 !important; /* Higher than sidebar */
+  transition: all 0.3s ease;
+}
+
+/* Sidebar z-index */
+.sidebar-container {
+  z-index: 1100 !important; /* Lower than header */
+}
+
+/* Ensure all page content starts below header */
+.page-content {
+  padding-top: 80px;
+  min-height: calc(100vh - 80px);
+  position: relative;
+  z-index: 1;
+}
+
+/* Override Material-UI z-indices */
+.MuiDrawer-root {
+  z-index: 1100 !important;
+}
+
+.MuiAppBar-root {
+  z-index: 1200 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767px) {
+  .header-container {
+    left: 0 !important;
+    width: 100% !important;
+  }
+  
+  .main-content-wrapper,
+  .page-content {
+    padding-top: 72px; /* Slightly less on mobile */
+  }
+}
+
+/* Animation for sidebar state changes */
+@keyframes headerReposition {
+  from { transform: translateX(-10px); opacity: 0.8; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.header-repositioning {
+  animation: headerReposition 0.3s ease-out;
+}
+

@@ -64,6 +64,7 @@ import VendorRFQsPage from "../dashboard/vendors/qoutes/qoutes";
 import VendorPODetailsPage from "../vendor-dash/purchase-orders/accept/accept";
 import SubmitQuotePage from "../dashboard/vendors/qoutes/submit/submit";
 import VendorInvoiceSubmissionPage from "../vendor-dash/invoices/invoices";
+import VendorRegistration from "./registration/registration";
 
 
 // Styled Components
@@ -417,7 +418,8 @@ export default function VendorDashboard() {
               {activeSection === "rfq" && <VendorRFQsPage />}
               {activeSection === "invoices" && <VendorInvoiceSubmissionPage  />}
               {activeSection === "purchase-order" && <VendorPODetailsPage />}
-            </Box>
+              {activeSection === "registration" && <VendorRegistration />}
+            </Box> 
           )}
         </Box>
       </Box>

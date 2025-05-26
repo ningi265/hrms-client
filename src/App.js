@@ -43,6 +43,7 @@ import ForgotPassword from './pages/login/ForgotPassword';
 import TermsOfService from './pages/login/TermsOfService';
 import PrivacyPolicy from './pages/login/PrivacyPolicy';
 import UserProfilePage from './pages/User/user';
+import VendorRegistration from './pages/vendor-dash/registration/registration';
 
 
 
@@ -99,6 +100,7 @@ function App() {
           <Route path="/vendors/qoutes/submit" element={<SubmitQuotePage/>}/>
           <Route path="/invoices/submit" element={<VendorInvoiceSubmissionPage/>}/>
           <Route path="/vendor-purchase-order" element={<VendorPODetailsPage/>}/>
+           <Route path="/vendor-registration" element={<VendorRegistration/>}/>
        
         </Routes>
       </BrowserRouter>      
