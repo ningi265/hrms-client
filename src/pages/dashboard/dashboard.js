@@ -108,7 +108,7 @@ import VendorsPage from '../../pages/dashboard/vendors/vendors';
 import { useAuth } from "../../authcontext/authcontext"; 
 import EmployeesPage from "./employee/employee";
 import DepartmentsPage from "./departments/departments";
-
+import VendorApprovalPage from "./vendors/registration";
 
 
 // Sample data for RevenueChart
@@ -905,6 +905,7 @@ const user = authUser ? {
       {activeSection === "employees" && <EmployeesPage/>}
       {activeSection === "departments" && <DepartmentsPage/>}
       {activeSection === "user-profile" && <UserProfilePage />}
+      {activeSection === "pending-registration" && <VendorApprovalPage />}
       {/* other sections */}
     </Box>
   )}

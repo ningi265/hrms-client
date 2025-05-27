@@ -218,11 +218,13 @@ export default function VendorRegistration() {
     formDataToSend.append('lastName', formData.businessName.split(' ').slice(1).join(' ') || 'User');
     formDataToSend.append('phoneNumber', '+265993773578'); // Default from contact info
     formDataToSend.append('password', 'TempPassword123!'); // You might want to add a password field to the form
-    
+    const token = localStorage.getItem('token'); // Assuming you store the JWT token in localStorage            
     const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/vendors/register`, {
       method: 'POST',
+      headers: {
+          Authorization: `Bearer ${token}`,
+        },
       body: formDataToSend,
-      // Don't set Content-Type header - let browser set it with boundary for FormData
     });
     
     const data = await response.json();
