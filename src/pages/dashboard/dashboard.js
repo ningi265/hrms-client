@@ -77,14 +77,14 @@ import ProductReviewsAnalysis from './productProcurement';
 import StatsCardsGrid from './statsCard';
 import FinancialDashboard from './financial';
 import HRMSSidebar from './sidebar';
-import DashboardHeader from './header'
+import DashboardHeader from './header';
+import UserProfilePage from "../../pages/User/user";
 import { motion, AnimatePresence } from 'framer-motion';
 import RequisitionsSection from "../dashboard/requisitions/manage/manage";
 import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
 import PurchaseOrdersSection  from '../../pages/dashboard/purchase-orders/purchase-order';
 import NewRequisitionSection  from '../../pages/dashboard/requisitions/requisitions';
 import RFQsSection  from '../../pages/dashboard/rfqs/view/view_rfqs';
-import VendorsSection  from '../../pages/dashboard/vendors/vendors';
 import ManageRequisitionsSection  from '../../pages/dashboard/requisitions/manage/manage';
 import RFQDetailsSection  from '../../pages/dashboard/rfqs/view/view_rfqs';
 import CreateRFQSection  from '../../pages/dashboard/rfqs/create/create';
@@ -106,8 +106,9 @@ import FinanceReconciliationReviewSection from '../../pages/dashboard/requisitio
 import FleetCoordinatorSection from '../../pages/dashboard/requisitions/manage/fleet';
 import VendorsPage from '../../pages/dashboard/vendors/vendors';
 import { useAuth } from "../../authcontext/authcontext"; 
-import axios from 'axios';
-import AddVendorPage from "../../pages/dashboard/vendors/add/add";
+import EmployeesPage from "./employee/employee";
+import DepartmentsPage from "./departments/departments";
+import VendorApprovalPage from "./vendors/registration";
 
 
 // Sample data for RevenueChart
@@ -261,6 +262,7 @@ export default function ProcurementDashboard() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+   const [sidebarOpen, setSidebarOpen] = useState(true);
   const open = Boolean(anchorEl);
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => {
@@ -383,6 +385,37 @@ const user = authUser ? {
     }, 100 * index);
   });
 }, [recentReports]);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedOpenState = localStorage.getItem('sidebarOpen');
+      if (savedOpenState !== null) {
+        setSidebarOpen(JSON.parse(savedOpenState));
+      }
+    };
+
+    // Listen for custom sidebar toggle events
+    const handleSidebarToggle = (event) => {
+      setSidebarOpen(event.detail.open);
+    };
+
+    // Listen for storage changes and custom events
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('sidebarToggle', handleSidebarToggle);
+    
+    // Check initial state
+    handleStorageChange();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sidebarToggle', handleSidebarToggle);
+    };
+  }, []);
+
+  const SIDEBAR_WIDTH = 256;
+  const COLLAPSED_SIDEBAR_WIDTH = 70;
+
+
 
   // Calculate opacity (0 when at top, 1 when scrolled down a bit)
   const opacity = Math.min(scrollPosition / 100, 1); 
@@ -529,6 +562,7 @@ const user = authUser ? {
         stats={stats} 
         activeSection={activeSection} 
         handleSectionChange={handleSectionChange}
+         onSidebarToggle={setSidebarOpen}
       />
 
       {/* Main Content */}
@@ -536,11 +570,29 @@ const user = authUser ? {
         flexGrow: 1, 
         overflow: "auto",
         backgroundColor: theme.palette.background.default,
+        position: 'relative',
       }}>
         {/* Header */}
-        
+        <DashboardHeader 
+          user={user}
+          onMobileMenuToggle={setMobileOpen}
+          scrollPosition={scrollPosition}
+          handleSectionChange={handleSectionChange} 
+          sidebarOpen={sidebarOpen}
+          sidebarWidth={SIDEBAR_WIDTH}
+          collapsedSidebarWidth={COLLAPSED_SIDEBAR_WIDTH}
+        />
         {/* Main Content Area */}
-<Box sx={{ p: 1.5 }}>
+<Box sx={{ 
+  paddingTop: '80px', 
+  minHeight: 'calc(100vh - 64px)',
+   position: 'relative',
+     zIndex: 1,
+      padding: '80px 1.5rem 1.5rem',
+
+  
+  
+  }}>
   {activeSection === "dashboard" ? (
     <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
       {/* All the current dashboard content */}
@@ -818,8 +870,6 @@ const user = authUser ? {
       <ProductReviewsAnalysis />
     </Box>
 
-    
-
 
           </Box>
     </Box>
@@ -833,7 +883,6 @@ const user = authUser ? {
       {activeSection === "fleet-management" && <FleetCoordinatorSection/>}
       {activeSection === "travel-requests" && <SupervisorApprovalSection/>}
       {activeSection === "new-requisition" && <NewRequisitionSection />}
-      {activeSection === "vendors" && <VendorsSection/>}
       {activeSection === "manage-rfq" && <ManageRequisitionsSection/>}
       {activeSection === "rfq-details" && <RFQDetailsSection/>}
       {activeSection === "create-rfq" && <CreateRFQSection/>}
@@ -853,7 +902,10 @@ const user = authUser ? {
       {activeSection === "recon-review" && <FinanceReconciliationReviewSection/>}
       {activeSection === "fleet-cordination" && <FleetCoordinatorSection/>}
       {activeSection === "vendors" && <VendorsPage/>}
-
+      {activeSection === "employees" && <EmployeesPage/>}
+      {activeSection === "departments" && <DepartmentsPage/>}
+      {activeSection === "user-profile" && <UserProfilePage />}
+      {activeSection === "pending-registration" && <VendorApprovalPage />}
       {/* other sections */}
     </Box>
   )}

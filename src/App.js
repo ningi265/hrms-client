@@ -43,6 +43,10 @@ import ForgotPassword from './pages/login/ForgotPassword';
 import TermsOfService from './pages/login/TermsOfService';
 import PrivacyPolicy from './pages/login/PrivacyPolicy';
 import UserProfilePage from './pages/User/user';
+import VendorRegistration from './pages/vendor-dash/registration/registration';
+import EmployeesPage from './pages/dashboard/employee/employee';
+import DepartmentsPage from './pages/dashboard/departments/departments';
+import VendorApprovalPage from './pages/dashboard/vendors/registration';
 
 
 
@@ -82,6 +86,10 @@ function App() {
           <Route path="/requisitions/manage" element={<ManageRequisitionsPage/>} />
           <Route path="/vendors" element={<VendorsPage/>}/>
           <Route path="/food" element={<FoodBudgetPlanner/>}/>
+          <Route path="/employee" element={<EmployeesPage/>}/>
+          <Route path="/departments" element={<DepartmentsPage/>}/>
+              <Route path="/pending/registration" element={<VendorApprovalPage/>}/>
+
    
            {/*Employee Routes */}
           <Route path="/employee-dash" element={<EmployeeDashboard/>}/>
@@ -99,6 +107,7 @@ function App() {
           <Route path="/vendors/qoutes/submit" element={<SubmitQuotePage/>}/>
           <Route path="/invoices/submit" element={<VendorInvoiceSubmissionPage/>}/>
           <Route path="/vendor-purchase-order" element={<VendorPODetailsPage/>}/>
+           <Route path="/vendor-registration" element={<VendorRegistration/>}/>
        
         </Routes>
       </BrowserRouter>      

@@ -332,12 +332,17 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           icon: <ModernIcons.Dashboard />,
           badge: null
         },
+          { 
+          id: 'registration', 
+          label: 'Registration', 
+          icon: <ModernIcons.RFQs />,
+        },
         { 
           id: 'rfq', 
           label: 'RFQs', 
           icon: <ModernIcons.RFQs />,
           badge: stats.rfqs?.counts?.open || null
-        },
+        }, 
         { 
           id: 'purchase-order', 
           label: 'Purchase Orders', 

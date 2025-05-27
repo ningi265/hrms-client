@@ -1,5 +1,6 @@
 import React, { useState, useEffect, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate ,useSearchParams } from "react-router-dom";
 import {
   Bell,
   Calendar,
@@ -30,7 +31,7 @@ import {
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays, isToday, isSameDay } from 'date-fns';
 
-// Modern Header Component
+// Modern Header Component - Fixed positioning and responsive layout
 const ModernHeaderComponent = ({ 
   user, 
   notificationCount = 3,
@@ -43,7 +44,10 @@ const ModernHeaderComponent = ({
   onSignOutClick,
   onMobileMenuToggle,
   scrollPosition = 0,
-  importantDates = []
+  importantDates = [],
+  sidebarOpen = true, // New prop to track sidebar state
+  sidebarWidth = 256, // New prop for sidebar width
+  collapsedSidebarWidth = 70 // New prop for collapsed sidebar width
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -52,10 +56,36 @@ const ModernHeaderComponent = ({
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    return searchParams.get('section') || 'dashboard';
+  });
 
   // Calculate header transparency based on scroll
   const headerOpacity = Math.min(scrollPosition / 100, 0.95);
   const blur = Math.min(scrollPosition / 10, 20);
+
+  // Calculate proper positioning based on sidebar state
+  const getHeaderLeftPosition = () => {
+    // On mobile, header should span full width
+    if (window.innerWidth < 768) return 0;
+    // On desktop, account for sidebar width
+    return sidebarOpen ? sidebarWidth : collapsedSidebarWidth;
+  };
+
+  const getHeaderWidth = () => {
+    // On mobile, header should span full width
+    if (window.innerWidth < 768) return '100%';
+    // On desktop, subtract sidebar width from total width
+    const sidebarWidthToUse = sidebarOpen ? sidebarWidth : collapsedSidebarWidth;
+    return `calc(100% - ${sidebarWidthToUse}px)`;
+  };
+
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    navigate(`?section=${section}`, { replace: true });
+  };
 
   // Default dates if none provided
   const IMPORTANT_DATES = importantDates.length > 0 ? importantDates : [
@@ -148,14 +178,41 @@ const ModernHeaderComponent = ({
     }
   };
 
+  // Listen for window resize to recalculate header positioning
+ useEffect(() => {
+    const handleResize = () => {
+      // Force re-render on resize to recalculate positioning
+      setMobileMenuOpen(false);
+      setUserMenuOpen(false);
+      setCalendarOpen(false);
+    };
+
+    const handleSidebarToggle = () => {
+      // Force re-render when sidebar toggles
+      setMobileMenuOpen(false);
+      setUserMenuOpen(false);
+      setCalendarOpen(false);
+    };
+
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('sidebarToggle', handleSidebarToggle);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('sidebarToggle', handleSidebarToggle);
+    };
+  }, [sidebarOpen]);
+
   return (
     <>
-      {/* Main Header */}
+      {/* Main Header - Fixed positioning with proper sidebar offset */}
       <motion.header
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300`}
+        className="fixed top-0 z-50 transition-all duration-300"
         style={{
+          left: getHeaderLeftPosition(),
+          width: getHeaderWidth(),
           backgroundColor: `rgba(255, 255, 255, ${headerOpacity})`,
           backdropFilter: `blur(${blur}px)`,
           borderBottom: headerOpacity > 0.1 ? '1px solid rgba(229, 231, 235, 0.8)' : 'none'
@@ -166,26 +223,17 @@ const ModernHeaderComponent = ({
             
             {/* Left Section */}
             <div className="flex items-center gap-4">
-              {/* Notifications */}
+              {/* Mobile Menu Button - Only show on mobile */}
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={onNotificationClick}
-                className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                onClick={toggleMobileMenu}
+                className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
               >
-                <Bell size={20} />
-                {notificationCount > 0 && (
-                  <motion.span
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium"
-                  >
-                    {notificationCount}
-                  </motion.span>
-                )}
+                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </motion.button>
 
-              {/* Date & Calendar */}
+               {/* Date & Calendar */}
               <div className="relative">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -197,7 +245,7 @@ const ModernHeaderComponent = ({
                   className="flex items-center gap-2 px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-all duration-200 border border-blue-200"
                 >
                   <Calendar size={16} />
-                  <span className="text-sm font-medium">
+                  <span className="text-sm font-medium hidden sm:inline">
                     {format(new Date(), 'MMM d, yyyy')}
                   </span>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${calendarOpen ? 'rotate-180' : ''}`} />
@@ -316,11 +364,32 @@ const ModernHeaderComponent = ({
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Notifications */}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={onNotificationClick}
+                className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              >
+                <Bell size={20} />
+                {notificationCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium"
+                  >
+                    {notificationCount}
+                  </motion.span>
+                )}
+              </motion.button>
+
+             
             </div>
 
             {/* Right Section */}
             <div className="flex items-center gap-3">
-              {/* Quick Actions */}
+              {/* Quick Actions - Hidden on mobile */}
               <div className="hidden md:flex items-center gap-2">
                 <motion.button
                   whileHover={{ scale: 1.05, y: -1 }}
@@ -386,6 +455,7 @@ const ModernHeaderComponent = ({
                           onClick={() => {
                             onProfileClick?.();
                             setUserMenuOpen(false);
+                            handleSectionChange("user-profile");
                           }}
                           className="w-full flex items-center gap-3 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                         >
@@ -418,16 +488,6 @@ const ModernHeaderComponent = ({
                   )}
                 </AnimatePresence>
               </div>
-
-              {/* Mobile Menu Button */}
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={toggleMobileMenu}
-                className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
-              >
-                {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </motion.button>
             </div>
           </div>
         </div>

@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { format, differenceInDays } from "date-fns"
-import {   purple, teal } from "@mui/material/colors"
 import {
   AlertCircle,
   ArrowLeft,
@@ -25,77 +24,18 @@ import {
   Search,
   Send,
   Wallet,
+  CheckCircle,
+  Clock,
+  Activity,
+  TrendingUp,
+  Users,
+  Bell,
+  Eye,
+  X,
+  Plus,
+  Building
 } from "lucide-react"
-import FinancialRequestsDashboard  from "./financial-processing"
-// Material-UI imports
-import {
-  Box,
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  CardActions,
-  Divider,
-  TextField,
-  Select,
-  MenuItem,
-  Tabs,
-  Tab,
-  Tooltip,
-  Alert,
-  AlertTitle,
-  Avatar,
-  Badge,
-  Checkbox,
-  Chip,
-  FormControl,
-  FormControlLabel,
-  FormHelperText,
-  InputAdornment,
-  InputLabel,
-  ListItemIcon,
-  ListItemText,
-  Paper,
-  Typography,
-} from "@mui/material"
-import { styled } from "@mui/material/styles"
-import { grey, blue, green, amber, red } from "@mui/material/colors"
-
-// Custom styled components to match the original design
-const StyledCard = styled(Card)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius * 2,
-  boxShadow: theme.shadows[3],
-  border: "none",
-}))
-
-const StyledTabs = styled(Tabs)({
-  "& .MuiTabs-indicator": {
-    display: "none",
-  },
-})
-
-const StyledTab = styled(Tab)(({ theme }) => ({
-  textTransform: "none",
-  borderRadius: theme.shape.borderRadius * 2,
-  "&.Mui-selected": {
-    backgroundColor: theme.palette.background.paper,
-    boxShadow: theme.shadows[1],
-  },
-}))
-
-const StatusBadge = styled(Badge)(({ theme, status }) => ({
-  "& .MuiBadge-badge": {
-    backgroundColor: status === "pending" ? amber[50] : status === "in-progress" ? blue[50] : green[50],
-    color: status === "pending" ? amber[700] : status === "in-progress" ? blue[700] : green[700],
-    border: `1px solid ${status === "pending" ? amber[200] : status === "in-progress" ? blue[200] : green[200]}`,
-    padding: "0 8px",
-  },
-}))
-
-const PriorityBadge = styled(Chip)(({ priority }) => ({
-  backgroundColor: priority === "high" ? red[500] : priority === "medium" ? amber[500] : green[500],
-  color: "white",
-}))
+import { motion } from "framer-motion"
 
 export default function FinanceProcessing() {
   const navigate = useNavigate()
@@ -128,6 +68,7 @@ export default function FinanceProcessing() {
     currency: "",
     additionalAllowance: 0,
     notes: "",
+    categories: {}
   })
 
   const [transferDetails, setTransferDetails] = useState({
@@ -166,7 +107,7 @@ export default function FinanceProcessing() {
     MWK: 1800,
   }
 
-  // Sample per diem rates by country (using location as key)
+  // Sample per diem rates by country
   const samplePerDiemRates = {
     "lilongwe": { currency: "USD", rate: 100 },
     "default": { currency: "MWK", rate: 40000 }
@@ -179,36 +120,34 @@ export default function FinanceProcessing() {
   }, [])
 
   // Transform API data to match component structure
-// Update the transformRequestData function
-const transformRequestData = (data) => {
-  return data.map(request => ({
-    id: request._id,
-    employeeName: request.employee?.name || "Employee",
-    employeeId: request.employee?._id,
-    department: "Not specified",
-    email: request.employee?.email || "No email",
-    purpose: request.purpose,
-    country: request.location || "Not specified",
-    city: request.location || "Not specified",
-    departureDate: new Date(request.departureDate),
-    returnDate: new Date(request.returnDate),
-    status: request.finalApproval === "approved" ? "approved" : "pending",
-    financialStatus: request.financeStatus || "pending", // Use financeStatus from API
-    perDiemAmount: request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000), 
-    currency: request.currency || "USD",
-    cardDetails: {
-      lastFour: "1234",
-      type: "VISA",
-      holder: request.employee?.name || "Employee",
-    },
-    documents: request.documents || [],
-    approvedBy: request.finalApprover || "System",
-    approvedAt: new Date(request.finalApprovalDate || request.updatedAt),
-    priority: "medium",
-    travelType: request.travelType || "local"
-  }))
-}
-
+  const transformRequestData = (data) => {
+    return data.map(request => ({
+      id: request._id,
+      employeeName: request.employee?.name || "Employee",
+      employeeId: request.employee?._id,
+      department: "Not specified",
+      email: request.employee?.email || "No email",
+      purpose: request.purpose,
+      country: request.location || "Not specified",
+      city: request.location || "Not specified",
+      departureDate: new Date(request.departureDate),
+      returnDate: new Date(request.returnDate),
+      status: request.finalApproval === "approved" ? "approved" : "pending",
+      financialStatus: request.financeStatus || "pending",
+      perDiemAmount: request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000), 
+      currency: request.currency || "USD",
+      cardDetails: {
+        lastFour: "1234",
+        type: "VISA",
+        holder: request.employee?.name || "Employee",
+      },
+      documents: request.documents || [],
+      approvedBy: request.finalApprover || "System",
+      approvedAt: new Date(request.finalApprovalDate || request.updatedAt),
+      priority: "medium",
+      travelType: request.travelType || "local"
+    }))
+  }
 
   // Filter travel requests based on search query and status filter
   const filteredRequests = travelRequests.filter((request) => {
@@ -249,6 +188,7 @@ const transformRequestData = (data) => {
         currency: request.currency,
         additionalAllowance: 0,
         notes: "",
+        categories: {}
       })
 
       setTransferDetails({
@@ -307,7 +247,7 @@ const transformRequestData = (data) => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            amount: perDiemDetails.totalAmount, // Use the calculated per diem amount
+            amount: perDiemDetails.totalAmount,
             currency: transferDetails.currency,
             processingFee: transferDetails.processingFee,
             totalAmount: transferDetails.totalAmount,
@@ -323,11 +263,10 @@ const transformRequestData = (data) => {
   
       const data = await response.json();
   
-      // Update the selected request with backend-calculated values
       const updatedRequest = {
         ...selectedRequest,
         financialStatus: "processed",
-        perDiemAmount: data.perDiemAmount, // Use the amount calculated by backend
+        perDiemAmount: data.perDiemAmount,
         paymentDate: new Date(data.paymentDate || new Date()),
       };
   
@@ -338,7 +277,6 @@ const transformRequestData = (data) => {
         )
       );
   
-      // Show notification with backend-calculated amount
       setNotificationDetails({
         recipient: selectedRequest.email,
         subject: `Travel Funds Transfer - ${selectedRequest.id.substring(0, 8)}`,
@@ -367,11 +305,9 @@ const transformRequestData = (data) => {
   const sendNotification = () => {
     setIsSendingNotification(true)
 
-    // Simulate API call
     setTimeout(() => {
       setIsSendingNotification(false)
 
-      // Update the selected request status
       const updatedRequest = {
         ...selectedRequest,
         financialStatus: "completed",
@@ -389,6 +325,7 @@ const transformRequestData = (data) => {
         currency: "",
         additionalAllowance: 0,
         notes: "",
+        categories: {}
       })
 
       setTransferDetails({
@@ -414,16 +351,51 @@ const transformRequestData = (data) => {
     }, 1500)
   }
 
-  // Get status badge color
+  // Get status badge
   const getStatusBadge = (status) => {
-    return (
-      <StatusBadge badgeContent={status === "pending" ? "Pending" : status === "in-progress" ? "In Progress" : "Completed"} status={status} />
-    )
+    switch (status) {
+      case "pending":
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
+            <Clock size={14} className="mr-1" />
+            Pending
+          </span>
+        )
+      case "processed":
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
+            <Activity size={14} className="mr-1" />
+            Processed
+          </span>
+        )
+      case "completed":
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+            <CheckCircle size={14} className="mr-1" />
+            Completed
+          </span>
+        )
+      default:
+        return (
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200">
+            {status}
+          </span>
+        )
+    }
   }
 
   // Get priority badge
   const getPriorityBadge = (priority) => {
-    return <PriorityBadge label={priority === "high" ? "High" : priority === "medium" ? "Medium" : "Low"} priority={priority} size="small" />
+    switch (priority) {
+      case "high":
+        return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">High</span>
+      case "medium":
+        return <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">Medium</span>
+      case "low":
+        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">Low</span>
+      default:
+        return null
+    }
   }
 
   // Format currency
@@ -439,7 +411,6 @@ const transformRequestData = (data) => {
   // Update processing fee when amount changes
   useEffect(() => {
     if (transferDetails.amount > 0) {
-      // Calculate a small processing fee (0.5% of the amount)
       const fee = transferDetails.amount * 0.005
       const total = Number.parseFloat(transferDetails.amount) + fee
 
@@ -449,7 +420,7 @@ const transformRequestData = (data) => {
         totalAmount: total,
       }))
     }
-  }, [transferDetails])
+  }, [transferDetails.amount])
 
   useEffect(() => {
     const fetchApprovedRequests = async () => {
@@ -478,1098 +449,845 @@ const transformRequestData = (data) => {
       }
     };
     fetchApprovedRequests();
-  }, []);
+  }, [backendUrl]);
+
+  // Calculate stats
+  const getTotalRequests = () => filteredRequests.length
+  const getPendingRequests = () => filteredRequests.filter(req => req.financialStatus === "pending").length
+  const getProcessedRequests = () => filteredRequests.filter(req => req.financialStatus === "processed").length
+  const getCompletedRequests = () => filteredRequests.filter(req => req.financialStatus === "completed").length
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="text-center"
+        >
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Financial Processing</h2>
+          <p className="text-gray-600">
+            Please wait while we fetch the latest travel requests...
+          </p>
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
-    <Box sx={{ 
-      display: "flex", 
-      flexDirection: "column", 
-      height: "100vh", // Fixed viewport height
-      overflow: "hidden", // Prevent page scrolling
-      background: "linear-gradient(to bottom, #f9fafb, #f3f4f6)" 
-    }}>
-      <Box sx={{ 
-        display: "flex", 
-        flexDirection: "column",
-        height: "100%" // Take full height
-      }}>
-        <Box component="main" sx={{ 
-          flex: 1, 
-          p: { xs: 2, md: 3 },
-          height: "100%", // Take full height
-          overflow: "hidden" // Prevent main content scrolling
-        }}>
-          {isLoading ? (
-            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
-              <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-              </div>
-            </Box>
-          ) : (
-            <Box sx={{ 
-              display: "grid", 
-              gridTemplateColumns: { lg: "1fr 2fr" }, 
-              gap: 3,
-              height: "100%" // Full height
-            }}>
-              {/* Left Column - Travel Requests - Now with fixed height and scrollable */}
-              <Box sx={{ 
-                display: "flex", 
-                flexDirection: "column", 
-                gap: 2,
-                height: "100%", // Full height
-                overflow: "hidden" // Prevent column scrolling
-              }}>
-                <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    Financial Requests Processing 
-                  </Typography>
-                  <Select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
-                    size="small"
-                    sx={{ minWidth: 120 }}
-                    renderValue={(selected) => (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Filter size={16} />
-                        <span>Filter</span>
-                      </Box>
-                    )}
-                  >
-                    <MenuItem value="all">All Requests</MenuItem>
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
-                  </Select>
-                  </Box>
-
-<TextField
-  placeholder="Search requests..."
-  fullWidth
-  size="small"
-  value={searchQuery}
-  onChange={(e) => setSearchQuery(e.target.value)}
-  InputProps={{
-    startAdornment: (
-      <InputAdornment position="start">
-        <Search size={16} />
-      </InputAdornment>
-    ),
-    sx: { borderRadius: 20 }
-  }}
-/>
-
-<StyledTabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ width: "100%" }}>
-  <StyledTab value="pending" label="Pending" />
-  <StyledTab value="processed" label="Processed" />
-</StyledTabs>
-
-<Box sx={{ 
-                  flex: 1, // Take remaining space
-                  overflow: "auto", // Make scrollable
-                  display: "flex", 
-                  flexDirection: "column", 
-                  gap: 1,
-                  pr: 1, // Add padding for scrollbar
-                  pb: 1, // Bottom padding
-                  mt: 1 // Top margin
-                }}>
-                  {filteredRequests
-                    .filter((req) => activeTab === "all" || req.financialStatus === activeTab)
-                    .length === 0 ? (
-                    <Box sx={{ textAlign: "center", py: 4, color: "text.secondary" }}>
-                      No {activeTab} requests found
-                    </Box>
-                  ) : (
-                    <>
-                      {filteredRequests
-                        .filter((req) => activeTab === "all" || req.financialStatus === activeTab)
-                        .map((request) => (
-                          <StyledCard
-                            key={request.id}
-                            sx={{
-                              cursor: "pointer",
-                              transition: "all 0.2s",
-                              border: selectedRequest?.id === request.id 
-                                ? `1px solid ${blue[300]}` 
-                                : "1px solid transparent",
-                              boxShadow: selectedRequest?.id === request.id ? 3 : 0,
-                              "&:hover": {
-                                borderColor: blue[200]
-                              }
-                            }}
-                            onClick={() => handleSelectRequest(request)}
-                          >
-                            <CardContent sx={{ p: 2 }}>
-                              <Box sx={{ 
-                                display: "flex", 
-                                justifyContent: "space-between", 
-                                alignItems: "flex-start", 
-                                mb: 1 
-                              }}>
-                                <Box>
-                                  <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
-                                    {request.employeeName}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {request.id.substring(0, 8)}
-                                  </Typography>
-                                </Box>
-                                {getPriorityBadge(request.priority)}
-                              </Box>
-                              
-                              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                                <Globe size={16} sx={{ mr: 0.5, color: "text.secondary" }} />
-                                <Typography variant="body2">
-                                  {request.city}, {request.country}
-                                </Typography>
-                              </Box>
-                              
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <Calendar size={16} sx={{ mr: 0.5, color: "text.secondary" }} />
-                                <Typography variant="body2">
-                                  {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
-                                </Typography>
-                              </Box>
-                              
-                              <Box sx={{ 
-                                display: "flex", 
-                                justifyContent: "space-between", 
-                                alignItems: "center", 
-                                mt: 2 
-                              }}>
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Chip
-                                    label={request.currency}
-                                    size="small"
-                                    sx={{ 
-                                      bgcolor: blue[50], 
-                                      color: blue[700], 
-                                      border: `1px solid ${blue[200]}` 
-                                    }}
-                                  />
-                                  {request.financialStatus === "completed" && request.perDiemAmount && (
-                                    <Typography variant="caption" sx={{ color: green[700] }}>
-                                      {formatCurrency(request.perDiemAmount, request.currency)}
-                                    </Typography>
-                                  )}
-                                </Box>
-                                
-                                <Typography variant="caption" color="text.secondary">
-                                  {request.financialStatus === "completed" && request.paymentDate 
-                                    ? `Paid: ${format(request.paymentDate, "MMM d, yyyy")}`
-                                    : `Approved: ${format(request.approvedAt, "MMM d, yyyy")}`}
-                                </Typography>
-                              </Box>
-                            </CardContent>
-                          </StyledCard>
-                        ))}
-
-                      {/* Optional Pagination */}
-                      {filteredRequests.filter((req) => activeTab === "all" || req.financialStatus === activeTab).length > 10 && (
-                        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 1 }}>
-                          <Button size="small" sx={{ minWidth: 30, p: 0.5 }}>
-                            <ArrowLeft size={16} />
-                          </Button>
-                          <Button size="small" variant="outlined" sx={{ mx: 0.5, minWidth: 30, p: 0.5 }}>
-                            1
-                          </Button>
-                          <Button size="small" sx={{ mx: 0.5, minWidth: 30, p: 0.5 }}>
-                            2
-                          </Button>
-                          <Button size="small" sx={{ mx: 0.5, minWidth: 30, p: 0.5 }}>
-                            3
-                          </Button>
-                          <Button size="small" sx={{ minWidth: 30, p: 0.5 }}>
-                            <ArrowRight size={16} />
-                          </Button>
-                        </Box>
-                      )}
-                    </>
-                  )}
-                </Box>
-              </Box>
-
-             {/* Right Column - Request Details and Actions - Now with fixed height and scrollable content */}
-             <Box sx={{ 
-                display: "flex", 
-                flexDirection: "column",
-                height: "100%", // Full height
-                overflow: "auto", // Make scrollable
-                pr: 1, // Right padding for scrollbar
-                pb: 1  // Bottom padding
-              }}>
-                {selectedRequest ? (
-                  <>
-                    {/* Request Details */}
-                    <StyledCard>
-                      <CardHeader
-                        sx={{
-                          bgcolor: blue[50],
-                          borderTopLeftRadius: 8,
-                          borderTopRightRadius: 8,
-                          pb: 2,
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start"
-                        }}
-                        avatar={
-                          <Box sx={{ p: 1, borderRadius: "50%", bgcolor: blue[100] }}>
-                            <FileText size={20} color={blue[600]} />
-                          </Box>
-                        }
-                        title={
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Typography variant="h6">{selectedRequest.employeeName}</Typography>
-                            {getStatusBadge(selectedRequest.financialStatus)}
-                          </Box>
-                        }
-                        subheader={`${selectedRequest.id.substring(0, 8)} • ${selectedRequest.department}`}
-                        action={
-                          <Button variant="text" size="small" sx={{ minWidth: 40, height: 40, borderRadius: "50%", p: 0 }}>
-                            <MoreHorizontal size={20} />
-                          </Button>
-                        }
-                      />
-                      <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-                        <Box sx={{ display: "grid", gridTemplateColumns: { md: "1fr 1fr" }, gap: 3 }}>
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Purpose of Travel
-                              </Typography>
-                              <Typography>{selectedRequest.purpose}</Typography>
-                            </Box>
-
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Destination
-                              </Typography>
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <MapPin size={16} sx={{ mr: 0.5, color: blue[600] }} />
-                                <Typography>
-                                  {selectedRequest.city}, {selectedRequest.country}
-                                </Typography>
-                              </Box>
-                            </Box>
-
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Travel Period
-                              </Typography>
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <Calendar size={16} sx={{ mr: 0.5, color: blue[600] }} />
-                                <Typography>
-                                  {format(selectedRequest.departureDate, "MMM d, yyyy")} -{" "}
-                                  {format(selectedRequest.returnDate, "MMM d, yyyy")}
-                                  <Chip
-                                    label={`${Math.ceil(
-                                      (selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)
-                                    ) + 1} days`}
-                                    size="small"
-                                    sx={{ ml: 1, bgcolor: grey[100] }}
-                                  />
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Box>
-
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Payment Details
-                              </Typography>
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
-                                <Box sx={{ p: 1, borderRadius: "50%", bgcolor: blue[100] }}>
-                                  <CreditCard size={16} color={blue[600]} />
-                                </Box>
-                                <Box>
-                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                    {selectedRequest.cardDetails.type} Card **** {selectedRequest.cardDetails.lastFour}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    Holder: {selectedRequest.cardDetails.holder}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                            </Box>
-
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Currency
-                              </Typography>
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <DollarSign size={16} sx={{ mr: 0.5, color: blue[600] }} />
-                                <Typography>{selectedRequest.currency}</Typography>
-                                {selectedRequest.currency !== "USD" && (
-                                  <Chip
-                                    label={`1 USD = ${exchangeRates[selectedRequest.currency]} ${selectedRequest.currency}`}
-                                    size="small"
-                                    sx={{ ml: 1, bgcolor: grey[100] }}
-                                  />
-                                )}
-                              </Box>
-                            </Box>
-
-                            {selectedRequest.financialStatus === "completed" && selectedRequest.perDiemAmount && (
-                              <Box>
-                                <Typography variant="caption" color="text.secondary">
-                                  Transferred Amount
-                                </Typography>
-                                <Box sx={{ display: "flex", alignItems: "center" }}>
-                                  <Wallet size={16} sx={{ mr: 0.5, color: blue[600] }} />
-                                  <Typography sx={{ fontWeight: 500 }}>
-                                    {formatCurrency(selectedRequest.perDiemAmount, selectedRequest.currency)}
-                                  </Typography>
-                                </Box>
-                                <Typography variant="caption" color="text.secondary">
-                                  {selectedRequest.transferredAt && `Transferred on ${format(selectedRequest.transferredAt, "MMMM d, yyyy")}`}
-                                </Typography>
-                              </Box>
-                            )}
-
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Approval
-                              </Typography>
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <Check size={16} sx={{ mr: 0.5, color: green[600] }} />
-                                <Typography>Approved by {selectedRequest.approvedBy}</Typography>
-                              </Box>
-                              <Typography variant="caption" color="text.secondary">
-                                {format(selectedRequest.approvedAt, "MMMM d, yyyy")}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-
-                        {selectedRequest.financialStatus === "pending" && (
-                          <Alert severity="warning" sx={{ bgcolor: amber[50], borderColor: amber[200], color: amber[800] }}>
-                            <AlertTitle sx={{ color: amber[700] }}>Action Required</AlertTitle>
-                            This request requires per diem calculation and fund transfer to the employee's {selectedRequest.cardDetails.type} card.
-                          </Alert>
-                        )}
-
-                        {selectedRequest.financialStatus === "in-progress" && (
-                          <Alert severity="info" sx={{ bgcolor: blue[50], borderColor: blue[200], color: blue[800] }}>
-                            <AlertTitle sx={{ color: blue[700] }}>In Progress</AlertTitle>
-                            Funds have been processed. Please notify the employee about the transfer.
-                          </Alert>
-                        )}
-
-                        {selectedRequest.financialStatus === "completed" && (
-                          <Alert severity="success" sx={{ bgcolor: green[50], borderColor: green[200], color: green[800] }}>
-                            <AlertTitle sx={{ color: green[700] }}>Completed</AlertTitle>
-                            All financial processing has been completed for this travel request.
-                          </Alert>
-                        )}
-                      </CardContent>
-                      <CardActions sx={{ justifyContent: "space-between", p: 2, bgcolor: grey[50] }}>
-                        {selectedRequest.financialStatus === "pending" && (
-                          <>
-                            <Button
-                              variant="outlined"
-                              onClick={() => navigate("/")}
-                            >
-                              Back to Dashboard
-                            </Button>
-                            <Button
-                              variant="contained"
-                              startIcon={<Calculator size={16} />}
-                              onClick={() => setShowPerDiem(true)}
-                            >
-                              Calculate Per Diem
-                            </Button>
-                          </>
-                        )}
-
-                        {selectedRequest.financialStatus === "in-progress" && (
-                          <>
-                            <Button
-                              variant="outlined"
-                              onClick={() => navigate("/travel-dashboard")}
-                            >
-                              Back to Dashboard
-                            </Button>
-                            <Button
-                              variant="contained"
-                              startIcon={<Send size={16} />}
-                              onClick={() => setShowNotification(true)}
-                            >
-                              Notify Employee
-                            </Button>
-                          </>
-                        )}
-
-                        {selectedRequest.financialStatus === "completed" && (
-                          <>
-                            <Button
-                              variant="outlined"
-                              onClick={() => navigate("/travel-dashboard")}
-                            >
-                              Back to Dashboard
-                            </Button>
-                            <Button
-                              variant="outlined"
-                              sx={{ borderColor: green[200], color: green[700], "&:hover": { bgcolor: green[50] } }}
-                              startIcon={<FileText size={16} />}
-                            >
-                              View Transaction Record
-                            </Button>
-                          </>
-                        )}
-                      </CardActions>
-                    </StyledCard>
-
-                    {/* Per Diem Calculation Section */}
-                     
-                     {/* Per Diem Calculation Section */}
-{showPerDiem && (
-  <StyledCard>
-    <CardHeader
-      sx={{
-        bgcolor: amber[50],
-        borderTopLeftRadius: 8,
-        borderTopRightRadius: 8,
-        pb: 2
-      }}
-      avatar={
-        <Box sx={{ p: 1, borderRadius: "50%", bgcolor: amber[100] }}>
-          <Calculator size={20} color={amber[600]} />
-        </Box>
-      }
-      title="Per Diem Calculation"
-      subheader={`Calculate per diem allowance for ${selectedRequest.employeeName}'s trip to ${selectedRequest.city}`}
-    />
-    <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-      {/* Expense Categories Section */}
-      <Box>
-        <Typography variant="subtitle2" sx={{ mb: 2 }}>
-          Expense Categories
-          <Tooltip title="Select the expense categories that will be covered by this per diem">
-            <HelpCircle size={16} sx={{ ml: 0.5, color: "text.secondary", display: "inline", verticalAlign: "middle" }} />
-          </Tooltip>
-        </Typography>
-        
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 2 }}>
-          {/* Food Category */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={perDiemDetails.categories?.food?.included || false}
-                onChange={(e) => setPerDiemDetails({
-                  ...perDiemDetails,
-                  categories: {
-                    ...perDiemDetails.categories,
-                    food: {
-                      ...perDiemDetails.categories?.food,
-                      included: e.target.checked,
-                      amount: e.target.checked 
-                        ? (perDiemDetails.categories?.food?.amount || Math.round(perDiemDetails.dailyRate * 0.4))
-                        : 0
-                    }
-                  }
-                })}
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box
-                  component="span"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    bgcolor: green[50],
-                    color: green[600],
-                    mr: 1
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 11H20L18 7H15M13 3H7V9H13M11 11H4C4 13.6 5 16 7 16V21H11V16C13 16 14 13.6 14 11M19 3H15.5L12.5 11H19C19 11 22 11 22 8C22 5 19 3 19 3Z" fill="currentColor" />
-                  </svg>
-                </Box>
-                <span>Food & Meals</span>
-              </Box>
-            }
-          />
-
-          {/* Accommodation Category */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={perDiemDetails.categories?.accommodation?.included || false}
-                onChange={(e) => setPerDiemDetails({
-                  ...perDiemDetails,
-                  categories: {
-                    ...perDiemDetails.categories,
-                    accommodation: {
-                      ...perDiemDetails.categories?.accommodation,
-                      included: e.target.checked,
-                      amount: e.target.checked 
-                        ? (perDiemDetails.categories?.accommodation?.amount || Math.round(perDiemDetails.dailyRate * 0.5))
-                        : 0
-                    }
-                  }
-                })}
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box
-                  component="span"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    bgcolor: blue[50],
-                    color: blue[600],
-                    mr: 1
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 7H11V14H3V5H1V20H3V17H21V20H23V11A4 4 0 0 0 19 7M7 13A3 3 0 0 0 7 7 3 3 0 0 0 7 13" fill="currentColor" />
-                  </svg>
-                </Box>
-                <span>Accommodation</span>
-              </Box>
-            }
-          />
-
-          {/* Transportation Category */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={perDiemDetails.categories?.transportation?.included || false}
-                onChange={(e) => setPerDiemDetails({
-                  ...perDiemDetails,
-                  categories: {
-                    ...perDiemDetails.categories,
-                    transportation: {
-                      ...perDiemDetails.categories?.transportation,
-                      included: e.target.checked,
-                      amount: e.target.checked 
-                        ? (perDiemDetails.categories?.transportation?.amount || Math.round(perDiemDetails.dailyRate * 0.2))
-                        : 0
-                    }
-                  }
-                })}
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box
-                  component="span"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    bgcolor: amber[50],
-                    color: amber[600],
-                    mr: 1
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.29 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01M6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16M17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16M5 12L6.5 6.5H17.5L19 12H5Z" fill="currentColor" />
-                  </svg>
-                </Box>
-                <span>Local Transportation</span>
-              </Box>
-            }
-          />
-
-          {/* Incidentals Category */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={perDiemDetails.categories?.incidentals?.included || false}
-                onChange={(e) => setPerDiemDetails({
-                  ...perDiemDetails,
-                  categories: {
-                    ...perDiemDetails.categories,
-                    incidentals: {
-                      ...perDiemDetails.categories?.incidentals,
-                      included: e.target.checked,
-                      amount: e.target.checked 
-                        ? (perDiemDetails.categories?.incidentals?.amount || Math.round(perDiemDetails.dailyRate * 0.1))
-                        : 0
-                    }
-                  }
-                })}
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box
-                  component="span"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    bgcolor: purple[50],
-                    color: purple[600],
-                    mr: 1
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 3H14.82C14.4 1.84 13.3 1 12 1S9.6 1.84 9.18 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M12 3C12.55 3 13 3.45 13 4S12.55 5 12 5 11 4.55 11 4 11.45 3 12 3" fill="currentColor" />
-                  </svg>
-                </Box>
-                <span>Incidentals</span>
-              </Box>
-            }
-          />
-
-          {/* Business Expenses Category */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={perDiemDetails.categories?.business?.included || false}
-                onChange={(e) => setPerDiemDetails({
-                  ...perDiemDetails,
-                  categories: {
-                    ...perDiemDetails.categories,
-                    business: {
-                      ...perDiemDetails.categories?.business,
-                      included: e.target.checked,
-                      amount: e.target.checked 
-                        ? (perDiemDetails.categories?.business?.amount || Math.round(perDiemDetails.dailyRate * 0.15))
-                        : 0
-                    }
-                  }
-                })}
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box
-                  component="span"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    bgcolor: red[50],
-                    color: red[600],
-                    mr: 1
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20,8H4V6H20M20,18H4V12H20M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" fill="currentColor" />
-                  </svg>
-                </Box>
-                <span>Business Expenses</span>
-              </Box>
-            }
-          />
-
-          {/* Communications Category */}
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={perDiemDetails.categories?.communications?.included || false}
-                onChange={(e) => setPerDiemDetails({
-                  ...perDiemDetails,
-                  categories: {
-                    ...perDiemDetails.categories,
-                    communications: {
-                      ...perDiemDetails.categories?.communications,
-                      included: e.target.checked,
-                      amount: e.target.checked 
-                        ? (perDiemDetails.categories?.communications?.amount || Math.round(perDiemDetails.dailyRate * 0.05))
-                        : 0
-                    }
-                  }
-                })}
-              />
-            }
-            label={
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Box
-                  component="span"
-                  sx={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 32,
-                    height: 32,
-                    borderRadius: "50%",
-                    bgcolor: teal[50],
-                    color: teal[600],
-                    mr: 1
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6.62,10.79C8.06,13.62 10.38,15.94 13.21,17.38L15.41,15.18C15.69,14.9 16.08,14.82 16.43,14.93C17.55,15.3 18.75,15.5 20,15.5A1,1 0 0,1 21,16.5V20A1,1 0 0,1 20,21A17,17 0 0,1 3,4A1,1 0 0,1 4,3H7.5A1,1 0 0,1 8.5,4C8.5,5.25 8.7,6.45 9.07,7.57C9.18,7.92 9.1,8.31 8.82,8.59L6.62,10.79Z" fill="currentColor" />
-                  </svg>
-                </Box>
-                <span>Communications</span>
-              </Box>
-            }
-          />
-        </Box>
-      </Box>
-
-      {/* Selected Categories Details */}
-      {Object.entries(perDiemDetails.categories || {})
-        .filter(([_, category]) => category.included)
-        .length > 0 && (
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" sx={{ mb: 2 }}>
-            Expense Breakdown
-          </Typography>
-          <Paper variant="outlined" sx={{ p: 2 }}>
-            {Object.entries(perDiemDetails.categories || {})
-              .filter(([_, category]) => category.included)
-              .map(([key, category]) => (
-                <Box key={key} sx={{ mb: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>
-                    <Typography sx={{ mr: 2, flex: 1, textTransform: "capitalize" }}>
-                      {key}:
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: "50%" }}>
-                    <TextField
-                      type="number"
-                      size="small"
-                      value={category.amount}
-                      onChange={(e) => {
-                        const newAmount = Number(e.target.value) || 0;
-                        setPerDiemDetails({
-                          ...perDiemDetails,
-                          categories: {
-                            ...perDiemDetails.categories,
-                            [key]: {
-                              ...category,
-                              amount: newAmount
-                            }
-                          }
-                        });
-                      }}
-                      InputProps={{
-                        startAdornment: <InputAdornment position="start">{selectedRequest.currency}</InputAdornment>,
-                      }}
-                      sx={{ width: "100%" }}
-                    />
-                    <Tooltip title={`Daily rate for ${key}`}>
-                      <Typography variant="caption" sx={{ minWidth: 60, color: "text.secondary", textAlign: "right" }}>
-                        per day
-                      </Typography>
-                    </Tooltip>
-                  </Box>
-                </Box>
-              ))}
-              
-            <Divider sx={{ my: 2 }} />
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
+      {/* Enhanced Header */}
+      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white">
+                  <DollarSign size={32} />
+                </div>
+                Financial Requests Processing
+              </h1>
+              <p className="text-gray-500 text-lg mt-2">
+                Process per diem calculations and fund transfers for approved travel requests
+              </p>
+            </div>
             
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="subtitle2">Daily Total:</Typography>
-              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                {formatCurrency(
-                  Object.values(perDiemDetails.categories || {})
-                    .filter(category => category.included)
-                    .reduce((sum, category) => sum + (Number(category.amount) || 0), 0),
-                  selectedRequest.currency
-                )}
-              </Typography>
-            </Box>
-          </Paper>
-        </Box>
-      )}
+            <div className="flex items-center space-x-3">
+              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+                <Bell size={20} />
+              </button>
+              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+                <RefreshCw size={20} />
+              </button>
+            </div>
+          </div>
 
-      {/* Main calculation grid */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { md: "1fr 1fr" }, gap: 3 }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Daily Rate
-              <Tooltip title={`Standard daily rate for ${selectedRequest.country} in ${selectedRequest.currency}`}>
-                <HelpCircle size={16} sx={{ ml: 0.5, color: "text.secondary", display: "inline", verticalAlign: "middle" }} />
-              </Tooltip>
-            </Typography>
-            <TextField
-              type="number"
-              value={perDiemDetails.dailyRate}
-              onChange={(e) => {
-                const newRate = Number.parseFloat(e.target.value) || 0;
-                setPerDiemDetails({
-                  ...perDiemDetails,
-                  dailyRate: newRate,
-                  // Update category amounts based on new daily rate if no custom values set
-                  categories: {
-                    ...(perDiemDetails.categories || {}),
-                    food: perDiemDetails.categories?.food?.included ? {
-                      included: true,
-                      amount: perDiemDetails.categories?.food?.userModified 
-                        ? perDiemDetails.categories?.food?.amount 
-                        : Math.round(newRate * 0.4)
-                    } : { included: false, amount: 0 },
-                    accommodation: perDiemDetails.categories?.accommodation?.included ? {
-                      included: true,
-                      amount: perDiemDetails.categories?.accommodation?.userModified 
-                        ? perDiemDetails.categories?.accommodation?.amount 
-                        : Math.round(newRate * 0.5)
-                    } : { included: false, amount: 0 },
-                    transportation: perDiemDetails.categories?.transportation?.included ? {
-                      included: true,
-                      amount: perDiemDetails.categories?.transportation?.userModified 
-                        ? perDiemDetails.categories?.transportation?.amount 
-                        : Math.round(newRate * 0.2)
-                    } : { included: false, amount: 0 },
-                    incidentals: perDiemDetails.categories?.incidentals?.included ? {
-                      included: true,
-                      amount: perDiemDetails.categories?.incidentals?.userModified 
-                        ? perDiemDetails.categories?.incidentals?.amount 
-                        : Math.round(newRate * 0.1)
-                    } : { included: false, amount: 0 },
-                    business: perDiemDetails.categories?.business?.included ? {
-                      included: true,
-                      amount: perDiemDetails.categories?.business?.userModified 
-                        ? perDiemDetails.categories?.business?.amount 
-                        : Math.round(newRate * 0.15)
-                    } : { included: false, amount: 0 },
-                    communications: perDiemDetails.categories?.communications?.included ? {
-                      included: true,
-                      amount: perDiemDetails.categories?.communications?.userModified 
-                        ? perDiemDetails.categories?.communications?.amount 
-                        : Math.round(newRate * 0.05)
-                    } : { included: false, amount: 0 },
-                  }
-                });
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    {selectedRequest.currency}
-                  </InputAdornment>
-                ),
-              }}
-              fullWidth
-            />
-            <Typography variant="caption" color="text.secondary">
-              Standard rate for {selectedRequest.country}
-            </Typography>
-          </Box>
+          {/* Enhanced Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
+                  <FileText size={24} className="text-white" />
+                </div>
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {getTotalRequests()}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Total Requests</p>
+                <p className="text-2xl font-bold text-gray-900">{getTotalRequests()}</p>
+              </div>
+            </motion.div>
 
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Number of Days
-            </Typography>
-            <TextField
-              type="number"
-              value={perDiemDetails.days}
-              onChange={(e) =>
-                setPerDiemDetails({ ...perDiemDetails, days: Number.parseInt(e.target.value) || 0 })
-              }
-              fullWidth
-            />
-            <Typography variant="caption" color="text.secondary">
-              Based on travel dates: {format(selectedRequest.departureDate, "MMM d")} -{" "}
-              {format(selectedRequest.returnDate, "MMM d")}
-            </Typography>
-          </Box>
-        </Box>
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
+                  <Clock size={24} className="text-white" />
+                </div>
+                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {getPendingRequests()}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Pending Processing</p>
+                <p className="text-2xl font-bold text-gray-900">{getPendingRequests()}</p>
+              </div>
+            </motion.div>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Additional Allowance
-              <Tooltip title="Any additional funds required for special circumstances">
-                <HelpCircle size={16} sx={{ ml: 0.5, color: "text.secondary", display: "inline", verticalAlign: "middle" }} />
-              </Tooltip>
-            </Typography>
-            <TextField
-              type="number"
-              placeholder="0.00"
-              value={perDiemDetails.additionalAllowance}
-              onChange={(e) =>
-                setPerDiemDetails({
-                  ...perDiemDetails,
-                  additionalAllowance: Number.parseFloat(e.target.value) || 0,
-                })
-              }
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    {selectedRequest.currency}
-                  </InputAdornment>
-                ),
-              }}
-              fullWidth
-            />
-          </Box>
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
+                  <Activity size={24} className="text-white" />
+                </div>
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {getProcessedRequests()}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Processed</p>
+                <p className="text-2xl font-bold text-gray-900">{getProcessedRequests()}</p>
+              </div>
+            </motion.div>
 
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Notes
-            </Typography>
-            <TextField
-              placeholder="Any notes about this per diem calculation"
-              value={perDiemDetails.notes}
-              onChange={(e) => setPerDiemDetails({ ...perDiemDetails, notes: e.target.value })}
-              multiline
-              rows={4}
-              fullWidth
-            />
-          </Box>
-        </Box>
-      </Box>
+            <motion.div
+              whileHover={{ y: -2, scale: 1.02 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
+                  <CheckCircle size={24} className="text-white" />
+                </div>
+                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                  {getCompletedRequests()}
+                </span>
+              </div>
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Completed</p>
+                <p className="text-2xl font-bold text-gray-900">{getCompletedRequests()}</p>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </div>
 
-      <Divider />
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+        >
+          {/* Left Column - Travel Requests */}
+          <div className="space-y-6">
+            {/* Search and Filter */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Financial Requests</h2>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm font-medium"
+                >
+                  <option value="all">All Requests</option>
+                  <option value="pending">Pending</option>
+                  <option value="processed">Processed</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
 
-      <Box sx={{ p: 2, bgcolor: grey[50], borderRadius: 1 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Calculation Summary
-            </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-              {Object.entries(perDiemDetails.categories || {})
-                .filter(([_, category]) => category.included)
-                .map(([key, category]) => (
-                  <Box key={key} sx={{ display: "flex", justifyContent: "space-between", width: 240 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ textTransform: "capitalize" }}>
-                      {key}:
-                    </Typography>
-                    <Typography variant="body2">
-                      {formatCurrency(category.amount * perDiemDetails.days, selectedRequest.currency)}
-                    </Typography>
-                  </Box>
-                ))}
+              <div className="relative mb-4">
+                <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search requests..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                />
+              </div>
               
-              {Object.entries(perDiemDetails.categories || {}).some(([_, category]) => category.included) && (
-                <Divider sx={{ my: 0.5 }} />
+              {/* Tabs */}
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setActiveTab("pending")}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "pending"
+                      ? "bg-blue-500 text-white shadow-lg"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Pending
+                </button>
+                <button
+                  onClick={() => setActiveTab("processed")}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                    activeTab === "processed"
+                      ? "bg-blue-500 text-white shadow-lg"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Processed
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Requests List */}
+            <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+              {filteredRequests
+                .filter((req) => activeTab === "all" || req.financialStatus === activeTab)
+                .length === 0 ? (
+                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8 shadow-xl text-center">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
+                      <FileText size={32} className="text-gray-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No {activeTab} requests found</h3>
+                      <p className="text-gray-600">All travel requests have been processed</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                filteredRequests
+                  .filter((req) => activeTab === "all" || req.financialStatus === activeTab)
+                  .map((request, index) => (
+                    <motion.div
+                      key={request.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      onClick={() => handleSelectRequest(request)}
+                      className={`bg-white/80 backdrop-blur-sm rounded-2xl border p-6 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] ${
+                        selectedRequest?.id === request.id
+                          ? "border-blue-500 bg-blue-50/50"
+                          : "border-gray-200/50 hover:border-blue-300"
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 text-lg">{request.employeeName}</h3>
+                          <p className="text-gray-600 text-sm">{request.id.substring(0, 8)}</p>
+                        </div>
+                        {getPriorityBadge(request.priority)}
+                      </div>
+                      
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Globe size={16} className="text-gray-400" />
+                          <span className="text-sm">{request.city}, {request.country}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <Calendar size={16} className="text-gray-400" />
+                          <span className="text-sm">
+                            {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium border border-blue-200">
+                            {request.currency}
+                          </span>
+                          {request.financialStatus === "completed" && request.perDiemAmount && (
+                            <span className="text-green-700 text-sm font-medium">
+                              {formatCurrency(request.perDiemAmount, request.currency)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {request.financialStatus === "completed" && request.paymentDate 
+                            ? `Paid: ${format(request.paymentDate, "MMM d, yyyy")}`
+                            : `Approved: ${format(request.approvedAt, "MMM d, yyyy")}`}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))
               )}
-              
-              <Box sx={{ display: "flex", justifyContent: "space-between", width: 240 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Additional Allowance:
-                </Typography>
-                <Typography variant="body2">
-                  {formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
-          <Box sx={{ textAlign: "right" }}>
-            <Typography variant="caption" color="text.secondary">
-              Total Amount
-            </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {formatCurrency(
-                // Calculate daily total from selected categories
-                (Object.values(perDiemDetails.categories || {})
-                  .filter(category => category.included)
-                  .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
-                Number.parseFloat(perDiemDetails.additionalAllowance || 0),
-                selectedRequest.currency,
-              )}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Approx.{" "}
-              {formatCurrency(
-                ((Object.values(perDiemDetails.categories || {})
-                  .filter(category => category.included)
-                  .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
-                  Number.parseFloat(perDiemDetails.additionalAllowance || 0)) /
-                  exchangeRates[selectedRequest.currency],
-                "USD",
-              )}
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-    </CardContent>
-    <CardActions sx={{ justifyContent: "space-between", p: 2, bgcolor: grey[50] }}>
-      <Button
-        variant="outlined"
-        onClick={() => setShowPerDiem(false)}
-      >
-        Cancel
-      </Button>
-      <Button
-        variant="contained"
-        disabled={
-          isCalculating || 
-          perDiemDetails.dailyRate <= 0 || 
-          perDiemDetails.days <= 0 ||
-          !Object.values(perDiemDetails.categories || {}).some(cat => cat.included)
-        }
-        onClick={calculatePerDiem}
-      >
-        {isCalculating ? (
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Loader2 size={16} className="animate-spin" sx={{ mr: 1 }} />
-            Calculating...
-          </Box>
-        ) : (
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Check size={16} sx={{ mr: 1 }} />
-            Confirm Calculation
-          </Box>
-        )}
-      </Button>
-    </CardActions>
-  </StyledCard>
-)}
-                    {/* Fund Transfer Section */}
-                    {showTransfer && (
-                      <StyledCard>
-                        <CardHeader
-                          sx={{
-                            bgcolor: blue[50],
-                            borderTopLeftRadius: 8,
-                            borderTopRightRadius: 8,
-                            pb: 2
-                          }}
-                          avatar={
-                            <Box sx={{ p: 1, borderRadius: "50%", bgcolor: blue[100] }}>
-                              <CreditCard size={20} color={blue[600]} />
-                            </Box>
+            </div>
+          </div>
+
+          {/* Right Column - Request Details and Actions */}
+          <div className="space-y-6">
+            {selectedRequest ? (
+              <>
+                {/* Request Details */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden"
+                >
+                  {/* Header */}
+                  <div className="bg-gradient-to-r from-blue-50/50 to-purple-50/30 border-b border-gray-100/50 p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
+                          <FileText size={24} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-3">
+                            <h2 className="text-xl font-bold text-gray-900">{selectedRequest.employeeName}</h2>
+                            {getStatusBadge(selectedRequest.financialStatus)}
+                          </div>
+                          <p className="text-gray-600 mt-1">{selectedRequest.id.substring(0, 8)} • {selectedRequest.department}</p>
+                        </div>
+                      </div>
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                        <MoreHorizontal size={20} />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm text-gray-500 font-medium mb-2">Purpose of Travel</p>
+                          <p className="text-gray-900">{selectedRequest.purpose}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500 font-medium mb-2">Destination</p>
+                          <div className="flex items-center gap-2">
+                            <MapPin className="text-blue-500" size={18} />
+                            <span className="text-gray-900">{selectedRequest.city}, {selectedRequest.country}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500 font-medium mb-2">Travel Period</p>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="text-blue-500" size={18} />
+                            <span className="text-gray-900">
+                              {format(selectedRequest.departureDate, "MMM d, yyyy")} - {format(selectedRequest.returnDate, "MMM d, yyyy")}
+                            </span>
+                            <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
+                              {Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1} days
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm text-gray-500 font-medium mb-2">Payment Details</p>
+                          <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                            <div className="p-2 bg-blue-100 rounded-full">
+                              <CreditCard className="text-blue-600" size={16} />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {selectedRequest.cardDetails.type} Card **** {selectedRequest.cardDetails.lastFour}
+                              </p>
+                              <p className="text-sm text-gray-600">Holder: {selectedRequest.cardDetails.holder}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-sm text-gray-500 font-medium mb-2">Currency</p>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="text-blue-500" size={18} />
+                            <span className="text-gray-900">{selectedRequest.currency}</span>
+                            {selectedRequest.currency !== "USD" && (
+                              <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
+                                1 USD = {exchangeRates[selectedRequest.currency]} {selectedRequest.currency}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {selectedRequest.financialStatus === "completed" && selectedRequest.perDiemAmount && (
+                          <div>
+                            <p className="text-sm text-gray-500 font-medium mb-2">Transferred Amount</p>
+                            <div className="flex items-center gap-2">
+                              <Wallet className="text-blue-500" size={18} />
+                              <span className="font-medium text-gray-900">
+                                {formatCurrency(selectedRequest.perDiemAmount, selectedRequest.currency)}
+                              </span>
+                            </div>
+                            {selectedRequest.transferredAt && (
+                              <p className="text-sm text-gray-500 mt-1">
+                                Transferred on {format(selectedRequest.transferredAt, "MMMM d, yyyy")}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        <div>
+                          <p className="text-sm text-gray-500 font-medium mb-2">Approval</p>
+                          <div className="flex items-center gap-2">
+                            <Check className="text-green-500" size={18} />
+                            <span className="text-gray-900">Approved by {selectedRequest.approvedBy}</span>
+                          </div>
+                          <p className="text-sm text-gray-500 mt-1">
+                            {format(selectedRequest.approvedAt, "MMMM d, yyyy")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Alerts */}
+                    {selectedRequest.financialStatus === "pending" && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                        <div className="flex items-center gap-3">
+                          <AlertCircle className="text-amber-600" size={20} />
+                          <div>
+                            <h4 className="font-semibold text-amber-800">Action Required</h4>
+                            <p className="text-amber-700 text-sm mt-1">
+                              This request requires per diem calculation and fund transfer to the employee's {selectedRequest.cardDetails.type} card.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedRequest.financialStatus === "processed" && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                        <div className="flex items-center gap-3">
+                          <Info className="text-blue-600" size={20} />
+                          <div>
+                            <h4 className="font-semibold text-blue-800">In Progress</h4>
+                            <p className="text-blue-700 text-sm mt-1">
+                              Funds have been processed. Please notify the employee about the transfer.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {selectedRequest.financialStatus === "completed" && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="text-green-600" size={20} />
+                          <div>
+                            <h4 className="font-semibold text-green-800">Completed</h4>
+                            <p className="text-green-700 text-sm mt-1">
+                              All financial processing has been completed for this travel request.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action Footer */}
+                  <div className="bg-gray-50/50 border-t border-gray-100 p-6 flex justify-between items-center">
+                    {selectedRequest.financialStatus === "pending" && (
+                      <>
+                        <button
+                          onClick={() => navigate("/")}
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          Back to Dashboard
+                        </button>
+                        <button
+                          onClick={() => setShowPerDiem(true)}
+                          className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center gap-2"
+                        >
+                          <Calculator size={16} />
+                          Calculate Per Diem
+                        </button>
+                      </>
+                    )}
+
+                    {selectedRequest.financialStatus === "processed" && (
+                      <>
+                        <button
+                          onClick={() => navigate("/travel-dashboard")}
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          Back to Dashboard
+                        </button>
+                        <button
+                          onClick={() => setShowNotification(true)}
+                          className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center gap-2"
+                        >
+                          <Send size={16} />
+                          Notify Employee
+                        </button>
+                      </>
+                    )}
+
+                    {selectedRequest.financialStatus === "completed" && (
+                      <>
+                        <button
+                          onClick={() => navigate("/travel-dashboard")}
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          Back to Dashboard
+                        </button>
+                        <button className="px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-xl hover:bg-green-200 transition-colors duration-200 flex items-center gap-2">
+                          <FileText size={16} />
+                          View Transaction Record
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* Per Diem Calculation Modal */}
+                {showPerDiem && (
+                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+                    >
+                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                              <Calculator size={24} className="text-amber-500" />
+                              Per Diem Calculation
+                            </h2>
+                            <p className="text-gray-600 mt-1">
+                              Calculate per diem allowance for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setShowPerDiem(false)}
+                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                          >
+                            <X size={24} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="p-6 max-h-[70vh] overflow-y-auto">
+                        {/* Expense Categories Section */}
+                        <div className="mb-8">
+                          <div className="flex items-center gap-2 mb-4">
+                            <h3 className="text-lg font-semibold text-gray-900">Expense Categories</h3>
+                            <button className="text-gray-400 hover:text-gray-600">
+                              <HelpCircle size={16} />
+                            </button>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {/* Food Category */}
+                            <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:border-green-300 cursor-pointer transition-colors duration-200">
+                              <input
+                                type="checkbox"
+                                checked={perDiemDetails.categories?.food?.included || false}
+                                onChange={(e) => setPerDiemDetails({
+                                  ...perDiemDetails,
+                                  categories: {
+                                    ...perDiemDetails.categories,
+                                    food: {
+                                      ...perDiemDetails.categories?.food,
+                                      included: e.target.checked,
+                                      amount: e.target.checked 
+                                        ? (perDiemDetails.categories?.food?.amount || Math.round(perDiemDetails.dailyRate * 0.4))
+                                        : 0
+                                    }
+                                  }
+                                })}
+                                className="rounded border-gray-300 text-green-600 focus:ring-green-500 mt-1"
+                              />
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green-600">
+                                    <path d="M15 11H20L18 7H15M13 3H7V9H13M11 11H4C4 13.6 5 16 7 16V21H11V16C13 16 14 13.6 14 11M19 3H15.5L12.5 11H19C19 11 22 11 22 8C22 5 19 3 19 3Z" fill="currentColor" />
+                                  </svg>
+                                </div>
+                                <span className="font-medium text-gray-900">Food & Meals</span>
+                              </div>
+                            </label>
+
+                            {/* Accommodation Category */}
+                            <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:border-blue-300 cursor-pointer transition-colors duration-200">
+                              <input
+                                type="checkbox"
+                                checked={perDiemDetails.categories?.accommodation?.included || false}
+                                onChange={(e) => setPerDiemDetails({
+                                  ...perDiemDetails,
+                                  categories: {
+                                    ...perDiemDetails.categories,
+                                    accommodation: {
+                                      ...perDiemDetails.categories?.accommodation,
+                                      included: e.target.checked,
+                                      amount: e.target.checked 
+                                        ? (perDiemDetails.categories?.accommodation?.amount || Math.round(perDiemDetails.dailyRate * 0.5))
+                                        : 0
+                                    }
+                                  }
+                                })}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                              />
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
+                                  <Building className="text-blue-600" size={20} />
+                                </div>
+                                <span className="font-medium text-gray-900">Accommodation</span>
+                              </div>
+                            </label>
+
+                            {/* Transportation Category */}
+                            <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:border-amber-300 cursor-pointer transition-colors duration-200">
+                              <input
+                                type="checkbox"
+                                checked={perDiemDetails.categories?.transportation?.included || false}
+                                onChange={(e) => setPerDiemDetails({
+                                  ...perDiemDetails,
+                                  categories: {
+                                    ...perDiemDetails.categories,
+                                    transportation: {
+                                      ...perDiemDetails.categories?.transportation,
+                                      included: e.target.checked,
+                                      amount: e.target.checked 
+                                        ? (perDiemDetails.categories?.transportation?.amount || Math.round(perDiemDetails.dailyRate * 0.2))
+                                        : 0
+                                    }
+                                  }
+                                })}
+                                className="rounded border-gray-300 text-amber-600 focus:ring-amber-500 mt-1"
+                              />
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center">
+                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-amber-600">
+                                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.29 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01M6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16M17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16M5 12L6.5 6.5H17.5L19 12H5Z" fill="currentColor" />
+                                  </svg>
+                                </div>
+                                <span className="font-medium text-gray-900">Transportation</span>
+                              </div>
+                            </label>
+
+                            {/* Additional categories can be added here */}
+                          </div>
+                        </div>
+
+                        {/* Calculation Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate</label>
+                              <div className="relative">
+                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                  {selectedRequest.currency}
+                                </span>
+                                <input
+                                  type="number"
+                                  value={perDiemDetails.dailyRate}
+                                  onChange={(e) => {
+                                    const newRate = Number.parseFloat(e.target.value) || 0;
+                                    setPerDiemDetails({
+                                      ...perDiemDetails,
+                                      dailyRate: newRate,
+                                    });
+                                  }}
+                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                />
+                              </div>
+                              <p className="text-sm text-gray-500 mt-1">Standard rate for {selectedRequest.country}</p>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Number of Days</label>
+                              <input
+                                type="number"
+                                value={perDiemDetails.days}
+                                onChange={(e) =>
+                                  setPerDiemDetails({ ...perDiemDetails, days: Number.parseInt(e.target.value) || 0 })
+                                }
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                              />
+                              <p className="text-sm text-gray-500 mt-1">
+                                Based on travel dates: {format(selectedRequest.departureDate, "MMM d")} - {format(selectedRequest.returnDate, "MMM d")}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Allowance</label>
+                              <div className="relative">
+                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                  {selectedRequest.currency}
+                                </span>
+                                <input
+                                  type="number"
+                                  placeholder="0.00"
+                                  value={perDiemDetails.additionalAllowance}
+                                  onChange={(e) =>
+                                    setPerDiemDetails({
+                                      ...perDiemDetails,
+                                      additionalAllowance: Number.parseFloat(e.target.value) || 0,
+                                    })
+                                  }
+                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                              <textarea
+                                placeholder="Any notes about this per diem calculation"
+                                value={perDiemDetails.notes}
+                                onChange={(e) => setPerDiemDetails({ ...perDiemDetails, notes: e.target.value })}
+                                rows={4}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Calculation Summary */}
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-semibold text-gray-900 mb-2">Calculation Summary</h4>
+                              <div className="space-y-1">
+                                {Object.entries(perDiemDetails.categories || {})
+                                  .filter(([_, category]) => category.included)
+                                  .map(([key, category]) => (
+                                    <div key={key} className="flex justify-between text-sm">
+                                      <span className="text-gray-600 capitalize">{key}:</span>
+                                      <span className="font-medium">
+                                        {formatCurrency(category.amount * perDiemDetails.days, selectedRequest.currency)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                
+                                {Object.entries(perDiemDetails.categories || {}).some(([_, category]) => category.included) && (
+                                  <hr className="my-2" />
+                                )}
+                                
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-gray-600">Additional Allowance:</span>
+                                  <span className="font-medium">
+                                    {formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                              <p className="text-3xl font-bold text-gray-900">
+                                {formatCurrency(
+                                  (Object.values(perDiemDetails.categories || {})
+                                    .filter(category => category.included)
+                                    .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
+                                  Number.parseFloat(perDiemDetails.additionalAllowance || 0),
+                                  selectedRequest.currency,
+                                )}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Approx. {formatCurrency(
+                                  ((Object.values(perDiemDetails.categories || {})
+                                    .filter(category => category.included)
+                                    .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
+                                    Number.parseFloat(perDiemDetails.additionalAllowance || 0)) /
+                                    exchangeRates[selectedRequest.currency],
+                                  "USD",
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+                        <button
+                          onClick={() => setShowPerDiem(false)}
+                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={calculatePerDiem}
+                          disabled={
+                            isCalculating || 
+                            perDiemDetails.dailyRate <= 0 || 
+                            perDiemDetails.days <= 0 ||
+                            !Object.values(perDiemDetails.categories || {}).some(cat => cat.included)
                           }
-                          title="Fund Transfer"
-                          subheader={`Transfer per diem funds to ${selectedRequest.employeeName}'s ${selectedRequest.cardDetails.type} card`}
-                        />
-                        <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-                          <Box sx={{ display: "grid", gridTemplateColumns: { md: "1fr 1fr" }, gap: 3 }}>
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                  Card Details
-                                </Typography>
-                                <Box sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: grey[50], display: "flex", alignItems: "center", gap: 1 }}>
-                                  <Box sx={{ p: 1, borderRadius: "50%", bgcolor: blue[100] }}>
-                                    <CreditCard size={20} color={blue[600]} />
-                                  </Box>
-                                  <Box>
-                                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                      {transferDetails.cardNumber}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      Holder: {transferDetails.accountHolder}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </Box>
+                          className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {isCalculating ? (
+                            <>
+                              <Loader2 size={16} className="animate-spin" />
+                              Calculating...
+                            </>
+                          ) : (
+                            <>
+                              <Check size={16} />
+                              Confirm Calculation
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
 
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                  Transfer Amount
-                                </Typography>
-                                <TextField
+                {/* Fund Transfer Modal */}
+                {showTransfer && (
+                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+                    >
+                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                              <CreditCard size={24} className="text-blue-500" />
+                              Fund Transfer
+                            </h2>
+                            <p className="text-gray-600 mt-1">
+                              Transfer per diem funds to {selectedRequest?.employeeName}'s {selectedRequest?.cardDetails.type} card
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setShowTransfer(false)}
+                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                          >
+                            <X size={24} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Card Details</label>
+                              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 flex items-center gap-3">
+                                <div className="p-2 bg-blue-100 rounded-full">
+                                  <CreditCard className="text-blue-600" size={20} />
+                                </div>
+                                <div>
+                                  <p className="font-medium text-gray-900">{transferDetails.cardNumber}</p>
+                                  <p className="text-sm text-gray-600">Holder: {transferDetails.accountHolder}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Amount</label>
+                              <div className="relative">
+                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                  {selectedRequest.currency}
+                                </span>
+                                <input
                                   type="number"
                                   value={transferDetails.amount}
                                   onChange={(e) =>
@@ -1578,373 +1296,365 @@ const transformRequestData = (data) => {
                                       amount: Number.parseFloat(e.target.value) || 0,
                                     })
                                   }
-                                  InputProps={{
-                                    startAdornment: (
-                                      <InputAdornment position="start">
-                                        {selectedRequest.currency}
-                                      </InputAdornment>
-                                    ),
-                                  }}
-                                  fullWidth
+                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 />
-                                <Typography variant="caption" color="text.secondary">
-                                  Amount calculated from per diem
-                                </Typography>
-                              </Box>
+                              </div>
+                              <p className="text-sm text-gray-500 mt-1">Amount calculated from per diem</p>
+                            </div>
 
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                  Transfer Date
-                                </Typography>
-                                <TextField
-                                  type="date"
-                                  value={transferDetails.transferDate}
-                                  onChange={(e) =>
-                                    setTransferDetails({ ...transferDetails, transferDate: e.target.value })
-                                  }
-                                  fullWidth
-                                />
-                              </Box>
-                            </Box>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Date</label>
+                              <input
+                                type="date"
+                                value={transferDetails.transferDate}
+                                onChange={(e) =>
+                                  setTransferDetails({ ...transferDetails, transferDate: e.target.value })
+                                }
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              />
+                            </div>
+                          </div>
 
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                  Currency
-                                </Typography>
-                                <TextField
-                                  value={transferDetails.currency}
-                                  onChange={(e) =>
-                                    setTransferDetails({ ...transferDetails, currency: e.target.value })
-                                  }
-                                  fullWidth
-                                  select
-                                >
-                                  <MenuItem value={selectedRequest.currency}>{selectedRequest.currency}</MenuItem>
-                                </TextField>
-                                <Typography variant="caption" color="text.secondary">
-                                  Exchange rate: 1 USD = {exchangeRates[selectedRequest.currency]} {selectedRequest.currency}
-                                </Typography>
-                              </Box>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                              <select
+                                value={transferDetails.currency}
+                                onChange={(e) =>
+                                  setTransferDetails({ ...transferDetails, currency: e.target.value })
+                                }
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              >
+                                <option value={selectedRequest.currency}>{selectedRequest.currency}</option>
+                              </select>
+                              <p className="text-sm text-gray-500 mt-1">
+                                Exchange rate: 1 USD = {exchangeRates[selectedRequest.currency]} {selectedRequest.currency}
+                              </p>
+                            </div>
 
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                  Processing Fee
-                                  <Tooltip title="Standard processing fee for international transfers (0.5%)">
-                                    <HelpCircle size={16} sx={{ ml: 0.5, color: "text.secondary", display: "inline", verticalAlign: "middle" }} />
-                                  </Tooltip>
-                                </Typography>
-                                <TextField
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Processing Fee</label>
+                              <div className="relative">
+                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                  {selectedRequest.currency}
+                                </span>
+                                <input
+                                  type="text"
                                   value={transferDetails.processingFee.toFixed(2)}
-                                  InputProps={{
-                                    startAdornment: (
-                                      <InputAdornment position="start">
-                                        {selectedRequest.currency}
-                                      </InputAdornment>
-                                    ),
-                                    readOnly: true,
-                                  }}
-                                  fullWidth
+                                  readOnly
+                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
                                 />
-                                <Typography variant="caption" color="text.secondary">
-                                  Automatically calculated (0.5% of transfer amount)
-                                </Typography>
-                              </Box>
+                              </div>
+                              <p className="text-sm text-gray-500 mt-1">
+                                Automatically calculated (0.5% of transfer amount)
+                              </p>
+                            </div>
 
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                  Transfer Notes
-                                </Typography>
-                                <TextField
-                                  placeholder="Any notes about this transfer"
-                                  value={transferDetails.notes}
-                                  onChange={(e) => setTransferDetails({ ...transferDetails, notes: e.target.value })}
-                                  multiline
-                                  rows={4}
-                                  fullWidth
-                                />
-                              </Box>
-                            </Box>
-                          </Box>
-
-                          <Divider />
-
-                          <Box sx={{ p: 2, bgcolor: blue[50], borderRadius: 1, border: "1px solid", borderColor: blue[200] }}>
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                              <Box>
-                                <Typography variant="subtitle2" sx={{ color: blue[800], mb: 1 }}>
-                                  Transfer Summary
-                                </Typography>
-                                <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                                  <Box sx={{ display: "flex", justifyContent: "space-between", width: 240 }}>
-                                    <Typography variant="body2" color={blue[700]}>
-                                      Transfer Amount:
-                                    </Typography>
-                                    <Typography variant="body2" color={blue[700]}>
-                                      {formatCurrency(transferDetails.amount, selectedRequest.currency)}
-                                    </Typography>
-                                  </Box>
-                                  <Box sx={{ display: "flex", justifyContent: "space-between", width: 240 }}>
-                                    <Typography variant="body2" color={blue[700]}>
-                                      Processing Fee:
-                                    </Typography>
-                                    <Typography variant="body2" color={blue[700]}>
-                                      {formatCurrency(transferDetails.processingFee, selectedRequest.currency)}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              </Box>
-                              <Box sx={{ textAlign: "right" }}>
-                                <Typography variant="caption" color={blue[700]}>
-                                  Total to Transfer
-                                </Typography>
-                                <Typography variant="h5" sx={{ fontWeight: 700, color: blue[800] }}>
-                                  {formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}
-                                </Typography>
-                                <Typography variant="caption" color={blue[600]}>
-                                  Approx.{" "}
-                                  {formatCurrency(
-                                    transferDetails.totalAmount / exchangeRates[selectedRequest.currency],
-                                    "USD",
-                                  )}
-                                </Typography>
-                              </Box>
-                            </Box>
-                          </Box>
-
-                          <Alert severity="warning" sx={{ bgcolor: amber[50], borderColor: amber[200], color: amber[800] }}>
-                            <AlertTitle sx={{ color: amber[700] }}>Important</AlertTitle>
-                            By proceeding, you confirm that the transfer details are correct and funds will be sent to
-                            the employee's {selectedRequest.cardDetails.type} card. This action cannot be undone.
-                          </Alert>
-                        </CardContent>
-                        <CardActions sx={{ justifyContent: "space-between", p: 2, bgcolor: grey[50] }}>
-                          <Button
-                            variant="outlined"
-                            onClick={() => setShowTransfer(false)}
-                          >
-                            Back
-                          </Button>
-                          <Button
-                            variant="contained"
-                            sx={{ bgcolor: blue[600], "&:hover": { bgcolor: blue[700] } }}
-                            onClick={processTransfer}
-                            disabled={isTransferring || transferDetails.amount <= 0}
-                          >
-                            {isTransferring ? (
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <Loader2 size={16} className="animate-spin" sx={{ mr: 1 }} />
-                                Processing Transfer...
-                              </Box>
-                            ) : (
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <ArrowRight size={16} sx={{ mr: 1 }} />
-                                Process Transfer
-                              </Box>
-                            )}
-                          </Button>
-                        </CardActions>
-                      </StyledCard>
-                    )}
-
-                    {/* Notification Section */}
-                    {showNotification && (
-                      <StyledCard>
-                        <CardHeader
-                          sx={{
-                            bgcolor: green[50],
-                            borderTopLeftRadius: 8,
-                            borderTopRightRadius: 8,
-                            pb: 2
-                          }}
-                          avatar={
-                            <Box sx={{ p: 1, borderRadius: "50%", bgcolor: green[100] }}>
-                              <Send size={20} color={green[600]} />
-                            </Box>
-                          }
-                          title="Notify Employee"
-                          subheader={`Send notification to ${selectedRequest.employeeName} about the fund transfer`}
-                        />
-                        <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}>
-                          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                            <Box>
-                              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                Recipient
-                              </Typography>
-                              <TextField
-                                value={notificationDetails.recipient}
-                                onChange={(e) =>
-                                  setNotificationDetails({ ...notificationDetails, recipient: e.target.value })
-                                }
-                                fullWidth
-                                InputProps={{
-                                  readOnly: true,
-                                }}
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Notes</label>
+                              <textarea
+                                placeholder="Any notes about this transfer"
+                                value={transferDetails.notes}
+                                onChange={(e) => setTransferDetails({ ...transferDetails, notes: e.target.value })}
+                                rows={4}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                               />
-                              <Typography variant="caption" color="text.secondary">
-                                Employee's email address
-                              </Typography>
-                            </Box>
+                            </div>
+                          </div>
+                        </div>
 
-                            <Box>
-                              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                Subject
-                              </Typography>
-                              <TextField
-                                placeholder="Notification subject"
-                                value={notificationDetails.subject}
-                                onChange={(e) =>
-                                  setNotificationDetails({ ...notificationDetails, subject: e.target.value })
-                                }
-                                fullWidth
-                              />
-                            </Box>
+                        {/* Transfer Summary */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="font-semibold text-blue-800 mb-2">Transfer Summary</h4>
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-blue-700">Transfer Amount:</span>
+                                  <span className="font-medium text-blue-700">
+                                    {formatCurrency(transferDetails.amount, selectedRequest.currency)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-blue-700">Processing Fee:</span>
+                                  <span className="font-medium text-blue-700">
+                                    {formatCurrency(transferDetails.processingFee, selectedRequest.currency)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-blue-700 mb-1">Total to Transfer</p>
+                              <p className="text-3xl font-bold text-blue-800">
+                                {formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}
+                              </p>
+                              <p className="text-sm text-blue-600">
+                                Approx. {formatCurrency(
+                                  transferDetails.totalAmount / exchangeRates[selectedRequest.currency],
+                                  "USD",
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
 
-                            <Box>
-                              <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                Message
-                              </Typography>
-                              <TextField
-                                placeholder="Enter notification message"
-                                value={notificationDetails.message}
-                                onChange={(e) =>
-                                  setNotificationDetails({ ...notificationDetails, message: e.target.value })
-                                }
-                                multiline
-                                rows={6}
-                                fullWidth
-                              />
-                            </Box>
+                        {/* Warning Alert */}
+                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                          <div className="flex items-center gap-3">
+                            <AlertCircle className="text-amber-600" size={20} />
+                            <div>
+                              <h4 className="font-semibold text-amber-800">Important</h4>
+                              <p className="text-amber-700 text-sm mt-1">
+                                By proceeding, you confirm that the transfer details are correct and funds will be sent to
+                                the employee's {selectedRequest.cardDetails.type} card. This action cannot be undone.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-                            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                              <FormControlLabel
-                                control={
-                                  <Checkbox
-                                    checked={notificationDetails.includeBreakdown}
-                                    onChange={(e) =>
-                                      setNotificationDetails({ ...notificationDetails, includeBreakdown: e.target.checked })
-                                    }
-                                  />
-                                }
-                                label="Include per diem breakdown in notification"
-                              />
-                              <FormControlLabel
-                                control={
-                                  <Checkbox
-                                    checked={notificationDetails.sendCopy}
-                                    onChange={(e) =>
-                                      setNotificationDetails({ ...notificationDetails, sendCopy: e.target.checked })
-                                    }
-                                  />
-                                }
-                                label="Send copy to finance department"
-                              />
-                            </Box>
-                          </Box>
-
-                          <Divider />
-
-                          <Box sx={{ p: 2, bgcolor: grey[50], borderRadius: 1 }}>
-                            <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                              Preview
-                            </Typography>
-                            <Box sx={{ p: 2, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "background.paper" }}>
-                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                                To: {notificationDetails.recipient}
-                              </Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                                Subject: {notificationDetails.subject}
-                              </Typography>
-                              <Divider sx={{ my: 1 }} />
-                              <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
-                                {notificationDetails.message}
-                              </Typography>
-
-                              {notificationDetails.includeBreakdown && (
-                                <>
-                                  <Divider sx={{ my: 2 }} />
-                                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 1 }}>
-                                    Per Diem Breakdown:
-                                  </Typography>
-                                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                      <Typography variant="body2">Daily Rate:</Typography>
-                                      <Typography variant="body2">
-                                        {formatCurrency(perDiemDetails.dailyRate, selectedRequest.currency)}
-                                      </Typography>
-                                    </Box>
-                                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                      <Typography variant="body2">Number of Days:</Typography>
-                                      <Typography variant="body2">{perDiemDetails.days}</Typography>
-                                    </Box>
-                                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                      <Typography variant="body2">Additional Allowance:</Typography>
-                                      <Typography variant="body2">
-                                        {formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}
-                                      </Typography>
-                                    </Box>
-                                    <Divider sx={{ my: 0.5 }} />
-                                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        Total Amount:
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                        {formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}
-                                      </Typography>
-                                    </Box>
-                                  </Box>
-                                </>
-                              )}
-                            </Box>
-                          </Box>
-                        </CardContent>
-                        <CardActions sx={{ justifyContent: "space-between", p: 2, bgcolor: grey[50] }}>
-                          <Button
-                            variant="outlined"
-                            onClick={() => setShowNotification(false)}
-                          >
-                            Back
-                          </Button>
-                          <Button
-                            variant="contained"
-                            sx={{ bgcolor: green[600], "&:hover": { bgcolor: green[700] } }}
-                            onClick={sendNotification}
-                            disabled={
-                              isSendingNotification || !notificationDetails.subject || !notificationDetails.message
-                            }
-                          >
-                            {isSendingNotification ? (
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <Loader2 size={16} className="animate-spin" sx={{ mr: 1 }} />
-                                Sending...
-                              </Box>
-                            ) : (
-                              <Box sx={{ display: "flex", alignItems: "center" }}>
-                                <Send size={16} sx={{ mr: 1 }} />
-                                Send Notification
-                              </Box>
-                            )}
-                          </Button>
-                        </CardActions>
-                      </StyledCard>
-                    )}
-                  </>
-                ) : (
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: 256, textAlign: "center" }}>
-                    <FileText size={48} sx={{ color: "text.secondary", mb: 2 }} />
-                    <Typography variant="h6" sx={{ fontWeight: 500 }}>
-                      No Request Selected
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Select a travel request from the list to view details
-                    </Typography>
-                  </Box>
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+                        <button
+                          onClick={() => setShowTransfer(false)}
+                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={processTransfer}
+                          disabled={isTransferring || transferDetails.amount <= 0}
+                          className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {isTransferring ? (
+                            <>
+                              <Loader2 size={16} className="animate-spin" />
+                              Processing Transfer...
+                            </>
+                          ) : (
+                            <>
+                              <ArrowRight size={16} />
+                              Process Transfer
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
                 )}
-              </Box>
-            </Box>
-          )}
-        </Box>
-      </Box>
-    </Box>
+
+                {/* Notification Modal */}
+                {showNotification && (
+                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+                    >
+                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                              <Send size={24} className="text-green-500" />
+                              Notify Employee
+                            </h2>
+                            <p className="text-gray-600 mt-1">
+                              Send notification to {selectedRequest?.employeeName} about the fund transfer
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setShowNotification(false)}
+                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                          >
+                            <X size={24} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="p-6 space-y-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Recipient</label>
+                          <input
+                            type="email"
+                            value={notificationDetails.recipient}
+                            onChange={(e) =>
+                              setNotificationDetails({ ...notificationDetails, recipient: e.target.value })
+                            }
+                            readOnly
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
+                          />
+                          <p className="text-sm text-gray-500 mt-1">Employee's email address</p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+                          <input
+                            type="text"
+                            placeholder="Notification subject"
+                            value={notificationDetails.subject}
+                            onChange={(e) =>
+                              setNotificationDetails({ ...notificationDetails, subject: e.target.value })
+                            }
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                          <textarea
+                            placeholder="Enter notification message"
+                            value={notificationDetails.message}
+                            onChange={(e) =>
+                              setNotificationDetails({ ...notificationDetails, message: e.target.value })
+                            }
+                            rows={6}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={notificationDetails.includeBreakdown}
+                              onChange={(e) =>
+                                setNotificationDetails({ ...notificationDetails, includeBreakdown: e.target.checked })
+                              }
+                              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                            />
+                            <span className="text-gray-700">Include per diem breakdown in notification</span>
+                          </label>
+                          <label className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={notificationDetails.sendCopy}
+                              onChange={(e) =>
+                                setNotificationDetails({ ...notificationDetails, sendCopy: e.target.checked })
+                              }
+                              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                            />
+                            <span className="text-gray-700">Send copy to finance department</span>
+                          </label>
+                        </div>
+
+                        {/* Preview */}
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                          <h4 className="font-semibold text-gray-900 mb-4">Preview</h4>
+                          <div className="bg-white border border-gray-200 rounded-lg p-4">
+                            <p className="font-medium text-gray-900 mb-1">To: {notificationDetails.recipient}</p>
+                            <p className="font-medium text-gray-900 mb-1">Subject: {notificationDetails.subject}</p>
+                            <hr className="my-3" />
+                            <p className="text-gray-700 whitespace-pre-line mb-4">{notificationDetails.message}</p>
+
+                            {notificationDetails.includeBreakdown && (
+                              <>
+                                <hr className="my-3" />
+                                <h5 className="font-medium text-gray-900 mb-2">Per Diem Breakdown:</h5>
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-sm">
+                                    <span>Daily Rate:</span>
+                                    <span>{formatCurrency(perDiemDetails.dailyRate, selectedRequest.currency)}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span>Number of Days:</span>
+                                    <span>{perDiemDetails.days}</span>
+                                  </div>
+                                  <div className="flex justify-between text-sm">
+                                    <span>Additional Allowance:</span>
+                                    <span>{formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}</span>
+                                  </div>
+                                  <hr className="my-2" />
+                                  <div className="flex justify-between text-sm font-medium">
+                                    <span>Total Amount:</span>
+                                    <span>{formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}</span>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+                        <button
+                          onClick={() => setShowNotification(false)}
+                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={sendNotification}
+                          disabled={
+                            isSendingNotification || !notificationDetails.subject || !notificationDetails.message
+                          }
+                          className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {isSendingNotification ? (
+                            <>
+                              <Loader2 size={16} className="animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <Send size={16} />
+                              Send Notification
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-12 text-center">
+                <div className="flex flex-col items-center space-y-6">
+                  <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
+                    <FileText size={40} className="text-gray-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Request Selected</h3>
+                    <p className="text-gray-600 max-w-md mx-auto">
+                      Select a travel request from the list to view details and process financial requirements
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Snackbar Notification */}
+      {snackbarOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className="fixed bottom-6 right-6 z-50"
+        >
+          <div className={`px-6 py-4 rounded-xl shadow-2xl border max-w-md ${
+            snackbarSeverity === "success"
+              ? "bg-green-50 border-green-200 text-green-800"
+              : snackbarSeverity === "error"
+              ? "bg-red-50 border-red-200 text-red-800"
+              : "bg-blue-50 border-blue-200 text-blue-800"
+          }`}>
+            <div className="flex items-center gap-3">
+              {snackbarSeverity === "success" && <CheckCircle size={20} className="text-green-600" />}
+              {snackbarSeverity === "error" && <AlertCircle size={20} className="text-red-600" />}
+              {snackbarSeverity === "info" && <Info size={20} className="text-blue-600" />}
+              <span className="font-medium">{snackbarMessage}</span>
+              <button
+                onClick={() => setSnackbarOpen(false)}
+                className="ml-2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
   )
 }

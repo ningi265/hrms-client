@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../authcontext/authcontext";
+import { userAPI } from '../User/api/userService';
 
 export default function UserProfilePage() {
   const { user, logout } = useAuth();
@@ -92,7 +93,7 @@ export default function UserProfilePage() {
       lastFour: "4242",
       expiryMonth: "12",
       expiryYear: "2025",
-      cardHolder: "John Doe",
+      cardHolder: "John Banda",
       isDefault: true,
       nickname: "Business Card"
     },
@@ -102,7 +103,7 @@ export default function UserProfilePage() {
       lastFour: "8888",
       expiryMonth: "06",
       expiryYear: "2026",
-      cardHolder: "John Doe",
+      cardHolder: "John Banda",
       isDefault: false,
       nickname: "Personal Card"
     }
@@ -116,16 +117,26 @@ export default function UserProfilePage() {
   const [showAddCard, setShowAddCard] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [notification, setNotification] = useState({ show: false, message: "", type: "success" });
+  const [avatarError, setAvatarError] = useState(false);
   const [newCard, setNewCard] = useState({
     cardNumber: "",
     expiryDate: "",
     cvv: "",
     cardHolder: "",
-    nickname: ""
+    nickname: "",
   });
+  const [showAddCardModal, setShowAddCardModal] = useState(false);
+const [newPaymentMethod, setNewPaymentMethod] = useState({
+  cardNumber: "",
+  expiryDate: "",
+  cvv: "",
+  cardHolder: "",
+  nickname: "",
+  isDefault: false
+});
 
   // Stats (mock data - replace with real API calls)
-  const [userStats] = useState({
+  const [userStats, setUserStats] = useState({
     totalTransactions: 247,
     totalSpent: 125420,
     averageTransactionValue: 508,
@@ -135,69 +146,288 @@ export default function UserProfilePage() {
     currentStreak: 45,
     achievementPoints: 2840
   });
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000/api";
+  
 
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
     setTimeout(() => setNotification({ show: false, message: "", type: "success" }), 5000);
   };
 
+  const handlePaymentMethodInputChange = (e) => {
+  const { name, value } = e.target;
+  setNewPaymentMethod(prev => ({ ...prev, [name]: value }));
+};
+
+const handleExpiryDateChange = (e) => {
+  const { value } = e.target;
+  const formattedValue = value
+    .replace(/\D/g, '')
+    .replace(/^(\d{2})/, '$1/')
+    .substring(0, 5);
+  setNewPaymentMethod(prev => ({ ...prev, expiryDate: formattedValue }));
+};
+
+const handleCardNumberChange = (e) => {
+  const { value } = e.target;
+  const formattedValue = value
+    .replace(/\D/g, '')
+    .replace(/(\d{4})/g, '$1 ')
+    .trim()
+    .substring(0, 19);
+  setNewPaymentMethod(prev => ({ ...prev, cardNumber: formattedValue }));
+};
+
   const handleProfileSave = async () => {
-    setIsSaving(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+  setIsSaving(true);
+  try {
+    const response = await userAPI.updateProfile(profileData);
+    
+    if (response.success) {
       showNotification("Profile updated successfully!");
       setIsEditing(false);
-    } catch (error) {
-      showNotification("Failed to update profile", "error");
-    } finally {
-      setIsSaving(false);
+      
+      // Update the profileData state with the returned user data
+      setProfileData(prev => ({
+        ...prev,
+        ...response.user
+      }));
     }
-  };
+  } catch (error) {
+    console.error('Profile update error:', error);
+    showNotification(error.message || "Failed to update profile", "error");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
 
   const handlePasswordChange = async () => {
-    if (securityData.newPassword !== securityData.confirmPassword) {
-      showNotification("Passwords don't match", "error");
-      return;
-    }
-    setIsSaving(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+  if (securityData.newPassword !== securityData.confirmPassword) {
+    showNotification("Passwords don't match", "error");
+    return;
+  }
+  
+  if (securityData.newPassword.length < 8) {
+    showNotification("Password must be at least 8 characters long", "error");
+    return;
+  }
+  
+  setIsSaving(true);
+  try {
+    const response = await userAPI.changePassword({
+      currentPassword: securityData.currentPassword,
+      newPassword: securityData.newPassword
+    });
+    
+    if (response.success) {
       showNotification("Password changed successfully!");
       setShowPasswordForm(false);
-      setSecurityData(prev => ({ ...prev, currentPassword: "", newPassword: "", confirmPassword: "" }));
-    } catch (error) {
-      showNotification("Failed to change password", "error");
-    } finally {
-      setIsSaving(false);
+      setSecurityData(prev => ({ 
+        ...prev, 
+        currentPassword: "", 
+        newPassword: "", 
+        confirmPassword: "" 
+      }));
     }
-  };
+  } catch (error) {
+    console.error('Password change error:', error);
+    showNotification(error.message || "Failed to change password", "error");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+const handleSecuritySettingsUpdate = async (setting, value) => {
+  try {
+    const updateData = { [setting]: value };
+    const response = await userAPI.updateSecuritySettings(updateData);
+    
+    if (response.success) {
+      setSecurityData(prev => ({ ...prev, [setting]: value }));
+      showNotification("Settings updated successfully!");
+    }
+  } catch (error) {
+    console.error('Security settings update error:', error);
+    showNotification(error.message || "Failed to update settings", "error");
+  }
+};
+
+const loadUserProfile = async () => {
+  console.log('loadUserProfile called');
+  try {
+    const response = await userAPI.getProfile();
+    console.log('Profile API response:', response);
+    
+    if (response.success) {
+      const userData = response.user;
+      console.log('User data from API:', userData);
+      
+      const newProfileData = {
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
+        email: userData.email || "",
+        phone: userData.phone || userData.phoneNumber || "", 
+        address: userData.address || "",
+        city: userData.city || "",
+        state: userData.state || "",
+        zipCode: userData.zipCode || "",
+        country: userData.country || "",
+        company: userData.company || userData.companyName || "", // Fixed: was companyName
+        jobTitle: userData.jobTitle || "",
+        bio: userData.bio || "",
+        website: userData.website || "",
+        linkedin: userData.linkedin || "",
+        twitter: userData.twitter || "",
+         avatar: userData.avatar 
+          ? `${API_BASE_URL.replace('/api', '')}${userData.avatar}`
+          : null
+      };
+      
+      console.log('Setting profileData to:', newProfileData);
+      setProfileData(newProfileData);
+      
+      setSecurityData(prev => ({
+        ...prev,
+        twoFactorEnabled: userData.twoFactorEnabled || false,
+        loginNotifications: userData.loginNotifications || true,
+        activityNotifications: userData.activityNotifications || true
+      }));
+    } else {
+      console.error('Profile API response not successful:', response);
+    }
+  } catch (error) {
+    console.error('Profile loading error:', error);
+    showNotification("Failed to load profile data", "error");
+  }
+};
+
+
+const loadUserStats = async () => {
+  try {
+    const response = await userAPI.getUserStats();
+    
+    if (response.success) {
+      setUserStats(response.stats);
+    }
+  } catch (error) {
+    console.error('Stats loading error:', error);
+    // Don't show error notification for stats as it's not critical
+  }
+};
+
+// Load payment methods from API
+const loadPaymentMethods = async () => {
+  try {
+    const response = await userAPI.getPaymentMethods();
+    if (response.success) {
+      setPaymentMethods(response.paymentMethods);
+    }
+  } catch (error) {
+    console.error('Payment methods loading error:', error);
+    showNotification("Failed to load payment methods", "error");
+  }
+};
+
+useEffect(() => {
+   console.log('useEffect triggered - loading data');
+  loadUserProfile();
+  loadUserStats();
+  loadPaymentMethods();
+}, []);
+
+useEffect(() => {
+  console.log('UserProfilePage mounted');
+  console.log('Initial user from auth:', user);
+  console.log('Initial profileData:', profileData);
+  console.log('Current activeTab:', activeTab);
+}, []);
+
+const handleAvatarUpload = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Validate file size (2MB)
+  if (file.size > 2 * 1024 * 1024) {
+    showNotification("File size must be less than 2MB", "error");
+    return;
+  }
+  
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowedTypes.includes(file.type)) {
+    showNotification("Please upload a valid image file (JPEG, PNG, GIF, WebP)", "error");
+    return;
+  }
+  
+  try {
+    setIsSaving(true);
+    const response = await userAPI.uploadAvatar(file);
+    
+    if (response.success) {
+       const fullAvatarUrl = `${API_BASE_URL.replace('/api', '')}${response.data.avatarUrl}`;
+      setProfileData(prev => ({ ...prev, avatar:fullAvatarUrl }));
+      setAvatarError(false); // Reset error state when new avatar is uploaded
+      showNotification("Avatar uploaded successfully!");
+    }
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    showNotification(error.message || "Failed to upload avatar", "error");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+// Update the security toggle handlers:
+const handleTwoFactorToggle = (checked) => {
+  handleSecuritySettingsUpdate('twoFactorEnabled', checked);
+};
+
+const handleLoginNotificationsToggle = (checked) => {
+  handleSecuritySettingsUpdate('loginNotifications', checked);
+};
+
+const handleActivityNotificationsToggle = (checked) => {
+  handleSecuritySettingsUpdate('activityNotifications', checked);
+};
 
   const handleAddCard = async () => {
-    setIsSaving(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const cardType = detectCardType(newCard.cardNumber);
-      const newPaymentMethod = {
-        id: Date.now(),
-        type: cardType,
-        lastFour: newCard.cardNumber.slice(-4),
-        expiryMonth: newCard.expiryDate.split('/')[0],
-        expiryYear: newCard.expiryDate.split('/')[1],
-        cardHolder: newCard.cardHolder,
-        isDefault: paymentMethods.length === 0,
-        nickname: newCard.nickname || `${cardType.toUpperCase()} ending in ${newCard.cardNumber.slice(-4)}`
-      };
-      setPaymentMethods(prev => [...prev, newPaymentMethod]);
+  setIsSaving(true);
+  try {
+    const response = await userAPI.addPaymentMethod({
+      cardNumber: newCard.cardNumber,
+      expiryDate: newCard.expiryDate,
+      cvv: newCard.cvv,
+      cardHolder: newCard.cardHolder,
+      nickname: newCard.nickname,
+      isDefault: paymentMethods.length === 0
+    });
+    
+    if (response.success) {
+      await loadPaymentMethods(); 
       setNewCard({ cardNumber: "", expiryDate: "", cvv: "", cardHolder: "", nickname: "" });
       setShowAddCard(false);
       showNotification("Payment method added successfully!");
-    } catch (error) {
-      showNotification("Failed to add payment method", "error");
-    } finally {
-      setIsSaving(false);
     }
-  };
+  } catch (error) {
+    console.error('Add payment method error:', error);
+    showNotification(error.message || "Failed to add payment method", "error");
+  } finally {
+    setIsSaving(false);
+  }
+};
+const handleDeleteCard = async (paymentMethodId) => {
+  try {
+    const response = await userAPI.deletePaymentMethod(paymentMethodId);
+    if (response.success) {
+      await loadPaymentMethods();
+      showNotification("Payment method deleted successfully!");
+    }
+  } catch (error) {
+    showNotification(error.message || "Failed to delete payment method", "error");
+  }
+};
+
 
   const detectCardType = (number) => {
     const cleaned = number.replace(/\s/g, '');
@@ -299,41 +529,49 @@ export default function UserProfilePage() {
           {/* Profile Summary Card */}
           <div className="lg:col-span-1">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl sticky top-24">
-              {/* Avatar Section */}
-              <div className="text-center mb-6">
-                <div className="relative inline-block">
-                  <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
-                    {profileData.avatar ? (
-                      <img src={profileData.avatar} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      `${profileData.firstName?.[0] || 'U'}${profileData.lastName?.[0] || 'S'}`
-                    )}
-                  </div>
-                  {isEditing && (
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute -bottom-1 -right-1 p-2 bg-white rounded-full shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors duration-200"
-                    >
-                      <Camera size={14} className="text-gray-600" />
-                    </button>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      // Handle file upload
-                      console.log("File selected:", e.target.files[0]);
-                    }}
-                  />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mt-4">
-                  {profileData.firstName} {profileData.lastName}
-                </h3>
-                <p className="text-gray-600">{profileData.jobTitle || "User"}</p>
-                <p className="text-sm text-gray-500">{profileData.company}</p>
-              </div>
+            {/* Avatar Section */}
+<div className="text-center mb-6">
+  <div className="relative inline-block">
+    <div className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden">
+      {profileData.avatar && !avatarError ? (
+        <img 
+          src={profileData.avatar} 
+          alt="Avatar" 
+          className="w-full h-full object-cover"
+           onError={(e) => {
+        
+          setProfileData(prev => ({ ...prev, avatar: null }));
+        }}
+        />
+      ) : (
+        <span>
+          {`${profileData.firstName?.[0] || 'U'}${profileData.lastName?.[0] || 'S'}`}
+        </span>
+      )}
+    </div>
+    {isEditing && (
+      <button
+        onClick={() => fileInputRef.current?.click()}
+        className="absolute -bottom-1 -right-1 p-2 bg-white rounded-full shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors duration-200"
+      >
+        <Camera size={14} className="text-gray-600" />
+      </button>
+    )}
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept="image/*"
+      className="hidden"
+      onChange={handleAvatarUpload}
+    />
+  </div>
+  <h3 className="text-xl font-bold text-gray-900 mt-4">
+    {profileData.firstName} {profileData.lastName}
+  </h3>
+  <p className="text-gray-600">{profileData.jobTitle || "User"}</p>
+  <p className="text-sm text-gray-500">{profileData.company}</p>
+</div>
+
 
               {/* Quick Stats */}
               <div className="space-y-4">
@@ -713,11 +951,11 @@ export default function UserProfilePage() {
                         </div>
                         <label className="relative inline-flex items-center cursor-pointer">
                           <input
-                            type="checkbox"
-                            checked={securityData.twoFactorEnabled}
-                            onChange={(e) => setSecurityData(prev => ({ ...prev, twoFactorEnabled: e.target.checked }))}
-                            className="sr-only peer"
-                          />
+  type="checkbox"
+  checked={securityData.twoFactorEnabled}
+  onChange={(e) => handleTwoFactorToggle(e.target.checked)}
+  className="sr-only peer"
+/>
                           <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                         </label>
                       </div>
@@ -759,191 +997,99 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               )}
+{/* Payment Methods Tab */}
+{activeTab === "payments" && (
+  <div className="p-8">
+    <div className="flex items-center justify-between mb-8">
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900">Payment Methods</h2>
+        <p className="text-gray-600 mt-1">Manage your saved payment methods for quick checkout</p>
+      </div>
+     <button
+  onClick={() => setShowAddCardModal(true)}
+  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+>
+  <Plus size={16} />
+  Add New Card
+</button>
+    </div>
 
-              {/* Payment Methods Tab */}
-              {activeTab === "payments" && (
-                <div className="p-8">
-                  <div className="flex items-center justify-between mb-8">
-                    <div>
-                      <h2 className="text-2xl font-bold text-gray-900">Payment Methods</h2>
-                      <p className="text-gray-600 mt-1">Manage your saved payment methods for quick checkout</p>
-                    </div>
-                    <button
-                      onClick={() => setShowAddCard(true)}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-                    >
-                      <Plus size={16} />
-                      Add New Card
-                    </button>
-                  </div>
+    {/* Payment Methods Grid */}
+    <div className="grid md:grid-cols-2 gap-6">
+      {paymentMethods.map((method) => (
+        <motion.div
+          key={method.id}
+          whileHover={{ y: -2, scale: 1.02 }}
+          className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-xl border border-gray-700"
+        >
+          {method.isDefault && (
+            <div className="absolute top-4 right-4">
+              <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                Default
+              </span>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-start mb-6">
+            <div className="flex items-center gap-3">
+              {getCardIcon(method.type)}
+              <div>
+                <div className="font-semibold">{method.nickname}</div>
+                <div className="text-gray-300 text-sm">{method.type.toUpperCase()}</div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mb-6">
+            <div className="text-2xl font-mono tracking-wider mb-2">
+              •••• •••• •••• {method.lastFour}
+            </div>
+            <div className="text-gray-300 text-sm">{method.cardHolder}</div>
+          </div>
+          
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-gray-300">
+              Expires {method.expiryMonth}/{method.expiryYear}
+            </div>
+            <div className="flex gap-2">
+              <button className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors duration-200">
+                <Edit3 size={16} />
+              </button>
+              <button 
+                onClick={() => handleDeleteCard(method.id)}
+                className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors duration-200"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      ))}
 
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {paymentMethods.map((method) => (
-                      <motion.div
-                        key={method.id}
-                        whileHover={{ y: -2, scale: 1.02 }}
-                        className="relative bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-xl border border-gray-700"
-                      >
-                        {method.isDefault && (
-                          <div className="absolute top-4 right-4">
-                            <span className="bg-purple-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-                              Default
-                            </span>
-                          </div>
-                        )}
-                        
-                        <div className="flex justify-between items-start mb-6">
-                          <div className="flex items-center gap-3">
-                            {getCardIcon(method.type)}
-                            <div>
-                              <div className="font-semibold">{method.nickname}</div>
-                              <div className="text-gray-300 text-sm">{method.type.toUpperCase()}</div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="mb-6">
-                          <div className="text-2xl font-mono tracking-wider mb-2">
-                            •••• •••• •••• {method.lastFour}
-                          </div>
-                          <div className="text-gray-300 text-sm">{method.cardHolder}</div>
-                        </div>
-                        
-                        <div className="flex justify-between items-center">
-                          <div className="text-sm text-gray-300">
-                            Expires {method.expiryMonth}/{method.expiryYear}
-                          </div>
-                          <div className="flex gap-2">
-                            <button className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-colors duration-200">
-                              <Edit3 size={16} />
-                            </button>
-                            <button className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-colors duration-200">
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+      {/* Add New Card Placeholder */}
+      {paymentMethods.length === 0 && (
+        <div className="md:col-span-2 flex flex-col items-center justify-center py-16 text-gray-500">
+          <CreditCard size={48} className="mb-4 text-gray-300" />
+          <h3 className="text-lg font-medium text-gray-700 mb-2">No payment methods yet</h3>
+          <p className="text-gray-500 text-center mb-6">Add your first payment method to get started with quick and secure checkout</p>
+          <button
+            onClick={() => setShowAddCard(true)}
+            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Add Your First Card
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
-                  {/* Add Card Modal */}
-                  <AnimatePresence>
-                    {showAddCard && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-                      >
-                        <motion.div
-                          initial={{ scale: 0.9, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0.9, opacity: 0 }}
-                          className="bg-white rounded-2xl max-w-md w-full shadow-2xl"
-                        >
-                          <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-xl font-bold text-gray-900">Add New Card</h3>
-                              <button
-                                onClick={() => setShowAddCard(false)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-                              >
-                                <X size={20} />
-                              </button>
-                            </div>
-                          </div>
-                          
-                          <div className="p-6 space-y-4">
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-700 mb-2">Card Number</label>
-                              <input
-                                type="text"
-                                name="cardNumber"
-                                value={newCard.cardNumber}
-                                onChange={handleCardInput}
-                                placeholder="1234 5678 9012 3456"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                              />
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">Expiry Date</label>
-                                <input
-                                  type="text"
-                                  name="expiryDate"
-                                  value={newCard.expiryDate}
-                                  onChange={handleCardInput}
-                                  placeholder="MM/YY"
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-2">CVV</label>
-                                <input
-                                  type="text"
-                                  name="cvv"
-                                  value={newCard.cvv}
-                                  onChange={handleCardInput}
-                                  placeholder="123"
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                />
-                              </div>
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-700 mb-2">Cardholder Name</label>
-                              <input
-                                type="text"
-                                name="cardHolder"
-                                value={newCard.cardHolder}
-                                onChange={handleCardInput}
-                                placeholder="JOHN DOE"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                              />
-                            </div>
-                            
-                            <div>
-                              <label className="block text-sm font-semibold text-gray-700 mb-2">Nickname (Optional)</label>
-                              <input
-                                type="text"
-                                name="nickname"
-                                value={newCard.nickname}
-                                onChange={handleCardInput}
-                                placeholder="Business Card"
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                              />
-                            </div>
-                            
-                            <div className="flex gap-3 pt-4">
-                              <button
-                                onClick={() => setShowAddCard(false)}
-                                className="flex-1 px-4 py-3 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={handleAddCard}
-                                disabled={isSaving}
-                                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
-                              >
-                                {isSaving ? (
-                                  <>
-                                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                                    Adding...
-                                  </>
-                                ) : (
-                                  "Add Card"
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
+
+
+
+
+
 
               {/* Notifications Tab */}
               {activeTab === "notifications" && (
@@ -965,12 +1111,12 @@ export default function UserProfilePage() {
                             <div className="text-sm text-gray-600">Get notified when someone logs into your account</div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={securityData.loginNotifications}
-                              onChange={(e) => setSecurityData(prev => ({ ...prev, loginNotifications: e.target.checked }))}
-                              className="sr-only peer"
-                            />
+                           <input
+  type="checkbox"
+  checked={securityData.loginNotifications}
+  onChange={(e) => handleLoginNotificationsToggle(e.target.checked)}
+  className="sr-only peer"
+/>
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                           </label>
                         </div>
@@ -980,12 +1126,12 @@ export default function UserProfilePage() {
                             <div className="text-sm text-gray-600">Get notified about important account changes</div>
                           </div>
                           <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={securityData.activityNotifications}
-                              onChange={(e) => setSecurityData(prev => ({ ...prev, activityNotifications: e.target.checked }))}
-                              className="sr-only peer"
-                            />
+                           <input
+  type="checkbox"
+  checked={securityData.activityNotifications}
+  onChange={(e) => handleActivityNotificationsToggle(e.target.checked)}
+  className="sr-only peer"
+/>
                             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                           </label>
                         </div>
@@ -1138,6 +1284,194 @@ export default function UserProfilePage() {
             </motion.div>
           </div>
         </div>
+        {/* Add Payment Method Modal */}
+<AnimatePresence>
+  {showAddCardModal && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={() => setShowAddCardModal(false)}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.9, y: 20 }}
+        className="bg-white rounded-2xl p-6 w-full max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900">Add Payment Method</h3>
+          <button
+            onClick={() => setShowAddCardModal(false)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+            <input
+              type="text"
+              name="cardNumber"
+              value={newPaymentMethod.cardNumber}
+              onChange={handleCardNumberChange}
+              placeholder="1234 5678 9012 3456"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+              <input
+                type="text"
+                name="expiryDate"
+                value={newPaymentMethod.expiryDate}
+                onChange={handleExpiryDateChange}
+                placeholder="MM/YY"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+              <input
+                type="text"
+                name="cvv"
+                value={newPaymentMethod.cvv}
+                onChange={handlePaymentMethodInputChange}
+                placeholder="123"
+                maxLength="4"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+            <input
+              type="text"
+              name="cardHolder"
+              value={newPaymentMethod.cardHolder}
+              onChange={handlePaymentMethodInputChange}
+              placeholder="JOHN BANDA"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 uppercase"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Card Nickname</label>
+            <input
+              type="text"
+              name="nickname"
+              value={newPaymentMethod.nickname}
+              onChange={handlePaymentMethodInputChange}
+              placeholder="Personal Card"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="defaultCard"
+              name="isDefault"
+              checked={newPaymentMethod.isDefault}
+              onChange={(e) => setNewPaymentMethod(prev => ({ ...prev, isDefault: e.target.checked }))}
+              className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
+            />
+            <label htmlFor="defaultCard" className="ml-2 block text-sm text-gray-700">
+              Set as default payment method
+            </label>
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={() => setShowAddCardModal(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200"
+          >
+            Cancel
+          </button>
+         <button
+  onClick={async () => {
+    try {
+      // Validate required fields before submitting
+      if (!newPaymentMethod.cardNumber || !newPaymentMethod.expiryDate || 
+          !newPaymentMethod.cvv || !newPaymentMethod.cardHolder) {
+        showNotification("Please fill in all required fields", "error");
+        return;
+      }
+
+      // Validate expiry date format
+      if (!/^\d{2}\/\d{2}$/.test(newPaymentMethod.expiryDate)) {
+        showNotification("Please enter a valid expiry date (MM/YY)", "error");
+        return;
+      }
+
+      setIsSaving(true);
+      
+      // Extract last 4 digits
+      const lastFour = newPaymentMethod.cardNumber.replace(/\s/g, '').slice(-4);
+      
+      // Extract expiry month and year
+      const [expiryMonth, expiryYear] = newPaymentMethod.expiryDate.split('/');
+      
+      // Determine card type
+      const type = detectCardType(newPaymentMethod.cardNumber);
+      
+      // Prepare the request payload
+      const payload = {
+        cardNumber: newPaymentMethod.cardNumber.replace(/\s/g, ''),
+        expiryDate: newPaymentMethod.expiryDate,
+        cvv: newPaymentMethod.cvv,
+        cardHolder: newPaymentMethod.cardHolder,
+        nickname: newPaymentMethod.nickname || `${type} ending in ${lastFour}`,
+        isDefault: newPaymentMethod.isDefault
+      };
+
+      const response = await userAPI.addPaymentMethod(payload);
+
+      if (response.success) {
+        showNotification("Payment method added successfully!");
+        setShowAddCardModal(false);
+        setNewPaymentMethod({
+          cardNumber: "",
+          expiryDate: "",
+          cvv: "",
+          cardHolder: "",
+          nickname: "",
+          isDefault: false
+        });
+        await loadPaymentMethods();
+      }
+    } catch (error) {
+      console.error('Add payment method error:', error);
+      showNotification(error.message || "Failed to add payment method", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  }}
+  disabled={isSaving}
+  className="px-6 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 flex items-center gap-2"
+>
+  {isSaving ? (
+    <>
+      <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+      Adding...
+    </>
+  ) : (
+    "Add Card"
+  )}
+</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
       </div>
 
       {/* Enhanced Notification */}
