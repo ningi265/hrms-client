@@ -150,8 +150,8 @@ export default function VendorApprovalPage() {
     setActionLoading(vendorId);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${backendUrl}/api/vendor-registrations/${vendorId}/approve`, {
-        method: "PATCH",
+      const response = await fetch(`${backendUrl}/api/vendors/approve/${vendorId}`, {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -179,8 +179,8 @@ export default function VendorApprovalPage() {
     setActionLoading(vendorId);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${backendUrl}/api/vendor-registrations/${vendorId}/reject`, {
-        method: "PATCH",
+      const response = await fetch(`${backendUrl}/api/vendors/reject/${vendorId}`, {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -529,60 +529,12 @@ export default function VendorApprovalPage() {
                     <div className="text-center">
                       <div className="relative">
                         <button
+                          data-vendor-id={vendor._id}
                           onClick={() => setShowMenuId(showMenuId === vendor._id ? null : vendor._id)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        
-                        {showMenuId === vendor._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button
-                                onClick={() => handleViewDetails(vendor)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              
-                              {vendor.registrationStatus === "pending" && (
-                                <>
-                                  <button
-                                    onClick={() => handleApproveVendor(vendor._id)}
-                                    disabled={actionLoading === vendor._id}
-                                    className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 disabled:opacity-50"
-                                  >
-                                    <UserCheck size={16} />
-                                    <span>Approve</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleRejectVendor(vendor._id)}
-                                    disabled={actionLoading === vendor._id}
-                                    className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 disabled:opacity-50"
-                                  >
-                                    <UserX size={16} />
-                                    <span>Reject</span>
-                                  </button>
-                                </>
-                              )}
-                              
-                              <button
-                                onClick={() => copyToClipboard(vendor._id)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Copy size={16} />
-                                <span>Copy ID</span>
-                              </button>
-                              
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200">
-                                <Trash2 size={16} />
-                                <span>Delete Request</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -799,12 +751,175 @@ export default function VendorApprovalPage() {
         </div>
       )}
 
-      {/* Click outside to close menu */}
+      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
       {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 z-[100] bg-transparent"
+            onClick={() => setShowMenuId(null)}
+          ></div>
+          
+          {/* Action Menu */}
+          <div 
+            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuHeight = 300; // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  const spaceAbove = rect.top;
+                  
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    return `${rect.top - menuHeight + window.scrollY}px`;
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`;
+                  }
+                }
+                return '50px';
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 224; // 56 * 4 (w-56)
+                  const spaceRight = window.innerWidth - rect.right;
+                  
+                  // If menu would go off screen on right, position it to the left of button
+                  if (spaceRight < menuWidth) {
+                    return `${rect.left - menuWidth + 8}px`;
+                  } else {
+                    return `${rect.right - menuWidth}px`;
+                  }
+                }
+                return '50px';
+              })()
+            }}
+          >
+            <div className="py-2">
+              {/* View Details */}
+              <button
+                onClick={() => {
+                  const vendor = filteredVendors.find(v => v._id === showMenuId);
+                  if (vendor) handleViewDetails(vendor);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Eye size={16} />
+                <span>View Details</span>
+              </button>
+              
+              {/* Conditional Actions for Pending Status */}
+              {(() => {
+                const vendor = filteredVendors.find(v => v._id === showMenuId);
+                return vendor?.registrationStatus === "pending" && (
+                  <>
+                    <button
+                      onClick={() => {
+                        handleApproveVendor(showMenuId);
+                      }}
+                      disabled={actionLoading === showMenuId}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 disabled:opacity-50 text-left"
+                    >
+                      <UserCheck size={16} />
+                      <span>Approve Registration</span>
+                      {actionLoading === showMenuId && (
+                        <div className="ml-auto">
+                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleRejectVendor(showMenuId);
+                      }}
+                      disabled={actionLoading === showMenuId}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 disabled:opacity-50 text-left"
+                    >
+                      <UserX size={16} />
+                      <span>Reject Registration</span>
+                      {actionLoading === showMenuId && (
+                        <div className="ml-auto">
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </button>
+                    <div className="border-t border-gray-100 my-1"></div>
+                  </>
+                );
+              })()}
+              
+              {/* Send Message */}
+              <button
+                onClick={() => {
+                  // Handle send message action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <MessageSquare size={16} />
+                <span>Send Message</span>
+              </button>
+              
+              {/* Download Documents */}
+              <button
+                onClick={() => {
+                  const vendor = filteredVendors.find(v => v._id === showMenuId);
+                  if (vendor?.powerOfAttorney?.filePath) {
+                    downloadDocument(vendor.powerOfAttorney.filePath, vendor.powerOfAttorney.fileName);
+                  }
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Download size={16} />
+                <span>Download Documents</span>
+              </button>
+              
+              {/* Copy Vendor ID */}
+              <button
+                onClick={() => {
+                  copyToClipboard(showMenuId);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Copy size={16} />
+                <span>Copy Vendor ID</span>
+              </button>
+              
+              {/* Edit Registration */}
+              <button
+                onClick={() => {
+                  // Handle edit action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Edit size={16} />
+                <span>Edit Registration</span>
+              </button>
+              
+              <div className="border-t border-gray-100 my-1"></div>
+              
+              {/* Delete Registration */}
+              <button
+                onClick={() => {
+                  // Handle delete action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left"
+              >
+                <Trash2 size={16} />
+                <span>Delete Registration</span>
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

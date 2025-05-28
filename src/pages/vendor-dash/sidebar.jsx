@@ -333,7 +333,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
           badge: null
         },
           { 
-          id: 'registration', 
+          id: 'registration-management', 
           label: 'Registration', 
           icon: <ModernIcons.RFQs />,
         },

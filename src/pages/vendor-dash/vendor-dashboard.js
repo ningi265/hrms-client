@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState,useEffect } from "react";
+import { useNavigate,useSearchParams } from "react-router-dom";
 import {
   Home,
   ShoppingCart,
@@ -65,6 +65,7 @@ import VendorPODetailsPage from "../vendor-dash/purchase-orders/accept/accept";
 import SubmitQuotePage from "../dashboard/vendors/qoutes/submit/submit";
 import VendorInvoiceSubmissionPage from "../vendor-dash/invoices/invoices";
 import VendorRegistration from "./registration/registration";
+import VendorManagementDashboard from "./registration/registrationManagement";
 
 
 // Styled Components
@@ -316,15 +317,25 @@ export default function VendorDashboard() {
 });
   const [anchorEl, setAnchorEl] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSection, setActiveSection] = useState("dashboard");
+   const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    return searchParams.get('section') || 'vendor-dash';
+  });
   const open = Boolean(anchorEl);
    const [mobileOpen, setMobileOpen] = useState(false);
+useEffect(() => {
+    const section = searchParams.get('section') || 'vendor-dash';
+    setActiveSection(section);
+  }, [searchParams]);
+
 
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
-  const handleSectionChange = (section) => setActiveSection(section);
-
+    const handleSectionChange = (section) => {
+    setActiveSection(section);
+    navigate(`?section=${section}`, { replace: true });
+  };
   return (
     <Box sx={{
       background: "linear-gradient(135deg,rgb(1, 4, 17) 0%,rgb(54, 79, 100) 100%)", 
@@ -419,6 +430,7 @@ export default function VendorDashboard() {
               {activeSection === "invoices" && <VendorInvoiceSubmissionPage  />}
               {activeSection === "purchase-order" && <VendorPODetailsPage />}
               {activeSection === "registration" && <VendorRegistration />}
+               {activeSection === "registration-management" && <VendorManagementDashboard/>}
             </Box> 
           )}
         </Box>

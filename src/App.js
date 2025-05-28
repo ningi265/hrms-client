@@ -47,7 +47,7 @@ import VendorRegistration from './pages/vendor-dash/registration/registration';
 import EmployeesPage from './pages/dashboard/employee/employee';
 import DepartmentsPage from './pages/dashboard/departments/departments';
 import VendorApprovalPage from './pages/dashboard/vendors/registration';
-
+import VendorManagementDashboard from './pages/vendor-dash/registration/registrationManagement';
 
 
 function App() {
@@ -108,6 +108,7 @@ function App() {
           <Route path="/invoices/submit" element={<VendorInvoiceSubmissionPage/>}/>
           <Route path="/vendor-purchase-order" element={<VendorPODetailsPage/>}/>
            <Route path="/vendor-registration" element={<VendorRegistration/>}/>
+            <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>
        
         </Routes>
       </BrowserRouter>      

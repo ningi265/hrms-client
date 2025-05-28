@@ -27,7 +27,12 @@ import {
   User,
   Clock,
   Calendar,
-  Shield
+  Shield,
+  Copy,
+  MessageSquare,
+  Settings,
+  FileText,
+  UserPlus
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
@@ -42,6 +47,7 @@ export default function EmployeesPage() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [isAddEmployeeModalOpen, setIsAddEmployeeModalOpen] = useState(false);
   const [showMenuId, setShowMenuId] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -116,6 +122,7 @@ export default function EmployeesPage() {
     : 0;
 
   const handleDeleteEmployee = async (employeeId) => {
+    setActionLoading(employeeId);
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${backendUrl}/api/employees/${employeeId}`, {
@@ -134,8 +141,10 @@ export default function EmployeesPage() {
     } catch (error) {
       showNotificationMessage("Failed to delete employee", "error");
       console.error("Failed to delete employee:", error);
+    } finally {
+      setActionLoading(null);
+      setShowMenuId(null);
     }
-    setShowMenuId(null);
   };
 
   const openAddEmployeeModal = () => {
@@ -213,6 +222,11 @@ export default function EmployeesPage() {
     setNotificationType(type);
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 5000);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showNotificationMessage("ID copied to clipboard!", "success");
   };
 
   if (isLoading) {
@@ -529,40 +543,12 @@ export default function EmployeesPage() {
                     <div className="text-center">
                       <div className="relative">
                         <button
+                          data-employee-id={employee._id}
                           onClick={() => setShowMenuId(showMenuId === employee._id ? null : employee._id)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        
-                        {showMenuId === employee._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button
-                                onClick={() => navigate(`/dashboard/employees/${employee._id}`)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              <button
-                                onClick={() => navigate(`/dashboard/employees/${employee._id}/edit`)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Edit size={16} />
-                                <span>Edit Employee</span>
-                              </button>
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button
-                                onClick={() => handleDeleteEmployee(employee._id)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
-                              >
-                                <Trash2 size={16} />
-                                <span>Delete Employee</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -572,6 +558,162 @@ export default function EmployeesPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
+      {showMenuId && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 z-[100] bg-transparent"
+            onClick={() => setShowMenuId(null)}
+          ></div>
+          
+          {/* Action Menu */}
+          <div 
+            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuHeight = 350; // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  const spaceAbove = rect.top;
+                  
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    return `${rect.top - menuHeight + window.scrollY}px`;
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`;
+                  }
+                }
+                return '50px';
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 224; // 56 * 4 (w-56)
+                  const spaceRight = window.innerWidth - rect.right;
+                  
+                  // If menu would go off screen on right, position it to the left of button
+                  if (spaceRight < menuWidth) {
+                    return `${rect.left - menuWidth + 8}px`;
+                  } else {
+                    return `${rect.right - menuWidth}px`;
+                  }
+                }
+                return '50px';
+              })()
+            }}
+          >
+            <div className="py-2">
+              {/* View Details */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/employees/${showMenuId}`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Eye size={16} />
+                <span>View Details</span>
+              </button>
+              
+              {/* Edit Employee */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/employees/${showMenuId}/edit`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Edit size={16} />
+                <span>Edit Employee</span>
+              </button>
+              
+              {/* Send Message */}
+              <button
+                onClick={() => {
+                  // Handle send message action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <MessageSquare size={16} />
+                <span>Send Message</span>
+              </button>
+              
+              {/* View Performance */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/employees/${showMenuId}/performance`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <TrendingUp size={16} />
+                <span>View Performance</span>
+              </button>
+              
+              {/* Generate Report */}
+              <button
+                onClick={() => {
+                  // Handle generate report action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <FileText size={16} />
+                <span>Generate Report</span>
+              </button>
+              
+              {/* Copy Employee ID */}
+              <button
+                onClick={() => {
+                  copyToClipboard(showMenuId);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Copy size={16} />
+                <span>Copy Employee ID</span>
+              </button>
+              
+              {/* Manage Access */}
+              <button
+                onClick={() => {
+                  // Handle manage access action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Settings size={16} />
+                <span>Manage Access</span>
+              </button>
+              
+              <div className="border-t border-gray-100 my-1"></div>
+              
+              {/* Delete Employee */}
+              <button
+                onClick={() => {
+                  handleDeleteEmployee(showMenuId);
+                }}
+                disabled={actionLoading === showMenuId}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                <span>Delete Employee</span>
+                {actionLoading === showMenuId && (
+                  <div className="ml-auto">
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Add Employee Modal */}
       {isAddEmployeeModalOpen && (
@@ -860,14 +1002,6 @@ export default function EmployeesPage() {
             </div>
           </div>
         </motion.div>
-      )}
-
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
       )}
     </div>
   );

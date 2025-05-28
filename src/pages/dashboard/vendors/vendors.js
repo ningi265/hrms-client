@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Users,
   Search,
@@ -23,7 +23,15 @@ import {
   Tag,
   Activity,
   TrendingUp,
-  Target
+  Target,
+  Copy,
+  MessageSquare,
+  Settings,
+  FileText,
+  UserPlus,
+  Send,
+  Clock,
+  Shield
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
@@ -38,6 +46,7 @@ export default function VendorsPage() {
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [isAddVendorModalOpen, setIsAddVendorModalOpen] = useState(false);
   const [showMenuId, setShowMenuId] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -55,6 +64,11 @@ export default function VendorsPage() {
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    return searchParams.get('section') || 'dashboard';
+  });
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -134,7 +148,13 @@ export default function VendorsPage() {
     );
   };
 
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    navigate(`?section=${section}`, { replace: true });
+  };
+
   const handleDeleteVendor = async (vendorId) => {
+    setActionLoading(vendorId);
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(`${backendUrl}/api/vendors/${vendorId}`, {
@@ -153,8 +173,10 @@ export default function VendorsPage() {
     } catch (error) {
       showNotificationMessage("Failed to delete vendor", "error");
       console.error("Failed to delete vendor:", error);
+    } finally {
+      setActionLoading(null);
+      setShowMenuId(null);
     }
-    setShowMenuId(null);
   };
 
   const openAddVendorModal = () => {
@@ -232,6 +254,11 @@ export default function VendorsPage() {
     setTimeout(() => setShowNotification(false), 5000);
   };
 
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showNotificationMessage("ID copied to clipboard!", "success");
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
@@ -288,6 +315,16 @@ export default function VendorsPage() {
               >
                 <Plus size={20} />
                 Add New Vendor
+              </button>
+              <button
+                onClick={() => {
+                  setUserMenuOpen(false);
+                  handleSectionChange("pending-registration");
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Approve Vendor Registration
               </button>
               <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
                 <Bell size={20} />
@@ -543,40 +580,12 @@ export default function VendorsPage() {
                     <div className="text-center">
                       <div className="relative">
                         <button
+                          data-vendor-id={vendor._id}
                           onClick={() => setShowMenuId(showMenuId === vendor._id ? null : vendor._id)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        
-                        {showMenuId === vendor._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button
-                                onClick={() => navigate(`/dashboard/vendors/${vendor._id}`)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              <button
-                                onClick={() => navigate(`/dashboard/vendors/${vendor._id}/edit`)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Edit size={16} />
-                                <span>Edit Vendor</span>
-                              </button>
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button
-                                onClick={() => handleDeleteVendor(vendor._id)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
-                              >
-                                <Trash2 size={16} />
-                                <span>Delete Vendor</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -586,6 +595,174 @@ export default function VendorsPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
+      {showMenuId && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 z-[100] bg-transparent"
+            onClick={() => setShowMenuId(null)}
+          ></div>
+          
+          {/* Action Menu */}
+          <div 
+            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuHeight = 400; // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  const spaceAbove = rect.top;
+                  
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    return `${rect.top - menuHeight + window.scrollY}px`;
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`;
+                  }
+                }
+                return '50px';
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 224; // 56 * 4 (w-56)
+                  const spaceRight = window.innerWidth - rect.right;
+                  
+                  // If menu would go off screen on right, position it to the left of button
+                  if (spaceRight < menuWidth) {
+                    return `${rect.left - menuWidth + 8}px`;
+                  } else {
+                    return `${rect.right - menuWidth}px`;
+                  }
+                }
+                return '50px';
+              })()
+            }}
+          >
+            <div className="py-2">
+              {/* View Details */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/vendors/${showMenuId}`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Eye size={16} />
+                <span>View Details</span>
+              </button>
+              
+              {/* Edit Vendor */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/vendors/${showMenuId}/edit`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Edit size={16} />
+                <span>Edit Vendor</span>
+              </button>
+              
+              {/* Send Message */}
+              <button
+                onClick={() => {
+                  // Handle send message action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <MessageSquare size={16} />
+                <span>Send Message</span>
+              </button>
+              
+              {/* View Performance */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/vendors/${showMenuId}/performance`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <TrendingUp size={16} />
+                <span>View Performance</span>
+              </button>
+              
+              {/* Create Order */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/orders/create?vendor=${showMenuId}`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Plus size={16} />
+                <span>Create Order</span>
+              </button>
+              
+              {/* Copy Vendor ID */}
+              <button
+                onClick={() => {
+                  copyToClipboard(showMenuId);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Copy size={16} />
+                <span>Copy Vendor ID</span>
+              </button>
+              
+              {/* Manage Access */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/vendors/${showMenuId}/access`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Shield size={16} />
+                <span>Manage Access</span>
+              </button>
+              
+              {/* Generate Report */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/reports/vendor/${showMenuId}`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <FileText size={16} />
+                <span>Generate Report</span>
+              </button>
+
+              <div className="border-t border-gray-100 my-1"></div>
+              
+              {/* Delete Vendor */}
+              <button
+                onClick={() => {
+                  handleDeleteVendor(showMenuId);
+                }}
+                disabled={actionLoading === showMenuId}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                <span>Delete Vendor</span>
+                {actionLoading === showMenuId && (
+                  <div className="ml-auto">
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Add Vendor Modal */}
       {isAddVendorModalOpen && (
@@ -833,14 +1010,6 @@ export default function VendorsPage() {
             </div>
           </div>
         </motion.div>
-      )}
-
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
       )}
     </div>
   );
