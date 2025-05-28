@@ -48,6 +48,7 @@ import EmployeesPage from './pages/dashboard/employee/employee';
 import DepartmentsPage from './pages/dashboard/departments/departments';
 import VendorApprovalPage from './pages/dashboard/vendors/registration';
 import VendorManagementDashboard from './pages/vendor-dash/registration/registrationManagement';
+import EmployeeRequisitionManagement from './pages/employee-dash/requisition/requistionManagement';
 
 
 function App() {
@@ -99,6 +100,7 @@ function App() {
           <Route path="/travel/recon" element={<TravelExecutionReconciliation/>}/>
           <Route path="/travel/manage/recon" element={<TravelReconciliation/>}/>
           <Route path="/local-travel" element={<TravelRequestForm/>}/>
+           <Route path="/requisition-management" element={<EmployeeRequisitionManagement/>}/>
           
           
           {/*Vendor Routes */}

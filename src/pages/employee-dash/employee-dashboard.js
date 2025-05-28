@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState,useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Home,
   ShoppingCart,
@@ -60,6 +60,8 @@ import TravelExecutionReconciliation from '../../pages/dashboard/requisitions/ma
 import TravelDashboard from '../../pages/dashboard/requisitions/manage/travel-dash';
 import TravelReconciliation from '../../pages/dashboard/requisitions/recon';
 import NewRequisitionPage from '../../pages/dashboard/requisitions/requisitions';
+import ManageRequisitionsPage from "../dashboard/requisitions/manage/manage";
+import EmployeeRequisitionManagement from "./requisition/requistionManagement";
 
 
 // Styled Components
@@ -311,14 +313,26 @@ export default function EmployeeDashboard() {
 });
   const [anchorEl, setAnchorEl] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [activeSection, setActiveSection] = useState("dashboard");
   const open = Boolean(anchorEl);
    const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    return searchParams.get('section') || 'employee-dash';
+  });
+   
+
+useEffect(() => {
+    const section = searchParams.get('section') || 'dashboard';
+    setActiveSection(section);
+  }, [searchParams]);
 
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
-  const handleSectionChange = (section) => setActiveSection(section);
+  const handleSectionChange = (section) => {
+    navigate(`?section=${section}`, { replace: true });
+  };
+
 
   return (
     <Box sx={{
@@ -414,6 +428,7 @@ export default function EmployeeDashboard() {
               {activeSection === "new-recon" && <TravelReconciliation  />}
               {activeSection === "travel-requests" && <TravelDashboard />}
               {activeSection === "travel-execution" && < TravelExecutionReconciliation/>}
+              {activeSection === "manage-requisitions" && <EmployeeRequisitionManagement/>}
             </Box>
           )}
         </Box>

@@ -354,7 +354,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
         },
        
         { 
-          id: 'requisitions', 
+          id: 'manage-requisitions', 
           label: 'Requisitions', 
           icon: <ModernIcons.Requisitions />,
           badge: stats.requisitions?.counts?.pending || null

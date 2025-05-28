@@ -327,7 +327,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
       label: 'Main',
       items: [
         { 
-          id: 'dashboard', 
+          id: 'vendor-dash', 
           label: 'Dashboard', 
           icon: <ModernIcons.Dashboard />,
           badge: null

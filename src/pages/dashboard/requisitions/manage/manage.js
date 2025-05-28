@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Check,
@@ -24,7 +24,7 @@ import {
   ChevronDown,
   MoreVertical
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function ManageRequisitionsPage() {
   const [requisitions, setRequisitions] = useState([]);
@@ -44,7 +44,7 @@ export default function ManageRequisitionsPage() {
     const fetchPendingRequisitions = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`${backendUrl}/api/requisitions/pendings`, {
+        const response = await fetch(`${backendUrl}/api/requisitions/my`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -421,7 +421,7 @@ export default function ManageRequisitionsPage() {
               </div>
             </div>
           ) : (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-visible">
               {/* Table Header */}
               <div className="bg-gradient-to-r from-gray-50/50 to-blue-50/30 border-b border-gray-100/50 px-6 py-4">
                 <div className="grid grid-cols-7 gap-4 items-center font-semibold text-gray-700 text-sm">
@@ -445,14 +445,14 @@ export default function ManageRequisitionsPage() {
               </div>
 
               {/* Table Body */}
-              <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
+              <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto overflow-x-visible">
                 {filteredRequisitions.map((requisition, index) => (
                   <motion.div
                     key={requisition._id}
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="grid grid-cols-7 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
+                    className="grid grid-cols-7 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group relative"
                   >
                     <div>
                       <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
@@ -499,51 +499,14 @@ export default function ManageRequisitionsPage() {
                       </span>
                     </div>
 
-                    <div className="text-center">
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowMenuId(showMenuId === requisition._id ? null : requisition._id)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
-                        
-                        {showMenuId === requisition._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button
-                                onClick={() => handleViewRequisition(requisition._id)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              <button
-                                onClick={() => handleDownloadPDF(requisition._id)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Download size={16} />
-                                <span>Download PDF</span>
-                              </button>
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button
-                                onClick={() => handleAction(requisition._id, "approve")}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200"
-                              >
-                                <Check size={16} />
-                                <span>Approve</span>
-                              </button>
-                              <button
-                                onClick={() => handleAction(requisition._id, "reject")}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
-                              >
-                                <X size={16} />
-                                <span>Reject</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                    <div className="text-center relative">
+                      <button
+                        data-requisition-id={requisition._id}
+                        onClick={() => setShowMenuId(showMenuId === requisition._id ? null : requisition._id)}
+                        className="p-3 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all duration-200 hover:shadow-lg"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
                     </div>
                   </motion.div>
                 ))}
@@ -554,50 +517,160 @@ export default function ManageRequisitionsPage() {
       </div>
 
       {/* Notification */}
-      {showNotification && (
-        <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.3 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.5 }}
-          className="fixed bottom-4 right-4 z-50"
-        >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
-            notificationType === 'success' 
-              ? 'bg-green-50 text-green-800 border-green-200' 
-              : 'bg-red-50 text-red-800 border-red-200'
-          }`}>
-            <div className="flex items-center gap-3">
-              {notificationType === 'success' ? (
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              ) : (
-                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </div>
-              )}
-              <span className="font-medium">{notificationMessage}</span>
-              <button
-                onClick={() => setShowNotification(false)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
+      <AnimatePresence>
+        {showNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.3 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.5 }}
+            className="fixed bottom-4 right-4 z-50"
+          >
+            <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
+              notificationType === 'success' 
+                ? 'bg-green-50 text-green-800 border-green-200' 
+                : 'bg-red-50 text-red-800 border-red-200'
+            }`}>
+              <div className="flex items-center gap-3">
+                {notificationType === 'success' ? (
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                )}
+                <span className="font-medium">{notificationMessage}</span>
+                <button
+                  onClick={() => setShowNotification(false)}
+                  className="ml-4 text-gray-400 hover:text-gray-600"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
+      {showMenuId && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 z-[100] bg-transparent"
+            onClick={() => setShowMenuId(null)}
+          ></div>
+          
+          {/* Action Menu */}
+          <div 
+            className="fixed z-[101] w-56 bg-white rounded-2xl shadow-2xl border border-gray-200/50 backdrop-blur-lg overflow-hidden"
+            style={{
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+              top: (() => {
+                const button = document.querySelector(`[data-requisition-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuHeight = 280; // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  const spaceAbove = rect.top;
+                  
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    return `${rect.top - menuHeight + window.scrollY}px`;
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`;
+                  }
+                }
+                return '50px';
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-requisition-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 224; // 56 * 4 (w-56)
+                  const spaceRight = window.innerWidth - rect.right;
+                  
+                  // If menu would go off screen on right, position it to the left of button
+                  if (spaceRight < menuWidth) {
+                    return `${rect.left - menuWidth + 8}px`;
+                  } else {
+                    return `${rect.right - menuWidth}px`;
+                  }
+                }
+                return '50px';
+              })()
+            }}
+          >
+            <div className="py-2">
+              {/* View Details */}
+              <motion.button
+                whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
+                onClick={() => handleViewRequisition(showMenuId)}
+                className="w-full flex items-center space-x-3 px-6 py-4 text-gray-700 hover:text-blue-600 transition-all duration-200 text-left"
               >
-                <X size={18} />
-              </button>
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Eye size={16} className="text-blue-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">View Details</div>
+                  <div className="text-xs text-gray-500">See full requisition</div>
+                </div>
+              </motion.button>
+              
+              {/* Download PDF */}
+              <motion.button
+                whileHover={{ backgroundColor: 'rgba(59, 130, 246, 0.05)' }}
+                onClick={() => handleDownloadPDF(showMenuId)}
+                className="w-full flex items-center space-x-3 px-6 py-4 text-gray-700 hover:text-blue-600 transition-all duration-200 text-left"
+              >
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Download size={16} className="text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">Download PDF</div>
+                  <div className="text-xs text-gray-500">Export as document</div>
+                </div>
+              </motion.button>
+              
+              <div className="border-t border-gray-100 my-2 mx-4"></div>
+              
+              {/* Approve */}
+              <motion.button
+                whileHover={{ backgroundColor: 'rgba(34, 197, 94, 0.05)' }}
+                onClick={() => handleAction(showMenuId, "approve")}
+                className="w-full flex items-center space-x-3 px-6 py-4 text-green-700 hover:text-green-800 transition-all duration-200 text-left"
+              >
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Check size={16} className="text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">Approve</div>
+                  <div className="text-xs text-green-600">Accept this request</div>
+                </div>
+              </motion.button>
+              
+              {/* Reject */}
+              <motion.button
+                whileHover={{ backgroundColor: 'rgba(239, 68, 68, 0.05)' }}
+                onClick={() => handleAction(showMenuId, "reject")}
+                className="w-full flex items-center space-x-3 px-6 py-4 text-red-700 hover:text-red-800 transition-all duration-200 text-left"
+              >
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <X size={16} className="text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium">Reject</div>
+                  <div className="text-xs text-red-600">Decline this request</div>
+                </div>
+              </motion.button>
             </div>
           </div>
-        </motion.div>
-      )}
-
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
+        </>
       )}
     </div>
   );

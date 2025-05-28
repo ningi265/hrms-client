@@ -362,7 +362,7 @@ useEffect(() => {
 
         {/* Main Content Area */}
         <Box sx={{ p: 2 }}>
-          {activeSection === "dashboard" ? (
+          {activeSection === "vendor-dash" ? (
             <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
               {/* Page Title */}
               <Box sx={{ 
@@ -431,6 +431,7 @@ useEffect(() => {
               {activeSection === "purchase-order" && <VendorPODetailsPage />}
               {activeSection === "registration" && <VendorRegistration />}
                {activeSection === "registration-management" && <VendorManagementDashboard/>}
+               
             </Box> 
           )}
         </Box>
