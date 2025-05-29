@@ -44,7 +44,7 @@ export default function ManageRequisitionsPage() {
     const fetchPendingRequisitions = async () => {
       try {
         const token = localStorage.getItem("token");
-        const response = await fetch(`${backendUrl}/api/requisitions/my`, {
+        const response = await fetch(`${backendUrl}/api/requisitions/pending`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

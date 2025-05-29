@@ -263,8 +263,17 @@ export default function CreateRFQPage({ onClose, onSuccess }) {
   );
 
   const filteredVendors = vendors.filter(vendor =>
-    vendor.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  (vendor.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+   vendor.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+   vendor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+   vendor.companyName?.toLowerCase().includes(searchTerm.toLowerCase()))
+);
+
+console.log('Total vendors:', vendors.length);
+console.log('Search term:', searchTerm);
+console.log('Filtered vendors:', filteredVendors.length);
+console.log('All vendors:', vendors);
+console.log('Filtered vendors data:', filteredVendors);
 
   if (isLoading && requisitions.length === 0) {
     return (
@@ -647,34 +656,38 @@ export default function CreateRFQPage({ onClose, onSuccess }) {
                     }`}
                     onClick={() => handleVendorToggle(vendor._id)}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 mb-1">{vendor.name}</h4>
-                        <p className="text-sm text-gray-600">{vendor.email}</p>
-                      </div>
-                      {formData.vendors.includes(vendor._id) && (
-                        <CheckCircle size={20} className="text-blue-600" />
-                      )}
-                    </div>
+                   <div className="flex items-start justify-between mb-3">
+  <div className="flex-1">
+    <h4 className="font-bold text-gray-900 mb-1">
+      {vendor.firstName} {vendor.lastName}
+    </h4>
+    <p className="text-sm text-gray-600">{vendor.email}</p>
+  </div>
+  {formData.vendors.includes(vendor._id) && (
+    <CheckCircle size={20} className="text-blue-600" />
+  )}
+</div>
                     
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">Category:</span>
-                        <span className="font-medium text-gray-700">{vendor.category || 'General'}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-500">Rating:</span>
-                        <div className="flex items-center gap-1">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={10}
-                              className={i < (vendor.rating || 4) ? 'text-amber-400 fill-current' : 'text-gray-300'}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                   <div className="space-y-1">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">Industry:</span>
+          <span className="font-medium text-gray-700">{vendor.industry || 'General'}</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">Phone:</span>
+          <span className="font-medium text-gray-700">{vendor.phoneNumber}</span>
+        </div>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-gray-500">Status:</span>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            vendor.isVerified 
+              ? 'bg-green-100 text-green-800' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {vendor.isVerified ? 'Verified' : 'Pending'}
+          </span>
+        </div>
+      </div>
                   </motion.div>
                 ))}
               </div>
@@ -749,28 +762,32 @@ export default function CreateRFQPage({ onClose, onSuccess }) {
                     <Users size={20} />
                     Selected Vendors ({formData.vendors.length})
                   </h5>
-                  <div className="space-y-3 max-h-48 overflow-y-auto">
-                    {formData.vendors.map((vendorId) => {
-                      const vendor = vendors.find(v => v._id === vendorId);
-                      return vendor ? (
-                        <div key={vendorId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div>
-                            <div className="font-medium text-gray-900">{vendor.name}</div>
-                            <div className="text-sm text-gray-600">{vendor.email}</div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={12}
-                                className={i < (vendor.rating || 4) ? 'text-amber-400 fill-current' : 'text-gray-300'}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      ) : null;
-                    })}
-                  </div>
+                 <div className="space-y-3 max-h-48 overflow-y-auto">
+  {formData.vendors.map((vendorId) => {
+    const vendor = vendors.find(v => v._id === vendorId);
+    return vendor ? (
+      <div key={vendorId} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+        <div>
+          <div className="font-medium text-gray-900">
+            {vendor.firstName} {vendor.lastName}
+          </div>
+          <div className="text-sm text-gray-600">{vendor.email}</div>
+          <div className="text-xs text-gray-500">{vendor.companyName}</div>
+        </div>
+        <div className="text-right">
+          <div className="text-xs text-gray-500">{vendor.industry}</div>
+          <div className={`text-xs px-2 py-1 rounded-full mt-1 ${
+            vendor.isVerified 
+              ? 'bg-green-100 text-green-600' 
+              : 'bg-yellow-100 text-yellow-600'
+          }`}>
+            {vendor.isVerified ? 'Verified' : 'Pending'}
+          </div>
+        </div>
+      </div>
+    ) : null;
+  })}
+</div>
                 </div>
               </div>
 

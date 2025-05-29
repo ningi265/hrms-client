@@ -45,6 +45,8 @@ export default function VendorRFQsPage() {
   const [notes, setNotes] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   // Log the token and user role when the component mounts
@@ -58,36 +60,41 @@ export default function VendorRFQsPage() {
   }, [user]);
 
   // Fetch all RFQs from the backend
-  useEffect(() => {
-    const fetchRFQs = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${backendUrl}/api/rfqs`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
+  const fetchRFQs = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/rfqs`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
 
-        if (response.ok) {
-          setRfqs(data);
-          // Filter RFQs where the vendor's email matches
-          const vendorRFQs = data.filter((rfq) =>
-            rfq.vendors.some((vendor) => vendor.email === user?.email)
-          );
-          setFilteredRFQs(vendorRFQs);
-        } else {
-          setError(data.message || "Failed to fetch RFQs");
-        }
-      } catch (err) {
-        setError("Failed to fetch RFQs. Please check your network connection.");
-        console.error("Failed to fetch RFQs:", err);
-      } finally {
-        setIsLoading(false);
+      if (response.ok) {
+        setRfqs(data);
+        // Filter RFQs where the vendor's email matches
+        const vendorRFQs = data.filter((rfq) =>
+          rfq.vendors.some((vendor) => vendor.email === user?.email)
+        );
+        setFilteredRFQs(vendorRFQs);
+        setError(null); // Clear any previous errors
+      } else {
+        setError(data.message || "Failed to fetch RFQs");
       }
-    };
+    } catch (err) {
+      setError("Failed to fetch RFQs. Please check your network connection.");
+      console.error("Failed to fetch RFQs:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchRFQs();
+  // Initial fetch
+  useEffect(() => {
+    if (user?.email) {
+      fetchRFQs();
+    }
   }, [user]);
 
   // Filter RFQs based on search term and status
@@ -109,6 +116,8 @@ export default function VendorRFQsPage() {
   const handleSelectRFQ = (rfq) => {
     setSelectedRFQ(rfq);
     setOpenModal(true);
+    setError(""); // Clear any previous errors
+    setSuccessMessage(""); // Clear any previous success messages
   };
 
   // Handle modal close
@@ -118,14 +127,18 @@ export default function VendorRFQsPage() {
     setPrice("");
     setDeliveryTime("");
     setNotes("");
+    setError("");
+    setSuccessMessage("");
   };
 
   const handleSubmitQuote = async () => {
-    if (!selectedRFQ) return;
+    if (!selectedRFQ || !price || !deliveryTime) return;
+
+    setIsSubmittingQuote(true);
+    setError("");
 
     try {
       const token = localStorage.getItem("token");
-      const userEmail = user?.email;
       console.log("Submitting quote for RFQ:", selectedRFQ._id);
 
       const response = await fetch(
@@ -144,21 +157,75 @@ export default function VendorRFQsPage() {
         }
       );
 
+      const data = await response.json();
+
       if (response.ok) {
-        // Show success message
-        setError(null);
-        handleCloseModal();
-        // Refresh the data
-        window.location.reload();
+        // Update the local state immediately to reflect the new quote
+        const updatedRFQs = filteredRFQs.map(rfq => {
+          if (rfq._id === selectedRFQ._id) {
+            return {
+              ...rfq,
+              quotes: [
+                ...(rfq.quotes || []),
+                {
+                  vendorEmail: user?.email,
+                  price: parseFloat(price),
+                  deliveryTime,
+                  notes,
+                  submittedAt: new Date().toISOString()
+                }
+              ]
+            };
+          }
+          return rfq;
+        });
+        
+        setFilteredRFQs(updatedRFQs);
+        
+        // Update the main rfqs array as well
+        const updatedAllRFQs = rfqs.map(rfq => {
+          if (rfq._id === selectedRFQ._id) {
+            return {
+              ...rfq,
+              quotes: [
+                ...(rfq.quotes || []),
+                {
+                  vendorEmail: user?.email,
+                  price: parseFloat(price),
+                  deliveryTime,
+                  notes,
+                  submittedAt: new Date().toISOString()
+                }
+              ]
+            };
+          }
+          return rfq;
+        });
+        
+        setRfqs(updatedAllRFQs);
+        
+        setSuccessMessage("Quote submitted successfully!");
+        
+        // Close modal after a brief delay to show success message
+        setTimeout(() => {
+          handleCloseModal();
+        }, 1500);
+        
       } else {
-        const data = await response.json();
         console.log("Error Response from Backend:", data);
         setError(data.message || "Failed to submit quote.");
       }
     } catch (err) {
       console.error("Failed to submit quote:", err);
       setError("Failed to submit quote. Please check your network connection.");
+    } finally {
+      setIsSubmittingQuote(false);
     }
+  };
+
+  // Function to refresh data manually
+  const handleRefreshData = () => {
+    fetchRFQs();
   };
 
   const formatDate = (dateString) => {
@@ -331,6 +398,18 @@ export default function VendorRFQsPage() {
           transition={{ duration: 0.5 }}
           className="space-y-8"
         >
+          {/* Success Alert */}
+          {successMessage && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-xl flex items-center gap-3"
+            >
+              <CheckCircle size={20} />
+              <span>{successMessage}</span>
+            </motion.div>
+          )}
+
           {/* Error Alert */}
           {error && (
             <motion.div
@@ -382,8 +461,12 @@ export default function VendorRFQsPage() {
                   <Download size={16} />
                   Export
                 </button>
-                <button className="p-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200">
-                  <RefreshCw size={18} />
+                <button 
+                  onClick={handleRefreshData}
+                  disabled={isLoading}
+                  className="p-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200 disabled:opacity-50"
+                >
+                  <RefreshCw size={18} className={isLoading ? "animate-spin" : ""} />
                 </button>
               </div>
             </div>
@@ -544,7 +627,8 @@ export default function VendorRFQsPage() {
                 </div>
                 <button
                   onClick={handleCloseModal}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                  disabled={isSubmittingQuote}
+                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200 disabled:opacity-50"
                 >
                   <X size={24} />
                 </button>
@@ -553,6 +637,22 @@ export default function VendorRFQsPage() {
             
             <div className="p-8 max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
+                {/* Success Message */}
+                {successMessage && (
+                  <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl flex items-center gap-3">
+                    <CheckCircle size={20} />
+                    <span>{successMessage}</span>
+                  </div>
+                )}
+
+                {/* Error Message */}
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-3">
+                    <AlertCircle size={20} />
+                    <span>{error}</span>
+                  </div>
+                )}
+
                 {/* RFQ Details */}
                 <div className="bg-gray-50 rounded-xl p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -597,6 +697,7 @@ export default function VendorRFQsPage() {
                       placeholder="Enter your price"
                       className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
                       required
+                      disabled={isSubmittingQuote}
                     />
                   </div>
 
@@ -612,6 +713,7 @@ export default function VendorRFQsPage() {
                       placeholder="e.g., 2 weeks, 10 business days"
                       className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
                       required
+                      disabled={isSubmittingQuote}
                     />
                   </div>
 
@@ -626,6 +728,7 @@ export default function VendorRFQsPage() {
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Include any additional information, terms, or conditions..."
                       className="w-full px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white resize-none"
+                      disabled={isSubmittingQuote}
                     />
                   </div>
                 </div>
@@ -634,15 +737,25 @@ export default function VendorRFQsPage() {
                 <div className="flex gap-4 pt-6 border-t border-gray-200">
                   <button
                     onClick={handleSubmitQuote}
-                    disabled={!price || !deliveryTime}
-                    className="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                    disabled={!price || !deliveryTime || isSubmittingQuote}
+                    className="flex-1 px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:from-green-500 disabled:hover:to-green-600 flex items-center justify-center gap-2"
                   >
-                    <Send size={20} />
-                    Submit Quote
+                    {isSubmittingQuote ? (
+                      <>
+                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send size={20} />
+                        Submit Quote
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={handleCloseModal}
-                    className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-semibold flex items-center justify-center gap-2"
+                    disabled={isSubmittingQuote}
+                    className="px-6 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <X size={20} />
                     Cancel
