@@ -433,15 +433,16 @@ const ModernHeaderComponent = ({
                   }}
                   className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-lg transition-all duration-200"
                 >
-                 <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
   {user?.firstName && user?.lastName
-    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
+    ? `${user.firstName.charAt(0).toUpperCase()}${user.lastName.charAt(0).toUpperCase()}`
     : user?.firstName
-    ? user.firstName.charAt(0)
+    ? user.firstName.charAt(0).toUpperCase()
     : user?.lastName
-    ? user.lastName.charAt(0)
+    ? user.lastName.charAt(0).toUpperCase()
     : "G"}
 </div>
+
 
                   <ChevronDown size={14} className={`transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </motion.button>

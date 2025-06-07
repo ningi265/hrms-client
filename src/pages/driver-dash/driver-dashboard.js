@@ -334,8 +334,21 @@ export default function DriverDashboard() {
   });
    const [mobileOpen, setMobileOpen] = useState(false);
     const { user: authUser, loading: authLoading } = useAuth();
+   const user = authUser ? {
+  ...authUser,
+  name: authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Guest User',
+  avatar: authUser.avatar || null,
+  email: authUser.email || '',
+  role: authUser.role || 'guest',
+  companyName: authUser.companyName || 'NyasaSC' // Add this line
+} : {
+  name: 'Guest User',
+  avatar: null,
+  email: '',
+  role: 'guest',
+  companyName: 'NyasaSC' // Add this line
+};
 
-    
 useEffect(() => {
     const section = searchParams.get('section') || 'vendor-dash';
     setActiveSection(section);
@@ -351,18 +364,7 @@ useEffect(() => {
     navigate(`?section=${section}`, { replace: true });
   };
 
-  const user = authUser ? {
-  ...authUser,
-  name: authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Guest User',
-  avatar: authUser.avatar || null,
-  email: authUser.email || '',
-  role: authUser.role || 'guest'
-} : {
-  name: 'Guest User',
-  avatar: null,
-  email: '',
-  role: 'guest'
-};
+  
 
   const SIDEBAR_WIDTH = 256;
     const COLLAPSED_SIDEBAR_WIDTH = 70;
@@ -416,6 +418,7 @@ useEffect(() => {
                activeSection={activeSection} 
                handleSectionChange={handleSectionChange}
                onSidebarToggle={setSidebarOpen}
+               user={user}
              />
       
 

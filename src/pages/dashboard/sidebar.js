@@ -349,7 +349,7 @@ const PulseBadge = styled('span')(({ theme }) => ({
 }));
 
 // Main component
-const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange, onSidebarToggle, user={} }) => {
+const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange, onSidebarToggle, user }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -667,85 +667,21 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   const drawer = (
     <>
       {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
-     <DrawerHeader>
-      <LogoContainer open={open}>
-        {open ? (
-          <>
-            {/* Company Display - matches sidebar theme */}
-            <Box 
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 2,
-                flexGrow: 1
-              }}
-            >
-              <Box 
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: '8px',
-                  backgroundColor: 'rgba(85, 105, 255, 0.8)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#ffffff',
-                  fontWeight: 700,
-                  fontSize: '1.2rem',
-                }}
-              >
-                {companyInitial}
-              </Box>
-              <Box>
-                <Typography 
-                  variant="subtitle1" 
-                  sx={{
-                    color: sidebarColors.text,
-                    fontWeight: 600,
-                    lineHeight: 1.2
-                  }}
-                >
-                  {companyFullName}
-                </Typography>
-                <Typography 
-                  variant="caption" 
-                  sx={{
-                    color: sidebarColors.textSecondary,
-                    fontSize: '0.75rem'
-                  }}
-                >
-                  Organization
-                </Typography>
-              </Box>
-            </Box>
-            
-            <ToggleButton 
-              onClick={toggleDrawer}
-              disabled={isAnimating}
-              aria-label="close drawer"
-              sx={{
-                '& img': {
-                  filter: 'brightness(0) invert(1)', 
-                }
-              }}
-            >
-              <img 
-                src="/sidebar1.png" 
-                alt="Toggle sidebar" 
-                style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  objectFit: 'contain',
-                  transform: 'rotate(0deg)',
-                  transition: 'transform 0.3s ease' 
-                }} 
-              />
-            </ToggleButton>
-          </>
-        ) : (
-              <Box 
-            onClick={toggleDrawer}
-            sx={{ 
+   <DrawerHeader>
+  <LogoContainer open={open}>
+    {open ? (
+      <>
+        {/* Company Display - matches sidebar theme */}
+        <Box 
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexGrow: 1
+          }}
+        >
+          <Box 
+            sx={{
               width: 36,
               height: 36,
               borderRadius: '8px',
@@ -756,17 +692,81 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
               color: '#ffffff',
               fontWeight: 700,
               fontSize: '1.2rem',
-              cursor: 'pointer',
-              '&:hover': {
-                transform: 'scale(1.05)',
-              }
             }}
           >
-            {companyInitial}
+            {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
           </Box>
-        )}
-      </LogoContainer>
-    </DrawerHeader>
+          <Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{
+                color: sidebarColors.text,
+                fontWeight: 600,
+                lineHeight: 1.2
+              }}
+            >
+              {user?.companyName || 'NyasaSC'} {/* Fallback to 'NyasaSC' if no company name */}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{
+                color: sidebarColors.textSecondary,
+                fontSize: '0.75rem'
+              }}
+            >
+              Organization
+            </Typography>
+          </Box>
+        </Box>
+        
+        <ToggleButton 
+          onClick={toggleDrawer}
+          disabled={isAnimating}
+          aria-label="close drawer"
+          sx={{
+            '& img': {
+              filter: 'brightness(0) invert(1)', 
+            }
+          }}
+        >
+          <img 
+            src="/sidebar1.png" 
+            alt="Toggle sidebar" 
+            style={{ 
+              width: '20px', 
+              height: '20px', 
+              objectFit: 'contain',
+              transform: 'rotate(0deg)',
+              transition: 'transform 0.3s ease' 
+            }} 
+          />
+        </ToggleButton>
+      </>
+    ) : (
+      <Box 
+        onClick={toggleDrawer}
+        sx={{ 
+          width: 36,
+          height: 36,
+          borderRadius: '8px',
+          backgroundColor: 'rgba(85, 105, 255, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontWeight: 700,
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          '&:hover': {
+            transform: 'scale(1.05)',
+          }
+        }}
+      >
+        {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
+      </Box>
+    )}
+  </LogoContainer>
+</DrawerHeader>
 
       {/* Scrollable Content */}
       <Box sx={{
@@ -1018,9 +1018,6 @@ HRMSSidebar.propTypes = {
     rfqs: PropTypes.object,
     purchaseOrders: PropTypes.object,
     invoices: PropTypes.object,
-  }),
-  user: PropTypes.shape({
-    companyName: PropTypes.string,
   }),
   activeSection: PropTypes.string.isRequired,
   handleSectionChange: PropTypes.func.isRequired,

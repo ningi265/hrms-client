@@ -269,7 +269,23 @@ export default function ProcurementDashboard() {
   const [activeSection, setActiveSection] = useState(() => {
     return searchParams.get('section') || 'dashboard';
   });
+  
+ 
   const { user: authUser, loading: authLoading } = useAuth();
+   const user = authUser ? {
+  ...authUser,
+  name: authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Guest User',
+  avatar: authUser.avatar || null,
+  email: authUser.email || '',
+  role: authUser.role || 'guest',
+  companyName: authUser.companyName || 'NyasaSC' // Add this line
+} : {
+  name: 'Guest User',
+  avatar: null,
+  email: '',
+  role: 'guest',
+  companyName: 'NyasaSC' // Add this line
+};
   const [recentReports, setRecentReports] = useState([
   {
     name: "Procurement Summary",
@@ -306,18 +322,7 @@ export default function ProcurementDashboard() {
     closed: '#3A0CA3',     // deep purple
     paid: '#7209B7'        // vibrant purple
   };
-const user = authUser ? {
-  ...authUser,
-  name: authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Guest User',
-  avatar: authUser.avatar || null,
-  email: authUser.email || '',
-  role: authUser.role || 'guest'
-} : {
-  name: 'Guest User',
-  avatar: null,
-  email: '',
-  role: 'guest'
-};
+
   
   const allData = [
     { name: 'Pending Requisitions', value: stats.requisitions.counts.pending, category: 'Requisitions', status: 'pending' },
@@ -568,6 +573,7 @@ const user = authUser ? {
         activeSection={activeSection} 
         handleSectionChange={handleSectionChange}
          onSidebarToggle={setSidebarOpen}
+          user={user} 
       />
 
       {/* Main Content */}
