@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 
 export default function PurchaseOrdersPage() {
   const { token } = useAuth();
@@ -238,9 +240,11 @@ export default function PurchaseOrdersPage() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
-          </div>
+           <DotLottieReact
+      src="loading.lottie"
+      loop
+      autoplay
+    />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Purchase Orders</h2>
           <p className="text-gray-600">
             Please wait while we fetch purchase order data...
@@ -489,9 +493,12 @@ export default function PurchaseOrdersPage() {
                     </div>
 
                     <div>
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                        {po.vendor?.name || "N/A"}
-                      </div>
+                     <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+  {po.vendor
+    ? `${po.vendor.lastName || ''} ${po.vendor.firstName || ''}`.trim()
+    : 'N/A'}
+</div>
+
                       {po.vendor?.email && (
                         <div className="text-sm text-gray-500">
                           {po.vendor.email}

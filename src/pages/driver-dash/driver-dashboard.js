@@ -1,5 +1,5 @@
 import React, { useState,useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate,useSearchParams } from "react-router-dom";
 import {
   Home,
   ShoppingCart,
@@ -55,13 +55,17 @@ import StatsCardsGrid from './statsCard';
 import AIChatButton from '../dashboard/aiChat';
 import QuickActions from './quickActions';
 import BarChartComponent from './tasks';
-import ActivityChangelogComponent from './activity'
-import TravelExecutionReconciliation from '../../pages/dashboard/requisitions/manage/travel-exec-recon';
-import TravelDashboard from '../../pages/dashboard/requisitions/manage/travel-dash';
-import TravelReconciliation from '../../pages/dashboard/requisitions/recon';
-import NewRequisitionPage from '../../pages/dashboard/requisitions/requisitions';
-import ManageRequisitionsPage from "../dashboard/requisitions/manage/manage";
-import EmployeeRequisitionManagement from "./requisition/requistionManagement";
+import MapComponent  from './activity'
+import TravelExecutionReconciliation from '../dashboard/requisitions/manage/travel-exec-recon';
+import TravelDashboard from '../dashboard/requisitions/manage/travel-dash';
+import TravelReconciliation from '../dashboard/requisitions/recon';
+import NewRequisitionPage from '../dashboard/requisitions/requisitions';
+import VendorRFQsPage from "../dashboard/vendors/qoutes/qoutes";
+import VendorPODetailsPage from "../vendor-dash/purchase-orders/accept/accept";
+import SubmitQuotePage from "../dashboard/vendors/qoutes/submit/submit";
+//import VendorInvoiceSubmissionPage from "../vendor-dash/invoices/invoices";
+//import VendorRegistration from "./registration/registration";
+//import VendorManagementDashboard from "./registration/registrationManagement";
 import UserProfilePage from "../User/user";
 
 // Styled Components
@@ -161,6 +165,7 @@ const ActivityCard = styled(Card)(({ theme }) => ({
 // Component Definitions
 const StatsCardComponent = ({ title, value, description, trend, trendDirection, icon, color }) => {
   const theme = useTheme();
+  
   return (
     <StatsCard>
       <CardContent>
@@ -244,7 +249,7 @@ const ActivityCardComponent = ({ title, description, time, icon, color }) => {
 };
 
 // Employee Section Components
-const EmployeeRequisitionsSection = () => (
+const VendorRequisitionsSection = () => (
   <Box>
     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>My Requisitions</Typography>
     <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -258,7 +263,7 @@ const EmployeeRequisitionsSection = () => (
   </Box>
 );
 
-const EmployeeNewRequisitionSection = () => (
+const VendorNewRequisitionSection = () => (
   <Box>
     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>New Requisition</Typography>
     <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -272,7 +277,7 @@ const EmployeeNewRequisitionSection = () => (
   </Box>
 );
 
-const EmployeeTravelRequestSection = () => (
+const VendorTravelRequestSection = () => (
   <Box>
     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>Travel Requests</Typography>
     <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -286,7 +291,7 @@ const EmployeeTravelRequestSection = () => (
   </Box>
 );
 
-const EmployeeExpenseReportSection = () => (
+const VendorExpenseReportSection = () => (
   <Box>
     <Typography variant="h5" gutterBottom sx={{ fontWeight: 700 }}>Expense Reports</Typography>
     <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
@@ -301,10 +306,9 @@ const EmployeeExpenseReportSection = () => (
 );
 
 // Main Dashboard Component
-export default function EmployeeDashboard() {
+export default function DriverDashboard() {
   const navigate = useNavigate();
   const theme = useTheme();
-  const { user } = useAuth();
  const [stats, setStats] = useState({
   requisitions: { counts: { total: 0, pending: 0 } },
   rfqs: { counts: { total: 0, open: 0 } },
@@ -313,90 +317,113 @@ export default function EmployeeDashboard() {
 });
   const [anchorEl, setAnchorEl] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const open = Boolean(anchorEl);
-   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchParams] = useSearchParams();
+   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => {
-    return searchParams.get('section') || 'employee-dash';
+    return searchParams.get('section') || 'vendor-dash';
   });
-   const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [scrollPosition, setScrollPosition] = useState(0);
-    const SIDEBAR_WIDTH = 256;
-  const COLLAPSED_SIDEBAR_WIDTH = 70;
+  const open = Boolean(anchorEl);
+  const [selectedDriver, setSelectedDriver] = useState(null);
+   const [drivers, setDrivers] = useState([]);
+  const [filteredDrivers, setFilteredDrivers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [driverStats, setDriverStats] = useState({
+    available: 12,
+    onTrip: 5,
+    offline: 2,
+    maintenance: 1
+  });
+   const [mobileOpen, setMobileOpen] = useState(false);
+    const { user: authUser, loading: authLoading } = useAuth();
 
-   const opacity = Math.min(scrollPosition / 100, 1);
-
-
-      useEffect(() => {
-        const handleScroll = () => {
-          setScrollPosition(window.pageYOffset);
-        };
-        
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-      }, []);
-   useEffect(() => {
-       const handleStorageChange = () => {
-         const savedOpenState = localStorage.getItem('sidebarOpen');
-         if (savedOpenState !== null) {
-           setSidebarOpen(JSON.parse(savedOpenState));
-         }
-       };
-   
-       // Listen for custom sidebar toggle events
-       const handleSidebarToggle = (event) => {
-         setSidebarOpen(event.detail.open);
-       };
-   
-       // Listen for storage changes and custom events
-       window.addEventListener('storage', handleStorageChange);
-       window.addEventListener('sidebarToggle', handleSidebarToggle);
-       
-       // Check initial state
-       handleStorageChange();
-       
-       return () => {
-         window.removeEventListener('storage', handleStorageChange);
-         window.removeEventListener('sidebarToggle', handleSidebarToggle);
-       };
-     }, []);
-
+    
 useEffect(() => {
-    const section = searchParams.get('section') || 'dashboard';
+    const section = searchParams.get('section') || 'vendor-dash';
     setActiveSection(section);
   }, [searchParams]);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+      const [scrollPosition, setScrollPosition] = useState(0);
 
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
-  const handleSectionChange = (section) => {
+    const handleSectionChange = (section) => {
+    setActiveSection(section);
     navigate(`?section=${section}`, { replace: true });
   };
 
+  const user = authUser ? {
+  ...authUser,
+  name: authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Guest User',
+  avatar: authUser.avatar || null,
+  email: authUser.email || '',
+  role: authUser.role || 'guest'
+} : {
+  name: 'Guest User',
+  avatar: null,
+  email: '',
+  role: 'guest'
+};
 
+  const SIDEBAR_WIDTH = 256;
+    const COLLAPSED_SIDEBAR_WIDTH = 70;
+  
+     const opacity = Math.min(scrollPosition / 100, 1);
+  
+  
+        useEffect(() => {
+          const handleScroll = () => {
+            setScrollPosition(window.pageYOffset);
+          };
+          
+          window.addEventListener('scroll', handleScroll);
+          return () => window.removeEventListener('scroll', handleScroll);
+        }, []);
+     useEffect(() => {
+         const handleStorageChange = () => {
+           const savedOpenState = localStorage.getItem('sidebarOpen');
+           if (savedOpenState !== null) {
+             setSidebarOpen(JSON.parse(savedOpenState));
+           }
+         };
+     
+         // Listen for custom sidebar toggle events
+         const handleSidebarToggle = (event) => {
+           setSidebarOpen(event.detail.open);
+         };
+     
+         // Listen for storage changes and custom events
+         window.addEventListener('storage', handleStorageChange);
+         window.addEventListener('sidebarToggle', handleSidebarToggle);
+         
+         // Check initial state
+         handleStorageChange();
+         
+         return () => {
+           window.removeEventListener('storage', handleStorageChange);
+           window.removeEventListener('sidebarToggle', handleSidebarToggle);
+         };
+       }, []);
   return (
     <Box sx={{
-    display: "flex", 
+      background: "linear-gradient(135deg,rgb(1, 4, 17) 0%,rgb(54, 79, 100) 100%)", 
+      display: "flex", 
       height: "100vh", 
       overflow: "hidden",
-      backgroundColor: theme.palette.background.default,
     }}>
       {/* Sidebar */}
         <HRMSSidebar 
                stats={stats} 
                activeSection={activeSection} 
                handleSectionChange={handleSectionChange}
-                 onSidebarToggle={setSidebarOpen}
+               onSidebarToggle={setSidebarOpen}
              />
       
 
       {/* Main Content */}
-      <Box component="main" sx={{ 
-        flexGrow: 1, 
+      <Box component="main" sx={{   flexGrow: 1, 
         overflow: "auto",
         backgroundColor: theme.palette.background.default,
-        position: 'relative',
-        }}>
+        position: 'relative', }}>
         {/* Header */}
              <DashboardHeader 
            user={user}
@@ -406,15 +433,16 @@ useEffect(() => {
           sidebarOpen={sidebarOpen}
           sidebarWidth={SIDEBAR_WIDTH}
           collapsedSidebarWidth={COLLAPSED_SIDEBAR_WIDTH}
+      
           />
 
         {/* Main Content Area */}
-        <Box sx={{ paddingTop: '80px', 
+        <Box sx={{  paddingTop: '80px', 
   minHeight: 'calc(100vh - 64px)',
    position: 'relative',
      zIndex: 1,
-      padding: '80px 1.5rem 1.5rem', }}>
-          {activeSection === "dashboard" ? (
+      padding: '80px 1.5rem 1.5rem',}}>
+          {activeSection === "vendor-dash" ? (
             <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
               {/* Page Title */}
               <Box sx={{ 
@@ -428,63 +456,29 @@ useEffect(() => {
               }}>
                 <Box>
                   <Typography variant="h5" component="h1" gutterBottom  sx={{ fontWeight: 700, color: 'black' }}>
-                    Employee Dashboard
+                    Drivers Dashboard
                   </Typography>
                   <Typography variant="body1"  sx={{ fontSize: '0.875rem', fontWeight: 400, color: 'black' }} >
-                    Welcome back, {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)}. Here's your current work status.
+                    Welcome back, {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)}. Here's your current driving status.
                   </Typography>
                 </Box>
-              </Box>
-
-              {/* Stats Cards */}
-             <StatsCardsGrid stats={stats} />
-              {/* Main Content Grid */}
-<Box sx={{ 
-  display: "flex", 
-  gap: 2,
-  mb: 4,
-  width: "100%",
-  height: "100%",
-}}>
-  {/* Tasks - Takes exactly half width */}
-  <Box sx={{ 
-    flex: 1, 
-    minWidth: 0, // Prevent overflow
-    height: "100%",
-    display: "flex",
-    flexDirection: "column"
-  }}>
-    <BarChartComponent/>
-  </Box>
-
-  {/* Quick Actions - Takes exactly half width */}
-  <Box sx={{ 
-    flex: 1,
-    minWidth: 0, // Prevent overflow
-    height: "100%",
-    display: "flex",
-    flexDirection: "column"
-  }}>
-    <QuickActions handleSectionChange={handleSectionChange} />
-  </Box>
-</Box>
-
-                {/* Recent Activity - Full width below with no top margin */}
-<Box sx={{ width: "100%" }}>
+              </Box>       
+              {/* Main Content Grid -<Box sx={{ width: "100%" }}>
   <ActivityChangelogComponent/>    
-</Box>
-
-              
+</Box> */}
+<MapComponent 
+  drivers={searchQuery ? filteredDrivers : drivers}
+  selectedDriver={selectedDriver}
+  onDriverSelect={setSelectedDriver}
+/>
+  
             </Box>
           ) : (
             <Box>
-              {activeSection === "requisitions" && <NewRequisitionPage />}
-              {activeSection === "new-recon" && <TravelReconciliation  />}
-              {activeSection === "travel-requests" && <TravelDashboard />}
-              {activeSection === "travel-execution" && < TravelExecutionReconciliation/>}
-              {activeSection === "manage-requisitions" && <EmployeeRequisitionManagement/>}
-              {activeSection === "user-profile" && <UserProfilePage />}
-            </Box>
+              {activeSection === "rfq" && <VendorRFQsPage />}
+
+               {activeSection === "user-profile" && <UserProfilePage />}
+            </Box> 
           )}
         </Box>
       </Box>

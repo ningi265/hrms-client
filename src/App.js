@@ -49,7 +49,8 @@ import DepartmentsPage from './pages/dashboard/departments/departments';
 import VendorApprovalPage from './pages/dashboard/vendors/registration';
 import VendorManagementDashboard from './pages/vendor-dash/registration/registrationManagement';
 import EmployeeRequisitionManagement from './pages/employee-dash/requisition/requistionManagement';
-
+import DriverDashboard from './pages/driver-dash/driver-dashboard';
+import FleetTrackingMap from './pages/driver-dash/fleetMap';
 
 function App() {
   return (
@@ -66,6 +67,8 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          
+          
            {/*PO,Finance and Admin Routes */}
           <Route path="/dash/new" element={<ProcurementDashboardWithSidebar/>}/>
           <Route path="/dashboard" element={<DashboardPage/>} />
@@ -89,7 +92,7 @@ function App() {
           <Route path="/food" element={<FoodBudgetPlanner/>}/>
           <Route path="/employee" element={<EmployeesPage/>}/>
           <Route path="/departments" element={<DepartmentsPage/>}/>
-              <Route path="/pending/registration" element={<VendorApprovalPage/>}/>
+          <Route path="/pending/registration" element={<VendorApprovalPage/>}/>
 
    
            {/*Employee Routes */}
@@ -100,7 +103,7 @@ function App() {
           <Route path="/travel/recon" element={<TravelExecutionReconciliation/>}/>
           <Route path="/travel/manage/recon" element={<TravelReconciliation/>}/>
           <Route path="/local-travel" element={<TravelRequestForm/>}/>
-           <Route path="/requisition-management" element={<EmployeeRequisitionManagement/>}/>
+          <Route path="/requisition-management" element={<EmployeeRequisitionManagement/>}/>
           
           
           {/*Vendor Routes */}
@@ -109,9 +112,18 @@ function App() {
           <Route path="/vendors/qoutes/submit" element={<SubmitQuotePage/>}/>
           <Route path="/invoices/submit" element={<VendorInvoiceSubmissionPage/>}/>
           <Route path="/vendor-purchase-order" element={<VendorPODetailsPage/>}/>
-           <Route path="/vendor-registration" element={<VendorRegistration/>}/>
-            <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>
-       
+          <Route path="/vendor-registration" element={<VendorRegistration/>}/>
+          <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>
+
+          {/*Vendor Routes */}
+          <Route path="/driver-dash" element={<DriverDashboard/>}/>
+          <Route path="/map" element={<FleetTrackingMap/>}/>
+          {/*<Route path="/qoutes" element={<VendorRFQsPage/>}/>
+          <Route path="/vendors/qoutes/submit" element={<SubmitQuotePage/>}/>
+          <Route path="/invoices/submit" element={<VendorInvoiceSubmissionPage/>}/>
+          <Route path="/vendor-purchase-order" element={<VendorPODetailsPage/>}/>
+          <Route path="/vendor-registration" element={<VendorRegistration/>}/>
+          <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>*/}
         </Routes>
       </BrowserRouter>      
       </AuthProvider>  

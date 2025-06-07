@@ -47,14 +47,6 @@ const ModernIcons = {
     </svg>
   ),
 
-
-  Requisitions: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
-  ),
   RFQs: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -71,25 +63,13 @@ const ModernIcons = {
       <line x1="12" y1="22.08" x2="12" y2="12" />
     </svg>
   ),
-
-  TravelRequests: (props) => (
+   Invoices: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M15 11h.01M11 15h.01M16 16h.01M10 12h.01M3 7l2.5 3 4-5 2.5 3 3-4 2.5 3L20.5 5" />
-      <path d="M20 22h-2a2 2 0 0 1-2-2v-8.5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5V20h3a1 1 0 0 1 1 1v0a1 1 0 0 1-1 1ZM15.4 22H8.6c-.5 0-.9-.4-.9-.9V10.1c0-.5.4-.9.9-.9h6.8c.5 0 .9.4.9.9v10.9c0 .6-.4 1-.9 1Z" />
-      <path d="M4 22H2a1 1 0 0 1-1-1v0a1 1 0 0 1 1-1h3v-8.5a.5.5 0 0 1 .5-.5.5.5 0 0 1 .5.5V20a2 2 0 0 1-2 2Z" />
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M7 15h0M2 9.5h20" />
+      <path d="M12 15h5" />
     </svg>
   ),
-
-  FleetManagement: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11" />
-      <path d="M14 9h4l4 4v4c0 .6-.4 1-1 1h-2" />
-      <circle cx="7" cy="18" r="2" />
-      <path d="M15 18H9" />
-      <circle cx="17" cy="18" r="2" />
-    </svg>
-  ),
-
   Reconciliation: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.5 10-10 10Z" />
@@ -302,7 +282,7 @@ const PulseBadge = styled('span')(({ theme }) => ({
 }));
 
 // Main component
-const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange, onSidebarToggle }) => {
+const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,onSidebarToggle,  user={} }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -314,17 +294,26 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Remember sidebar state in localStorage
- useEffect(() => {
-    const savedOpenState = localStorage.getItem('sidebarOpen');
-    if (savedOpenState !== null && !isMobile) {
-      const parsedState = JSON.parse(savedOpenState);
-      setOpen(parsedState);
-      onSidebarToggle?.(parsedState); // Notify parent component
-    }
-  }, [isMobile, onSidebarToggle]);
+   useEffect(() => {
+      const savedOpenState = localStorage.getItem('sidebarOpen');
+      if (savedOpenState !== null && !isMobile) {
+        const parsedState = JSON.parse(savedOpenState);
+        setOpen(parsedState);
+        onSidebarToggle?.(parsedState); // Notify parent component
+      }
+    }, [isMobile, onSidebarToggle]);
+
+      // Extract first letter of company name
+  const companyInitial = user?.companyName?.charAt(0) || 'N';
+  
+  // Get full company name or default
+  const companyFullName = user?.companyName || 'NyasaSC';
+   console.log('Company Initial:', companyInitial);
+   console.log('Company Full Name:', companyFullName);
+  
 
   // Improved toggle behavior with animation lock
-  const toggleDrawer = () => {
+   const toggleDrawer = () => {
     if (isAnimating) return;
     
     setIsAnimating(true);
@@ -354,47 +343,33 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
       label: 'Main',
       items: [
         { 
-          id: 'dashboard', 
+          id: 'vendor-dash', 
           label: 'Dashboard', 
           icon: <ModernIcons.Dashboard />,
           badge: null
         },
-       
-        { 
-          id: 'manage-requisitions', 
-          label: 'Requisitions', 
-          icon: <ModernIcons.Requisitions />,
-          badge: stats.requisitions?.counts?.pending || null
+          { 
+          id: 'registration-management', 
+          label: 'Registration', 
+          icon: <ModernIcons.RFQs />,
         },
         { 
-          id: 'rfqs', 
+          id: 'rfq', 
           label: 'RFQs', 
           icon: <ModernIcons.RFQs />,
           badge: stats.rfqs?.counts?.open || null
-        },
+        }, 
         { 
-          id: 'purchase-orders', 
+          id: 'purchase-order', 
           label: 'Purchase Orders', 
           icon: <ModernIcons.PurchaseOrders />,
           badge: stats.purchaseOrders?.counts?.pending || null
         },
-      ]
-    },
-    {
-      id: 'travel',
-      label: 'Travel Management',
-      items: [
-        { 
-          id: 'travel-requests', 
-          label: 'Travel Requests', 
-          icon: <ModernIcons.TravelRequests />,
-          badge: null
-        },
-        { 
-          id: 'travel-execution', 
-          label: 'Fleet Management', 
-          icon: <ModernIcons.FleetManagement />,
-          badge: null
+           { 
+          id: 'invoices', 
+          label: 'Invoices', 
+          icon: <ModernIcons.Invoices />,
+          badge: stats.invoices?.counts?.pending || null
         },
       ]
     },
@@ -575,77 +550,106 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   const drawer = (
     <>
       {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
-      <DrawerHeader>
-        <LogoContainer open={open}>
-          {open ? (
-            <>
-              {/* When open, show logo and title on left, toggle button on right */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <LogoBox>
-                  N
-                </LogoBox>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600,
-                    color: sidebarColors.text,
-                    letterSpacing: '0.5px',
-                    fontSize: '1.125rem',
-                  }}
-                >
-                NYASA SC
-                </Typography>
-              </Box>
-              
-              <ToggleButton 
-                onClick={toggleDrawer}
-                disabled={isAnimating}
-                aria-label="close drawer"
-                 sx={{
-    '& img': {
-      filter: 'brightness(0) invert(1)', 
-    }
-  }}
-              >
-                <img 
-                  src="/sidebar1.png" 
-                  alt="Toggle sidebar" 
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    objectFit: 'contain',
-                    transform: 'rotate(0deg)',
-                    transition: 'transform 0.3s ease' 
-                  }} 
-                />
-              </ToggleButton>
-            </>
-          ) : (
-            // When collapsed, only show toggle icon in the H logo's place
-            <LogoBox 
-              onClick={toggleDrawer} 
-              sx={{ 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+   <DrawerHeader>
+  <LogoContainer open={open}>
+    {open ? (
+      <>
+        {/* Company Display - matches sidebar theme */}
+        <Box 
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexGrow: 1
+          }}
+        >
+          <Box 
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: '8px',
+              backgroundColor: 'rgba(85, 105, 255, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '1.2rem',
+            }}
+          >
+            {companyInitial}
+          </Box>
+          <Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{
+                color: sidebarColors.text,
+                fontWeight: 600,
+                lineHeight: 1.2
               }}
             >
-              <img 
-                src="/sidebar.svg" 
-                alt="Toggle sidebar" 
-                style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  objectFit: 'contain',
-                  transform: 'rotate(180deg)',
-                  transition: 'transform 0.3s ease'
-                }} 
-              />
-            </LogoBox>
-          )}
-        </LogoContainer>
-      </DrawerHeader>
+              {companyFullName}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{
+                color: sidebarColors.textSecondary,
+                fontSize: '0.75rem'
+              }}
+            >
+              Organization
+            </Typography>
+          </Box>
+        </Box>
+        
+        <ToggleButton 
+          onClick={toggleDrawer}
+          disabled={isAnimating}
+          aria-label="close drawer"
+          sx={{
+            '& img': {
+              filter: 'brightness(0) invert(1)', 
+            }
+          }}
+        >
+          <img 
+            src="/sidebar1.png" 
+            alt="Toggle sidebar" 
+            style={{ 
+              width: '20px', 
+              height: '20px', 
+              objectFit: 'contain',
+              transform: 'rotate(0deg)',
+              transition: 'transform 0.3s ease' 
+            }} 
+          />
+        </ToggleButton>
+      </>
+    ) : (
+          <Box 
+        onClick={toggleDrawer}
+        sx={{ 
+          width: 36,
+          height: 36,
+          borderRadius: '8px',
+          backgroundColor: 'rgba(85, 105, 255, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontWeight: 700,
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          '&:hover': {
+            transform: 'scale(1.05)',
+          }
+        }}
+      >
+        {companyInitial}
+      </Box>
+    )}
+  </LogoContainer>
+</DrawerHeader>
 
       {/* Scrollable Content */}
       <Box sx={{
@@ -876,7 +880,7 @@ HRMSSidebar.propTypes = {
   }),
   activeSection: PropTypes.string.isRequired,
   handleSectionChange: PropTypes.func.isRequired,
-  onSidebarToggle: PropTypes.func
+    onSidebarToggle: PropTypes.func
 };
 
 export default HRMSSidebar;

@@ -25,6 +25,8 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { useNavigate } from "react-router-dom";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 
 export default function InvoicesPage() {
   const { token, user, logout } = useAuth();
@@ -282,9 +284,11 @@ export default function InvoicesPage() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
-          </div>
+           <DotLottieReact
+                src="loading.lottie"
+                loop
+                autoplay
+              />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Invoices</h2>
           <p className="text-gray-600">
             Please wait while we fetch invoice data...
@@ -573,7 +577,7 @@ export default function InvoicesPage() {
 
                     <div>
                       <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                        {invoice.vendor?.name || "N/A"}
+                        {invoice.vendor?.firstName || "N/A"}
                       </div>
                       {invoice.vendor?.email && (
                         <div className="text-sm text-gray-500">

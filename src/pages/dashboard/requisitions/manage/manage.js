@@ -25,6 +25,8 @@ import {
   MoreVertical
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 
 export default function ManageRequisitionsPage() {
   const [requisitions, setRequisitions] = useState([]);
@@ -195,9 +197,12 @@ export default function ManageRequisitionsPage() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
-          </div>
+           
+           <DotLottieReact
+      src="loading.lottie"
+      loop
+      autoplay
+    />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Requisitions</h2>
           <p className="text-gray-600">
             Please wait while we fetch pending requisitions...

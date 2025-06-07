@@ -69,6 +69,7 @@ import {
   ThemeProvider,
   CircularProgress
 } from "@mui/material";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import './dashboard.css';
 import RevenueChart from './revenueChart';
 import DateComponent from './date';
@@ -511,7 +512,11 @@ const user = authUser ? {
                transition={{ duration: 0.5 }}
              >
                <Box textAlign="center" sx={{ color: "text.secondary" }}>
-                 <CircularProgress size={48} thickness={4} sx={{ mb: 2 }} />
+                 <DotLottieReact
+      src="spinner.lottie"
+      loop
+      autoplay
+    />
                  <Typography variant="h6" gutterBottom>
                    Loading Dashboard...
                  </Typography>

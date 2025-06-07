@@ -66,7 +66,7 @@ import SubmitQuotePage from "../dashboard/vendors/qoutes/submit/submit";
 import VendorInvoiceSubmissionPage from "../vendor-dash/invoices/invoices";
 import VendorRegistration from "./registration/registration";
 import VendorManagementDashboard from "./registration/registrationManagement";
-
+import UserProfilePage from "../User/user";
 
 // Styled Components
 const Sidebar = styled(Drawer)(({ theme }) => ({
@@ -327,7 +327,8 @@ useEffect(() => {
     const section = searchParams.get('section') || 'vendor-dash';
     setActiveSection(section);
   }, [searchParams]);
-
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+      const [scrollPosition, setScrollPosition] = useState(0);
 
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
@@ -336,6 +337,46 @@ useEffect(() => {
     setActiveSection(section);
     navigate(`?section=${section}`, { replace: true });
   };
+
+  const SIDEBAR_WIDTH = 256;
+    const COLLAPSED_SIDEBAR_WIDTH = 70;
+  
+     const opacity = Math.min(scrollPosition / 100, 1);
+  
+  
+        useEffect(() => {
+          const handleScroll = () => {
+            setScrollPosition(window.pageYOffset);
+          };
+          
+          window.addEventListener('scroll', handleScroll);
+          return () => window.removeEventListener('scroll', handleScroll);
+        }, []);
+     useEffect(() => {
+         const handleStorageChange = () => {
+           const savedOpenState = localStorage.getItem('sidebarOpen');
+           if (savedOpenState !== null) {
+             setSidebarOpen(JSON.parse(savedOpenState));
+           }
+         };
+     
+         // Listen for custom sidebar toggle events
+         const handleSidebarToggle = (event) => {
+           setSidebarOpen(event.detail.open);
+         };
+     
+         // Listen for storage changes and custom events
+         window.addEventListener('storage', handleStorageChange);
+         window.addEventListener('sidebarToggle', handleSidebarToggle);
+         
+         // Check initial state
+         handleStorageChange();
+         
+         return () => {
+           window.removeEventListener('storage', handleStorageChange);
+           window.removeEventListener('sidebarToggle', handleSidebarToggle);
+         };
+       }, []);
   return (
     <Box sx={{
       background: "linear-gradient(135deg,rgb(1, 4, 17) 0%,rgb(54, 79, 100) 100%)", 
@@ -348,20 +389,33 @@ useEffect(() => {
                stats={stats} 
                activeSection={activeSection} 
                handleSectionChange={handleSectionChange}
+               onSidebarToggle={setSidebarOpen}
              />
       
 
       {/* Main Content */}
-      <Box component="main" sx={{ flexGrow: 1, overflow: "auto", backgroundColor: theme.palette.background.default }}>
+      <Box component="main" sx={{   flexGrow: 1, 
+        overflow: "auto",
+        backgroundColor: theme.palette.background.default,
+        position: 'relative', }}>
         {/* Header */}
              <DashboardHeader 
-            user={user}
-            onMobileMenuToggle={setMobileOpen}
+           user={user}
+          onMobileMenuToggle={setMobileOpen}
+          scrollPosition={scrollPosition}
+          handleSectionChange={handleSectionChange} 
+          sidebarOpen={sidebarOpen}
+          sidebarWidth={SIDEBAR_WIDTH}
+          collapsedSidebarWidth={COLLAPSED_SIDEBAR_WIDTH}
       
           />
 
         {/* Main Content Area */}
-        <Box sx={{ p: 2 }}>
+        <Box sx={{  paddingTop: '80px', 
+  minHeight: 'calc(100vh - 64px)',
+   position: 'relative',
+     zIndex: 1,
+      padding: '80px 1.5rem 1.5rem',}}>
           {activeSection === "vendor-dash" ? (
             <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
               {/* Page Title */}
@@ -369,7 +423,7 @@ useEffect(() => {
                 display: "flex", 
                 justifyContent: "space-between", 
                 alignItems: 'center',
-                mb: 3,
+                mb: 2,
                 flexDirection: { xs: 'column', sm: 'row' },
                 gap: { xs: 1, sm: 0 },
                 textAlign: { xs: 'center', sm: 'left' }
@@ -431,7 +485,7 @@ useEffect(() => {
               {activeSection === "purchase-order" && <VendorPODetailsPage />}
               {activeSection === "registration" && <VendorRegistration />}
                {activeSection === "registration-management" && <VendorManagementDashboard/>}
-               
+               {activeSection === "user-profile" && <UserProfilePage />}
             </Box> 
           )}
         </Box>

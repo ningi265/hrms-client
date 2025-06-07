@@ -269,11 +269,7 @@ export default function CreateRFQPage({ onClose, onSuccess }) {
    vendor.companyName?.toLowerCase().includes(searchTerm.toLowerCase()))
 );
 
-console.log('Total vendors:', vendors.length);
-console.log('Search term:', searchTerm);
-console.log('Filtered vendors:', filteredVendors.length);
-console.log('All vendors:', vendors);
-console.log('Filtered vendors data:', filteredVendors);
+
 
   if (isLoading && requisitions.length === 0) {
     return (

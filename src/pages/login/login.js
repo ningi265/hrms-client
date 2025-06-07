@@ -50,51 +50,67 @@ export default function LoginPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-  
-    try {
-      await login(email, password);
-      const user = JSON.parse(localStorage.getItem("user"));
-  
-      if (!user) {
-        throw new Error("User data not found");
-      }
-  
-      // Define role categories
-      const elevatedRoles = [
-        "admin",
-        "procurement_officer",
-        "IT/Technical",
-        "Executive (CEO, CFO, etc.)",
-        "Management",
-        "Human Resources",
-        "Accounting/Finance"
-      ];
-  
-      // Special case for vendor
-      if (user.role === "Vendor") {
-        navigate("/vendor-dash");
-        return;
-      }
-  
-      // Check for elevated privileges
-      if (elevatedRoles.includes(user.role)) {
-        navigate("/dashboard");
-      } 
-      // Default for all other roles (Sales/Marketing, Operations, Other, etc.)
-      else {
-        navigate("/employee-dash");
-      }
-  
-    } catch (error) {
-      setError("Login failed. Invalid credentials.");
-      console.error("Login error:", error.message);
-    } finally {
-      setIsLoading(false);
+ const handleSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+  setError(""); // Clear previous errors
+
+  try {
+    // Validate inputs before making API call
+    if (!email || !password) {
+      throw new Error("Please enter both email and password");
     }
-  };
+
+    await login(email, password);
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (!user) {
+      throw new Error("User data not found. Please try logging in again.");
+    }
+
+    // Define role-based navigation paths
+    const roleNavigationMap = {
+      // Elevated privileges roles
+      "admin": "/dashboard",
+      "procurement_officer": "/dashboard",
+      "IT/Technical": "/dashboard",
+      "Executive (CEO, CFO, etc.)": "/dashboard",
+      "Management": "/dashboard",
+      "Human Resources": "/dashboard",
+      "Accounting/Finance": "/dashboard",
+      
+      // Special case roles
+      "Vendor": "/vendor-dash",
+      "Driver": "/driver-dash",
+      
+      // Default role
+      "default": "/employee-dash"
+    };
+
+    // Get the path based on role or use default
+    const path = roleNavigationMap[user.role] || roleNavigationMap.default;
+    
+    // Navigate to the determined path
+    navigate(path);
+
+    // Optional: Show success message
+    // toast.success("Login successful!");
+
+  } catch (error) {
+    // Handle different error types with appropriate messages
+    const errorMessage = error.response?.data?.message || 
+                        error.message || 
+                        "Login failed. Please check your credentials and try again.";
+    
+    setError(errorMessage);
+    console.error("Login error:", error);
+
+    // Optional: Show error toast
+    // toast.error(errorMessage);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
