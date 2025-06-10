@@ -302,7 +302,7 @@ const PulseBadge = styled('span')(({ theme }) => ({
 }));
 
 // Main component
-const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange }) => {
+const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange, onSidebarToggle, user }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -314,12 +314,14 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Remember sidebar state in localStorage
-  useEffect(() => {
+ useEffect(() => {
     const savedOpenState = localStorage.getItem('sidebarOpen');
     if (savedOpenState !== null && !isMobile) {
-      setOpen(JSON.parse(savedOpenState));
+      const parsedState = JSON.parse(savedOpenState);
+      setOpen(parsedState);
+      onSidebarToggle?.(parsedState); // Notify parent component
     }
-  }, [isMobile]);
+  }, [isMobile, onSidebarToggle]);
 
   // Improved toggle behavior with animation lock
   const toggleDrawer = () => {
@@ -335,6 +337,11 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
       setOpen(newOpenState);
       localStorage.setItem('sidebarOpen', JSON.stringify(newOpenState));
       
+
+      onSidebarToggle?.(newOpenState);
+        window.dispatchEvent(new CustomEvent('sidebarToggle', { 
+        detail: { open: newOpenState } 
+      }));
       // Wait for animation to complete before allowing another toggle
       setTimeout(() => setIsAnimating(false), 300);
     }
@@ -568,77 +575,106 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange 
   const drawer = (
     <>
       {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
-      <DrawerHeader>
-        <LogoContainer open={open}>
-          {open ? (
-            <>
-              {/* When open, show logo and title on left, toggle button on right */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <LogoBox>
-                  N
-                </LogoBox>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600,
-                    color: sidebarColors.text,
-                    letterSpacing: '0.5px',
-                    fontSize: '1.125rem',
-                  }}
-                >
-                NYASA SC
-                </Typography>
-              </Box>
-              
-              <ToggleButton 
-                onClick={toggleDrawer}
-                disabled={isAnimating}
-                aria-label="close drawer"
-                 sx={{
-    '& img': {
-      filter: 'brightness(0) invert(1)', 
-    }
-  }}
-              >
-                <img 
-                  src="/sidebar1.png" 
-                  alt="Toggle sidebar" 
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    objectFit: 'contain',
-                    transform: 'rotate(0deg)',
-                    transition: 'transform 0.3s ease' 
-                  }} 
-                />
-              </ToggleButton>
-            </>
-          ) : (
-            // When collapsed, only show toggle icon in the H logo's place
-            <LogoBox 
-              onClick={toggleDrawer} 
-              sx={{ 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+<DrawerHeader>
+  <LogoContainer open={open}>
+    {open ? (
+      <>
+        {/* Company Display - matches sidebar theme */}
+        <Box 
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexGrow: 1
+          }}
+        >
+          <Box 
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: '8px',
+              backgroundColor: 'rgba(85, 105, 255, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '1.2rem',
+            }}
+          >
+            {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
+          </Box>
+          <Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{
+                color: sidebarColors.text,
+                fontWeight: 600,
+                lineHeight: 1.2
               }}
             >
-              <img 
-                src="/sidebar.svg" 
-                alt="Toggle sidebar" 
-                style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  objectFit: 'contain',
-                  transform: 'rotate(180deg)',
-                  transition: 'transform 0.3s ease'
-                }} 
-              />
-            </LogoBox>
-          )}
-        </LogoContainer>
-      </DrawerHeader>
+              {user?.companyName || 'NyasaSC'} {/* Fallback to 'NyasaSC' if no company name */}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{
+                color: sidebarColors.textSecondary,
+                fontSize: '0.75rem'
+              }}
+            >
+              Organization
+            </Typography>
+          </Box>
+        </Box>
+        
+        <ToggleButton 
+          onClick={toggleDrawer}
+          disabled={isAnimating}
+          aria-label="close drawer"
+          sx={{
+            '& img': {
+              filter: 'brightness(0) invert(1)', 
+            }
+          }}
+        >
+          <img 
+            src="/sidebar1.png" 
+            alt="Toggle sidebar" 
+            style={{ 
+              width: '20px', 
+              height: '20px', 
+              objectFit: 'contain',
+              transform: 'rotate(0deg)',
+              transition: 'transform 0.3s ease' 
+            }} 
+          />
+        </ToggleButton>
+      </>
+    ) : (
+      <Box 
+        onClick={toggleDrawer}
+        sx={{ 
+          width: 36,
+          height: 36,
+          borderRadius: '8px',
+          backgroundColor: 'rgba(85, 105, 255, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontWeight: 700,
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          '&:hover': {
+            transform: 'scale(1.05)',
+          }
+        }}
+      >
+        {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
+      </Box>
+    )}
+  </LogoContainer>
+</DrawerHeader>
 
       {/* Scrollable Content */}
       <Box sx={{
@@ -868,7 +904,8 @@ HRMSSidebar.propTypes = {
     invoices: PropTypes.object,
   }),
   activeSection: PropTypes.string.isRequired,
-  handleSectionChange: PropTypes.func.isRequired
+  handleSectionChange: PropTypes.func.isRequired,
+  onSidebarToggle: PropTypes.func
 };
 
 export default HRMSSidebar;
