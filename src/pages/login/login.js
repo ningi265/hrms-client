@@ -84,7 +84,7 @@ export default function LoginPage() {
       "Driver": "/driver-dash",
       
       // Default role
-      "default": "/employee-dash"
+      "Sales/Marketing": "/employee-dash"
     };
 
     // Get the path based on role or use default
