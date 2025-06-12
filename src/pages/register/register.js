@@ -1,79 +1,85 @@
-import { useState, useEffect } from "react";
-import { 
-  Eye, 
-  EyeOff, 
-  AlertCircle, 
-  CheckCircle, 
-  ArrowLeft, 
-  User, 
-  Building, 
-  Briefcase, 
-  UserCheck, 
-  Mail, 
-  Phone, 
-  Lock, 
-  Upload, 
-  Image, 
-  FileSignature, 
-  Youtube 
-} from "lucide-react";
+"use client"
+
+import { useState, useEffect } from "react"
+import {
+  Eye,
+  EyeOff,
+  AlertCircle,
+  CheckCircle,
+  ArrowLeft,
+  User,
+  Building,
+  Briefcase,
+  UserCheck,
+  Mail,
+  Phone,
+  Lock,
+  ImageIcon,
+  FileSignature,
+  Youtube,
+} from "lucide-react"
 
 export default function RegisterPage() {
-  const [activeStep, setActiveStep] = useState(0);
-  const [email, setEmail] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [industry, setIndustry] = useState("");
-  const [role, setRole] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [currentProcess, setCurrentProcess] = useState(0);
-  const [success, setSuccess] = useState(false);
-  const [emailVerificationCode, setVerificationCode] = useState("");
-  const [showVerification, setShowVerification] = useState(false);
-  const [isSendingSMS, setIsSendingSMS] = useState(false);
-  const [logo, setLogo] = useState(null);
-  const [signature, setSignature] = useState(null);
-  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const [onboardingStep, setOnboardingStep] = useState(0);
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const [activeStep, setActiveStep] = useState(0)
+  const [email, setEmail] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [companyName, setCompanyName] = useState("")
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [industry, setIndustry] = useState("")
+  const [role, setRole] = useState("")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [currentProcess, setCurrentProcess] = useState(0)
+  const [success, setSuccess] = useState(false)
+  const [emailVerificationCode, setVerificationCode] = useState("")
+  const [showVerification, setShowVerification] = useState(false)
+  const [isSendingSMS, setIsSendingSMS] = useState(false)
+  const [logo, setLogo] = useState(null)
+  const [signature, setSignature] = useState(null)
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState(0)
 
-  const steps = ["Email", "Personal", "Company", "Review"];
+  // NEW: Store user data and token from registration
+  const [userData, setUserData] = useState(null)
+  const [authToken, setAuthToken] = useState(null)
+
+  const backendUrl = process.env.REACT_APP_BACKEND_URL
+
+  const steps = ["Email", "Personal", "Company", "Review"]
 
   const hrmsProcesses = [
-    { 
-      icon: Mail, 
-      title: "Quick Onboarding", 
-      description: "Secure registration process" 
+    {
+      icon: Mail,
+      title: "Quick Onboarding",
+      description: "Secure registration process",
     },
-    { 
-      icon: User, 
-      title: "Team Management", 
-      description: "Manage team with custom roles" 
+    {
+      icon: User,
+      title: "Team Management",
+      description: "Manage team with custom roles",
     },
-    { 
-      icon: Building, 
-      title: "Company Setup", 
-      description: "Customize for your organization" 
+    {
+      icon: Building,
+      title: "Company Setup",
+      description: "Customize for your organization",
     },
-    { 
-      icon: Briefcase, 
-      title: "Workflow Design", 
-      description: "Create approval workflows" 
-    }
-  ];
-  
+    {
+      icon: Briefcase,
+      title: "Workflow Design",
+      description: "Create approval workflows",
+    },
+  ]
+
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentProcess(prev => (prev + 1) % hrmsProcesses.length);
-    }, 4000);
-    
-    return () => clearInterval(interval);
-  }, []);
+      setCurrentProcess((prev) => (prev + 1) % hrmsProcesses.length)
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const industries = [
     "Technology",
@@ -83,8 +89,8 @@ export default function RegisterPage() {
     "Manufacturing",
     "Retail",
     "Hospitality",
-    "Other"
-  ];
+    "Other",
+  ]
 
   const roles = [
     "IT/Technical",
@@ -95,90 +101,112 @@ export default function RegisterPage() {
     "Human Resources",
     "Accounting/Finance",
     "Other",
-    "Driver"
-  ];
+    "Driver",
+  ]
+
+  // Define role-based navigation paths
+  const getRoleBasedPath = (userRole) => {
+    const roleNavigationMap = {
+      // Elevated privileges roles
+      admin: "/dashboard",
+      procurement_officer: "/dashboard",
+      "IT/Technical": "/dashboard",
+      "Executive (CEO, CFO, etc.)": "/dashboard",
+      Management: "/dashboard",
+      "Human Resources": "/dashboard",
+      "Accounting/Finance": "/dashboard",
+
+      // Special case roles
+      Vendor: "/vendor-dash",
+      Driver: "/driver-dash",
+
+      // Default role
+      "Sales/Marketing": "/employee-dash",
+    }
+
+    return roleNavigationMap[userRole] || "/employee-dash"
+  }
 
   const handleNext = () => {
-    setError("");
-    
+    setError("")
+
     if (activeStep === 0 && !email) {
-      setError("Please enter your email address");
-      return;
+      setError("Please enter your email address")
+      return
     }
     if (activeStep === 1 && (!firstName || !lastName || !password)) {
-      setError("Please fill all required fields");
-      return;
+      setError("Please fill all required fields")
+      return
     }
     if (activeStep === 2 && (!companyName || !industry || !role)) {
-      setError("Please complete all company details");
-      return;
+      setError("Please complete all company details")
+      return
     }
-    
-    setActiveStep(activeStep + 1);
-  };
+
+    setActiveStep(activeStep + 1)
+  }
 
   const handleBack = () => {
-    setError("");
-    setActiveStep(activeStep - 1);
-  };
+    setError("")
+    setActiveStep(activeStep - 1)
+  }
 
   const handleResendCode = async () => {
-    setIsSendingSMS(true);
-    setError("");
-    
+    setIsSendingSMS(true)
+    setError("")
+
     try {
       const response = await fetch(`${backendUrl}/api/auth/resend`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ phoneNumber }),
-      });
-  
+      })
+
       if (!response.ok) {
-        throw new Error('Failed to resend verification code');
+        throw new Error("Failed to resend verification code")
       }
-      
     } catch (err) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setIsSendingSMS(false);
+      setIsSendingSMS(false)
     }
-  };
-  
+  }
+
   const handleLogoUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.match('image.*')) {
-      setLogo(file);
+    const file = e.target.files[0]
+    if (file && file.type.match("image.*")) {
+      setLogo(file)
     }
-  };
+  }
 
   const handleSignatureUpload = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type.match('image.*')) {
-      setSignature(file);
+    const file = e.target.files[0]
+    if (file && file.type.match("image.*")) {
+      setSignature(file)
     }
-  };
+  }
 
   const handleSubmit = async () => {
     if (!phoneNumber) {
-      setError("Please enter your phone number");
-      return;
+      setError("Please enter your phone number")
+      return
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      return;
+      setError("Password must be at least 8 characters")
+      return
     }
-  
-    setIsLoading(true);
-    setError("");
-  
+
+    setIsLoading(true)
+    setError("")
+
     try {
       const registrationResponse = await fetch(`${backendUrl}/api/auth/register`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email,
@@ -188,256 +216,210 @@ export default function RegisterPage() {
           password,
           industry,
           role,
-          phoneNumber
+          phoneNumber,
         }),
-      });
-      
+      })
+
       if (!registrationResponse.ok) {
-        const errorData = await registrationResponse.json();
-        throw new Error(errorData.message || 'Registration failed');
+        const errorData = await registrationResponse.json()
+        throw new Error(errorData.message || "Registration failed")
       }
 
-      const registrationData = await registrationResponse.json();
-      localStorage.setItem("token", registrationData.token);
-  
-      setIsSendingSMS(true);
+      const registrationData = await registrationResponse.json()
+
+      // FIXED: Store user data and token in state instead of localStorage
+      setUserData(registrationData.user)
+      setAuthToken(registrationData.token)
+
+      // Optional: Still store in localStorage as backup, but don't rely on it
+      localStorage.setItem("token", registrationData.token)
+      localStorage.setItem("user", JSON.stringify(registrationData.user))
+
+      setIsSendingSMS(true)
       const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({email}),
-      });
-  
+        body: JSON.stringify({ email }),
+      })
+
       if (!smsResponse.ok) {
-        throw new Error('Failed to send verification code');
+        throw new Error("Failed to send verification code")
       }
-  
-      setShowVerification(true);
-      
+
+      setShowVerification(true)
     } catch (err) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setIsLoading(false);
-      setIsSendingSMS(false);
+      setIsLoading(false)
+      setIsSendingSMS(false)
     }
-  };
+  }
 
   const handleVerify = async () => {
     if (!emailVerificationCode || emailVerificationCode.length !== 6) {
-      setError("Please enter a valid 6-digit code");
-      return;
+      setError("Please enter a valid 6-digit code")
+      return
     }
-  
-    setIsLoading(true);
-    setError("");
-  
+
+    setIsLoading(true)
+    setError("")
+
     try {
       const response = await fetch(`${backendUrl}/api/auth/email/verify`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email,
-          code: emailVerificationCode
+          code: emailVerificationCode,
         }),
-      });
-  
+      })
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Verification failed');
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Verification failed")
       }
-  
-      setSuccess(true);
-      
+
+      setSuccess(true)
     } catch (err) {
-      setError(err.message);
+      setError(err.message)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
+  const uploadLogoToServer = async () => {
+    if (!logo) return null
 
-const uploadLogoToServer = async () => {
-  if (!logo) return null;
-  
-  const formData = new FormData();
-  formData.append('logo', logo);
-  
-  // Make sure email is defined and add it to the form data
-  if (!email) {
-    setError("User email is missing. Please try logging in again.");
-    return null;
-  }
-  
-  formData.append('email', email);
-  console.log("Sending email in request:", email); // Debug log
-  
-  try {
-    const response = await fetch(`${backendUrl}/api/auth/onboarding/logo`, {
-      method: 'PUT',
-      body: formData,
-      // Note: Don't set Content-Type header when using FormData - the browser will set it correctly with boundary
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Logo upload error response:", errorData); // Debug log
-      throw new Error(errorData.message || 'Failed to upload logo');
-    }
-    
-    const data = await response.json();
-    return data.logoUrl;
-  } catch (error) {
-    console.error("Error uploading logo:", error);
-    setError("Failed to upload company logo. Please try again.");
-    return null;
-  }
-};
+    const formData = new FormData()
+    formData.append("logo", logo)
+    formData.append("email", email)
 
-const uploadSignatureToServer = async () => {
-  if (!signature) return null;
-  
-  console.log("Signature file to upload:", signature);
-  console.log("Signature file type:", signature.type);
-  console.log("Signature file size:", signature.size);
-  
-  // Create a fresh FormData instance
-  const formData = new FormData();
-  
-  // Make sure to use exactly the same field name as expected by the server
-  formData.append('signature', signature);
-  
-  if (!email) {
-    setError("User email is missing. Please try logging in again.");
-    return null;
-  }
-  
-  formData.append('email', email);
-  
-  // Log what's being sent in the FormData
-  for (let [key, value] of formData.entries()) {
-    console.log(`FormData contains - ${key}: ${value instanceof File ? value.name : value}`);
-  }
-  
-  try {
-    console.log("Sending request to:", `${backendUrl}/api/auth/onboarding/signature`);
-    
-    // Don't set Content-Type header - browser will set it correctly with boundary
-    const response = await fetch(`${backendUrl}/api/auth/onboarding/signature`, {
-      method: 'PUT',
-      body: formData,
-      // Include token if authentication is required
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}` 
-      }
-    });
-    
-    console.log("Response status:", response.status);
-    
-    // Check for specific error status codes
-    if (response.status === 400) {
-      const errorData = await response.json();
-      console.error("Bad request error:", errorData);
-      throw new Error(errorData.message || 'Bad request when uploading signature');
-    }
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Signature upload error:", errorData);
-      throw new Error(errorData.message || 'Failed to upload signature');
-    }
-    
-    const data = await response.json();
-    console.log("Successful upload response:", data);
-    return data.signatureUrl;
-  } catch (error) {
-    console.error("Error uploading signature:", error);
-    setError(`Failed to upload signature: ${error.message}`);
-    return null;
-  }
-};
+    try {
+      const response = await fetch(`${backendUrl}/api/auth/onboarding/logo`, {
+        method: "PUT",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${authToken}`, // Use stored token
+        },
+      })
 
- const handleCompleteOnboarding = async () => {
-  setIsLoading(true);
-  setError("");
-  
-  try {
-    // Handle logo upload
-    if (logo) {
-      // Create a separate FormData just for the logo
-      const logoFormData = new FormData();
-      logoFormData.append('logo', logo); // This must match exactly what backend expects
-      logoFormData.append('email', email.trim().toLowerCase());
-      
-      console.log("Sending logo upload with fields:");
-      for (let pair of logoFormData.entries()) {
-        console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to upload logo")
       }
 
-      const logoResponse = await fetch(`${backendUrl}/api/auth/onboarding/logo`, {
-        method: 'PUT',
-        body: logoFormData,
-        // Don't set Content-Type header - browser will set it correctly with boundary
-      });
-      
-      console.log("Logo upload response status:", logoResponse.status);
-      
-      if (!logoResponse.ok) {
-        const errorData = await logoResponse.json();
-        console.error("Logo upload error:", errorData);
-        setError(errorData.message || "Failed to upload logo");
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Logo uploaded successfully");
+      const data = await response.json()
+      return data.logoUrl
+    } catch (error) {
+      console.error("Error uploading logo:", error)
+      setError("Failed to upload company logo. Please try again.")
+      return null
     }
-    
-    // Handle signature upload separately
-    if (signature) {
-      // Create a separate FormData just for the signature
-      const signatureFormData = new FormData();
-      signatureFormData.append('signature', signature); // This must match exactly what backend expects
-      signatureFormData.append('email', email.trim().toLowerCase());
-      
-      console.log("Sending signature upload with fields:");
-      for (let pair of signatureFormData.entries()) {
-        console.log(pair[0] + ': ' + (pair[1] instanceof File ? pair[1].name : pair[1]));
+  }
+
+  const uploadSignatureToServer = async () => {
+    if (!signature) return null
+
+    const formData = new FormData()
+    formData.append("signature", signature)
+    formData.append("email", email)
+
+    try {
+      const response = await fetch(`${backendUrl}/api/auth/onboarding/signature`, {
+        method: "PUT",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${authToken}`, // Use stored token
+        },
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to upload signature")
       }
 
-      const signatureResponse = await fetch(`${backendUrl}/api/auth/onboarding/signature`, {
-        method: 'PUT',
-        body: signatureFormData,
-        // Don't set Content-Type header - browser will set it correctly with boundary
-      });
-      
-      console.log("Signature upload response status:", signatureResponse.status);
-      
-      if (!signatureResponse.ok) {
-        const errorData = await signatureResponse.json();
-        console.error("Signature upload error:", errorData);
-        setError(errorData.message || "Failed to upload signature");
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Signature uploaded successfully");
+      const data = await response.json()
+      return data.signatureUrl
+    } catch (error) {
+      console.error("Error uploading signature:", error)
+      setError(`Failed to upload signature: ${error.message}`)
+      return null
     }
-    
-    // If we got here, uploads were successful or not needed
-    setHasCompletedOnboarding(true);
-    
-    // Redirect to dashboard
-    window.location.href = '/dashboard';
-  } catch (error) {
-    console.error("Error during onboarding completion:", error);
-    setError("An error occurred while completing onboarding. Please try again.");
-  } finally {
-    setIsLoading(false);
   }
-};
+
+  const handleCompleteOnboarding = async () => {
+    setIsLoading(true)
+    setError("")
+
+    try {
+      // Handle logo upload
+      if (logo) {
+        const logoFormData = new FormData()
+        logoFormData.append("logo", logo)
+        logoFormData.append("email", email.trim().toLowerCase())
+
+        const logoResponse = await fetch(`${backendUrl}/api/auth/onboarding/logo`, {
+          method: "PUT",
+          body: logoFormData,
+          headers: {
+            Authorization: `Bearer ${authToken}`, // Use stored token
+          },
+        })
+
+        if (!logoResponse.ok) {
+          const errorData = await logoResponse.json()
+          setError(errorData.message || "Failed to upload logo")
+          setIsLoading(false)
+          return
+        }
+      }
+
+      // Handle signature upload
+      if (signature) {
+        const signatureFormData = new FormData()
+        signatureFormData.append("signature", signature)
+        signatureFormData.append("email", email.trim().toLowerCase())
+
+        const signatureResponse = await fetch(`${backendUrl}/api/auth/onboarding/signature`, {
+          method: "PUT",
+          body: signatureFormData,
+          headers: {
+            Authorization: `Bearer ${authToken}`, // Use stored token
+          },
+        })
+
+        if (!signatureResponse.ok) {
+          const errorData = await signatureResponse.json()
+          setError(errorData.message || "Failed to upload signature")
+          setIsLoading(false)
+          return
+        }
+      }
+
+      // FIXED: Use userData from state instead of localStorage
+      if (!userData) {
+        throw new Error("User data not available. Please try logging in again.")
+      }
+
+      // Get the path based on user role from our stored data
+      const dashboardPath = getRoleBasedPath(userData.role || role)
+
+      // Set onboarding as complete
+      setHasCompletedOnboarding(true)
+
+      // Navigate to the appropriate dashboard
+      window.location.href = dashboardPath
+    } catch (error) {
+      console.error("Error during onboarding completion:", error)
+      setError(error.message || "An error occurred while completing onboarding. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   if (showVerification) {
     if (success) {
@@ -448,7 +430,7 @@ const uploadSignatureToServer = async () => {
               <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full">
                 <CheckCircle size={24} />
               </div>
-              
+
               <h2 className="text-xl font-bold text-gray-900 mb-1">
                 {onboardingStep === 0 && "Brand Your Account"}
                 {onboardingStep === 1 && "Add Your Signature"}
@@ -460,20 +442,32 @@ const uploadSignatureToServer = async () => {
                 {onboardingStep === 2 && "Watch a quick overview of our platform"}
               </p>
             </div>
-            
+
+            {/* Display user info from state */}
+            {userData && (
+              <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  Welcome, {userData.firstName || firstName} {userData.lastName || lastName}!
+                </p>
+                <p className="text-xs text-blue-600">
+                  Role: {userData.role || role} | Company: {userData.companyName || companyName}
+                </p>
+              </div>
+            )}
+
             <div className="space-y-6">
               {onboardingStep === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
                   {logo ? (
                     <>
                       <div className="mb-3 p-2 bg-gray-100 rounded-lg">
-                        <img 
-                          src={URL.createObjectURL(logo)} 
-                          alt="Company Logo Preview" 
+                        <img
+                          src={URL.createObjectURL(logo) || "/placeholder.svg"}
+                          alt="Company Logo Preview"
                           className="h-24 object-contain"
                         />
                       </div>
-                      <button 
+                      <button
                         onClick={() => setLogo(null)}
                         className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                       >
@@ -483,17 +477,12 @@ const uploadSignatureToServer = async () => {
                   ) : (
                     <>
                       <div className="bg-blue-100 p-3 rounded-full mb-3">
-                        <Image size={24} className="text-blue-600" />
+                        <ImageIcon size={24} className="text-blue-600" />
                       </div>
                       <label className="cursor-pointer">
                         <span className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                           Upload Logo
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleLogoUpload}
-                            className="hidden"
-                          />
+                          <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                         </span>
                       </label>
                       <p className="mt-2 text-xs text-gray-500">PNG, JPG or SVG (Max. 5MB)</p>
@@ -501,19 +490,19 @@ const uploadSignatureToServer = async () => {
                   )}
                 </div>
               )}
-              
+
               {onboardingStep === 1 && (
                 <div className="flex flex-col items-center justify-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
                   {signature ? (
                     <>
                       <div className="mb-3 p-2 bg-gray-100 rounded-lg">
-                        <img 
-                          src={URL.createObjectURL(signature)} 
-                          alt="Signature Preview" 
+                        <img
+                          src={URL.createObjectURL(signature) || "/placeholder.svg"}
+                          alt="Signature Preview"
                           className="h-24 object-contain"
                         />
                       </div>
-                      <button 
+                      <button
                         onClick={() => setSignature(null)}
                         className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                       >
@@ -528,12 +517,7 @@ const uploadSignatureToServer = async () => {
                       <label className="cursor-pointer">
                         <span className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                           Upload Signature
-                          <input 
-                            type="file" 
-                            accept="image/*" 
-                            onChange={handleSignatureUpload}
-                            className="hidden"
-                          />
+                          <input type="file" accept="image/*" onChange={handleSignatureUpload} className="hidden" />
                         </span>
                       </label>
                       <p className="mt-2 text-xs text-gray-500">PNG or JPG (Max. 2MB)</p>
@@ -541,7 +525,7 @@ const uploadSignatureToServer = async () => {
                   )}
                 </div>
               )}
-              
+
               {onboardingStep === 2 && (
                 <div className="bg-gray-100 rounded-lg overflow-hidden aspect-video">
                   <div className="h-full flex items-center justify-center bg-black">
@@ -559,7 +543,7 @@ const uploadSignatureToServer = async () => {
                   </div>
                 </div>
               )}
-              
+
               <div className="flex justify-between items-center">
                 {onboardingStep > 0 && (
                   <button
@@ -570,35 +554,40 @@ const uploadSignatureToServer = async () => {
                     Back
                   </button>
                 )}
-                
+
                 <button
-  onClick={() => {
-    if (onboardingStep < 2) {
-      setOnboardingStep(onboardingStep + 1);
-    } else {
-      handleCompleteOnboarding();
-    }
-  }}
-  disabled={(onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature) || isLoading}
-  className={`ml-auto flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 ${
-    (onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature) || isLoading 
-      ? "opacity-50 cursor-not-allowed" 
-      : ""
-  }`}
->
-  {isLoading ? (
-    <>
-      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-3"></div>
-      Saving...
-    </>
-  ) : onboardingStep < 2 ? "Continue" : "Go to Dashboard"}
-</button>
+                  onClick={() => {
+                    if (onboardingStep < 2) {
+                      setOnboardingStep(onboardingStep + 1)
+                    } else {
+                      handleCompleteOnboarding()
+                    }
+                  }}
+                  disabled={(onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature) || isLoading}
+                  className={`ml-auto flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 ${
+                    (onboardingStep === 0 && !logo) || (onboardingStep === 1 && !signature) || isLoading
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-3"></div>
+                      Saving...
+                    </>
+                  ) : onboardingStep < 2 ? (
+                    "Continue"
+                  ) : (
+                    "Go to Dashboard"
+                  )}
+                </button>
               </div>
             </div>
           </div>
         </div>
-      );
+      )
     }
+
     return (
       <div className="h-screen bg-white flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
@@ -606,13 +595,13 @@ const uploadSignatureToServer = async () => {
             <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 bg-blue-100 text-blue-600 rounded-full">
               <Phone size={24} />
             </div>
-            
+
             <h2 className="text-xl font-bold text-gray-900 mb-1">Verify Your email</h2>
             <p className="text-sm text-gray-600">
               We've sent a 6-digit code to <span className="font-medium">{email}</span>
             </p>
           </div>
-          
+
           <div className="space-y-4">
             {error && (
               <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start text-red-700">
@@ -620,7 +609,7 @@ const uploadSignatureToServer = async () => {
                 <span className="text-xs">{error}</span>
               </div>
             )}
-            
+
             <div>
               <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-1">
                 Verification Code
@@ -630,8 +619,8 @@ const uploadSignatureToServer = async () => {
                 type="text"
                 value={emailVerificationCode}
                 onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                  setVerificationCode(value);
+                  const value = e.target.value.replace(/\D/g, "").slice(0, 6)
+                  setVerificationCode(value)
                 }}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-center text-lg tracking-widest"
                 placeholder="123456"
@@ -639,9 +628,9 @@ const uploadSignatureToServer = async () => {
                 required
               />
               <p className="mt-1 text-xs text-gray-500">
-                Didn't receive a code? 
-                <button 
-                  onClick={handleResendCode} 
+                Didn't receive a code?{" "}
+                <button
+                  onClick={handleResendCode}
                   className="text-blue-600 hover:underline ml-1"
                   disabled={isSendingSMS}
                 >
@@ -649,7 +638,7 @@ const uploadSignatureToServer = async () => {
                 </button>
               </p>
             </div>
-            
+
             <button
               onClick={handleVerify}
               disabled={isLoading}
@@ -669,9 +658,9 @@ const uploadSignatureToServer = async () => {
           </div>
         </div>
       </div>
-    );
+    )
   }
-  
+
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
@@ -697,7 +686,7 @@ const uploadSignatureToServer = async () => {
               </div>
             </div>
           </div>
-        );
+        )
       case 1:
         return (
           <div className="space-y-4">
@@ -741,7 +730,7 @@ const uploadSignatureToServer = async () => {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                 Password
@@ -768,18 +757,18 @@ const uploadSignatureToServer = async () => {
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              <p className={`mt-1 text-xs ${
-                password.length > 0 && password.length < 8 
-                  ? "text-red-500" 
-                  : "text-gray-500"
-              }`}>
+              <p
+                className={`mt-1 text-xs ${
+                  password.length > 0 && password.length < 8 ? "text-red-500" : "text-gray-500"
+                }`}
+              >
                 {password.length > 0 && password.length < 8
                   ? "Password must be at least 8 characters"
                   : "Password must be at least 8 characters"}
               </p>
             </div>
           </div>
-        );
+        )
       case 2:
         return (
           <div className="space-y-4">
@@ -802,7 +791,7 @@ const uploadSignatureToServer = async () => {
                 />
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
                 Industry
@@ -818,7 +807,9 @@ const uploadSignatureToServer = async () => {
                   className="w-full pl-9 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 appearance-none bg-white"
                   required
                 >
-                  <option value="" disabled>Select your industry</option>
+                  <option value="" disabled>
+                    Select your industry
+                  </option>
                   {industries.map((option) => (
                     <option key={option} value={option}>
                       {option}
@@ -827,12 +818,16 @@ const uploadSignatureToServer = async () => {
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                 Your Role
@@ -848,7 +843,9 @@ const uploadSignatureToServer = async () => {
                   className="w-full pl-9 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 appearance-none bg-white"
                   required
                 >
-                  <option value="" disabled>Select your role</option>
+                  <option value="" disabled>
+                    Select your role
+                  </option>
                   {roles.map((option) => (
                     <option key={option} value={option}>
                       {option}
@@ -857,19 +854,23 @@ const uploadSignatureToServer = async () => {
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                   <svg className="h-4 w-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </div>
               </div>
             </div>
           </div>
-        );
+        )
       case 3:
         return (
           <div className="space-y-4">
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <h3 className="text-sm font-medium text-gray-900 mb-3">Review Your Information</h3>
-              
+
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Email:</span>
@@ -877,7 +878,9 @@ const uploadSignatureToServer = async () => {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Name:</span>
-                  <span className="font-medium">{firstName} {lastName}</span>
+                  <span className="font-medium">
+                    {firstName} {lastName}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Company:</span>
@@ -893,7 +896,7 @@ const uploadSignatureToServer = async () => {
                 </div>
               </div>
             </div>
-            
+
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
                 Phone Number
@@ -915,11 +918,11 @@ const uploadSignatureToServer = async () => {
               <p className="mt-1 text-xs text-gray-500">We'll send a verification code to this number</p>
             </div>
           </div>
-        );
+        )
       default:
-        return null;
+        return null
     }
-  };
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-white">
@@ -930,63 +933,65 @@ const uploadSignatureToServer = async () => {
             {/* Logo */}
             <div className="text-center flex-shrink-0">
               <div className="inline-flex items-center">
-                <img
-                  src="/hrms-logo.png"
-                  className="h-32 w-auto mx-auto"
-                  alt="Company Logo"
-                />
+                <img src="/hrms-logo.png" className="h-32 w-auto mx-auto" alt="Company Logo" />
               </div>
             </div>
-            
+
             {/* Progress bar */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 {steps.map((step, index) => (
                   <div key={index} className="flex flex-col items-center">
-                    <div 
+                    <div
                       className={`w-8 h-8 flex items-center justify-center rounded-full text-xs font-medium transition-all duration-300
-                      ${index < activeStep 
-                        ? "bg-blue-600 text-white" 
-                        : index === activeStep 
-                        ? "bg-blue-600 text-white ring-4 ring-blue-100" 
-                        : "bg-gray-100 text-gray-500"}`}
+                      ${
+                        index < activeStep
+                          ? "bg-blue-600 text-white"
+                          : index === activeStep
+                            ? "bg-blue-600 text-white ring-4 ring-blue-100"
+                            : "bg-gray-100 text-gray-500"
+                      }`}
                     >
-                      {index < activeStep ? (
-                        <CheckCircle size={14} />
-                      ) : (
-                        index + 1
-                      )}
+                      {index < activeStep ? <CheckCircle size={14} /> : index + 1}
                     </div>
-                    <span className={`text-xs mt-1 ${index === activeStep ? "text-gray-900 font-medium" : "text-gray-500"}`}>
+                    <span
+                      className={`text-xs mt-1 ${index === activeStep ? "text-gray-900 font-medium" : "text-gray-500"}`}
+                    >
                       {step}
                     </span>
                   </div>
                 ))}
               </div>
-              
+
               <div className="relative h-1 bg-gray-100 rounded-full">
-                <div 
+                <div
                   className="absolute top-0 left-0 h-full bg-blue-600 rounded-full transition-all duration-500 ease-out"
                   style={{ width: `${(activeStep / (steps.length - 1)) * 100}%` }}
                 ></div>
               </div>
             </div>
-            
+
             <div className="text-center space-y-1">
               <h2 className="text-xl font-bold text-gray-900">
-                {activeStep === 0 ? "Create your account" : 
-                 activeStep === 1 ? "Tell us about yourself" : 
-                 activeStep === 2 ? "Company information" : 
-                 "Review your details"}
+                {activeStep === 0
+                  ? "Create your account"
+                  : activeStep === 1
+                    ? "Tell us about yourself"
+                    : activeStep === 2
+                      ? "Company information"
+                      : "Review your details"}
               </h2>
               <p className="text-sm text-gray-500">
-                {activeStep === 0 ? "Start your 14-day free trial" : 
-                 activeStep === 1 ? "We'll personalize your experience" : 
-                 activeStep === 2 ? "Tell us about your organization" : 
-                 "Make sure everything looks correct"}
+                {activeStep === 0
+                  ? "Start your 14-day free trial"
+                  : activeStep === 1
+                    ? "We'll personalize your experience"
+                    : activeStep === 2
+                      ? "Tell us about your organization"
+                      : "Make sure everything looks correct"}
               </p>
             </div>
-            
+
             <div className="space-y-4">
               {error && (
                 <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start text-red-700">
@@ -994,10 +999,10 @@ const uploadSignatureToServer = async () => {
                   <span className="text-xs">{error}</span>
                 </div>
               )}
-              
+
               {renderStepContent(activeStep)}
             </div>
-            
+
             <div className="flex space-x-3">
               {activeStep > 0 && (
                 <button
@@ -1008,7 +1013,7 @@ const uploadSignatureToServer = async () => {
                   Back
                 </button>
               )}
-              
+
               <button
                 onClick={activeStep === steps.length - 1 ? handleSubmit : handleNext}
                 disabled={isLoading}
@@ -1028,7 +1033,7 @@ const uploadSignatureToServer = async () => {
                 )}
               </button>
             </div>
-            
+
             {activeStep === 0 && (
               <div className="text-center space-y-3">
                 <div className="relative flex items-center justify-center">
@@ -1046,36 +1051,44 @@ const uploadSignatureToServer = async () => {
           </div>
         </div>
       </div>
-      
+
       {/* Right panel - branding */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 text-white relative overflow-hidden">
         {/* Animated background elements */}
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute w-96 h-96 bg-white/5 rounded-full -top-20 -right-20 animate-pulse"></div>
-          <div className="absolute w-96 h-96 bg-white/5 rounded-full bottom-10 -left-20 animate-pulse" style={{animationDelay: '1s', animationDuration: '10s'}}></div>
-          <div className="absolute w-64 h-64 bg-white/5 rounded-full bottom-1/4 right-1/3 animate-pulse" style={{animationDelay: '0.5s', animationDuration: '7s'}}></div>
+          <div
+            className="absolute w-96 h-96 bg-white/5 rounded-full bottom-10 -left-20 animate-pulse"
+            style={{ animationDelay: "1s", animationDuration: "10s" }}
+          ></div>
+          <div
+            className="absolute w-64 h-64 bg-white/5 rounded-full bottom-1/4 right-1/3 animate-pulse"
+            style={{ animationDelay: "0.5s", animationDuration: "7s" }}
+          ></div>
         </div>
-        
+
         <div className="flex flex-col justify-center max-w-md z-10 p-12 space-y-8">
           <div>
             <h1 className="text-3xl font-bold mb-4">Streamline Your Procurement</h1>
-            <p className="text-lg opacity-90">Join thousands of companies managing their procurement process efficiently with our platform.</p>
+            <p className="text-lg opacity-90">
+              Join thousands of companies managing their procurement process efficiently with our platform.
+            </p>
           </div>
-          
+
           {/* HRMS Process Animation */}
           <div className="space-y-6">
             <div className="relative h-64">
               {hrmsProcesses.map((process, index) => {
-                const ProcessIcon = process.icon;
+                const ProcessIcon = process.icon
                 return (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className={`absolute w-full transition-all duration-700 transform ${
-                      index === currentProcess 
-                        ? "opacity-100 translate-y-0" 
+                      index === currentProcess
+                        ? "opacity-100 translate-y-0"
                         : index < currentProcess
-                        ? "opacity-0 -translate-y-full" 
-                        : "opacity-0 translate-y-full"
+                          ? "opacity-0 -translate-y-full"
+                          : "opacity-0 translate-y-full"
                     }`}
                   >
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
@@ -1086,7 +1099,7 @@ const uploadSignatureToServer = async () => {
                         <h3 className="text-lg font-bold">{process.title}</h3>
                       </div>
                       <p className="text-sm text-white/90 mb-4">{process.description}</p>
-                      
+
                       <div className="bg-white/10 rounded-lg p-4">
                         <div className="animate-pulse space-y-2">
                           <div className="h-3 bg-white/30 rounded w-3/4"></div>
@@ -1096,14 +1109,14 @@ const uploadSignatureToServer = async () => {
                       </div>
                     </div>
                   </div>
-                );
+                )
               })}
             </div>
-            
+
             {/* Progress indicators */}
             <div className="flex justify-center space-x-2">
               {hrmsProcesses.map((_, index) => (
-                <div 
+                <div
                   key={index}
                   className={`h-1 rounded-full transition-all duration-500 ${
                     index === currentProcess ? "w-6 bg-white" : "w-1 bg-white/40"
@@ -1112,21 +1125,29 @@ const uploadSignatureToServer = async () => {
               ))}
             </div>
           </div>
-          
+
           <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm border border-white/20">
             <div className="flex items-center mb-3">
               <div className="flex -space-x-3">
-                <div className="w-8 h-8 rounded-full bg-blue-400 border-2 border-white flex items-center justify-center text-xs font-medium">JD</div>
-                <div className="w-8 h-8 rounded-full bg-purple-400 border-2 border-white flex items-center justify-center text-xs font-medium">AR</div>
-                <div className="w-8 h-8 rounded-full bg-yellow-400 border-2 border-white flex items-center justify-center text-xs font-medium">TK</div>
+                <div className="w-8 h-8 rounded-full bg-blue-400 border-2 border-white flex items-center justify-center text-xs font-medium">
+                  JD
+                </div>
+                <div className="w-8 h-8 rounded-full bg-purple-400 border-2 border-white flex items-center justify-center text-xs font-medium">
+                  AR
+                </div>
+                <div className="w-8 h-8 rounded-full bg-yellow-400 border-2 border-white flex items-center justify-center text-xs font-medium">
+                  TK
+                </div>
               </div>
               <div className="ml-3 text-xs">Join 5,000+ companies using our platform</div>
             </div>
-            <p className="italic text-sm">"Implementation was seamless and we saw immediate improvements in our procurement process efficiency."</p>
+            <p className="italic text-sm">
+              "Implementation was seamless and we saw immediate improvements in our procurement process efficiency."
+            </p>
             <p className="mt-3 font-semibold text-sm">— Michael Kaunda, Director of Operations</p>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

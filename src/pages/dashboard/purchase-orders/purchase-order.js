@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+"use client"
+
+import { useState, useEffect } from "react"
 import {
   Plus,
   Search,
@@ -17,115 +19,110 @@ import {
   Truck,
   Calendar,
   Building,
-  Activity,
-  TrendingUp,
   ShoppingCart,
-  Users,
-  Target
-} from "lucide-react";
-import { motion } from "framer-motion";
-import { useAuth } from "../../../authcontext/authcontext";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-
+} from "lucide-react"
+import { motion } from "framer-motion"
+import { useAuth } from "../../../authcontext/authcontext"
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 
 export default function PurchaseOrdersPage() {
-  const { token } = useAuth();
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [showMenuId, setShowMenuId] = useState(null);
-  const [isCreatePOModalOpen, setIsCreatePOModalOpen] = useState(false);
-  const [rfqs, setRfqs] = useState([]);
-  const [selectedRfqId, setSelectedRfqId] = useState("");
-  const [selectedQuote, setSelectedQuote] = useState(null);
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState("");
-  const [notificationType, setNotificationType] = useState("success");
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const { token } = useAuth()
+  const [purchaseOrders, setPurchaseOrders] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [showMenuId, setShowMenuId] = useState(null)
+  const [isCreatePOModalOpen, setIsCreatePOModalOpen] = useState(false)
+  const [rfqs, setRfqs] = useState([])
+  const [selectedRfqId, setSelectedRfqId] = useState("")
+  const [selectedQuote, setSelectedQuote] = useState(null)
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState("")
+  const [notificationType, setNotificationType] = useState("success")
+  const backendUrl = process.env.REACT_APP_BACKEND_URL
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token")
         const poResponse = await fetch(`${backendUrl}/api/purchase-orders`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        if (!poResponse.ok) throw new Error("Failed to fetch purchase orders");
-        const poData = await poResponse.json();
-        setPurchaseOrders(poData);
+        })
+        if (!poResponse.ok) throw new Error("Failed to fetch purchase orders")
+        const poData = await poResponse.json()
+        setPurchaseOrders(poData)
 
         const rfqResponse = await fetch(`${backendUrl}/api/rfqs`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        });
-        if (!rfqResponse.ok) throw new Error("Failed to fetch RFQs");
-        const rfqData = await rfqResponse.json();
-        setRfqs(rfqData);
+        })
+        if (!rfqResponse.ok) throw new Error("Failed to fetch RFQs")
+        const rfqData = await rfqResponse.json()
+        setRfqs(rfqData)
       } catch (error) {
-        console.error("Failed to fetch data:", error);
+        console.error("Failed to fetch data:", error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
 
-    fetchData();
-  }, [token, backendUrl]);
+    fetchData()
+  }, [token, backendUrl])
 
   // Filter purchase orders
   const filteredPurchaseOrders = purchaseOrders
     .filter((po) => {
-      if (statusFilter === "all") return true;
-      return po.status === statusFilter;
+      if (statusFilter === "all") return true
+      return po.status === statusFilter
     })
     .filter((po) => {
       return (
         po._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         po.vendor?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         false
-      );
-    });
+      )
+    })
 
   // Calculate stats
-  const totalPOs = purchaseOrders?.length || 0;
-  const approvedPOs = purchaseOrders?.filter(po => po.status === "approved")?.length || 0;
-  const pendingPOs = purchaseOrders?.filter(po => po.status === "pending")?.length || 0;
-  const totalAmount = purchaseOrders?.reduce((sum, po) => sum + (po.totalAmount || 0), 0) || 0;
+  const totalPOs = purchaseOrders?.length || 0
+  const approvedPOs = purchaseOrders?.filter((po) => po.status === "approved")?.length || 0
+  const pendingPOs = purchaseOrders?.filter((po) => po.status === "pending")?.length || 0
+  const totalAmount = purchaseOrders?.reduce((sum, po) => sum + (po.totalAmount || 0), 0) || 0
 
   const openCreatePOModal = () => {
-    setIsCreatePOModalOpen(true);
-  };
+    setIsCreatePOModalOpen(true)
+  }
 
   const closeCreatePOModal = () => {
-    setIsCreatePOModalOpen(false);
-    setSelectedRfqId("");
-    setSelectedQuote(null);
-  };
+    setIsCreatePOModalOpen(false)
+    setSelectedRfqId("")
+    setSelectedQuote(null)
+  }
 
   const handleRfqSelection = (rfqId) => {
-    setSelectedRfqId(rfqId);
-    const rfq = rfqs.find((rfq) => rfq._id === rfqId);
+    setSelectedRfqId(rfqId)
+    const rfq = rfqs.find((rfq) => rfq._id === rfqId)
     if (rfq && rfq.selectedVendor) {
-      const selectedQuote = rfq.quotes.find((quote) => quote.vendor === rfq.selectedVendor);
-      setSelectedQuote(selectedQuote);
+      const selectedQuote = rfq.quotes.find((quote) => quote.vendor === rfq.selectedVendor)
+      setSelectedQuote(selectedQuote)
     }
-  };
+  }
 
   const handleCreatePO = async () => {
     if (!selectedRfqId || !selectedQuote) {
-      showNotificationMessage("Please select an RFQ and ensure a quote is selected.", "error");
-      return;
+      showNotificationMessage("Please select an RFQ and ensure a quote is selected.", "error")
+      return
     }
 
-    const rfq = rfqs.find((rfq) => rfq._id === selectedRfqId);
+    const rfq = rfqs.find((rfq) => rfq._id === selectedRfqId)
     if (!rfq) {
-      showNotificationMessage("RFQ not found.", "error");
-      return;
+      showNotificationMessage("RFQ not found.", "error")
+      return
     }
 
     const items = [
@@ -135,10 +132,10 @@ export default function PurchaseOrdersPage() {
         quantity: rfq.quantity,
         price: selectedQuote.price,
       },
-    ];
+    ]
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem("token")
       const response = await fetch(`${backendUrl}/api/purchase-orders`, {
         method: "POST",
         headers: {
@@ -149,87 +146,87 @@ export default function PurchaseOrdersPage() {
           rfqId: selectedRfqId,
           items,
         }),
-      });
-      const data = await response.json();
+      })
+      const data = await response.json()
       if (response.ok) {
-        showNotificationMessage("Purchase Order created successfully!", "success");
-        setPurchaseOrders([...purchaseOrders, data.po]);
-        closeCreatePOModal();
+        showNotificationMessage("Purchase Order created successfully!", "success")
+        setPurchaseOrders([...purchaseOrders, data.po])
+        closeCreatePOModal()
       } else {
-        throw new Error(data.message || "Failed to create PO");
+        throw new Error(data.message || "Failed to create PO")
       }
     } catch (error) {
-      console.error("Error creating PO:", error);
-      showNotificationMessage(error.message, "error");
+      console.error("Error creating PO:", error)
+      showNotificationMessage(error.message, "error")
     }
-  };
+  }
 
   const showNotificationMessage = (message, type = "success") => {
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 5000);
-  };
+    setNotificationMessage(message)
+    setNotificationType(type)
+    setShowNotification(true)
+    setTimeout(() => setShowNotification(false), 5000)
+  }
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case "approved":
-        return "text-green-700 bg-green-50 border-green-200";
+        return "text-green-700 bg-green-50 border-green-200"
       case "pending":
-        return "text-amber-700 bg-amber-50 border-amber-200";
+        return "text-amber-700 bg-amber-50 border-amber-200"
       case "rejected":
-        return "text-red-700 bg-red-50 border-red-200";
+        return "text-red-700 bg-red-50 border-red-200"
       default:
-        return "text-gray-700 bg-gray-50 border-gray-200";
+        return "text-gray-700 bg-gray-50 border-gray-200"
     }
-  };
+  }
 
   const getStatusIcon = (status) => {
     switch (status?.toLowerCase()) {
       case "approved":
-        return <Check size={14} />;
+        return <Check size={14} />
       case "pending":
-        return <Package size={14} />;
+        return <Package size={14} />
       case "rejected":
-        return <X size={14} />;
+        return <X size={14} />
       default:
-        return <Package size={14} />;
+        return <Package size={14} />
     }
-  };
+  }
 
   const getDeliveryStatusColor = (deliveryStatus) => {
     switch (deliveryStatus?.toLowerCase()) {
       case "delivered":
-        return "text-green-700 bg-green-50 border-green-200";
+        return "text-green-700 bg-green-50 border-green-200"
       case "shipped":
-        return "text-blue-700 bg-blue-50 border-blue-200";
+        return "text-blue-700 bg-blue-50 border-blue-200"
       case "confirmed":
-        return "text-purple-700 bg-purple-50 border-purple-200";
+        return "text-purple-700 bg-purple-50 border-purple-200"
       default:
-        return "text-gray-700 bg-gray-50 border-gray-200";
+        return "text-gray-700 bg-gray-50 border-gray-200"
     }
-  };
+  }
 
   const getDeliveryStatusIcon = (deliveryStatus) => {
     switch (deliveryStatus?.toLowerCase()) {
       case "delivered":
-        return <Check size={14} />;
+        return <Check size={14} />
       case "shipped":
-        return <Truck size={14} />;
+        return <Truck size={14} />
       case "confirmed":
-        return <FileText size={14} />;
+        return <FileText size={14} />
       default:
-        return <Package size={14} />;
+        return <Package size={14} />
     }
-  };
+  }
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    });
-  };
+    })
+  }
 
   if (isLoading) {
     return (
@@ -240,18 +237,12 @@ export default function PurchaseOrdersPage() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-           <DotLottieReact
-      src="loading.lottie"
-      loop
-      autoplay
-    />
+          <DotLottieReact src="loading.lottie" loop autoplay />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Purchase Orders</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch purchase order data...
-          </p>
+          <p className="text-gray-600">Please wait while we fetch purchase order data...</p>
         </motion.div>
       </div>
-    );
+    )
   }
 
   return (
@@ -267,11 +258,9 @@ export default function PurchaseOrdersPage() {
                 </div>
                 Purchase Orders
               </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Manage and track your purchase orders efficiently
-              </p>
+              <p className="text-gray-500 text-lg mt-2">Manage and track your purchase orders efficiently</p>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <button
                 onClick={openCreatePOModal}
@@ -299,9 +288,7 @@ export default function PurchaseOrdersPage() {
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
                   <ShoppingCart size={24} className="text-white" />
                 </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {totalPOs}
-                </span>
+                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">{totalPOs}</span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Total POs</p>
@@ -428,13 +415,14 @@ export default function PurchaseOrdersPage() {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {searchTerm || statusFilter !== "all" ? "No purchase orders match your filters" : "No Purchase Orders"}
+                    {searchTerm || statusFilter !== "all"
+                      ? "No purchase orders match your filters"
+                      : "No Purchase Orders"}
                   </h3>
                   <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm || statusFilter !== "all" 
+                    {searchTerm || statusFilter !== "all"
                       ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : "Start by creating your first purchase order from an approved RFQ."
-                    }
+                      : "Start by creating your first purchase order from an approved RFQ."}
                   </p>
                 </div>
                 <button
@@ -493,40 +481,34 @@ export default function PurchaseOrdersPage() {
                     </div>
 
                     <div>
-                     <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-  {po.vendor
-    ? `${po.vendor.lastName || ''} ${po.vendor.firstName || ''}`.trim()
-    : 'N/A'}
-</div>
+                      <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                        {po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A"}
+                      </div>
 
-                      {po.vendor?.email && (
-                        <div className="text-sm text-gray-500">
-                          {po.vendor.email}
-                        </div>
-                      )}
+                      {po.vendor?.email && <div className="text-sm text-gray-500">{po.vendor.email}</div>}
                     </div>
 
                     <div>
-                      <span className="text-gray-700">
-                        {formatDate(po.createdAt)}
-                      </span>
+                      <span className="text-gray-700">{formatDate(po.createdAt)}</span>
                     </div>
 
                     <div>
-                      <span className="font-semibold text-gray-900">
-                        MWK {po.totalAmount?.toFixed(2) || "0.00"}
-                      </span>
+                      <span className="font-semibold text-gray-900">MWK {po.totalAmount?.toFixed(2) || "0.00"}</span>
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(po.status)}`}>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(po.status)}`}
+                      >
                         {getStatusIcon(po.status)}
                         <span className="ml-2 capitalize">{po.status || "Unknown"}</span>
                       </span>
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDeliveryStatusColor(po.deliveryStatus)}`}>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDeliveryStatusColor(po.deliveryStatus)}`}
+                      >
                         {getDeliveryStatusIcon(po.deliveryStatus)}
                         <span className="ml-2 capitalize">{po.deliveryStatus || "Pending"}</span>
                       </span>
@@ -535,39 +517,12 @@ export default function PurchaseOrdersPage() {
                     <div className="text-center">
                       <div className="relative">
                         <button
+                          data-po-id={po._id}
                           onClick={() => setShowMenuId(showMenuId === po._id ? null : po._id)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        
-                        {showMenuId === po._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              {po.status === "pending" && (
-                                <>
-                                  <button className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200">
-                                    <Check size={16} />
-                                    <span>Approve</span>
-                                  </button>
-                                  <button className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200">
-                                    <X size={16} />
-                                    <span>Reject</span>
-                                  </button>
-                                </>
-                              )}
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <Download size={16} />
-                                <span>Download PDF</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -577,6 +532,77 @@ export default function PurchaseOrdersPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Enhanced Action Dropdown Menu - Positioned directly on top of the button */}
+      {showMenuId && (
+        <>
+          {/* Backdrop overlay */}
+          <div className="fixed inset-0 z-[100] bg-transparent" onClick={() => setShowMenuId(null)}></div>
+
+          {/* Action Menu */}
+          <div
+            className="fixed z-[101] w-48 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-po-id="${showMenuId}"]`)
+                if (button) {
+                  const rect = button.getBoundingClientRect()
+                  const menuHeight = 200 // Approximate menu height
+
+                  // Center the menu vertically over the button
+                  const buttonCenter = rect.top + rect.height / 2
+                  const menuTop = buttonCenter - menuHeight / 2
+
+                  return `${menuTop + window.scrollY}px`
+                }
+                return "50px"
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-po-id="${showMenuId}"]`)
+                if (button) {
+                  const rect = button.getBoundingClientRect()
+                  const menuWidth = 192 // 48 * 4 (w-48)
+
+                  // Center the menu horizontally over the button
+                  const buttonCenter = rect.left + rect.width / 2
+                  const menuLeft = buttonCenter - menuWidth / 2
+
+                  // Make sure menu doesn't go off screen
+                  const minLeft = 8
+                  const maxLeft = window.innerWidth - menuWidth - 8
+
+                  return `${Math.max(minLeft, Math.min(maxLeft, menuLeft))}px`
+                }
+                return "50px"
+              })(),
+            }}
+          >
+            <div className="py-2">
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left">
+                <Eye size={16} />
+                <span>View Details</span>
+              </button>
+              {purchaseOrders.find((po) => po._id === showMenuId)?.status === "pending" && (
+                <>
+                  <button className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 text-left">
+                    <Check size={16} />
+                    <span>Approve</span>
+                  </button>
+                  <button className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left">
+                    <X size={16} />
+                    <span>Reject</span>
+                  </button>
+                </>
+              )}
+              <div className="border-t border-gray-100 my-1"></div>
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left">
+                <Download size={16} />
+                <span>Download PDF</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Create PO Modal */}
       {isCreatePOModalOpen && (
@@ -599,13 +625,11 @@ export default function PurchaseOrdersPage() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-8 max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Select RFQ *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select RFQ *</label>
                   <select
                     value={selectedRfqId}
                     onChange={(e) => handleRfqSelection(e.target.value)}
@@ -635,21 +659,15 @@ export default function PurchaseOrdersPage() {
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Price</p>
-                        <p className="text-gray-900 font-semibold">
-                          MWK {selectedQuote.price?.toFixed(2) || "N/A"}
-                        </p>
+                        <p className="text-gray-900 font-semibold">MWK {selectedQuote.price?.toFixed(2) || "N/A"}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Delivery Time</p>
-                        <p className="text-gray-900 font-semibold">
-                          {selectedQuote.deliveryTime || "N/A"}
-                        </p>
+                        <p className="text-gray-900 font-semibold">{selectedQuote.deliveryTime || "N/A"}</p>
                       </div>
                       <div>
                         <p className="text-sm font-medium text-gray-600">Notes</p>
-                        <p className="text-gray-900 font-semibold">
-                          {selectedQuote.notes || "None"}
-                        </p>
+                        <p className="text-gray-900 font-semibold">{selectedQuote.notes || "None"}</p>
                       </div>
                     </div>
                   </div>
@@ -684,13 +702,15 @@ export default function PurchaseOrdersPage() {
           exit={{ opacity: 0, y: 20, scale: 0.5 }}
           className="fixed bottom-4 right-4 z-50"
         >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
-            notificationType === 'success' 
-              ? 'bg-green-50 text-green-800 border-green-200' 
-              : 'bg-red-50 text-red-800 border-red-200'
-          }`}>
+          <div
+            className={`px-6 py-4 rounded-xl shadow-2xl border ${
+              notificationType === "success"
+                ? "bg-green-50 text-green-800 border-green-200"
+                : "bg-red-50 text-red-800 border-red-200"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              {notificationType === 'success' ? (
+              {notificationType === "success" ? (
                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -704,24 +724,13 @@ export default function PurchaseOrdersPage() {
                 </div>
               )}
               <span className="font-medium">{notificationMessage}</span>
-              <button
-                onClick={() => setShowNotification(false)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
           </div>
         </motion.div>
       )}
-
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
-      )}
     </div>
-  );
+  )
 }

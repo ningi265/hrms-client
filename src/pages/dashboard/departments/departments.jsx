@@ -1,5 +1,7 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+"use client"
+
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Building2,
   Search,
@@ -7,44 +9,40 @@ import {
   MoreVertical,
   Save,
   X,
-  Star,
   Phone,
   Mail,
-  Building,
   MapPin,
   Eye,
   Edit,
   Trash2,
-  Award,
   Filter,
   Download,
   RefreshCw,
   Bell,
-  Tag,
   Activity,
-  TrendingUp,
-  Target,
-  Calendar,
   DollarSign,
-  Clock,
-  User,
   Users,
   Crown,
-  PieChart,
-  BarChart3
-} from "lucide-react";
-import { motion } from "framer-motion";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+  BarChart3,
+  Copy,
+  MessageSquare,
+  Settings,
+  FileText,
+  TrendingUp,
+} from "lucide-react"
+import { motion } from "framer-motion"
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 
 export default function DepartmentsPage() {
-  const navigate = useNavigate();
-  const [departments, setDepartments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState(null);
-  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false);
-  const [showMenuId, setShowMenuId] = useState(null);
+  const navigate = useNavigate()
+  const [departments, setDepartments] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedDepartment, setSelectedDepartment] = useState(null)
+  const [isAddDepartmentModalOpen, setIsAddDepartmentModalOpen] = useState(false)
+  const [showMenuId, setShowMenuId] = useState(null)
+  const [actionLoading, setActionLoading] = useState(null)
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -56,19 +54,19 @@ export default function DepartmentsPage() {
     status: "active",
     goals: [],
     establishedDate: "",
-  });
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState("");
-  const [notificationType, setNotificationType] = useState("success");
+  })
+  const [isFormSubmitting, setIsFormSubmitting] = useState(false)
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState("")
+  const [notificationType, setNotificationType] = useState("success")
 
   // Mock data for demonstration
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
         // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+
         const mockDepartments = [
           {
             _id: "1",
@@ -84,7 +82,7 @@ export default function DepartmentsPage() {
             goals: ["Product Development", "Technical Innovation", "System Optimization"],
             establishedDate: "2020-01-15",
             performance: 92,
-            projects: 12
+            projects: 12,
           },
           {
             _id: "2",
@@ -100,7 +98,7 @@ export default function DepartmentsPage() {
             goals: ["Brand Growth", "Lead Generation", "Customer Engagement"],
             establishedDate: "2020-03-20",
             performance: 88,
-            projects: 8
+            projects: 8,
           },
           {
             _id: "3",
@@ -116,7 +114,7 @@ export default function DepartmentsPage() {
             goals: ["Revenue Growth", "Customer Retention", "Market Expansion"],
             establishedDate: "2020-02-10",
             performance: 95,
-            projects: 6
+            projects: 6,
           },
           {
             _id: "4",
@@ -132,7 +130,7 @@ export default function DepartmentsPage() {
             goals: ["Talent Acquisition", "Employee Development", "Culture Building"],
             establishedDate: "2020-01-05",
             performance: 90,
-            projects: 4
+            projects: 4,
           },
           {
             _id: "5",
@@ -148,7 +146,7 @@ export default function DepartmentsPage() {
             goals: ["Financial Planning", "Cost Optimization", "Compliance"],
             establishedDate: "2020-01-08",
             performance: 93,
-            projects: 3
+            projects: 3,
           },
           {
             _id: "6",
@@ -164,61 +162,65 @@ export default function DepartmentsPage() {
             goals: ["Process Improvement", "Efficiency", "Quality Control"],
             establishedDate: "2020-04-15",
             performance: 85,
-            projects: 5
-          }
-        ];
-        
-        setDepartments(mockDepartments);
-      } catch (error) {
-        setError("Failed to fetch departments");
-        console.error("Failed to fetch departments:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+            projects: 5,
+          },
+        ]
 
-    fetchDepartments();
-  }, []);
+        setDepartments(mockDepartments)
+      } catch (error) {
+        setError("Failed to fetch departments")
+        console.error("Failed to fetch departments:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchDepartments()
+  }, [])
 
   const filteredDepartments = departments.filter((department) => {
-    const nameMatch = department.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const headMatch = department.departmentHead.toLowerCase().includes(searchTerm.toLowerCase());
-    const locationMatch = department.location.toLowerCase().includes(searchTerm.toLowerCase());
-    const goalsMatch = department.goals && Array.isArray(department.goals) 
-      ? department.goals.some((goal) => 
-          goal && typeof goal === 'string' && goal.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : false;
-    
-    return nameMatch || headMatch || locationMatch || goalsMatch;
-  });
+    const nameMatch = department.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const headMatch = department.departmentHead.toLowerCase().includes(searchTerm.toLowerCase())
+    const locationMatch = department.location.toLowerCase().includes(searchTerm.toLowerCase())
+    const goalsMatch =
+      department.goals && Array.isArray(department.goals)
+        ? department.goals.some(
+            (goal) => goal && typeof goal === "string" && goal.toLowerCase().includes(searchTerm.toLowerCase()),
+          )
+        : false
+
+    return nameMatch || headMatch || locationMatch || goalsMatch
+  })
 
   // Calculate stats
-  const totalDepartments = departments?.length || 0;
-  const activeDepartments = departments?.filter(dept => dept.status === "active")?.length || 0;
-  const totalEmployees = departments?.reduce((sum, dept) => sum + (dept.employeeCount || 0), 0) || 0;
-  const totalBudget = departments?.reduce((sum, dept) => sum + (dept.budget || 0), 0) || 0;
+  const totalDepartments = departments?.length || 0
+  const activeDepartments = departments?.filter((dept) => dept.status === "active")?.length || 0
+  const totalEmployees = departments?.reduce((sum, dept) => sum + (dept.employeeCount || 0), 0) || 0
+  const totalBudget = departments?.reduce((sum, dept) => sum + (dept.budget || 0), 0) || 0
 
   const handleDeleteDepartment = async (departmentId) => {
+    setActionLoading(departmentId);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      setDepartments((prev) => prev.filter((department) => department._id !== departmentId));
-      showNotificationMessage("Department deleted successfully!", "success");
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      setDepartments((prev) => prev.filter((department) => department._id !== departmentId))
+      showNotificationMessage("Department deleted successfully!", "success")
     } catch (error) {
-      showNotificationMessage("Failed to delete department", "error");
-      console.error("Failed to delete department:", error);
+      showNotificationMessage("Failed to delete department", "error")
+      console.error("Failed to delete department:", error)
+    } finally {
+      setActionLoading(null);
+      setShowMenuId(null)
     }
-    setShowMenuId(null);
-  };
+  }
 
   const openAddDepartmentModal = () => {
-    setIsAddDepartmentModalOpen(true);
-  };
+    setIsAddDepartmentModalOpen(true)
+  }
 
   const closeAddDepartmentModal = () => {
-    setIsAddDepartmentModalOpen(false);
+    setIsAddDepartmentModalOpen(false)
     setFormData({
       name: "",
       description: "",
@@ -230,76 +232,82 @@ export default function DepartmentsPage() {
       status: "active",
       goals: [],
       establishedDate: "",
-    });
-  };
+    })
+  }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     if (name === "goals") {
-      const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
+      const selectedOptions = Array.from(e.target.selectedOptions, (option) => option.value)
       setFormData((prev) => ({
         ...prev,
         [name]: selectedOptions,
-      }));
+      }))
     } else {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
-      }));
+      }))
     }
-  };
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsFormSubmitting(true);
-    setError(null);
+    e.preventDefault()
+    setIsFormSubmitting(true)
+    setError(null)
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
       const newDepartment = {
         ...formData,
         _id: Date.now().toString(),
         employeeCount: 0,
         performance: 0,
         projects: 0,
-        budget: parseFloat(formData.budget)
-      };
-      
-      setDepartments((prev) => [...prev, newDepartment]);
-      showNotificationMessage("Department added successfully!", "success");
-      closeAddDepartmentModal();
+        budget: Number.parseFloat(formData.budget),
+      }
+
+      setDepartments((prev) => [...prev, newDepartment])
+      showNotificationMessage("Department added successfully!", "success")
+      closeAddDepartmentModal()
     } catch (err) {
-      showNotificationMessage(err.message || "Failed to add department", "error");
-      console.error("Failed to add department:", err);
+      showNotificationMessage(err.message || "Failed to add department", "error")
+      console.error("Failed to add department:", err)
     } finally {
-      setIsFormSubmitting(false);
+      setIsFormSubmitting(false)
     }
-  };
+  }
 
   const showNotificationMessage = (message, type = "success") => {
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 5000);
+    setNotificationMessage(message)
+    setNotificationType(type)
+    setShowNotification(true)
+    setTimeout(() => setShowNotification(false), 5000)
+  }
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showNotificationMessage("Department ID copied to clipboard!", "success");
+    setShowMenuId(null);
   };
 
   const formatBudget = (budget) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
-    }).format(budget);
-  };
+    }).format(budget)
+  }
 
   const getPerformanceColor = (performance) => {
-    if (performance >= 90) return "text-green-700 bg-green-50 border-green-200";
-    if (performance >= 80) return "text-blue-700 bg-blue-50 border-blue-200";
-    if (performance >= 70) return "text-yellow-700 bg-yellow-50 border-yellow-200";
-    return "text-red-700 bg-red-50 border-red-200";
-  };
+    if (performance >= 90) return "text-green-700 bg-green-50 border-green-200"
+    if (performance >= 80) return "text-blue-700 bg-blue-50 border-blue-200"
+    if (performance >= 70) return "text-yellow-700 bg-yellow-50 border-yellow-200"
+    return "text-red-700 bg-red-50 border-red-200"
+  }
 
   if (isLoading) {
     return (
@@ -310,28 +318,20 @@ export default function DepartmentsPage() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <DotLottieReact
-      src="loading.lottie"
-      loop
-      autoplay
-    />
+          <DotLottieReact src="loading.lottie" loop autoplay />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Departments</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch department information...
-          </p>
+          <p className="text-gray-600">Please wait while we fetch department information...</p>
         </motion.div>
       </div>
-    );
+    )
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          {error}
-        </div>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -347,11 +347,9 @@ export default function DepartmentsPage() {
                 </div>
                 Department Management
               </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Organize and manage your company departments
-              </p>
+              <p className="text-gray-500 text-lg mt-2">Organize and manage your company departments</p>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <button
                 onClick={openAddDepartmentModal}
@@ -497,10 +495,9 @@ export default function DepartmentsPage() {
                     {searchTerm ? "No departments match your search" : "No departments found"}
                   </h3>
                   <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm 
+                    {searchTerm
                       ? "Try adjusting your search criteria to find what you're looking for."
-                      : "Start by adding your first department to organize your company structure."
-                    }
+                      : "Start by adding your first department to organize your company structure."}
                   </p>
                 </div>
                 <button
@@ -559,23 +556,18 @@ export default function DepartmentsPage() {
                       <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
                         {department.name}
                       </div>
-                      <div className="text-sm text-gray-500 line-clamp-2">
-                        {department.description}
-                      </div>
+                      <div className="text-sm text-gray-500 line-clamp-2">{department.description}</div>
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {department.goals && Array.isArray(department.goals) 
-                          ? department.goals
-                              .slice(0, 2)
-                              .map((goal, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium"
-                                >
-                                  {goal}
-                                </span>
-                              ))
-                          : null
-                        }
+                        {department.goals && Array.isArray(department.goals)
+                          ? department.goals.slice(0, 2).map((goal, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium"
+                              >
+                                {goal}
+                              </span>
+                            ))
+                          : null}
                         {department.goals && department.goals.length > 2 && (
                           <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
                             +{department.goals.length - 2}
@@ -585,9 +577,7 @@ export default function DepartmentsPage() {
                     </div>
 
                     <div>
-                      <div className="font-medium text-gray-900">
-                        {department.departmentHead}
-                      </div>
+                      <div className="font-medium text-gray-900">{department.departmentHead}</div>
                       <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
                         <Mail size={12} />
                         <span className="truncate">{department.headEmail}</span>
@@ -611,82 +601,41 @@ export default function DepartmentsPage() {
                           <Users size={14} className="text-blue-600" />
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900">
-                            {department.employeeCount}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {department.projects} projects
-                          </div>
+                          <div className="font-semibold text-gray-900">{department.employeeCount}</div>
+                          <div className="text-xs text-gray-500">{department.projects} projects</div>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <div className="font-semibold text-gray-900">
-                        {formatBudget(department.budget)}
-                      </div>
+                      <div className="font-semibold text-gray-900">{formatBudget(department.budget)}</div>
                       <div className="text-xs text-gray-500">
                         Est. {new Date(department.establishedDate).getFullYear()}
                       </div>
                     </div>
 
                     <div>
-                      <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getPerformanceColor(department.performance)}`}>
+                      <div
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getPerformanceColor(department.performance)}`}
+                      >
                         {department.performance}%
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${department.performance}%` }}
                         ></div>
                       </div>
                     </div>
 
                     <div className="text-center">
-                      <div className="relative">
-                        <button
-                          onClick={() => setShowMenuId(showMenuId === department._id ? null : department._id)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
-                        
-                        {showMenuId === department._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button
-                                onClick={() => navigate(`/dashboard/departments/${department._id}`)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              <button
-                                onClick={() => navigate(`/dashboard/departments/${department._id}/edit`)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Edit size={16} />
-                                <span>Edit Department</span>
-                              </button>
-                              <button
-                                onClick={() => navigate(`/dashboard/departments/${department._id}/employees`)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200"
-                              >
-                                <Users size={16} />
-                                <span>View Employees</span>
-                              </button>
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button
-                                onClick={() => handleDeleteDepartment(department._id)}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
-                              >
-                                <Trash2 size={16} />
-                                <span>Delete Department</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        data-department-id={department._id}
+                        onClick={() => setShowMenuId(showMenuId === department._id ? null : department._id)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
                     </div>
                   </motion.div>
                 ))}
@@ -695,6 +644,169 @@ export default function DepartmentsPage() {
           )}
         </motion.div>
       </div>
+
+      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
+      {showMenuId && (
+        <>
+          {/* Backdrop overlay */}
+          <div
+            className="fixed inset-0 z-[100] bg-transparent"
+            onClick={() => setShowMenuId(null)}
+          ></div>
+          
+          {/* Action Menu */}
+          <div 
+            className="fixed z-[101] w-64 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuHeight = 400; // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  const spaceAbove = rect.top;
+                  
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    return `${rect.top - menuHeight + window.scrollY}px`;
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`;
+                  }
+                }
+                return '50px';
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 256; // w-64
+                  const spaceRight = window.innerWidth - rect.right;
+                  
+                  // If menu would go off screen on right, position it to the left of button
+                  if (spaceRight < menuWidth) {
+                    return `${rect.left - menuWidth + 8}px`;
+                  } else {
+                    return `${rect.right - menuWidth}px`;
+                  }
+                }
+                return '50px';
+              })()
+            }}
+          >
+            <div className="py-2">
+              {/* View Details */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/departments/${showMenuId}`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Eye size={16} />
+                <span>View Details</span>
+              </button>
+              
+              {/* Edit Department */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/departments/${showMenuId}/edit`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Edit size={16} />
+                <span>Edit Department</span>
+              </button>
+              
+              {/* View Employees */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/departments/${showMenuId}/employees`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Users size={16} />
+                <span>View Employees</span>
+              </button>
+              
+              {/* View Performance */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/departments/${showMenuId}/performance`);
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <TrendingUp size={16} />
+                <span>View Performance</span>
+              </button>
+              
+              {/* Send Message */}
+              <button
+                onClick={() => {
+                  // Handle send message action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <MessageSquare size={16} />
+                <span>Send Message to Head</span>
+              </button>
+              
+              {/* Generate Report */}
+              <button
+                onClick={() => {
+                  // Handle generate report action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <FileText size={16} />
+                <span>Generate Report</span>
+              </button>
+              
+              {/* Copy Department ID */}
+              <button
+                onClick={() => copyToClipboard(showMenuId)}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Copy size={16} />
+                <span>Copy Department ID</span>
+              </button>
+              
+              {/* Manage Settings */}
+              <button
+                onClick={() => {
+                  // Handle manage settings action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Settings size={16} />
+                <span>Manage Settings</span>
+              </button>
+              
+              <div className="border-t border-gray-100 my-1"></div>
+              
+              {/* Delete Department */}
+              <button
+                onClick={() => handleDeleteDepartment(showMenuId)}
+                disabled={actionLoading === showMenuId}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left disabled:opacity-50"
+              >
+                <Trash2 size={16} />
+                <span>Delete Department</span>
+                {actionLoading === showMenuId && (
+                  <div className="ml-auto">
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Add Department Modal */}
       {isAddDepartmentModalOpen && (
@@ -717,14 +829,12 @@ export default function DepartmentsPage() {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-8 max-h-[70vh] overflow-y-auto">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department Name *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Department Name *</label>
                     <input
                       type="text"
                       name="name"
@@ -736,9 +846,7 @@ export default function DepartmentsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Status *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
                     <select
                       name="status"
                       value={formData.status}
@@ -754,9 +862,7 @@ export default function DepartmentsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
                   <textarea
                     name="description"
                     value={formData.description}
@@ -770,9 +876,7 @@ export default function DepartmentsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department Head *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Department Head *</label>
                     <input
                       type="text"
                       name="departmentHead"
@@ -784,9 +888,7 @@ export default function DepartmentsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Head Email *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Head Email *</label>
                     <input
                       type="email"
                       name="headEmail"
@@ -801,9 +903,7 @@ export default function DepartmentsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Head Phone Number *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Head Phone Number *</label>
                     <input
                       type="tel"
                       name="headPhone"
@@ -815,9 +915,7 @@ export default function DepartmentsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Established Date *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Established Date *</label>
                     <input
                       type="date"
                       name="establishedDate"
@@ -831,9 +929,7 @@ export default function DepartmentsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Budget *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Budget *</label>
                     <input
                       type="number"
                       name="budget"
@@ -845,9 +941,7 @@ export default function DepartmentsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Location *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
                     <input
                       type="text"
                       name="location"
@@ -861,9 +955,7 @@ export default function DepartmentsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Department Goals
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Department Goals</label>
                   <select
                     name="goals"
                     value={formData.goals}
@@ -935,13 +1027,15 @@ export default function DepartmentsPage() {
           exit={{ opacity: 0, y: 20, scale: 0.5 }}
           className="fixed bottom-4 right-4 z-50"
         >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
-            notificationType === 'success' 
-              ? 'bg-green-50 text-green-800 border-green-200' 
-              : 'bg-red-50 text-red-800 border-red-200'
-          }`}>
+          <div
+            className={`px-6 py-4 rounded-xl shadow-2xl border ${
+              notificationType === "success"
+                ? "bg-green-50 text-green-800 border-green-200"
+                : "bg-red-50 text-red-800 border-red-200"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              {notificationType === 'success' ? (
+              {notificationType === "success" ? (
                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -955,24 +1049,13 @@ export default function DepartmentsPage() {
                 </div>
               )}
               <span className="font-medium">{notificationMessage}</span>
-              <button
-                onClick={() => setShowNotification(false)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
           </div>
         </motion.div>
       )}
-
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
-      )}
     </div>
-  );
+  )
 }

@@ -1,17 +1,15 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   Check,
   X,
-  AlertCircle,
   Calendar,
   MapPin,
   Plane,
   CreditCard,
   AlertTriangle,
-  Clock,
   User,
   Search,
   Filter,
@@ -19,19 +17,15 @@ import {
   RefreshCw,
   Bell,
   Settings,
-  Activity,
-  TrendingUp,
-  Users,
   Package,
   MoreVertical,
   Eye,
   FileText,
   Car,
-  Train
+  Train,
 } from "lucide-react"
-import { motion } from "framer-motion";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-
+import { motion } from "framer-motion"
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 
 // Mock data for preview/development
 const MOCK_TRAVEL_REQUESTS = [
@@ -130,21 +124,21 @@ const SupervisorDashboard = () => {
 
   // Filter travel requests
   const filteredTravelRequests = travelRequests.filter((request) => {
-    const matchesSearch = 
+    const matchesSearch =
       request.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.meansOfTravel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      false;
-    
-    const matchesStatus = statusFilter === "all" || request.meansOfTravel === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      false
+
+    const matchesStatus = statusFilter === "all" || request.meansOfTravel === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   // Calculate stats
-  const totalRequests = travelRequests?.length || 0;
-  const flightRequests = travelRequests?.filter(req => req.meansOfTravel === "Flight")?.length || 0;
-  const trainRequests = travelRequests?.filter(req => req.meansOfTravel === "Train")?.length || 0;
-  const carRequests = travelRequests?.filter(req => req.meansOfTravel === "Car")?.length || 0;
+  const totalRequests = travelRequests?.length || 0
+  const flightRequests = travelRequests?.filter((req) => req.meansOfTravel === "Flight")?.length || 0
+  const trainRequests = travelRequests?.filter((req) => req.meansOfTravel === "Train")?.length || 0
+  const carRequests = travelRequests?.filter((req) => req.meansOfTravel === "Car")?.length || 0
 
   const showNotificationMessage = (message, type = "success") => {
     setNotificationMessage(message)
@@ -247,15 +241,9 @@ const SupervisorDashboard = () => {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-           <DotLottieReact
-      src="loading.lottie"
-      loop
-      autoplay
-    />
+          <DotLottieReact src="loading.lottie" loop autoplay />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Travel Requests</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch pending travel requests...
-          </p>
+          <p className="text-gray-600">Please wait while we fetch pending travel requests...</p>
         </motion.div>
       </div>
     )
@@ -274,11 +262,9 @@ const SupervisorDashboard = () => {
                 </div>
                 Travel Request Management
               </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Review and approve employee travel requests
-              </p>
+              <p className="text-gray-500 text-lg mt-2">Review and approve employee travel requests</p>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
                 <Bell size={20} />
@@ -450,13 +436,14 @@ const SupervisorDashboard = () => {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {searchTerm || statusFilter !== "all" ? "No travel requests match your filters" : "No Pending Travel Requests"}
+                    {searchTerm || statusFilter !== "all"
+                      ? "No travel requests match your filters"
+                      : "No Pending Travel Requests"}
                   </h3>
                   <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm || statusFilter !== "all" 
+                    {searchTerm || statusFilter !== "all"
                       ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : "There are currently no travel requests waiting for your approval."
-                    }
+                      : "There are currently no travel requests waiting for your approval."}
                   </p>
                 </div>
                 <button
@@ -527,9 +514,7 @@ const SupervisorDashboard = () => {
                     </div>
 
                     <div>
-                      <div className="text-gray-700 text-sm">
-                        {formatDate(request.departureDate)}
-                      </div>
+                      <div className="text-gray-700 text-sm">{formatDate(request.departureDate)}</div>
                       <div className="text-gray-500 text-xs flex items-center gap-1">
                         <span>→</span>
                         {formatDate(request.returnDate)}
@@ -537,62 +522,31 @@ const SupervisorDashboard = () => {
                     </div>
 
                     <div>
-                      <div className="font-medium text-gray-900">
-                        {request.location || "N/A"}
-                      </div>
+                      <div className="font-medium text-gray-900">{request.location || "N/A"}</div>
                     </div>
 
                     <div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getTravelColor(request.meansOfTravel)}`}>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getTravelColor(request.meansOfTravel)}`}
+                      >
                         {getTravelIcon(request.meansOfTravel)}
                         <span className="ml-2">{request.meansOfTravel || "N/A"}</span>
                       </span>
                     </div>
 
                     <div>
-                      <span className="text-gray-700 font-mono text-sm">
-                        {request.fundingCodes || "N/A"}
-                      </span>
+                      <span className="text-gray-700 font-mono text-sm">{request.fundingCodes || "N/A"}</span>
                     </div>
 
                     <div className="text-center">
                       <div className="relative">
                         <button
+                          data-request-id={request._id}
                           onClick={() => setShowMenuId(showMenuId === request._id ? null : request._id)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        
-                        {showMenuId === request._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              <button
-                                onClick={() => openConfirmationDialog(request._id, "approved")}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200"
-                              >
-                                <Check size={16} />
-                                <span>Approve</span>
-                              </button>
-                              <button
-                                onClick={() => openConfirmationDialog(request._id, "rejected")}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
-                              >
-                                <X size={16} />
-                                <span>Reject</span>
-                              </button>
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <FileText size={16} />
-                                <span>Download PDF</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -601,14 +555,113 @@ const SupervisorDashboard = () => {
 
               {/* Footer */}
               <div className="bg-gray-50/50 px-6 py-3 border-t border-gray-100">
-                <p className="text-gray-600 text-sm">
-                  Showing all pending travel requests that require your approval.
-                </p>
+                <p className="text-gray-600 text-sm">Showing all pending travel requests that require your approval.</p>
               </div>
             </div>
           )}
         </motion.div>
       </div>
+
+      {/* Enhanced Action Dropdown Menu - Positioned Like Employee.jsx */}
+      {showMenuId && (
+        <>
+          {/* Backdrop overlay */}
+          <div className="fixed inset-0 z-[100] bg-transparent" onClick={() => setShowMenuId(null)}></div>
+
+          {/* Action Menu */}
+          <div
+            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-request-id="${showMenuId}"]`)
+                if (button) {
+                  const rect = button.getBoundingClientRect()
+                  const menuHeight = 300 // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom
+                  const spaceAbove = rect.top
+
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    // Position menu so its bottom edge aligns with top edge of button
+                    return `${rect.top - menuHeight + window.scrollY}px`
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`
+                  }
+                }
+                return "50px"
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-request-id="${showMenuId}"]`)
+                if (button) {
+                  const rect = button.getBoundingClientRect()
+                  const menuWidth = 224 // 56 * 4 (w-56)
+
+                  // Center the menu over the button
+                  const buttonCenter = rect.left + rect.width / 2
+                  const menuLeft = buttonCenter - menuWidth / 2
+
+                  // Make sure menu doesn't go off screen
+                  const minLeft = 8
+                  const maxLeft = window.innerWidth - menuWidth - 8
+
+                  return `${Math.max(minLeft, Math.min(maxLeft, menuLeft))}px`
+                }
+                return "50px"
+              })(),
+            }}
+          >
+            <div className="py-2">
+              {/* View Details */}
+              <button
+                onClick={() => {
+                  navigate(`/dashboard/travel-requests/${showMenuId}`)
+                  setShowMenuId(null)
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Eye size={16} />
+                <span>View Details</span>
+              </button>
+
+              {/* Approve Request */}
+              <button
+                onClick={() => {
+                  openConfirmationDialog(showMenuId, "approved")
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 text-left"
+              >
+                <Check size={16} />
+                <span>Approve</span>
+              </button>
+
+              {/* Reject Request */}
+              <button
+                onClick={() => {
+                  openConfirmationDialog(showMenuId, "rejected")
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left"
+              >
+                <X size={16} />
+                <span>Reject</span>
+              </button>
+
+              <div className="border-t border-gray-100 my-1"></div>
+
+              {/* Download PDF */}
+              <button
+                onClick={() => {
+                  // Handle download PDF action
+                  setShowMenuId(null)
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <FileText size={16} />
+                <span>Download PDF</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Confirmation Dialog */}
       {openConfirmation && (
@@ -632,18 +685,18 @@ const SupervisorDashboard = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-8">
               <p className="text-gray-700 mb-6">
                 Are you sure you want to mark this travel request as{" "}
-                <span className={`font-semibold ${
-                  selectedDecision === "approved" ? "text-green-600" : "text-red-600"
-                }`}>
+                <span
+                  className={`font-semibold ${selectedDecision === "approved" ? "text-green-600" : "text-red-600"}`}
+                >
                   {selectedDecision}
                 </span>
                 ? This action cannot be undone.
               </p>
-              
+
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={closeConfirmationDialog}
@@ -654,16 +707,12 @@ const SupervisorDashboard = () => {
                 <button
                   onClick={confirmDecision}
                   className={`px-6 py-3 rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 ${
-                    selectedDecision === "approved" 
+                    selectedDecision === "approved"
                       ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
                       : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
                   }`}
                 >
-                  {selectedDecision === "approved" ? (
-                    <Check size={20} />
-                  ) : (
-                    <X size={20} />
-                  )}
+                  {selectedDecision === "approved" ? <Check size={20} /> : <X size={20} />}
                   Confirm
                 </button>
               </div>
@@ -680,21 +729,23 @@ const SupervisorDashboard = () => {
           exit={{ opacity: 0, y: 20, scale: 0.5 }}
           className="fixed bottom-4 right-4 z-50"
         >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
-            notificationType === 'success' 
-              ? 'bg-green-50 text-green-800 border-green-200' 
-              : notificationType === 'error'
-              ? 'bg-red-50 text-red-800 border-red-200'
-              : 'bg-blue-50 text-blue-800 border-blue-200'
-          }`}>
+          <div
+            className={`px-6 py-4 rounded-xl shadow-2xl border ${
+              notificationType === "success"
+                ? "bg-green-50 text-green-800 border-green-200"
+                : notificationType === "error"
+                  ? "bg-red-50 text-red-800 border-red-200"
+                  : "bg-blue-50 text-blue-800 border-blue-200"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              {notificationType === 'success' ? (
+              {notificationType === "success" ? (
                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-              ) : notificationType === 'error' ? (
+              ) : notificationType === "error" ? (
                 <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -703,28 +754,22 @@ const SupervisorDashboard = () => {
               ) : (
                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </div>
               )}
               <span className="font-medium">{notificationMessage}</span>
-              <button
-                onClick={() => setShowNotification(false)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
           </div>
         </motion.div>
-      )}
-
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
       )}
     </div>
   )

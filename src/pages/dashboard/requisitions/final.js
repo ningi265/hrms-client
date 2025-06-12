@@ -1,14 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import {
   Check,
   X,
-  AlertCircle,
   Calendar,
   MapPin,
-  Plane,
-  CreditCard,
   AlertTriangle,
   ShieldCheck,
   RefreshCw,
@@ -19,20 +16,15 @@ import {
   Download,
   Bell,
   Settings,
-  Activity,
-  TrendingUp,
-  Users,
   Package,
   MoreVertical,
   Eye,
   FileText,
   Car,
-  Train,
-  Bus
+  Bus,
 } from "lucide-react"
-import { motion } from "framer-motion";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
-
+import { motion } from "framer-motion"
+import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 
 // Mock data for preview/development
 const MOCK_TRAVEL_REQUESTS = [
@@ -137,21 +129,21 @@ const FinalApproverDashboard = () => {
 
   // Filter travel requests
   const filteredTravelRequests = travelRequests.filter((request) => {
-    const matchesSearch = 
+    const matchesSearch =
       request.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       request.meansOfTravel?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      false;
-    
-    const matchesStatus = statusFilter === "all" || request.meansOfTravel === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+      false
+
+    const matchesStatus = statusFilter === "all" || request.meansOfTravel === statusFilter
+    return matchesSearch && matchesStatus
+  })
 
   // Calculate stats
-  const totalRequests = travelRequests?.length || 0;
-  const ownVehicleRequests = travelRequests?.filter(req => req.meansOfTravel === "own")?.length || 0;
-  const companyVehicleRequests = travelRequests?.filter(req => req.meansOfTravel === "company")?.length || 0;
-  const publicTransportRequests = travelRequests?.filter(req => req.meansOfTravel === "public_transport")?.length || 0;
+  const totalRequests = travelRequests?.length || 0
+  const ownVehicleRequests = travelRequests?.filter((req) => req.meansOfTravel === "own")?.length || 0
+  const companyVehicleRequests = travelRequests?.filter((req) => req.meansOfTravel === "company")?.length || 0
+  const publicTransportRequests = travelRequests?.filter((req) => req.meansOfTravel === "public_transport")?.length || 0
 
   const showNotificationMessage = (message, type = "success") => {
     setNotificationMessage(message)
@@ -166,7 +158,7 @@ const FinalApproverDashboard = () => {
         setTravelRequests((prev) => prev.filter((request) => request._id !== id))
         showNotificationMessage(
           `Travel request ${decision === "approve" ? "approved" : "rejected"} successfully! (Preview mode)`,
-          "info"
+          "info",
         )
         return
       }
@@ -188,7 +180,10 @@ const FinalApproverDashboard = () => {
 
       if (response.ok) {
         setTravelRequests((prev) => prev.filter((request) => request._id !== id))
-        showNotificationMessage(`Travel request ${decision === "approve" ? "approved" : "rejected"} successfully!`, "success")
+        showNotificationMessage(
+          `Travel request ${decision === "approve" ? "approved" : "rejected"} successfully!`,
+          "success",
+        )
       } else {
         const errorData = await response.json()
         showNotificationMessage(errorData.message || "Failed to update travel request", "error")
@@ -308,15 +303,9 @@ const FinalApproverDashboard = () => {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-           <DotLottieReact
-                src="loading.lottie"
-                loop
-                autoplay
-              />
+          <DotLottieReact src="loading.lottie" loop autoplay />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Travel Requests</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch supervisor-approved requests...
-          </p>
+          <p className="text-gray-600">Please wait while we fetch supervisor-approved requests...</p>
         </motion.div>
       </div>
     )
@@ -335,11 +324,9 @@ const FinalApproverDashboard = () => {
                 </div>
                 Final Approval Dashboard
               </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Review and finalize supervisor-approved travel requests
-              </p>
+              <p className="text-gray-500 text-lg mt-2">Review and finalize supervisor-approved travel requests</p>
             </div>
-            
+
             <div className="flex items-center space-x-3">
               <button
                 onClick={fetchApprovedRequests}
@@ -517,13 +504,14 @@ const FinalApproverDashboard = () => {
                 </div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {searchTerm || statusFilter !== "all" ? "No travel requests match your filters" : "No Pending Final Approvals"}
+                    {searchTerm || statusFilter !== "all"
+                      ? "No travel requests match your filters"
+                      : "No Pending Final Approvals"}
                   </h3>
                   <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm || statusFilter !== "all" 
+                    {searchTerm || statusFilter !== "all"
                       ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : "There are currently no supervisor-approved travel requests waiting for your final approval."
-                    }
+                      : "There are currently no supervisor-approved travel requests waiting for your final approval."}
                   </p>
                 </div>
                 <button
@@ -587,7 +575,9 @@ const FinalApproverDashboard = () => {
                   >
                     <div>
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${getAvatarColor(request.employee?.name)}`}>
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${getAvatarColor(request.employee?.name)}`}
+                        >
                           {getEmployeeAvatar(request.employee?.name)}
                         </div>
                         <div>
@@ -603,9 +593,7 @@ const FinalApproverDashboard = () => {
 
                     <div>
                       <div className="space-y-1">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatDate(request.departureDate)}
-                        </div>
+                        <div className="text-sm font-medium text-gray-900">{formatDate(request.departureDate)}</div>
                         <div className="flex items-center gap-1 text-xs text-gray-500">
                           <ArrowRight size={12} />
                           {formatDate(request.returnDate)}
@@ -614,21 +602,19 @@ const FinalApproverDashboard = () => {
                     </div>
 
                     <div>
-                      <div className="font-medium text-gray-900">
-                        {request.location || "N/A"}
-                      </div>
+                      <div className="font-medium text-gray-900">{request.location || "N/A"}</div>
                     </div>
 
                     <div className="space-y-2">
                       <div>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getTravelMeansColor(request.meansOfTravel)}`}>
+                        <span
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getTravelMeansColor(request.meansOfTravel)}`}
+                        >
                           {getTravelMeansIcon(request.meansOfTravel)}
                           <span className="ml-2">{getTravelMeansText(request.meansOfTravel)}</span>
                         </span>
                       </div>
-                      <div className="text-xs text-gray-600 font-mono">
-                        {request.fundingCodes || "N/A"}
-                      </div>
+                      <div className="text-xs text-gray-600 font-mono">{request.fundingCodes || "N/A"}</div>
                     </div>
 
                     <div>
@@ -641,41 +627,12 @@ const FinalApproverDashboard = () => {
                     <div className="text-center">
                       <div className="relative">
                         <button
+                          data-request-id={request._id}
                           onClick={() => setShowMenuId(showMenuId === request._id ? null : request._id)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                         >
                           <MoreVertical size={18} />
                         </button>
-                        
-                        {showMenuId === request._id && (
-                          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 z-50">
-                            <div className="py-2">
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <Eye size={16} />
-                                <span>View Details</span>
-                              </button>
-                              <button
-                                onClick={() => openConfirmationDialog(request._id, "approve")}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200"
-                              >
-                                <Check size={16} />
-                                <span>Final Approve</span>
-                              </button>
-                              <button
-                                onClick={() => openConfirmationDialog(request._id, "reject")}
-                                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
-                              >
-                                <X size={16} />
-                                <span>Deny</span>
-                              </button>
-                              <div className="border-t border-gray-100 my-1"></div>
-                              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200">
-                                <FileText size={16} />
-                                <span>Download PDF</span>
-                              </button>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -692,6 +649,83 @@ const FinalApproverDashboard = () => {
           )}
         </motion.div>
       </div>
+
+      {/* Enhanced Action Dropdown Menu - Positioned at edge of topmost dot */}
+      {showMenuId && (
+        <>
+          {/* Backdrop overlay */}
+          <div className="fixed inset-0 z-[100] bg-transparent" onClick={() => setShowMenuId(null)}></div>
+
+          {/* Action Menu */}
+          <div
+            className="fixed z-[101] w-48 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-request-id="${showMenuId}"]`)
+                if (button) {
+                  const rect = button.getBoundingClientRect()
+                  const menuHeight = 250 // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom
+                  const spaceAbove = rect.top
+
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    // Position menu so its bottom edge aligns with top edge of button
+                    return `${rect.top - menuHeight + window.scrollY}px`
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`
+                  }
+                }
+                return "50px"
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-request-id="${showMenuId}"]`)
+                if (button) {
+                  const rect = button.getBoundingClientRect()
+                  const menuWidth = 192 // 48 * 4 (w-48)
+
+                  // Center the menu over the button
+                  const buttonCenter = rect.left + rect.width / 2
+                  const menuLeft = buttonCenter - menuWidth / 2
+
+                  // Make sure menu doesn't go off screen
+                  const minLeft = 8
+                  const maxLeft = window.innerWidth - menuWidth - 8
+
+                  return `${Math.max(minLeft, Math.min(maxLeft, menuLeft))}px`
+                }
+                return "50px"
+              })(),
+            }}
+          >
+            <div className="py-2">
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left">
+                <Eye size={16} />
+                <span>View Details</span>
+              </button>
+              <button
+                onClick={() => openConfirmationDialog(showMenuId, "approve")}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 text-left"
+              >
+                <Check size={16} />
+                <span>Final Approve</span>
+              </button>
+              <button
+                onClick={() => openConfirmationDialog(showMenuId, "reject")}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left"
+              >
+                <X size={16} />
+                <span>Deny</span>
+              </button>
+              <div className="border-t border-gray-100 my-1"></div>
+              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left">
+                <FileText size={16} />
+                <span>Download PDF</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Confirmation Dialog */}
       {openConfirmation && (
@@ -719,12 +753,14 @@ const FinalApproverDashboard = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-8">
               <div className="flex items-start gap-4 mb-6">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  selectedDecision === "approve" ? "bg-green-100" : "bg-red-100"
-                }`}>
+                <div
+                  className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                    selectedDecision === "approve" ? "bg-green-100" : "bg-red-100"
+                  }`}
+                >
                   {selectedDecision === "approve" ? (
                     <Check size={24} className="text-green-600" />
                   ) : (
@@ -734,9 +770,9 @@ const FinalApproverDashboard = () => {
                 <div>
                   <p className="text-gray-700 mb-2">
                     You are about to{" "}
-                    <span className={`font-semibold ${
-                      selectedDecision === "approve" ? "text-green-600" : "text-red-600"
-                    }`}>
+                    <span
+                      className={`font-semibold ${selectedDecision === "approve" ? "text-green-600" : "text-red-600"}`}
+                    >
                       {selectedDecision === "approve" ? "give final approval to" : "deny"}
                     </span>{" "}
                     this travel request.
@@ -746,7 +782,7 @@ const FinalApproverDashboard = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={closeConfirmationDialog}
@@ -757,7 +793,7 @@ const FinalApproverDashboard = () => {
                 <button
                   onClick={confirmDecision}
                   className={`px-6 py-3 rounded-xl transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 ${
-                    selectedDecision === "approve" 
+                    selectedDecision === "approve"
                       ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
                       : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white"
                   }`}
@@ -788,21 +824,23 @@ const FinalApproverDashboard = () => {
           exit={{ opacity: 0, y: 20, scale: 0.5 }}
           className="fixed bottom-4 right-4 z-50"
         >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
-            notificationType === 'success' 
-              ? 'bg-green-50 text-green-800 border-green-200' 
-              : notificationType === 'error'
-              ? 'bg-red-50 text-red-800 border-red-200'
-              : 'bg-blue-50 text-blue-800 border-blue-200'
-          }`}>
+          <div
+            className={`px-6 py-4 rounded-xl shadow-2xl border ${
+              notificationType === "success"
+                ? "bg-green-50 text-green-800 border-green-200"
+                : notificationType === "error"
+                  ? "bg-red-50 text-red-800 border-red-200"
+                  : "bg-blue-50 text-blue-800 border-blue-200"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              {notificationType === 'success' ? (
+              {notificationType === "success" ? (
                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-              ) : notificationType === 'error' ? (
+              ) : notificationType === "error" ? (
                 <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -811,28 +849,22 @@ const FinalApproverDashboard = () => {
               ) : (
                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
                   <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 </div>
               )}
               <span className="font-medium">{notificationMessage}</span>
-              <button
-                onClick={() => setShowNotification(false)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
-              >
+              <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
                 <X size={18} />
               </button>
             </div>
           </div>
         </motion.div>
-      )}
-
-      {/* Click outside to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
       )}
     </div>
   )
