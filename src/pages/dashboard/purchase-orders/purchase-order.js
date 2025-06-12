@@ -20,26 +20,36 @@ import {
   Calendar,
   Building,
   ShoppingCart,
-} from "lucide-react"
-import { motion } from "framer-motion"
-import { useAuth } from "../../../authcontext/authcontext"
-import { DotLottieReact } from "@lottiefiles/dotlottie-react"
+  Users,
+  Target,
+  Edit,
+  Send,
+  Copy,
+  History,
+  Ban,
+  MessageSquare
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { useAuth } from "../../../authcontext/authcontext";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
 
 export default function PurchaseOrdersPage() {
-  const { token } = useAuth()
-  const [purchaseOrders, setPurchaseOrders] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [showMenuId, setShowMenuId] = useState(null)
-  const [isCreatePOModalOpen, setIsCreatePOModalOpen] = useState(false)
-  const [rfqs, setRfqs] = useState([])
-  const [selectedRfqId, setSelectedRfqId] = useState("")
-  const [selectedQuote, setSelectedQuote] = useState(null)
-  const [showNotification, setShowNotification] = useState(false)
-  const [notificationMessage, setNotificationMessage] = useState("")
-  const [notificationType, setNotificationType] = useState("success")
-  const backendUrl = process.env.REACT_APP_BACKEND_URL
+  const { token } = useAuth();
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [showMenuId, setShowMenuId] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [isCreatePOModalOpen, setIsCreatePOModalOpen] = useState(false);
+  const [rfqs, setRfqs] = useState([]);
+  const [selectedRfqId, setSelectedRfqId] = useState("");
+  const [selectedQuote, setSelectedQuote] = useState(null);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationType, setNotificationType] = useState("success");
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -167,6 +177,50 @@ export default function PurchaseOrdersPage() {
     setShowNotification(true)
     setTimeout(() => setShowNotification(false), 5000)
   }
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showNotificationMessage("PO Number copied to clipboard!", "success");
+    setShowMenuId(null);
+  };
+
+  const handleApprovePO = async (poId) => {
+    setActionLoading(poId);
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      setPurchaseOrders(prev => prev.map(po => 
+        po._id === poId ? { ...po, status: "approved" } : po
+      ));
+      showNotificationMessage("Purchase Order approved successfully!", "success");
+    } catch (error) {
+      showNotificationMessage("Failed to approve purchase order", "error");
+      console.error("Failed to approve PO:", error);
+    } finally {
+      setActionLoading(null);
+      setShowMenuId(null);
+    }
+  };
+
+  const handleRejectPO = async (poId) => {
+    setActionLoading(poId);
+    try {
+      // Simulate API call
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      setPurchaseOrders(prev => prev.map(po => 
+        po._id === poId ? { ...po, status: "rejected" } : po
+      ));
+      showNotificationMessage("Purchase Order rejected successfully!", "success");
+    } catch (error) {
+      showNotificationMessage("Failed to reject purchase order", "error");
+      console.error("Failed to reject PO:", error);
+    } finally {
+      setActionLoading(null);
+      setShowMenuId(null);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
@@ -515,15 +569,13 @@ export default function PurchaseOrdersPage() {
                     </div>
 
                     <div className="text-center">
-                      <div className="relative">
-                        <button
-                          data-po-id={po._id}
-                          onClick={() => setShowMenuId(showMenuId === po._id ? null : po._id)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
-                      </div>
+                      <button
+                        data-po-id={po._id}
+                        onClick={() => setShowMenuId(showMenuId === po._id ? null : po._id)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                      >
+                        <MoreVertical size={18} />
+                      </button>
                     </div>
                   </motion.div>
                 ))}
@@ -533,71 +585,207 @@ export default function PurchaseOrdersPage() {
         </motion.div>
       </div>
 
-      {/* Enhanced Action Dropdown Menu - Positioned directly on top of the button */}
+      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
       {showMenuId && (
         <>
           {/* Backdrop overlay */}
-          <div className="fixed inset-0 z-[100] bg-transparent" onClick={() => setShowMenuId(null)}></div>
-
-          {/* Action Menu */}
           <div
-            className="fixed z-[101] w-48 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] bg-transparent"
+            onClick={() => setShowMenuId(null)}
+          ></div>
+          
+          {/* Action Menu */}
+          <div 
+            className="fixed z-[101] w-64 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
             style={{
               top: (() => {
-                const button = document.querySelector(`[data-po-id="${showMenuId}"]`)
+                const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
                 if (button) {
-                  const rect = button.getBoundingClientRect()
-                  const menuHeight = 200 // Approximate menu height
-
-                  // Center the menu vertically over the button
-                  const buttonCenter = rect.top + rect.height / 2
-                  const menuTop = buttonCenter - menuHeight / 2
-
-                  return `${menuTop + window.scrollY}px`
+                  const rect = button.getBoundingClientRect();
+                  const menuHeight = 500; // Approximate menu height
+                  const spaceBelow = window.innerHeight - rect.bottom;
+                  const spaceAbove = rect.top;
+                  
+                  // If there's more space above or menu would go off screen below
+                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                    return `${rect.top - menuHeight + window.scrollY}px`;
+                  } else {
+                    return `${rect.bottom + 8 + window.scrollY}px`;
+                  }
                 }
-                return "50px"
+                return '50px';
               })(),
               left: (() => {
-                const button = document.querySelector(`[data-po-id="${showMenuId}"]`)
+                const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
                 if (button) {
-                  const rect = button.getBoundingClientRect()
-                  const menuWidth = 192 // 48 * 4 (w-48)
-
-                  // Center the menu horizontally over the button
-                  const buttonCenter = rect.left + rect.width / 2
-                  const menuLeft = buttonCenter - menuWidth / 2
-
-                  // Make sure menu doesn't go off screen
-                  const minLeft = 8
-                  const maxLeft = window.innerWidth - menuWidth - 8
-
-                  return `${Math.max(minLeft, Math.min(maxLeft, menuLeft))}px`
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 256; // w-64
+                  const spaceRight = window.innerWidth - rect.right;
+                  
+                  // If menu would go off screen on right, position it to the left of button
+                  if (spaceRight < menuWidth) {
+                    return `${rect.left - menuWidth + 8}px`;
+                  } else {
+                    return `${rect.right - menuWidth}px`;
+                  }
                 }
-                return "50px"
-              })(),
+                return '50px';
+              })()
             }}
           >
             <div className="py-2">
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left">
+              {/* View Details */}
+              <button
+                onClick={() => {
+                  // Handle view details action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
                 <Eye size={16} />
                 <span>View Details</span>
               </button>
-              {purchaseOrders.find((po) => po._id === showMenuId)?.status === "pending" && (
-                <>
-                  <button className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 text-left">
-                    <Check size={16} />
-                    <span>Approve</span>
-                  </button>
-                  <button className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left">
-                    <X size={16} />
-                    <span>Reject</span>
-                  </button>
-                </>
-              )}
-              <div className="border-t border-gray-100 my-1"></div>
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left">
+              
+              {/* Edit PO */}
+              <button
+                onClick={() => {
+                  // Handle edit action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Edit size={16} />
+                <span>Edit PO</span>
+              </button>
+              
+              {/* Track Delivery */}
+              <button
+                onClick={() => {
+                  // Handle track delivery action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Truck size={16} />
+                <span>Track Delivery</span>
+              </button>
+              
+              {/* Send to Vendor */}
+              <button
+                onClick={() => {
+                  // Handle send to vendor action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Send size={16} />
+                <span>Send to Vendor</span>
+              </button>
+              
+              {/* Conditional Approve/Reject for pending POs */}
+              {(() => {
+                const po = purchaseOrders.find(po => po._id === showMenuId);
+                return po?.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => handleApprovePO(showMenuId)}
+                      disabled={actionLoading === showMenuId}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 text-left disabled:opacity-50"
+                    >
+                      <Check size={16} />
+                      <span>Approve PO</span>
+                      {actionLoading === showMenuId && (
+                        <div className="ml-auto">
+                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleRejectPO(showMenuId)}
+                      disabled={actionLoading === showMenuId}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left disabled:opacity-50"
+                    >
+                      <X size={16} />
+                      <span>Reject PO</span>
+                      {actionLoading === showMenuId && (
+                        <div className="ml-auto">
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                      )}
+                    </button>
+                  </>
+                );
+              })()}
+              
+              {/* Download PDF */}
+              <button
+                onClick={() => {
+                  // Handle download PDF action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
                 <Download size={16} />
                 <span>Download PDF</span>
+              </button>
+              
+              {/* Copy PO Number */}
+              <button
+                onClick={() => copyToClipboard(showMenuId)}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Copy size={16} />
+                <span>Copy PO Number</span>
+              </button>
+              
+              {/* View History */}
+              <button
+                onClick={() => {
+                  // Handle view history action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <History size={16} />
+                <span>View History</span>
+              </button>
+              
+              {/* Send Message */}
+              <button
+                onClick={() => {
+                  // Handle send message action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <MessageSquare size={16} />
+                <span>Message Vendor</span>
+              </button>
+              
+              {/* Manage Settings */}
+              <button
+                onClick={() => {
+                  // Handle manage settings action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+              >
+                <Settings size={16} />
+                <span>Manage Settings</span>
+              </button>
+              
+              <div className="border-t border-gray-100 my-1"></div>
+              
+              {/* Cancel PO */}
+              <button
+                onClick={() => {
+                  // Handle cancel PO action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left"
+              >
+                <Ban size={16} />
+                <span>Cancel PO</span>
               </button>
             </div>
           </div>
