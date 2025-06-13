@@ -79,6 +79,8 @@ export default function EmployeesPage() {
           },
         });
         const data = await response.json();
+        console.log("Fetched employees:", data);
+        console.log("First employee ID:", data[0]?._id);
         setEmployees(data);
       } catch (error) {
         setError("Failed to fetch employees");
@@ -123,6 +125,13 @@ export default function EmployeesPage() {
     : 0;
 
   const handleDeleteEmployee = async (employeeId) => {
+    console.log("Deleting employee with ID:", employeeId);
+    if (!employeeId) {
+      console.error("Employee ID is undefined for delete!");
+      showNotificationMessage("Error: Employee ID not found", "error");
+      return;
+    }
+    
     setActionLoading(employeeId);
     try {
       const token = localStorage.getItem("token");
@@ -134,7 +143,10 @@ export default function EmployeesPage() {
       });
 
       if (response.ok) {
-        setEmployees((prev) => prev.filter((employee) => employee._id !== employeeId));
+        setEmployees((prev) => prev.filter((employee) => {
+          const empId = employee._id || employee.id || employee.employeeId;
+          return empId !== employeeId;
+        }));
         showNotificationMessage("Employee deleted successfully!", "success");
       } else {
         throw new Error("Failed to delete employee");
@@ -230,6 +242,68 @@ export default function EmployeesPage() {
     showNotificationMessage("ID copied to clipboard!", "success");
   };
 
+  // Navigation handlers for action menu
+  const handleViewDetails = (employeeId) => {
+    console.log("Navigating to details for employee ID:", employeeId);
+    if (!employeeId) {
+      console.error("Employee ID is undefined!");
+      showNotificationMessage("Error: Employee ID not found", "error");
+      return;
+    }
+    navigate(`/dashboard/employees/${employeeId}`);
+    setShowMenuId(null);
+  };
+
+  const handleEditEmployee = (employeeId) => {
+    console.log("Navigating to edit for employee ID:", employeeId);
+    if (!employeeId) {
+      console.error("Employee ID is undefined!");
+      showNotificationMessage("Error: Employee ID not found", "error");
+      return;
+    }
+    navigate(`/dashboard/employees/${employeeId}/edit`);
+    setShowMenuId(null);
+  };
+
+  const handleViewPerformance = (employeeId) => {
+    console.log("Navigating to performance for employee ID:", employeeId);
+    if (!employeeId) {
+      console.error("Employee ID is undefined!");
+      showNotificationMessage("Error: Employee ID not found", "error");
+      return;
+    }
+    navigate(`/dashboard/employees/${employeeId}/performance`);
+    setShowMenuId(null);
+  };
+
+  const handleGenerateReport = (employeeId) => {
+    console.log("Navigating to report for employee ID:", employeeId);
+    if (!employeeId) {
+      console.error("Employee ID is undefined!");
+      showNotificationMessage("Error: Employee ID not found", "error");
+      return;
+    }
+    navigate(`/dashboard/employees/${employeeId}/report`);
+    setShowMenuId(null);
+  };
+
+  const handleManageAccess = (employeeId) => {
+    console.log("Navigating to access for employee ID:", employeeId);
+    if (!employeeId) {
+      console.error("Employee ID is undefined!");
+      showNotificationMessage("Error: Employee ID not found", "error");
+      return;
+    }
+    navigate(`/dashboard/employees/${employeeId}/access`);
+    setShowMenuId(null);
+  };
+
+  const handleSendMessage = (employeeId) => {
+    // This could open a message modal or navigate to a messaging interface
+    showNotificationMessage("Message feature coming soon!", "info");
+    setShowMenuId(null);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
@@ -240,10 +314,10 @@ export default function EmployeesPage() {
           className="text-center"
         >
           <DotLottieReact
-      src="loading.lottie"
-      loop
-      autoplay
-    />
+            src="loading.lottie"
+            loop
+            autoplay
+          />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Employees</h2>
           <p className="text-gray-600">
             Please wait while we fetch employee information...
@@ -472,90 +546,101 @@ export default function EmployeesPage() {
 
               {/* Table Body */}
               <div className="divide-y divide-gray-100">
-                {filteredEmployees.map((employee, index) => (
-                  <motion.div
-                    key={employee._id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
-                  >
-                    <div>
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                        {`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ID: {employee.employeeId || "N/A"}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                        <Mail size={14} />
-                        <span>{employee.email || "N/A"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Phone size={14} />
-                        <span>{employee.phoneNumber || employee.phone || "N/A"}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {employee.position || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ${employee.salary ? employee.salary.toLocaleString() : "N/A"}
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                        {employee.department || "N/A"}
-                      </span>
-                      {employee.skills && employee.skills.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {employee.skills.slice(0, 2).map((skill, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                          {employee.skills.length > 2 && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-                              +{employee.skills.length - 2}
-                            </span>
-                          )}
+                {filteredEmployees.map((employee, index) => {
+                  // Get employee ID - check multiple possible field names
+                  const employeeId = employee._id || employee.id || employee.employeeId;
+                  console.log("Processing employee:", employee.firstName, employee.lastName, "ID:", employeeId);
+                  
+                  return (
+                    <motion.div
+                      key={employeeId || index}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                      className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
+                    >
+                      <div>
+                        <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                          {`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || "N/A"}
                         </div>
-                      )}
-                    </div>
+                        <div className="text-sm text-gray-500">
+                          ID: {employeeId || "N/A"}
+                        </div>
+                      </div>
 
-                    <div>
-                      <div className="text-sm text-gray-700">
-                        {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "N/A"}
+                      <div>
+                        <div className="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                          <Mail size={14} />
+                          <span>{employee.email || "N/A"}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <Phone size={14} />
+                          <span>{employee.phoneNumber || employee.phone || "N/A"}</span>
+                        </div>
                       </div>
-                      <div className="text-sm text-gray-500">
-                        {employee.hireDate 
-                          ? `${Math.floor((new Date() - new Date(employee.hireDate)) / (1000 * 60 * 60 * 24 * 365))} yrs` 
-                          : "N/A"}
-                      </div>
-                    </div>
 
-                    <div className="text-center">
-                      <div className="relative">
-                        <button
-                          data-employee-id={employee._id}
-                          onClick={() => setShowMenuId(showMenuId === employee._id ? null : employee._id)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
+                      <div>
+                        <div className="font-medium text-gray-900">
+                          {employee.position || "N/A"}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          ${employee.salary ? employee.salary.toLocaleString() : "N/A"}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+
+                      <div>
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                          {employee.department || "N/A"}
+                        </span>
+                        {employee.skills && employee.skills.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {employee.skills.slice(0, 2).map((skill, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium"
+                              >
+                                {skill}
+                              </span>
+                            ))}
+                            {employee.skills.length > 2 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                                +{employee.skills.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="text-sm text-gray-700">
+                          {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "N/A"}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {employee.hireDate 
+                            ? `${Math.floor((new Date() - new Date(employee.hireDate)) / (1000 * 60 * 60 * 24 * 365))} yrs` 
+                            : "N/A"}
+                        </div>
+                      </div>
+
+                      <div className="text-center">
+                        <div className="relative">
+                          <button
+                            data-employee-id={employeeId}
+                            onClick={() => {
+                              console.log("Clicked action menu for employee:", employee);
+                              console.log("Employee ID:", employeeId);
+                              console.log("Employee name:", employee.firstName, employee.lastName);
+                              setShowMenuId(showMenuId === employeeId ? null : employeeId);
+                            }}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -613,10 +698,7 @@ export default function EmployeesPage() {
             <div className="py-2">
               {/* View Details */}
               <button
-                onClick={() => {
-                  navigate(`/dashboard/employees/${showMenuId}`);
-                  setShowMenuId(null);
-                }}
+                onClick={() => handleViewDetails(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
               >
                 <Eye size={16} />
@@ -625,10 +707,7 @@ export default function EmployeesPage() {
               
               {/* Edit Employee */}
               <button
-                onClick={() => {
-                  navigate(`/dashboard/employees/${showMenuId}/edit`);
-                  setShowMenuId(null);
-                }}
+                onClick={() => handleEditEmployee(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
               >
                 <Edit size={16} />
@@ -637,10 +716,7 @@ export default function EmployeesPage() {
               
               {/* Send Message */}
               <button
-                onClick={() => {
-                  // Handle send message action
-                  setShowMenuId(null);
-                }}
+                onClick={() => handleSendMessage(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
               >
                 <MessageSquare size={16} />
@@ -649,10 +725,7 @@ export default function EmployeesPage() {
               
               {/* View Performance */}
               <button
-                onClick={() => {
-                  navigate(`/dashboard/employees/${showMenuId}/performance`);
-                  setShowMenuId(null);
-                }}
+                onClick={() => handleViewPerformance(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
               >
                 <TrendingUp size={16} />
@@ -661,10 +734,7 @@ export default function EmployeesPage() {
               
               {/* Generate Report */}
               <button
-                onClick={() => {
-                  // Handle generate report action
-                  setShowMenuId(null);
-                }}
+                onClick={() => handleGenerateReport(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
               >
                 <FileText size={16} />
@@ -685,10 +755,7 @@ export default function EmployeesPage() {
               
               {/* Manage Access */}
               <button
-                onClick={() => {
-                  // Handle manage access action
-                  setShowMenuId(null);
-                }}
+                onClick={() => handleManageAccess(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
               >
                 <Settings size={16} />

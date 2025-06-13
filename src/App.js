@@ -51,6 +51,11 @@ import VendorManagementDashboard from './pages/vendor-dash/registration/registra
 import EmployeeRequisitionManagement from './pages/employee-dash/requisition/requistionManagement';
 import DriverDashboard from './pages/driver-dash/driver-dashboard';
 import FleetTrackingMap from './pages/driver-dash/fleetMap';
+import EmployeeDetailPage from './pages/dashboard/employee/view-details';
+import EditEmployeePage from './pages/dashboard/employee/edit';
+import EmployeePerformancePage from './pages/dashboard/employee/performance';
+import GenerateReportPage from './pages/dashboard/employee/report';
+import ManageAccessPage from './pages/dashboard/employee/access';
 
 function App() {
   return (
@@ -90,7 +95,23 @@ function App() {
           <Route path="/requisitions/manage" element={<ManageRequisitionsPage/>} />
           <Route path="/vendors" element={<VendorsPage/>}/>
           <Route path="/food" element={<FoodBudgetPlanner/>}/>
+          
+          {/* Employee Management Routes - Updated with proper parameter handling */}
+          <Route path="/dashboard/employees" element={<EmployeesPage/>}/>
+          <Route path="/dashboard/employees/:id" element={<EmployeeDetailPage/>}/>
+          <Route path="/dashboard/employees/:id/edit" element={<EditEmployeePage/>}/>
+          <Route path="/dashboard/employees/:id/performance" element={<EmployeePerformancePage/>}/>
+          <Route path="/dashboard/employees/:id/report" element={<GenerateReportPage/>}/>
+          <Route path="/dashboard/employees/:id/access" element={<ManageAccessPage/>}/>
+          
+          {/* Legacy employee routes - keeping for backward compatibility */}
           <Route path="/employee" element={<EmployeesPage/>}/>
+          <Route path="/employee-details" element={<EmployeeDetailPage/>}/>
+          <Route path="/edit-employee" element={<EditEmployeePage/>}/>
+          <Route path="/employee-performance" element={<EmployeePerformancePage/>}/>
+          <Route path="/employee-report" element={<GenerateReportPage/>}/>
+          <Route path="/employee-access" element={<ManageAccessPage/>}/>
+          
           <Route path="/departments" element={<DepartmentsPage/>}/>
           <Route path="/pending/registration" element={<VendorApprovalPage/>}/>
 
@@ -115,15 +136,9 @@ function App() {
           <Route path="/vendor-registration" element={<VendorRegistration/>}/>
           <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>
 
-          {/*Vendor Routes */}
+          {/*Driver Routes */}
           <Route path="/driver-dash" element={<DriverDashboard/>}/>
           <Route path="/map" element={<FleetTrackingMap/>}/>
-          {/*<Route path="/qoutes" element={<VendorRFQsPage/>}/>
-          <Route path="/vendors/qoutes/submit" element={<SubmitQuotePage/>}/>
-          <Route path="/invoices/submit" element={<VendorInvoiceSubmissionPage/>}/>
-          <Route path="/vendor-purchase-order" element={<VendorPODetailsPage/>}/>
-          <Route path="/vendor-registration" element={<VendorRegistration/>}/>
-          <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>*/}
         </Routes>
       </BrowserRouter>      
       </AuthProvider>  
