@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -17,10 +18,12 @@ import {
   ImageIcon,
   FileSignature,
   Youtube,
-} from "lucide-react"
+} from "lucide-react";
+import { useAuth } from "../../authcontext/authcontext";
 
 export default function RegisterPage() {
-  const [activeStep, setActiveStep] = useState(0)
+  const [activeStep, setActiveStep] = useState(0);
+  const navigate = useNavigate();
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -41,6 +44,7 @@ export default function RegisterPage() {
   const [signature, setSignature] = useState(null)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
   const [onboardingStep, setOnboardingStep] = useState(0)
+  const { register: authRegister } = useAuth();
 
   // NEW: Store user data and token from registration
   const [userData, setUserData] = useState(null)
@@ -102,6 +106,7 @@ export default function RegisterPage() {
     "Accounting/Finance",
     "Other",
     "Driver",
+    "Vendor",
   ]
 
   // Define role-based navigation paths
@@ -188,7 +193,7 @@ export default function RegisterPage() {
     }
   }
 
-  const handleSubmit = async () => {
+   const handleSubmit = async () => {
     if (!phoneNumber) {
       setError("Please enter your phone number")
       return
@@ -203,37 +208,21 @@ export default function RegisterPage() {
     setError("")
 
     try {
-      const registrationResponse = await fetch(`${backendUrl}/api/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          firstName,
-          lastName,
-          companyName,
-          password,
-          industry,
-          role,
-          phoneNumber,
-        }),
-      })
+      // Use the auth context register function instead of direct fetch
+      const registrationData = await authRegister(
+        firstName,
+        lastName,
+        email,
+        password,
+        companyName,
+        industry,
+        role,
+        phoneNumber
+      );
 
-      if (!registrationResponse.ok) {
-        const errorData = await registrationResponse.json()
-        throw new Error(errorData.message || "Registration failed")
-      }
-
-      const registrationData = await registrationResponse.json()
-
-      // FIXED: Store user data and token in state instead of localStorage
+      // Store user data and token in local state for onboarding process
       setUserData(registrationData.user)
       setAuthToken(registrationData.token)
-
-      // Optional: Still store in localStorage as backup, but don't rely on it
-      localStorage.setItem("token", registrationData.token)
-      localStorage.setItem("user", JSON.stringify(registrationData.user))
 
       setIsSendingSMS(true)
       const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
@@ -412,7 +401,7 @@ export default function RegisterPage() {
       setHasCompletedOnboarding(true)
 
       // Navigate to the appropriate dashboard
-      window.location.href = dashboardPath
+        navigate(dashboardPath);
     } catch (error) {
       console.error("Error during onboarding completion:", error)
       setError(error.message || "An error occurred while completing onboarding. Please try again.")

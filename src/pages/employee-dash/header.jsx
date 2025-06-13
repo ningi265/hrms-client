@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 const DashboardHeader = ({ 
   user, 
+  userProfile, // Add userProfile prop
   onMobileMenuToggle, 
   scrollPosition,
   sidebarOpen = true, // New prop to track sidebar state
@@ -159,6 +160,7 @@ const DashboardHeader = ({
       <GlobalStyles />
       <ModernHeaderComponent
         user={user}
+        userProfile={userProfile} // Pass userProfile to ModernHeaderComponent
         notificationCount={notificationCount}
         onNotificationClick={handleNotificationClick}
         onHelpClick={handleHelpClick}

@@ -481,6 +481,7 @@ useEffect(() => {
               {activeSection === "rfq" && <VendorRFQsPage />}
 
                {activeSection === "user-profile" && <UserProfilePage />}
+               
             </Box> 
           )}
         </Box>

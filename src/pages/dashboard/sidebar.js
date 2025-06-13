@@ -667,7 +667,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   const drawer = (
     <>
       {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
-   <DrawerHeader>
+<DrawerHeader>
   <LogoContainer open={open}>
     {open ? (
       <>
@@ -692,9 +692,10 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
               color: '#ffffff',
               fontWeight: 700,
               fontSize: '1.2rem',
+              textTransform: 'uppercase' // Added this line
             }}
           >
-            {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
+            {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
           </Box>
           <Box>
             <Typography 
@@ -702,10 +703,11 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
               sx={{
                 color: sidebarColors.text,
                 fontWeight: 600,
-                lineHeight: 1.2
+                lineHeight: 1.2,
+                textTransform: 'uppercase' // Added this line
               }}
             >
-              {user?.companyName || 'NyasaSC'} {/* Fallback to 'NyasaSC' if no company name */}
+              {user?.companyName?.toUpperCase() || 'NYASASC'} {/* Ensures uppercase */}
             </Typography>
             <Typography 
               variant="caption" 
@@ -714,7 +716,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
                 fontSize: '0.75rem'
               }}
             >
-              Organization
+              ORGANIZATION {/* Changed to uppercase */}
             </Typography>
           </Box>
         </Box>
@@ -757,12 +759,13 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           fontWeight: 700,
           fontSize: '1.2rem',
           cursor: 'pointer',
+          textTransform: 'uppercase', // Added this line
           '&:hover': {
             transform: 'scale(1.05)',
           }
         }}
       >
-        {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
+        {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
       </Box>
     )}
   </LogoContainer>

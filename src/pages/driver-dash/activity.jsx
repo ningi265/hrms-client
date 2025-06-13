@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Car, 
   MapPin, 
@@ -34,30 +34,273 @@ import {
   Globe,
   ChevronRight
 } from 'lucide-react';
-//import FleetTrackingMap from './fleetMap';
+
+// Google Maps Fleet Tracking Component
+const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect }) => {
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const markersRef = useRef(new Map());
+  const [isMapLoaded, setIsMapLoaded] = useState(false);
+
+  // Load Google Maps API
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      setIsMapLoaded(true);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=geometry,places`;
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = () => {
+      setIsMapLoaded(true);
+    };
+
+    // For demo purposes, we'll simulate the Google Maps API
+    setTimeout(() => {
+      window.google = {
+        maps: {
+          Map: class {
+            constructor(element, options) {
+              this.element = element;
+              this.options = options;
+              // Simulate map initialization
+            }
+            setCenter() {}
+            setZoom() {}
+          },
+          Marker: class {
+            constructor(options) {
+              this.options = options;
+              this.position = options.position;
+            }
+            setPosition(pos) { this.position = pos; }
+            setMap() {}
+            setIcon() {}
+          },
+          InfoWindow: class {
+            constructor(options) {
+              this.options = options;
+            }
+            open() {}
+            close() {}
+            setContent() {}
+          },
+          LatLng: class {
+            constructor(lat, lng) {
+              this.lat = lat;
+              this.lng = lng;
+            }
+          }
+        }
+      };
+      setIsMapLoaded(true);
+    }, 1000);
+
+    document.head.appendChild(script);
+    
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
+
+  // Initialize map
+  useEffect(() => {
+    if (!isMapLoaded || !mapRef.current) return;
+
+    // Create a custom map visualization since we can't use actual Google Maps in this environment
+    const mapContainer = mapRef.current;
+    mapContainer.innerHTML = '';
+    
+    // Create a custom map background
+    const mapDiv = document.createElement('div');
+    mapDiv.className = 'relative w-full h-full bg-gradient-to-br from-blue-100 via-green-50 to-blue-50 rounded-2xl overflow-hidden';
+    mapDiv.style.backgroundImage = `
+      radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 60%, rgba(147, 51, 234, 0.05) 0%, transparent 50%)
+    `;
+    
+    // Add grid pattern
+    const gridSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    gridSvg.setAttribute('class', 'absolute inset-0 w-full h-full');
+    gridSvg.innerHTML = `
+      <defs>
+        <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+          <path d="M 50 0 L 0 0 0 50" fill="none" stroke="rgba(59, 130, 246, 0.1)" stroke-width="1"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#grid)" />
+    `;
+    
+    mapDiv.appendChild(gridSvg);
+    mapContainer.appendChild(mapDiv);
+
+    mapInstance.current = { element: mapDiv };
+  }, [isMapLoaded]);
+
+  // Update driver markers
+  useEffect(() => {
+    if (!mapInstance.current || !drivers.length) return;
+
+    const mapElement = mapInstance.current.element;
+    
+    // Clear existing markers
+    const existingMarkers = mapElement.querySelectorAll('.driver-marker');
+    existingMarkers.forEach(marker => marker.remove());
+
+    // Add new markers
+    drivers.forEach(driver => {
+      const marker = document.createElement('div');
+      marker.className = 'driver-marker absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 hover:z-50';
+      
+      // Convert lat/lng to map coordinates (simplified for demo)
+      const x = ((driver.lng + 74.1) / 0.3) * 100;
+      const y = ((40.9 - driver.lat) / 0.2) * 100;
+      
+      marker.style.left = `${Math.max(5, Math.min(95, x))}%`;
+      marker.style.top = `${Math.max(5, Math.min(95, y))}%`;
+
+      const getStatusColor = (status) => {
+        switch(status) {
+          case 'available': return 'bg-emerald-500 border-emerald-300 shadow-emerald-500/50';
+          case 'on-trip': return 'bg-blue-500 border-blue-300 shadow-blue-500/50';
+          case 'offline': return 'bg-gray-400 border-gray-300 shadow-gray-400/50';
+          case 'maintenance': return 'bg-red-500 border-red-300 shadow-red-500/50';
+          default: return 'bg-gray-400 border-gray-300 shadow-gray-400/50';
+        }
+      };
+
+      marker.innerHTML = `
+        <div class="relative">
+          <div class="w-8 h-8 ${getStatusColor(driver.status)} rounded-full border-2 border-white shadow-lg flex items-center justify-center ${driver.status === 'on-assignment' ? 'animate-pulse' : ''}">
+            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M10 2L3 7v11h4v-6h6v6h4V7l-7-5z"/>
+            </svg>
+          </div>
+          ${driver.status === 'on-assignment' ? `
+            <div class="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full animate-ping"></div>
+          ` : ''}
+          <div class="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-gray-900/90 text-white px-3 py-2 rounded-lg text-xs opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg pointer-events-none">
+            <div class="font-semibold">${driver.name}</div>
+            <div class="text-gray-300">${driver.vehicle}</div>
+            <div class="text-blue-300 capitalize">${driver.status}</div>
+          </div>
+        </div>
+      `;
+
+      marker.addEventListener('click', () => {
+        if (onDriverSelect) {
+          onDriverSelect(driver);
+        }
+      });
+
+      mapElement.appendChild(marker);
+    });
+  }, [drivers, onDriverSelect]);
+
+  return (
+    <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-100/50 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-xl font-bold text-gray-900 flex items-center space-x-3">
+          <MapPin className="text-blue-500" size={24} />
+          <span>Live Fleet Tracking</span>
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        </h3>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 text-sm">
+            <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+            <span className="text-gray-600">Available ({driverStats.available})</span>
+          </div>
+          <div className="flex items-center space-x-2 text-sm">
+            <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+            <span className="text-gray-600">On Assignment ({driverStats.onAssignment})</span>
+          </div>
+          <div className="flex items-center space-x-2 text-sm">
+            <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+            <span className="text-gray-600">Off Duty ({driverStats.offDuty})</span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="relative">
+        <div 
+          ref={mapRef}
+          className="w-full h-96 rounded-2xl border border-gray-200 bg-gradient-to-br from-blue-50 to-green-50 relative overflow-hidden"
+        >
+          {!isMapLoaded && (
+            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 rounded-2xl">
+              <div className="text-center">
+                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600 font-medium">Loading Fleet Map...</p>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Map Controls */}
+        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-2 space-y-2">
+          <button className="w-10 h-10 bg-white hover:bg-gray-50 rounded-xl shadow-sm flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors">
+            <Search size={16} />
+          </button>
+          <button className="w-10 h-10 bg-white hover:bg-gray-50 rounded-xl shadow-sm flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors">
+            <RefreshCw size={16} />
+          </button>
+          <button className="w-10 h-10 bg-white hover:bg-gray-50 rounded-xl shadow-sm flex items-center justify-center text-gray-600 hover:text-gray-800 transition-colors">
+            <Filter size={16} />
+          </button>
+        </div>
+
+        {/* Status Legend */}
+        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-4">
+          <h4 className="text-sm font-semibold text-gray-800 mb-3">Driver Status</h4>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-emerald-500 rounded-full"></div>
+              <span className="text-xs text-gray-600">Available for assignments</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-xs text-gray-600">Currently on assignment</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <span className="text-xs text-gray-600">Under maintenance</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+              <span className="text-xs text-gray-600">Off duty</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const DriverDashboard = () => {
   const [activeTab, setActiveTab] = useState('today');
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
- 
-   const [drivers, setDrivers] = useState([]);
-  
-    const [searchQuery, setSearchQuery] = useState('');
-   
+  const [drivers, setDrivers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Simulate real-time driver positions
   useEffect(() => {
     const initialDrivers = [
-      { id: 1, name: "John Smith", lat: 40.7128, lng: -74.0060, status: "available", vehicle: "Toyota Camry", rating: 4.8, trips: 45, earnings: 1250, phone: "+1-555-0123" },
-      { id: 2, name: "Sarah Johnson", lat: 40.7589, lng: -73.9851, status: "on-trip", vehicle: "Honda Accord", rating: 4.9, trips: 38, earnings: 1180, phone: "+1-555-0124" },
-      { id: 3, name: "Mike Wilson", lat: 40.7505, lng: -73.9934, status: "available", vehicle: "Nissan Altima", rating: 4.7, trips: 52, earnings: 1420, phone: "+1-555-0125" },
-      { id: 4, name: "Emily Davis", lat: 40.7831, lng: -73.9712, status: "on-trip", vehicle: "Ford Fusion", rating: 4.9, trips: 41, earnings: 1320, phone: "+1-555-0126" },
-      { id: 5, name: "Robert Brown", lat: 40.7282, lng: -73.7949, status: "offline", vehicle: "Chevrolet Malibu", rating: 4.6, trips: 33, earnings: 980, phone: "+1-555-0127" },
-      { id: 6, name: "Lisa Garcia", lat: 40.7900, lng: -73.9441, status: "available", vehicle: "Hyundai Elantra", rating: 4.8, trips: 47, earnings: 1290, phone: "+1-555-0128" },
-      { id: 7, name: "David Miller", lat: 40.7614, lng: -73.9776, status: "maintenance", vehicle: "Kia Optima", rating: 4.5, trips: 29, earnings: 850, phone: "+1-555-0129" },
-      { id: 8, name: "Anna Wilson", lat: 40.7489, lng: -73.9680, status: "on-trip", vehicle: "Subaru Legacy", rating: 4.9, trips: 56, earnings: 1560, phone: "+1-555-0130" }
+      { id: 1, name: "John Smith", lat: 40.7128, lng: -74.0060, status: "available", vehicle: "Toyota Camry", empId: "DRV001", trips: 45, hoursWorked: 168, phone: "+1-555-0123", department: "Corporate Transport" },
+      { id: 2, name: "Sarah Johnson", lat: 40.7589, lng: -73.9851, status: "on-assignment", vehicle: "Honda Accord", empId: "DRV002", trips: 38, hoursWorked: 152, phone: "+1-555-0124", department: "Executive Transport" },
+      { id: 3, name: "Mike Wilson", lat: 40.7505, lng: -73.9934, status: "available", vehicle: "Mercedes E-Class", empId: "DRV003", trips: 52, hoursWorked: 176, phone: "+1-555-0125", department: "Executive Transport" },
+      { id: 4, name: "Emily Davis", lat: 40.7831, lng: -73.9712, status: "on-assignment", vehicle: "Ford Transit", empId: "DRV004", trips: 41, hoursWorked: 144, phone: "+1-555-0126", department: "Shuttle Service" },
+      { id: 5, name: "Robert Brown", lat: 40.7282, lng: -73.7949, status: "off-duty", vehicle: "Chevrolet Suburban", empId: "DRV005", trips: 33, hoursWorked: 120, phone: "+1-555-0127", department: "Airport Service" },
+      { id: 6, name: "Lisa Garcia", lat: 40.7900, lng: -73.9441, status: "available", vehicle: "Toyota Highlander", empId: "DRV006", trips: 47, hoursWorked: 160, phone: "+1-555-0128", department: "Corporate Transport" },
+      { id: 7, name: "David Miller", lat: 40.7614, lng: -73.9776, status: "maintenance", vehicle: "BMW 5 Series", empId: "DRV007", trips: 29, hoursWorked: 96, phone: "+1-555-0129", department: "Executive Transport" },
+      { id: 8, name: "Anna Wilson", lat: 40.7489, lng: -73.9680, status: "on-assignment", vehicle: "Audi A6", empId: "DRV008", trips: 56, hoursWorked: 184, phone: "+1-555-0130", department: "Client Relations" }
     ];
     
     setDrivers(initialDrivers);
@@ -79,13 +322,14 @@ const DriverDashboard = () => {
   // Simulate real-time notifications
   useEffect(() => {
     const notificationMessages = [
-      "Driver John Smith completed trip to JFK Airport - $85 earned",
-      "High demand alert: Downtown Manhattan area needs drivers",
-      "Vehicle maintenance reminder: Unit #A123 due for service",
-      "Peak hour surge pricing activated in Midtown",
-      "Sarah Johnson received 5-star rating from customer",
-      "Traffic alert: Heavy congestion on FDR Drive - rerouting drivers",
-      "New driver Emily Chen completed onboarding process"
+      "Driver John Smith completed executive transport to JFK Airport",
+      "Shuttle request: Marketing team needs transport to client meeting downtown",
+      "Vehicle maintenance completed: Unit BMW-007 ready for service",
+      "Morning shuttle schedule: 8:30 AM pickup for finance department",
+      "Sarah Johnson completed VIP transport for board members",
+      "Traffic alert: Route to LaGuardia delayed - rerouting executive transport",
+      "New employee orientation: HR requesting airport pickup for new hires",
+      "Emergency transport request: IT team needs urgent transport to data center"
     ];
 
     const interval = setInterval(() => {
@@ -106,50 +350,59 @@ const DriverDashboard = () => {
     setTimeout(() => setIsRefreshing(false), 1500);
   };
 
+  const handleDriverSelect = (driver) => {
+    setSelectedDriver(driver);
+    // You can add more functionality here like showing driver details in a modal
+    console.log('Selected driver:', driver);
+  };
+
   // Enhanced metrics calculation
   const driverStats = {
     available: drivers.filter(d => d.status === 'available').length,
-    onTrip: drivers.filter(d => d.status === 'on-trip').length,
-    offline: drivers.filter(d => d.status === 'offline').length,
+    onAssignment: drivers.filter(d => d.status === 'on-assignment').length,
+    offDuty: drivers.filter(d => d.status === 'off-duty').length,
     maintenance: drivers.filter(d => d.status === 'maintenance').length,
     total: drivers.length
   };
 
   const advancedStats = {
-    totalRevenue: 8450,
-    avgTripTime: 18,
-    customerSatisfaction: 4.8,
+    totalHours: 1240,
+    avgTransportTime: 24,
+    employeeSatisfaction: 4.6,
     fuelEfficiency: 85,
-    responseTime: 3.2,
-    peakHours: "2:00 PM - 6:00 PM",
-    fleetUtilization: Math.round(((driverStats.available + driverStats.onTrip) / driverStats.total) * 100)
+    responseTime: 4.2,
+    peakHours: "8:00 AM - 10:00 AM, 5:00 PM - 7:00 PM",
+    fleetUtilization: Math.round(((driverStats.available + driverStats.onAssignment) / driverStats.total) * 100),
+    costSavings: 15240
   };
 
-  const tripStats = {
+  const transportStats = {
     today: {
-      completed: 156,
-      inProgress: driverStats.onTrip,
-      cancelled: 8,
-      earnings: 8450,
+      completed: 94,
+      inProgress: driverStats.onAssignment,
+      cancelled: 3,
+      totalHours: 156,
       distance: 2847,
-      avgRating: 4.7
+      employeesSafelyTransported: 142,
+      costSavings: 2840
     },
     total: {
-      completed: 12847,
-      inProgress: driverStats.onTrip,
-      cancelled: 423,
-      earnings: 456780,
+      completed: 8947,
+      inProgress: driverStats.onAssignment,
+      cancelled: 67,
+      totalHours: 12456,
       distance: 234567,
-      avgRating: 4.8
+      employeesSafelyTransported: 15847,
+      costSavings: 156780
     }
   };
 
-  const recentTrips = [
-    { id: 1, driver: "John Smith", route: "Times Square → JFK Airport", status: "completed", earnings: 95, time: "3 mins ago", distance: "18.2 km", duration: "24 min", rating: 5 },
-    { id: 2, driver: "Sarah Johnson", route: "Central Park → Brooklyn Bridge", status: "in-progress", earnings: 45, time: "8 mins ago", distance: "12.1 km", duration: "16 min", rating: null },
-    { id: 3, driver: "Mike Wilson", route: "Grand Central → LaGuardia", status: "completed", earnings: 78, time: "12 mins ago", distance: "15.7 km", duration: "22 min", rating: 4 },
-    { id: 4, driver: "Emily Davis", route: "Wall Street → Penn Station", status: "completed", earnings: 35, time: "18 mins ago", distance: "6.8 km", duration: "14 min", rating: 5 },
-    { id: 5, driver: "Anna Wilson", route: "SoHo → Upper East Side", status: "in-progress", earnings: 52, time: "25 mins ago", distance: "11.3 km", duration: "19 min", rating: null },
+  const recentAssignments = [
+    { id: 1, driver: "John Smith", route: "Corporate HQ → JFK Airport", status: "completed", passengers: "Board Members (3)", time: "3 mins ago", distance: "18.2 km", duration: "24 min", department: "Executive" },
+    { id: 2, driver: "Sarah Johnson", route: "Office → Client Meeting (Goldman Sachs)", status: "in-progress", passengers: "Sales Team (4)", time: "8 mins ago", distance: "12.1 km", duration: "16 min", department: "Sales" },
+    { id: 3, driver: "Mike Wilson", route: "LaGuardia → Corporate HQ", status: "completed", passengers: "New Hires (2)", time: "12 mins ago", distance: "15.7 km", duration: "22 min", department: "HR" },
+    { id: 4, driver: "Emily Davis", route: "Office → Downtown Conference Center", status: "completed", passengers: "Marketing Team (6)", time: "18 mins ago", distance: "6.8 km", duration: "14 min", department: "Marketing" },
+    { id: 5, driver: "Anna Wilson", route: "Corporate HQ → Medical Center", status: "in-progress", passengers: "Employee (1)", time: "25 mins ago", distance: "11.3 km", duration: "19 min", department: "Emergency" },
   ];
 
   // Filter drivers based on search
@@ -191,53 +444,62 @@ const DriverDashboard = () => {
     </div>
   );
 
-  const DriverMarker = ({ driver, onClick }) => {
-    const getStatusColor = (status) => {
-      switch(status) {
-        case 'available': return 'bg-emerald-500 shadow-emerald-500/50';
-        case 'on-trip': return 'bg-blue-500 shadow-blue-500/50';
-        case 'offline': return 'bg-gray-400 shadow-gray-400/50';
-        case 'maintenance': return 'bg-red-500 shadow-red-500/50';
-        default: return 'bg-gray-400 shadow-gray-400/50';
-      }
-    };
-
-    return (
-      <div 
-        className={`absolute w-7 h-7 ${getStatusColor(driver.status)} rounded-full border-3 border-white shadow-lg cursor-pointer transform transition-all duration-300 hover:scale-150 hover:z-20 z-10`}
-        style={{
-          left: `${((driver.lng + 74.1) / 0.3) * 100}%`,
-          top: `${((40.9 - driver.lat) / 0.2) * 100}%`,
-          animation: driver.status === 'on-trip' ? 'pulse 2s infinite' : 'none'
-        }}
-        onClick={() => onClick(driver)}
-      >
-        <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-gray-900/90 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-xs opacity-0 hover:opacity-100 transition-opacity whitespace-nowrap shadow-lg">
-          <div className="font-semibold">{driver.name}</div>
-          <div className="text-gray-300 capitalize">{driver.status}</div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-     
-
       {/* Dashboard Content */}
       <main className="p-8 space-y-8 max-w-[1600px] mx-auto">
-       
-
-       
+        {/* Quick Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard 
+            title="Active Drivers" 
+            value={driverStats.available + driverStats.onAssignment} 
+            icon={Users} 
+            color="text-blue-600" 
+            bgColor="bg-blue-100"
+            trend={8}
+            subtitle="Out of total fleet"
+          />
+          <StatCard 
+            title="Cost Savings" 
+            value={advancedStats.costSavings.toLocaleString()} 
+            prefix="$"
+            icon={DollarSign} 
+            color="text-emerald-600" 
+            bgColor="bg-emerald-100"
+            trend={12}
+            subtitle="Monthly vs external transport"
+          />
+          <StatCard 
+            title="Fleet Utilization" 
+            value={advancedStats.fleetUtilization}
+            suffix="%"
+            icon={Gauge} 
+            color="text-purple-600" 
+            bgColor="bg-purple-100"
+            trend={-2}
+            subtitle="Current efficiency"
+          />
+          <StatCard 
+            title="Avg Response Time" 
+            value={advancedStats.responseTime}
+            suffix=" min"
+            icon={Clock} 
+            color="text-orange-600" 
+            bgColor="bg-orange-100"
+            trend={-8}
+            subtitle="Driver pickup time"
+          />
+        </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-          {/* Enhanced Dynamic Fleet Map -  <FleetTrackingMap 
-      drivers={drivers}
-      filteredDrivers={filteredDrivers}
-      searchQuery={searchQuery}
-      driverStats={driverStats}
-    /> */}
-         
+          {/* Enhanced Dynamic Fleet Map */}
+          <div className="xl:col-span-3">
+            <FleetTrackingMap 
+              drivers={drivers}
+              driverStats={driverStats}
+              onDriverSelect={handleDriverSelect}
+            />
+          </div>
 
           {/* Enhanced Analytics Sidebar */}
           <div className="space-y-6">
@@ -277,7 +539,7 @@ const DriverDashboard = () => {
                       <span className="text-gray-800 font-semibold">Completed</span>
                     </div>
                     <span className="text-3xl font-bold text-emerald-600">
-                      {activeTab === 'today' ? tripStats.today.completed : tripStats.total.completed.toLocaleString()}
+                      {activeTab === 'today' ? transportStats.today.completed : transportStats.total.completed.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -289,7 +551,7 @@ const DriverDashboard = () => {
                       <span className="text-gray-800 font-semibold">Active</span>
                     </div>
                     <span className="text-3xl font-bold text-blue-600">
-                      {activeTab === 'today' ? tripStats.today.inProgress : tripStats.total.inProgress}
+                      {activeTab === 'today' ? transportStats.today.inProgress : transportStats.total.inProgress}
                     </span>
                   </div>
                 </div>
@@ -298,26 +560,25 @@ const DriverDashboard = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <DollarSign className="text-amber-600" size={24} />
-                      <span className="text-gray-800 font-semibold">Revenue</span>
+                      <span className="text-gray-800 font-semibold">Cost Savings</span>
                     </div>
                     <span className="text-3xl font-bold text-amber-600">
-                      ${activeTab === 'today' ? tripStats.today.earnings.toLocaleString() : tripStats.total.earnings.toLocaleString()}
+                      ${activeTab === 'today' ? transportStats.today.costSavings.toLocaleString() : transportStats.total.costSavings.toLocaleString()}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Performance Metrics */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-100/50 p-6">
+            {/* Performance Metrics - <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-100/50 p-6">
               <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center space-x-2">
                 <BarChart3 className="text-blue-500" size={22} />
                 <span>Performance Insights</span>
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                  <span className="text-gray-700 font-medium">Avg Trip Duration</span>
-                  <span className="font-bold text-gray-900">{advancedStats.avgTripTime} min</span>
+                  <span className="text-gray-700 font-medium">Avg Transport Time</span>
+                  <span className="font-bold text-gray-900">{advancedStats.avgTransportTime} min</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
                   <span className="text-gray-700 font-medium">Peak Hours</span>
@@ -328,11 +589,12 @@ const DriverDashboard = () => {
                   <span className="font-bold text-blue-600">{advancedStats.fleetUtilization}%</span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-gray-50 rounded-xl">
-                  <span className="text-gray-700 font-medium">Customer Rating</span>
-                  <span className="font-bold text-yellow-600">{activeTab === 'today' ? tripStats.today.avgRating : tripStats.total.avgRating} ⭐</span>
+                  <span className="text-gray-700 font-medium">Employee Satisfaction</span>
+                  <span className="font-bold text-yellow-600">{advancedStats.employeeSatisfaction}/5.0 ⭐</span>
                 </div>
               </div>
-            </div>
+            </div>*/}
+            
           </div>
         </div>
 
@@ -341,7 +603,7 @@ const DriverDashboard = () => {
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-2xl font-bold text-gray-900 flex items-center space-x-3">
               <Route className="text-blue-500" size={28} />
-              <span>Recent Trip Activity</span>
+              <span>Recent Employee Transport Activity</span>
             </h3>
             <div className="flex items-center space-x-4">
               <button className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 text-sm font-semibold bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl transition-all">
@@ -349,7 +611,7 @@ const DriverDashboard = () => {
                 <span>Export Data</span>
               </button>
               <button className="text-blue-600 hover:text-blue-700 text-sm font-semibold flex items-center space-x-2">
-                <span>View All Trips</span>
+                <span>View All Assignments</span>
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -361,56 +623,54 @@ const DriverDashboard = () => {
                   <th className="text-left py-4 px-6 text-gray-700 font-bold text-sm">Driver</th>
                   <th className="text-left py-4 px-6 text-gray-700 font-bold text-sm">Route</th>
                   <th className="text-center py-4 px-6 text-gray-700 font-bold text-sm">Status</th>
+                  <th className="text-center py-4 px-6 text-gray-700 font-bold text-sm">Passengers</th>
                   <th className="text-center py-4 px-6 text-gray-700 font-bold text-sm">Distance</th>
                   <th className="text-center py-4 px-6 text-gray-700 font-bold text-sm">Duration</th>
-                  <th className="text-center py-4 px-6 text-gray-700 font-bold text-sm">Rating</th>
-                  <th className="text-right py-4 px-6 text-gray-700 font-bold text-sm">Earnings</th>
+                  <th className="text-right py-4 px-6 text-gray-700 font-bold text-sm">Department</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {recentTrips.map((trip, index) => (
-                  <tr key={trip.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-300 group">
+                {recentAssignments.map((assignment, index) => (
+                  <tr key={assignment.id} className="hover:bg-gradient-to-r hover:from-blue-50 hover:to-transparent transition-all duration-300 group">
                     <td className="py-5 px-6">
                       <div className="flex items-center space-x-4">
                         <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
                           <span className="text-white text-sm font-bold">
-                            {trip.driver.split(' ').map(n => n[0]).join('')}
+                            {assignment.driver.split(' ').map(n => n[0]).join('')}
                           </span>
                         </div>
                         <div>
-                          <span className="font-semibold text-gray-900">{trip.driver}</span>
-                          <p className="text-xs text-gray-500">{trip.time}</p>
+                          <span className="font-semibold text-gray-900">{assignment.driver}</span>
+                          <p className="text-xs text-gray-500">{assignment.time}</p>
                         </div>
                       </div>
                     </td>
                     <td className="py-5 px-6">
-                      <div className="text-gray-700 font-medium">{trip.route}</div>
+                      <div className="text-gray-700 font-medium">{assignment.route}</div>
                     </td>
                     <td className="py-5 px-6 text-center">
                       <span className={`px-4 py-2 rounded-full text-xs font-bold inline-flex items-center ${
-                        trip.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                        trip.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                        assignment.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                        assignment.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
                         'bg-red-100 text-red-700'
                       }`}>
-                        {trip.status === 'in-progress' && <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-2"></div>}
-                        {trip.status.replace('-', ' ').toUpperCase()}
+                        {assignment.status === 'in-progress' && <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-2"></div>}
+                        {assignment.status.replace('-', ' ').toUpperCase()}
                       </span>
                     </td>
                     <td className="py-5 px-6 text-center text-gray-600 font-medium">
-                      {trip.distance}
+                      {assignment.passengers}
                     </td>
                     <td className="py-5 px-6 text-center text-gray-600 font-medium">
-                      {trip.duration}
+                      {assignment.distance}
                     </td>
-                    <td className="py-5 px-6 text-center">
-                      {trip.rating ? (
-                        <span className="text-yellow-500 font-bold">{trip.rating} ⭐</span>
-                      ) : (
-                        <span className="text-gray-400 text-sm">Pending</span>
-                      )}
+                    <td className="py-5 px-6 text-center text-gray-600 font-medium">
+                      {assignment.duration}
                     </td>
-                    <td className="py-5 px-6 text-right font-bold text-lg text-gray-900">
-                      ${trip.earnings}
+                    <td className="py-5 px-6 text-right">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        {assignment.department}
+                      </span>
                     </td>
                   </tr>
                 ))}
@@ -418,6 +678,7 @@ const DriverDashboard = () => {
             </table>
           </div>
         </div>
+        
          {/* Real-time Activity Feed */}
         {notifications.length > 0 && (
           <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-lg border border-gray-100/50 p-6">

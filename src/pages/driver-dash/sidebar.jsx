@@ -47,6 +47,21 @@ const ModernIcons = {
     </svg>
   ),
 
+  Vehicle: (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <rect x="3" y="11" width="18" height="5" rx="2" />
+    <path d="M5 11V7h14v4" />
+    <circle cx="7.5" cy="16" r="1.5" />
+    <circle cx="16.5" cy="16" r="1.5" />
+  </svg>
+),
+Trip: (props) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+    <path d="M4 17a4 4 0 1 1 8 0H4zM18 3l-3 3 3 3M15 6H9a6 6 0 0 0-6 6v4" />
+  </svg>
+),
+
+
   RFQs: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -348,29 +363,19 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           icon: <ModernIcons.Dashboard />,
           badge: null
         },
-          { 
-          id: 'registration-management', 
-          label: 'Registration', 
-          icon: <ModernIcons.RFQs />,
-        },
-        { 
-          id: 'rfq', 
-          label: 'RFQs', 
-          icon: <ModernIcons.RFQs />,
-          badge: stats.rfqs?.counts?.open || null
-        }, 
-        { 
-          id: 'purchase-order', 
-          label: 'Purchase Orders', 
-          icon: <ModernIcons.PurchaseOrders />,
-          badge: stats.purchaseOrders?.counts?.pending || null
-        },
-           { 
-          id: 'invoices', 
-          label: 'Invoices', 
-          icon: <ModernIcons.Invoices />,
-          badge: stats.invoices?.counts?.pending || null
-        },
+     {
+  id: 'registration-management',
+  label: 'Trip Management',
+  icon: <ModernIcons.Trip />,
+},
+{
+  id: 'rfq',
+  label: 'Vehicle Management',
+  icon: <ModernIcons.Vehicle />,
+  badge: stats.rfqs?.counts?.open || null
+},
+
+        
       ]
     },
     {
@@ -550,106 +555,109 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   const drawer = (
     <>
       {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
-  <DrawerHeader>
-    <LogoContainer open={open}>
-      {open ? (
-        <>
-          {/* Company Display - matches sidebar theme */}
-          <Box 
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 2,
-              flexGrow: 1
-            }}
-          >
-            <Box 
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '8px',
-                backgroundColor: 'rgba(85, 105, 255, 0.8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '1.2rem',
-              }}
-            >
-              {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
-            </Box>
-            <Box>
-              <Typography 
-                variant="subtitle1" 
-                sx={{
-                  color: sidebarColors.text,
-                  fontWeight: 600,
-                  lineHeight: 1.2
-                }}
-              >
-                {user?.companyName || 'NyasaSC'} {/* Fallback to 'NyasaSC' if no company name */}
-              </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{
-                  color: sidebarColors.textSecondary,
-                  fontSize: '0.75rem'
-                }}
-              >
-                Organization
-              </Typography>
-            </Box>
-          </Box>
-          
-          <ToggleButton 
-            onClick={toggleDrawer}
-            disabled={isAnimating}
-            aria-label="close drawer"
-            sx={{
-              '& img': {
-                filter: 'brightness(0) invert(1)', 
-              }
-            }}
-          >
-            <img 
-              src="/sidebar1.png" 
-              alt="Toggle sidebar" 
-              style={{ 
-                width: '20px', 
-                height: '20px', 
-                objectFit: 'contain',
-                transform: 'rotate(0deg)',
-                transition: 'transform 0.3s ease' 
-              }} 
-            />
-          </ToggleButton>
-        </>
-      ) : (
+    <DrawerHeader>
+  <LogoContainer open={open}>
+    {open ? (
+      <>
+        {/* Company Display - matches sidebar theme */}
         <Box 
-          onClick={toggleDrawer}
-          sx={{ 
-            width: 36,
-            height: 36,
-            borderRadius: '8px',
-            backgroundColor: 'rgba(85, 105, 255, 0.8)',
+          sx={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: '#ffffff',
-            fontWeight: 700,
-            fontSize: '1.2rem',
-            cursor: 'pointer',
-            '&:hover': {
-              transform: 'scale(1.05)',
+            gap: 2,
+            flexGrow: 1
+          }}
+        >
+          <Box 
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: '8px',
+              backgroundColor: 'rgba(85, 105, 255, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '1.2rem',
+              textTransform: 'uppercase' // Added this line
+            }}
+          >
+            {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
+          </Box>
+          <Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{
+                color: sidebarColors.text,
+                fontWeight: 600,
+                lineHeight: 1.2,
+                textTransform: 'uppercase' // Added this line
+              }}
+            >
+              {user?.companyName?.toUpperCase() || 'NYASASC'} {/* Ensures uppercase */}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{
+                color: sidebarColors.textSecondary,
+                fontSize: '0.75rem'
+              }}
+            >
+              ORGANIZATION {/* Changed to uppercase */}
+            </Typography>
+          </Box>
+        </Box>
+        
+        <ToggleButton 
+          onClick={toggleDrawer}
+          disabled={isAnimating}
+          aria-label="close drawer"
+          sx={{
+            '& img': {
+              filter: 'brightness(0) invert(1)', 
             }
           }}
         >
-          {user?.companyName?.charAt(0) || 'N'} {/* Fallback to 'N' if no company name */}
-        </Box>
-      )}
-    </LogoContainer>
-  </DrawerHeader>
+          <img 
+            src="/sidebar1.png" 
+            alt="Toggle sidebar" 
+            style={{ 
+              width: '20px', 
+              height: '20px', 
+              objectFit: 'contain',
+              transform: 'rotate(0deg)',
+              transition: 'transform 0.3s ease' 
+            }} 
+          />
+        </ToggleButton>
+      </>
+    ) : (
+      <Box 
+        onClick={toggleDrawer}
+        sx={{ 
+          width: 36,
+          height: 36,
+          borderRadius: '8px',
+          backgroundColor: 'rgba(85, 105, 255, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontWeight: 700,
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          textTransform: 'uppercase', // Added this line
+          '&:hover': {
+            transform: 'scale(1.05)',
+          }
+        }}
+      >
+        {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
+      </Box>
+    )}
+  </LogoContainer>
+</DrawerHeader>
 
       {/* Scrollable Content */}
       <Box sx={{

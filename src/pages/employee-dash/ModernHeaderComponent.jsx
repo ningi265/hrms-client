@@ -31,9 +31,35 @@ import {
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays, isToday, isSameDay } from 'date-fns';
 
+// Helper function to get user initials from profile data
+const getUserInitials = (user, userProfile) => {
+  // Try to get data from userProfile first (API response), then fallback to auth user
+  const profileUser = userProfile?.user || userProfile;
+  const authUser = user;
+  
+  const firstName = profileUser?.firstName || authUser?.firstName;
+  const lastName = profileUser?.lastName || authUser?.lastName;
+  
+  if (firstName && lastName) {
+    return `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}`;
+  } else if (firstName) {
+    return firstName.charAt(0).toUpperCase();
+  } else if (lastName) {
+    return lastName.charAt(0).toUpperCase();
+  } else {
+    // Fallback to email initial if available
+    const email = profileUser?.email || authUser?.email;
+    if (email) {
+      return email.charAt(0).toUpperCase();
+    }
+    return "U"; // Ultimate fallback for "User"
+  }
+};
+
 // Modern Header Component - Fixed positioning and responsive layout
 const ModernHeaderComponent = ({ 
   user, 
+  userProfile, // Add userProfile prop
   notificationCount = 3,
   onNotificationClick,
   onHelpClick,
@@ -433,17 +459,9 @@ const ModernHeaderComponent = ({
                   }}
                   className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-lg transition-all duration-200"
                 >
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
-  {user?.firstName && user?.lastName
-    ? `${user.firstName.charAt(0).toUpperCase()}${user.lastName.charAt(0).toUpperCase()}`
-    : user?.firstName
-    ? user.firstName.charAt(0).toUpperCase()
-    : user?.lastName
-    ? user.lastName.charAt(0).toUpperCase()
-    : "G"}
-</div>
-
-
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
+                    {getUserInitials(user, userProfile)}
+                  </div>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </motion.button>
 

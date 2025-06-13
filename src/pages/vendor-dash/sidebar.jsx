@@ -70,12 +70,6 @@ const ModernIcons = {
       <path d="M12 15h5" />
     </svg>
   ),
-  Reconciliation: (props) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.5 10-10 10Z" />
-      <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
-    </svg>
-  ),
   Analytics: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M3 3v18h18" />
@@ -282,7 +276,7 @@ const PulseBadge = styled('span')(({ theme }) => ({
 }));
 
 // Main component
-const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,onSidebarToggle }) => {
+const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,onSidebarToggle,user }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -362,18 +356,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           label: 'Invoices', 
           icon: <ModernIcons.Invoices />,
           badge: stats.invoices?.counts?.pending || null
-        },
-      ]
-    },
-    {
-      id: 'finance',
-      label: 'Finance Processing',
-      items: [
-        { 
-          id: 'new-recon', 
-          label: 'Reconciliation', 
-          icon: <ModernIcons.Reconciliation />,
-          badge: null
         },
       ]
     },
@@ -542,78 +524,109 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   const drawer = (
     <>
       {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
-      <DrawerHeader>
-        <LogoContainer open={open}>
-          {open ? (
-            <>
-              {/* When open, show logo and title on left, toggle button on right */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <LogoBox>
-                  N
-                </LogoBox>
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600,
-                    color: sidebarColors.text,
-                    letterSpacing: '0.5px',
-                    fontSize: '1.125rem',
-                  }}
-                >
-                NYASA SC
-                </Typography>
-              </Box>
-              
-              <ToggleButton 
-                onClick={toggleDrawer}
-                disabled={isAnimating}
-                aria-label="close drawer"
-                 sx={{
-    '& img': {
-      filter: 'brightness(0) invert(1)', 
-    }
-  }}
-              >
-                <img 
-                  src="/sidebar1.png" 
-                  alt="Toggle sidebar" 
-                  style={{ 
-                    width: '20px', 
-                    height: '20px', 
-                    objectFit: 'contain',
-                    transform: 'rotate(0deg)',
-                    transition: 'transform 0.3s ease' 
-                  }} 
-                />
-              </ToggleButton>
-            </>
-          ) : (
-            // When collapsed, only show toggle icon in the H logo's place
-            <LogoBox 
-              onClick={toggleDrawer} 
-              sx={{ 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+    <DrawerHeader>
+  <LogoContainer open={open}>
+    {open ? (
+      <>
+        {/* Company Display - matches sidebar theme */}
+        <Box 
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2,
+            flexGrow: 1
+          }}
+        >
+          <Box 
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: '8px',
+              backgroundColor: 'rgba(85, 105, 255, 0.8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              fontWeight: 700,
+              fontSize: '1.2rem',
+              textTransform: 'uppercase' // Added this line
+            }}
+          >
+            {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
+          </Box>
+          <Box>
+            <Typography 
+              variant="subtitle1" 
+              sx={{
+                color: sidebarColors.text,
+                fontWeight: 600,
+                lineHeight: 1.2,
+                textTransform: 'uppercase' // Added this line
               }}
             >
-              <img 
-                src="/sidebar.svg" 
-                alt="Toggle sidebar" 
-                style={{ 
-                  width: '20px', 
-                  height: '20px', 
-                  objectFit: 'contain',
-                  transform: 'rotate(180deg)',
-                  transition: 'transform 0.3s ease'
-                }} 
-              />
-            </LogoBox>
-          )}
-        </LogoContainer>
-      </DrawerHeader>
-
+              {user?.companyName?.toUpperCase() || 'NYASASC'} {/* Ensures uppercase */}
+            </Typography>
+            <Typography 
+              variant="caption" 
+              sx={{
+                color: sidebarColors.textSecondary,
+                fontSize: '0.75rem'
+              }}
+            >
+              ORGANIZATION {/* Changed to uppercase */}
+            </Typography>
+          </Box>
+        </Box>
+        
+        <ToggleButton 
+          onClick={toggleDrawer}
+          disabled={isAnimating}
+          aria-label="close drawer"
+          sx={{
+            '& img': {
+              filter: 'brightness(0) invert(1)', 
+            }
+          }}
+        >
+          <img 
+            src="/sidebar1.png" 
+            alt="Toggle sidebar" 
+            style={{ 
+              width: '20px', 
+              height: '20px', 
+              objectFit: 'contain',
+              transform: 'rotate(0deg)',
+              transition: 'transform 0.3s ease' 
+            }} 
+          />
+        </ToggleButton>
+      </>
+    ) : (
+      <Box 
+        onClick={toggleDrawer}
+        sx={{ 
+          width: 36,
+          height: 36,
+          borderRadius: '8px',
+          backgroundColor: 'rgba(85, 105, 255, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          fontWeight: 700,
+          fontSize: '1.2rem',
+          cursor: 'pointer',
+          textTransform: 'uppercase', // Added this line
+          '&:hover': {
+            transform: 'scale(1.05)',
+          }
+        }}
+      >
+        {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
+      </Box>
+    )}
+  </LogoContainer>
+</DrawerHeader>
       {/* Scrollable Content */}
       <Box sx={{
         overflowY: 'auto',

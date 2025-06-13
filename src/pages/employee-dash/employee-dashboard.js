@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Home,
@@ -46,9 +46,11 @@ import {
   useTheme,
   styled,
   alpha,
-  LinearProgress
+  LinearProgress,
+  CircularProgress
 } from "@mui/material";
 import { useAuth } from "../../authcontext/authcontext";
+import { userAPI } from "../User/api/userService";
 import HRMSSidebar from './sidebar';
 import DashboardHeader from './header';
 import StatsCardsGrid from './statsCard';
@@ -157,6 +159,70 @@ const ActivityCard = styled(Card)(({ theme }) => ({
     boxShadow: theme.shadows[3],
   },
 }));
+
+// Helper function to safely get user display name
+const getUserDisplayName = (user, userProfile) => {
+  // Try to get name from userProfile first (API response), then fallback to auth user
+  const profileUser = userProfile?.user || userProfile;
+  const authUser = user;
+  
+  const firstName = profileUser?.firstName || authUser?.firstName;
+  const lastName = profileUser?.lastName || authUser?.lastName;
+  
+  if (!firstName || typeof firstName !== 'string') {
+    return 'User';
+  }
+  
+  const displayFirstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
+  const displayLastName = lastName ? ` ${lastName.charAt(0).toUpperCase() + lastName.slice(1)}` : '';
+  
+  return `${displayFirstName}${displayLastName}`;
+};
+
+// Helper function to determine if user is first-time
+const isFirstTimeUser = (userProfile) => {
+  if (!userProfile) return false;
+  
+  // Get user data from the nested structure
+  const profileUser = userProfile.user || userProfile;
+  
+  // Check if lastLoginAt is null (first login) or very recent registration
+  const hasNeverLoggedIn = !profileUser.lastLoginAt || profileUser.lastLoginAt === null;
+  
+  // Check registration time
+  const createdAt = new Date(profileUser.createdAt);
+  const now = new Date();
+  const hoursSinceRegistration = (now - createdAt) / (1000 * 60 * 60);
+  
+  // Consider first-time if:
+  // 1. Never logged in before OR
+  // 2. Registered less than 24 hours ago
+  return hasNeverLoggedIn || hoursSinceRegistration < 24;
+};
+
+// Helper function to get appropriate welcome message
+const getWelcomeMessage = (user, userProfile, userStats) => {
+  const displayName = getUserDisplayName(user, userProfile);
+  const isFirstTime = isFirstTimeUser(userProfile);
+  
+  if (isFirstTime) {
+    return {
+      title: `Welcome to your dashboard, ${displayName}! 🎉`,
+      subtitle: "You're all set up! Here's everything you need to get started with your employee dashboard."
+    };
+  }
+  
+  // Existing user welcome message
+  const profileUser = userProfile?.user || userProfile;
+  const lastLoginTime = profileUser?.lastLoginAt 
+    ? new Date(profileUser.lastLoginAt).toLocaleDateString()
+    : 'today';
+  
+  return {
+    title: `Welcome back, ${displayName}!`,
+    subtitle: `Here's your current work status. Last login: ${lastLoginTime}`
+  };
+};
 
 // Component Definitions
 const StatsCardComponent = ({ title, value, description, trend, trendDirection, icon, color }) => {
@@ -300,72 +366,167 @@ const EmployeeExpenseReportSection = () => (
   </Box>
 );
 
+// Loading Component
+const LoadingScreen = ({ theme }) => (
+  <Box sx={{
+    display: "flex", 
+    height: "100vh", 
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.palette.background.default,
+  }}>
+    <Box sx={{ textAlign: 'center' }}>
+      <CircularProgress size={40} sx={{ mb: 2 }} />
+      <Typography variant="h6" sx={{ mb: 2, color: theme.palette.text.primary }}>
+        Loading Dashboard...
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        Please wait while we load your information
+      </Typography>
+    </Box>
+  </Box>
+);
+
 // Main Dashboard Component
 export default function EmployeeDashboard() {
+  // ALL HOOKS MUST BE CALLED FIRST - BEFORE ANY CONDITIONAL RETURNS
   const navigate = useNavigate();
   const theme = useTheme();
-  const { user } = useAuth();
- const [stats, setStats] = useState({
-  requisitions: { counts: { total: 0, pending: 0 } },
-  rfqs: { counts: { total: 0, open: 0 } },
-  purchaseOrders: { counts: { total: 0, pending: 0 } },
-  invoices: { counts: { total: 0, pending: 0 } }
-});
+  const { user, loading, token } = useAuth();
+  const [searchParams] = useSearchParams();
+  
+  const [stats, setStats] = useState({
+    requisitions: { counts: { total: 0, pending: 0 } },
+    rfqs: { counts: { total: 0, open: 0 } },
+    purchaseOrders: { counts: { total: 0, pending: 0 } },
+    invoices: { counts: { total: 0, pending: 0 } }
+  });
+  const [userProfile, setUserProfile] = useState(null);
+  const [userStats, setUserStats] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [anchorEl, setAnchorEl] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const open = Boolean(anchorEl);
-   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeSection, setActiveSection] = useState(() => {
-    return searchParams.get('section') || 'employee-dash';
+    return searchParams.get('section') || 'dashboard';
   });
-   const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [scrollPosition, setScrollPosition] = useState(0);
-    const SIDEBAR_WIDTH = 256;
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [scrollPosition, setScrollPosition] = useState(0);
+
+  // Constants
+  const open = Boolean(anchorEl);
+  const SIDEBAR_WIDTH = 256;
   const COLLAPSED_SIDEBAR_WIDTH = 70;
+  const opacity = Math.min(scrollPosition / 100, 1);
 
-   const opacity = Math.min(scrollPosition / 100, 1);
+  // useEffect hooks
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.pageYOffset);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const savedOpenState = localStorage.getItem('sidebarOpen');
+      if (savedOpenState !== null) {
+        setSidebarOpen(JSON.parse(savedOpenState));
+      }
+    };
 
-      useEffect(() => {
-        const handleScroll = () => {
-          setScrollPosition(window.pageYOffset);
-        };
-        
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-      }, []);
-   useEffect(() => {
-       const handleStorageChange = () => {
-         const savedOpenState = localStorage.getItem('sidebarOpen');
-         if (savedOpenState !== null) {
-           setSidebarOpen(JSON.parse(savedOpenState));
-         }
-       };
-   
-       // Listen for custom sidebar toggle events
-       const handleSidebarToggle = (event) => {
-         setSidebarOpen(event.detail.open);
-       };
-   
-       // Listen for storage changes and custom events
-       window.addEventListener('storage', handleStorageChange);
-       window.addEventListener('sidebarToggle', handleSidebarToggle);
-       
-       // Check initial state
-       handleStorageChange();
-       
-       return () => {
-         window.removeEventListener('storage', handleStorageChange);
-         window.removeEventListener('sidebarToggle', handleSidebarToggle);
-       };
-     }, []);
+    // Listen for custom sidebar toggle events
+    const handleSidebarToggle = (event) => {
+      setSidebarOpen(event.detail.open);
+    };
 
-useEffect(() => {
+    // Listen for storage changes and custom events
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('sidebarToggle', handleSidebarToggle);
+    
+    // Check initial state
+    handleStorageChange();
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('sidebarToggle', handleSidebarToggle);
+    };
+  }, []);
+
+  useEffect(() => {
     const section = searchParams.get('section') || 'dashboard';
     setActiveSection(section);
   }, [searchParams]);
 
+  // Fetch user profile and stats when user is available
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user || !token) return;
+      
+      try {
+        setProfileLoading(true);
+        
+        // Fetch user profile and stats in parallel
+        const [profileResponse, statsResponse] = await Promise.all([
+          userAPI.getProfile().catch(err => {
+            console.warn('Failed to fetch profile:', err);
+            return null;
+          }),
+          userAPI.getUserStats().catch(err => {
+            console.warn('Failed to fetch user stats:', err);
+            return null;
+          })
+        ]);
+        
+        if (profileResponse) {
+          setUserProfile(profileResponse);
+          console.log('User profile loaded:', profileResponse);
+        }
+        
+        if (statsResponse) {
+          setUserStats(statsResponse);
+          console.log('User stats loaded:', statsResponse);
+          
+          // Update dashboard stats with user-specific data if available
+          if (statsResponse.dashboardStats) {
+            setStats(prev => ({
+              ...prev,
+              ...statsResponse.dashboardStats
+            }));
+          }
+        }
+        
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [user, token]);
+
+  // Check for authentication - if auth context is done loading but no user/token, redirect to login
+  useEffect(() => {
+    if (!loading && (!user || !token)) {
+      console.log('No user or token found, redirecting to login');
+      navigate('/login');
+    }
+  }, [user, token, loading, navigate]);
+
+  // Show loading screen while auth context is initializing
+  if (loading || profileLoading) {
+    return <LoadingScreen theme={theme} />;
+  }
+
+  // Show loading screen if no user data (will redirect to login via useEffect)
+  if (!user || !token) {
+    return <LoadingScreen theme={theme} />;
+  }
+
+  // Event handlers
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
   const toggleSidebar = () => setSidebarCollapsed(!sidebarCollapsed);
@@ -373,22 +534,20 @@ useEffect(() => {
     navigate(`?section=${section}`, { replace: true });
   };
 
-
   return (
     <Box sx={{
-    display: "flex", 
+      display: "flex", 
       height: "100vh", 
       overflow: "hidden",
       backgroundColor: theme.palette.background.default,
     }}>
       {/* Sidebar */}
-        <HRMSSidebar 
-               stats={stats} 
-               activeSection={activeSection} 
-               handleSectionChange={handleSectionChange}
-                 onSidebarToggle={setSidebarOpen}
-             />
-      
+      <HRMSSidebar 
+        stats={stats} 
+        activeSection={activeSection} 
+        handleSectionChange={handleSectionChange}
+        onSidebarToggle={setSidebarOpen}
+      />
 
       {/* Main Content */}
       <Box component="main" sx={{ 
@@ -396,24 +555,26 @@ useEffect(() => {
         overflow: "auto",
         backgroundColor: theme.palette.background.default,
         position: 'relative',
-        }}>
+      }}>
         {/* Header */}
-             <DashboardHeader 
-           user={user}
+        <DashboardHeader 
+          user={user}
           onMobileMenuToggle={setMobileOpen}
           scrollPosition={scrollPosition}
           handleSectionChange={handleSectionChange} 
           sidebarOpen={sidebarOpen}
           sidebarWidth={SIDEBAR_WIDTH}
           collapsedSidebarWidth={COLLAPSED_SIDEBAR_WIDTH}
-          />
+        />
 
         {/* Main Content Area */}
-        <Box sx={{ paddingTop: '80px', 
-  minHeight: 'calc(100vh - 64px)',
-   position: 'relative',
-     zIndex: 1,
-      padding: '80px 1.5rem 1.5rem', }}>
+        <Box sx={{ 
+          paddingTop: '80px', 
+          minHeight: 'calc(100vh - 64px)',
+          position: 'relative',
+          zIndex: 1,
+          padding: '80px 1.5rem 1.5rem', 
+        }}>
           {activeSection === "dashboard" ? (
             <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
               {/* Page Title */}
@@ -421,74 +582,198 @@ useEffect(() => {
                 display: "flex", 
                 justifyContent: "space-between", 
                 alignItems: 'center',
-                mb: 2,
+                mb: 3,
                 flexDirection: { xs: 'column', sm: 'row' },
-                gap: { xs: 1, sm: 0 },
+                gap: { xs: 2, sm: 0 },
                 textAlign: { xs: 'center', sm: 'left' }
               }}>
                 <Box>
-                  <Typography variant="h5" component="h1" gutterBottom  sx={{ fontWeight: 700, color: 'black' }}>
-                    Employee Dashboard
-                  </Typography>
-                  <Typography variant="body1"  sx={{ fontSize: '0.875rem', fontWeight: 400, color: 'black' }} >
-                    Welcome back, {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)}. Here's your current work status.
-                  </Typography>
+                  {(() => {
+                    const welcomeMsg = getWelcomeMessage(user, userProfile, userStats);
+                    const isFirstTime = isFirstTimeUser(userProfile);
+                    
+                    return (
+                      <>
+                        <Typography 
+                          variant="h5" 
+                          component="h1" 
+                          gutterBottom 
+                          sx={{ 
+                            fontWeight: 700, 
+                            color: 'black',
+                            fontSize: isFirstTime ? '1.75rem' : '1.5rem'
+                          }}
+                        >
+                          {isFirstTime ? 'Employee Dashboard' : 'Employee Dashboard'}
+                        </Typography>
+                        <Typography 
+                          variant="h6"
+                          sx={{ 
+                            fontSize: '1.1rem', 
+                            fontWeight: isFirstTime ? 600 : 400, 
+                            color: isFirstTime ? 'primary.main' : 'black',
+                            mb: 0.5
+                          }}
+                        >
+                          {welcomeMsg.title}
+                        </Typography>
+                        <Typography 
+                          variant="body1" 
+                          sx={{ 
+                            fontSize: '0.875rem', 
+                            fontWeight: 400, 
+                            color: 'text.secondary' 
+                          }}
+                        >
+                          {welcomeMsg.subtitle}
+                        </Typography>
+                        
+                        {/* First-time user additional info */}
+                        {isFirstTime && (
+                          <Box sx={{ 
+                            mt: 2, 
+                            p: 2, 
+                            bgcolor: 'primary.50', 
+                            borderRadius: 2,
+                            border: '1px solid',
+                            borderColor: 'primary.200'
+                          }}>
+                            <Typography variant="body2" sx={{ color: 'primary.800', fontWeight: 500 }}>
+                              🚀 Quick Start Tips:
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'primary.700', mt: 0.5 }}>
+                              • Submit your first requisition using the Quick Actions panel
+                              • Explore your tasks and pending items
+                              • Check out your activity feed for updates
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {/* User profile summary for existing users */}
+                        {!isFirstTime && userProfile && (
+                          <Box sx={{ 
+                            mt: 1.5, 
+                            display: 'flex', 
+                            gap: 2, 
+                            flexWrap: 'wrap',
+                            alignItems: 'center'
+                          }}>
+                            <Typography variant="body2" sx={{ 
+                              px: 2, 
+                              py: 0.5, 
+                              bgcolor: 'grey.100', 
+                              borderRadius: 1,
+                              fontSize: '0.75rem'
+                            }}>
+                              Role: {(userProfile.user || userProfile).role || user.role}
+                            </Typography>
+                            <Typography variant="body2" sx={{ 
+                              px: 2, 
+                              py: 0.5, 
+                              bgcolor: 'grey.100', 
+                              borderRadius: 1,
+                              fontSize: '0.75rem'
+                            }}>
+                              Company: {(userProfile.user || userProfile).companyName || user.companyName}
+                            </Typography>
+                            {userStats?.totalRequisitions && (
+                              <Typography variant="body2" sx={{ 
+                                px: 2, 
+                                py: 0.5, 
+                                bgcolor: 'success.50', 
+                                color: 'success.800',
+                                borderRadius: 1,
+                                fontSize: '0.75rem'
+                              }}>
+                                {userStats.totalRequisitions} Total Requisitions
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </>
+                    );
+                  })()}
                 </Box>
               </Box>
 
               {/* Stats Cards */}
-             <StatsCardsGrid stats={stats} />
-              {/* Main Content Grid */}
-<Box sx={{ 
-  display: "flex", 
-  gap: 2,
-  mb: 4,
-  width: "100%",
-  height: "100%",
-}}>
-  {/* Tasks - Takes exactly half width */}
-  <Box sx={{ 
-    flex: 1, 
-    minWidth: 0, // Prevent overflow
-    height: "100%",
-    display: "flex",
-    flexDirection: "column"
-  }}>
-    <BarChartComponent/>
-  </Box>
-
-  {/* Quick Actions - Takes exactly half width */}
-  <Box sx={{ 
-    flex: 1,
-    minWidth: 0, // Prevent overflow
-    height: "100%",
-    display: "flex",
-    flexDirection: "column"
-  }}>
-    <QuickActions handleSectionChange={handleSectionChange} />
-  </Box>
-</Box>
-
-                {/* Recent Activity - Full width below with no top margin */}
-<Box sx={{ width: "100%" }}>
-  <ActivityChangelogComponent/>    
-</Box>
-
+              <StatsCardsGrid stats={stats} userStats={userStats} />
               
+              {/* Main Content Grid */}
+              <Box sx={{ 
+                display: "flex", 
+                gap: 2,
+                mb: 4,
+                width: "100%",
+                height: "100%",
+              }}>
+                {/* Tasks - Takes exactly half width */}
+                <Box sx={{ 
+                  flex: 1, 
+                  minWidth: 0, // Prevent overflow
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column"
+                }}>
+                  <BarChartComponent/>
+                </Box>
+
+                {/* Quick Actions - Takes exactly half width */}
+                <Box sx={{ 
+                  flex: 1,
+                  minWidth: 0, // Prevent overflow
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column"
+                }}>
+                  <QuickActions handleSectionChange={handleSectionChange} />
+                </Box>
+              </Box>
+
+              {/* Recent Activity - Full width below with no top margin */}
+              <Box sx={{ width: "100%" }}>
+                {/* Activity Header with User Context */}
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  mb: 2
+                }}>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Recent Activity
+                  </Typography>
+                  {userProfile && (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      px: 2,
+                      py: 1,
+                      bgcolor: 'grey.50',
+                      borderRadius: 1
+                    }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Member since: {new Date((userProfile.user || userProfile).createdAt).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+                <ActivityChangelogComponent userStats={userStats} />    
+              </Box>
             </Box>
           ) : (
             <Box>
               {activeSection === "requisitions" && <NewRequisitionPage />}
-              {activeSection === "new-recon" && <TravelReconciliation  />}
+              {activeSection === "new-recon" && <TravelReconciliation />}
               {activeSection === "travel-requests" && <TravelDashboard />}
-              {activeSection === "travel-execution" && < TravelExecutionReconciliation/>}
+              {activeSection === "travel-execution" && <TravelExecutionReconciliation/>}
               {activeSection === "manage-requisitions" && <EmployeeRequisitionManagement/>}
               {activeSection === "user-profile" && <UserProfilePage />}
             </Box>
           )}
         </Box>
       </Box>
-       <AIChatButton user={user} />
+      <AIChatButton user={user} />
     </Box>
   );
 }
