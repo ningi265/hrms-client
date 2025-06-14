@@ -211,7 +211,7 @@ export default function Home() {
           src="/hrms-logo.png"
           className="h-20 w-auto mx-auto"
         />
-        <span className={`text-xl font-bold ${scrolled ? "text-white" : "text-gray-800"}`}>SOFT ERA</span>
+        <span className={`text-xl font-bold ${scrolled ? "text-white" : "text-gray-800"}`}>NEXUMWI</span>
       </div>
 
       {/* Desktop Navigation */}
@@ -682,7 +682,7 @@ export default function Home() {
             <div>
               <div className="flex items-center mb-4">
                 <ShoppingCart className="text-blue-400 mr-2 text-2xl" />
-                <span className="text-xl font-bold">SoftEra</span>
+                <span className="text-xl font-bold">NexusMWI</span>
               </div>
               <p className="text-gray-400 mb-4">
                 Streamlining procurement processes for modern enterprises.
@@ -739,7 +739,7 @@ export default function Home() {
           </div>
           
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-400">© {new Date().getFullYear()} SoftEra. All rights reserved.</p>
+            <p className="text-gray-400">© {new Date().getFullYear()} NexusMWI. All rights reserved.</p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a href="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">Privacy Policy</a>
               <a href="/terms-of-service" className="text-gray-400 hover:text-white transition-colors">Terms of Service</a>
