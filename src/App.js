@@ -59,6 +59,7 @@ import ManageAccessPage from './pages/dashboard/employee/access';
 import DepartmentDetailPage from './pages/dashboard/departments/view-details.';
 import DepartmentEditPage from './pages/dashboard/departments/edit';
 import DepartmentPerformancePage from './pages/dashboard/departments/perfomance';
+import CompleteRegistration from './pages/dashboard/employee/complete-registration';
 
 function App() {
   return (
@@ -133,7 +134,7 @@ function App() {
           <Route path="/travel/manage/recon" element={<TravelReconciliation/>}/>
           <Route path="/local-travel" element={<TravelRequestForm/>}/>
           <Route path="/requisition-management" element={<EmployeeRequisitionManagement/>}/>
-          
+          <Route path="/complete-registration" element={<CompleteRegistration />} />
           
           {/*Vendor Routes */}
           <Route path="/vendor-dash" element={<VendorDashboard/>}/>

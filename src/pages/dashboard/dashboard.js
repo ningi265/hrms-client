@@ -110,6 +110,9 @@ import { useAuth } from "../../authcontext/authcontext";
 import EmployeesPage from "./employee/employee";
 import DepartmentsPage from "./departments/departments";
 import VendorApprovalPage from "./vendors/registration";
+import EmployeeDetailPage from "./employee/view-details";
+import EmployeePerformancePage from "./employee/performance";
+import EditEmployeePage from "./employee/edit";
 
 
 // Sample data for RevenueChart
@@ -278,13 +281,13 @@ export default function ProcurementDashboard() {
   avatar: authUser.avatar || null,
   email: authUser.email || '',
   role: authUser.role || 'guest',
-  companyName: authUser.companyName || 'NyasaSC' // Add this line
+  companyName: authUser.companyName || 'NexusMWI' // Add this line
 } : {
   name: 'Guest User',
   avatar: null,
   email: '',
   role: 'guest',
-  companyName: 'NyasaSC' // Add this line
+  companyName: 'NexusMWI' // Add this line
 };
   const [recentReports, setRecentReports] = useState([
   {
@@ -917,7 +920,12 @@ export default function ProcurementDashboard() {
       {activeSection === "departments" && <DepartmentsPage/>}
       {activeSection === "user-profile" && <UserProfilePage />}
       {activeSection === "pending-registration" && <VendorApprovalPage />}
+      {activeSection === "employees-details" && <EmployeeDetailPage />}
+       {activeSection === "employees-edit" && <EditEmployeePage/>}
+       {activeSection === "employee-performance" && <EmployeePerformancePage />}
+       
       {/* other sections */}
+
     </Box>
   )}
 </Box>

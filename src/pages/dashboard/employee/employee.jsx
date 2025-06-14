@@ -261,36 +261,58 @@ export default function EmployeesPage() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsFormSubmitting(true);
-    setError(null);
+  e.preventDefault();
+  setIsFormSubmitting(true);
+  setError(null);
 
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${backendUrl}/api/auth/employees`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${backendUrl}/api/auth/employees`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+    const data = await response.json();
+
+    if (response.ok) {
+      setEmployees((prev) => [...prev, data.employee]);
+      showNotificationMessage(
+        `Employee ${data.employee.firstName} ${data.employee.lastName} has been created successfully! A registration email has been sent to ${data.employee.email}.`, 
+        "success"
+      );
+      closeAddEmployeeModal();
+      
+      // Reset form data
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        address: '',
+        department: '',
+        position: '',
+        hireDate: '',
+        salary: '',
+        status: 'active',
+        emergencyContact: {},
+        skills: [],
+        employmentType: 'full-time',
+        workLocation: 'office',
+        manager: null
       });
-      const data = await response.json();
-
-      if (response.ok) {
-        setEmployees((prev) => [...prev, data]);
-        showNotificationMessage("Employee added successfully!", "success");
-        closeAddEmployeeModal();
-      } else {
-        throw new Error(data.message || "Failed to add employee");
-      }
-    } catch (err) {
-      showNotificationMessage(err.message || "Failed to add employee", "error");
-      console.error("Failed to add employee:", err);
-    } finally {
-      setIsFormSubmitting(false);
+    } else {
+      throw new Error(data.message || "Failed to add employee");
     }
-  };
+  } catch (err) {
+    showNotificationMessage(err.message || "Failed to add employee", "error");
+    console.error("Failed to add employee:", err);
+  } finally {
+    setIsFormSubmitting(false);
+  }
+};
 
   const showNotificationMessage = (message, type = "success") => {
     setNotificationMessage(message);

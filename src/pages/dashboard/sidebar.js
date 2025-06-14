@@ -708,7 +708,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
                 textTransform: 'uppercase' // Added this line
               }}
             >
-              {user?.companyName?.toUpperCase() || 'NYASASC'} {/* Ensures uppercase */}
+              {user?.companyName?.toUpperCase() || 'NexusMWI'} {/* Ensures uppercase */}
             </Typography>
             <Typography 
               variant="caption" 
