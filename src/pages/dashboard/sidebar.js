@@ -418,16 +418,17 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           badge: null
         },
         { 
+          id: 'departments', 
+          label: 'Departments', 
+          icon: <ModernIcons.Department/>,
+        },
+        { 
           id: 'employees', 
           label: 'Employees', 
           icon: <ModernIcons.Employees />,
           badge: stats.employees?.counts?.pending || null
         },
-         { 
-          id: 'departments', 
-          label: 'Departments', 
-          icon: <ModernIcons.Department/>,
-        },
+         
         { 
           id: 'vendors', 
           label: 'Vendors', 

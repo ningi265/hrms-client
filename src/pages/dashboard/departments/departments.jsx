@@ -32,9 +32,11 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { DotLottieReact } from "@lottiefiles/dotlottie-react"
+import { useAuth } from "../../../authcontext/authcontext"
 
 export default function DepartmentsPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [departments, setDepartments] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -51,122 +53,40 @@ export default function DepartmentsPage() {
     headPhone: "",
     budget: "",
     location: "",
+    floor: "",
+    building: "",
     status: "active",
     goals: [],
     establishedDate: "",
+    maxCapacity: "",
   })
   const [isFormSubmitting, setIsFormSubmitting] = useState(false)
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState("")
   const [notificationType, setNotificationType] = useState("success")
 
-  // Mock data for demonstration
+  const backendUrl = process.env.REACT_APP_BACKEND_URL
+
+  // Fetch departments from backend
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000))
+        const token = localStorage.getItem("token")
+        console.log("Fetching departments from:", `${backendUrl}/api/departments`)
+        
+        const response = await fetch(`${backendUrl}/api/departments`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
 
-        const mockDepartments = [
-          {
-            _id: "1",
-            name: "Engineering",
-            description: "Software development and technical infrastructure",
-            departmentHead: "Sarah Johnson",
-            headEmail: "sarah.johnson@company.com",
-            headPhone: "+1 (555) 123-4567",
-            budget: 2500000,
-            location: "Building A, Floor 3",
-            status: "active",
-            employeeCount: 45,
-            goals: ["Product Development", "Technical Innovation", "System Optimization"],
-            establishedDate: "2020-01-15",
-            performance: 92,
-            projects: 12,
-          },
-          {
-            _id: "2",
-            name: "Marketing",
-            description: "Brand management, digital marketing, and customer acquisition",
-            departmentHead: "Michael Brown",
-            headEmail: "michael.brown@company.com",
-            headPhone: "+1 (555) 234-5678",
-            budget: 1200000,
-            location: "Building B, Floor 2",
-            status: "active",
-            employeeCount: 28,
-            goals: ["Brand Growth", "Lead Generation", "Customer Engagement"],
-            establishedDate: "2020-03-20",
-            performance: 88,
-            projects: 8,
-          },
-          {
-            _id: "3",
-            name: "Sales",
-            description: "Revenue generation and customer relationship management",
-            departmentHead: "Emily Davis",
-            headEmail: "emily.davis@company.com",
-            headPhone: "+1 (555) 345-6789",
-            budget: 800000,
-            location: "Building A, Floor 1",
-            status: "active",
-            employeeCount: 32,
-            goals: ["Revenue Growth", "Customer Retention", "Market Expansion"],
-            establishedDate: "2020-02-10",
-            performance: 95,
-            projects: 6,
-          },
-          {
-            _id: "4",
-            name: "Human Resources",
-            description: "Employee management, recruitment, and organizational development",
-            departmentHead: "John Smith",
-            headEmail: "john.smith@company.com",
-            headPhone: "+1 (555) 456-7890",
-            budget: 600000,
-            location: "Building B, Floor 1",
-            status: "active",
-            employeeCount: 15,
-            goals: ["Talent Acquisition", "Employee Development", "Culture Building"],
-            establishedDate: "2020-01-05",
-            performance: 90,
-            projects: 4,
-          },
-          {
-            _id: "5",
-            name: "Finance",
-            description: "Financial planning, accounting, and budget management",
-            departmentHead: "Lisa Chen",
-            headEmail: "lisa.chen@company.com",
-            headPhone: "+1 (555) 567-8901",
-            budget: 500000,
-            location: "Building A, Floor 2",
-            status: "active",
-            employeeCount: 18,
-            goals: ["Financial Planning", "Cost Optimization", "Compliance"],
-            establishedDate: "2020-01-08",
-            performance: 93,
-            projects: 3,
-          },
-          {
-            _id: "6",
-            name: "Operations",
-            description: "Business operations, logistics, and process optimization",
-            departmentHead: "David Wilson",
-            headEmail: "david.wilson@company.com",
-            headPhone: "+1 (555) 678-9012",
-            budget: 400000,
-            location: "Building C, Floor 1",
-            status: "restructuring",
-            employeeCount: 22,
-            goals: ["Process Improvement", "Efficiency", "Quality Control"],
-            establishedDate: "2020-04-15",
-            performance: 85,
-            projects: 5,
-          },
-        ]
-
-        setDepartments(mockDepartments)
+        if (response.ok) {
+          const data = await response.json()
+          console.log("Departments fetched successfully:", data)
+          setDepartments(data)
+        } else {
+          throw new Error("Failed to fetch departments")
+        }
       } catch (error) {
         setError("Failed to fetch departments")
         console.error("Failed to fetch departments:", error)
@@ -176,7 +96,7 @@ export default function DepartmentsPage() {
     }
 
     fetchDepartments()
-  }, [])
+  }, [backendUrl])
 
   const filteredDepartments = departments.filter((department) => {
     const nameMatch = department.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -201,13 +121,23 @@ export default function DepartmentsPage() {
   const handleDeleteDepartment = async (departmentId) => {
     setActionLoading(departmentId);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${backendUrl}/api/departments/${departmentId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
 
-      setDepartments((prev) => prev.filter((department) => department._id !== departmentId))
-      showNotificationMessage("Department deleted successfully!", "success")
+      if (response.ok) {
+        setDepartments((prev) => prev.filter((department) => department._id !== departmentId))
+        showNotificationMessage("Department deleted successfully!", "success")
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to delete department")
+      }
     } catch (error) {
-      showNotificationMessage("Failed to delete department", "error")
+      showNotificationMessage(error.message || "Failed to delete department", "error")
       console.error("Failed to delete department:", error)
     } finally {
       setActionLoading(null);
@@ -229,9 +159,12 @@ export default function DepartmentsPage() {
       headPhone: "",
       budget: "",
       location: "",
+      floor: "",
+      building: "",
       status: "active",
       goals: [],
       establishedDate: "",
+      maxCapacity: "",
     })
   }
 
@@ -257,21 +190,25 @@ export default function DepartmentsPage() {
     setError(null)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${backendUrl}/api/departments`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
 
-      const newDepartment = {
-        ...formData,
-        _id: Date.now().toString(),
-        employeeCount: 0,
-        performance: 0,
-        projects: 0,
-        budget: Number.parseFloat(formData.budget),
+      const responseData = await response.json()
+
+      if (response.ok) {
+        setDepartments((prev) => [...prev, responseData.department])
+        showNotificationMessage("Department added successfully!", "success")
+        closeAddDepartmentModal()
+      } else {
+        throw new Error(responseData.message || "Failed to add department")
       }
-
-      setDepartments((prev) => [...prev, newDepartment])
-      showNotificationMessage("Department added successfully!", "success")
-      closeAddDepartmentModal()
     } catch (err) {
       showNotificationMessage(err.message || "Failed to add department", "error")
       console.error("Failed to add department:", err)
@@ -307,6 +244,23 @@ export default function DepartmentsPage() {
     if (performance >= 80) return "text-blue-700 bg-blue-50 border-blue-200"
     if (performance >= 70) return "text-yellow-700 bg-yellow-50 border-yellow-200"
     return "text-red-700 bg-red-50 border-red-200"
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 text-green-800"
+      case "restructuring":
+        return "bg-yellow-100 text-yellow-800"
+      case "inactive":
+        return "bg-red-100 text-red-800"
+      case "merging":
+        return "bg-blue-100 text-blue-800"
+      case "dissolving":
+        return "bg-gray-100 text-gray-800"
+      default:
+        return "bg-gray-100 text-gray-800"
+    }
   }
 
   if (isLoading) {
@@ -476,7 +430,10 @@ export default function DepartmentsPage() {
                   <Download size={16} />
                   Export
                 </button>
-                <button className="p-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200">
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="p-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200"
+                >
                   <RefreshCw size={18} />
                 </button>
               </div>
@@ -574,6 +531,11 @@ export default function DepartmentsPage() {
                           </span>
                         )}
                       </div>
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(department.status)}`}>
+                          {department.status}
+                        </span>
+                      </div>
                     </div>
 
                     <div>
@@ -593,6 +555,13 @@ export default function DepartmentsPage() {
                         <MapPin size={14} />
                         <span>{department.location}</span>
                       </div>
+                      {(department.building || department.floor) && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          {department.building && `${department.building}`}
+                          {department.building && department.floor && ", "}
+                          {department.floor && `${department.floor}`}
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -601,29 +570,41 @@ export default function DepartmentsPage() {
                           <Users size={14} className="text-blue-600" />
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900">{department.employeeCount}</div>
-                          <div className="text-xs text-gray-500">{department.projects} projects</div>
+                          <div className="font-semibold text-gray-900">{department.employeeCount || 0}</div>
+                          <div className="text-xs text-gray-500">
+                            {department.activeProjects || 0} projects
+                          </div>
                         </div>
                       </div>
+                      {department.maxCapacity && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          of {department.maxCapacity} capacity
+                        </div>
+                      )}
                     </div>
 
                     <div>
-                      <div className="font-semibold text-gray-900">{formatBudget(department.budget)}</div>
+                      <div className="font-semibold text-gray-900">{formatBudget(department.budget || 0)}</div>
                       <div className="text-xs text-gray-500">
-                        Est. {new Date(department.establishedDate).getFullYear()}
+                        Est. {department.establishedDate ? new Date(department.establishedDate).getFullYear() : "N/A"}
                       </div>
+                      {department.actualSpending && (
+                        <div className="text-xs text-gray-500">
+                          {formatBudget(department.actualSpending)} spent
+                        </div>
+                      )}
                     </div>
 
                     <div>
                       <div
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getPerformanceColor(department.performance)}`}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getPerformanceColor(department.performance || 0)}`}
                       >
-                        {department.performance}%
+                        {department.performance || 0}%
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${department.performance}%` }}
+                          style={{ width: `${department.performance || 0}%` }}
                         ></div>
                       </div>
                     </div>
@@ -857,6 +838,8 @@ export default function DepartmentsPage() {
                       <option value="active">Active</option>
                       <option value="restructuring">Restructuring</option>
                       <option value="inactive">Inactive</option>
+                      <option value="merging">Merging</option>
+                      <option value="dissolving">Dissolving</option>
                     </select>
                   </div>
                 </div>
@@ -927,7 +910,7 @@ export default function DepartmentsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Budget *</label>
                     <input
@@ -949,6 +932,42 @@ export default function DepartmentsPage() {
                       onChange={handleInputChange}
                       required
                       placeholder="e.g., Building A, Floor 3"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Max Capacity</label>
+                    <input
+                      type="number"
+                      name="maxCapacity"
+                      value={formData.maxCapacity}
+                      onChange={handleInputChange}
+                      placeholder="e.g., 50"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Building</label>
+                    <input
+                      type="text"
+                      name="building"
+                      value={formData.building}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Building A"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Floor</label>
+                    <input
+                      type="text"
+                      name="floor"
+                      value={formData.floor}
+                      onChange={handleInputChange}
+                      placeholder="e.g., Floor 3"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>

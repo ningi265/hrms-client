@@ -56,6 +56,9 @@ import EditEmployeePage from './pages/dashboard/employee/edit';
 import EmployeePerformancePage from './pages/dashboard/employee/performance';
 import GenerateReportPage from './pages/dashboard/employee/report';
 import ManageAccessPage from './pages/dashboard/employee/access';
+import DepartmentDetailPage from './pages/dashboard/departments/view-details.';
+import DepartmentEditPage from './pages/dashboard/departments/edit';
+import DepartmentPerformancePage from './pages/dashboard/departments/perfomance';
 
 function App() {
   return (
@@ -104,6 +107,11 @@ function App() {
           <Route path="/dashboard/employees/:id/report" element={<GenerateReportPage/>}/>
           <Route path="/dashboard/employees/:id/access" element={<ManageAccessPage/>}/>
           
+
+          <Route path="/dashboard/departments/:id" element={<DepartmentDetailPage/>}/>
+          <Route path="/dashboard/departments/:id/edit" element={<DepartmentEditPage/>}/>
+          <Route path="/dashboard/departments/:id/performance" element={<DepartmentPerformancePage/>}/>
+
           {/* Legacy employee routes - keeping for backward compatibility */}
           <Route path="/employee" element={<EmployeesPage/>}/>
           <Route path="/employee-details" element={<EmployeeDetailPage/>}/>

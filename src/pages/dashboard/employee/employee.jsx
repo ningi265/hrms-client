@@ -67,6 +67,7 @@ export default function EmployeesPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
+   const [departments, setDepartments] = useState([])
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
@@ -91,6 +92,28 @@ export default function EmployeesPage() {
     };
 
     fetchEmployees();
+  }, [backendUrl]);
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${backendUrl}/api/departments`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        setDepartments(data);
+      } catch (error) {
+        setError("Failed to fetch departments");
+        console.error("Failed to fetch departments:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDepartments();
   }, [backendUrl]);
 
   const filteredEmployees = employees.filter((employee) => {
@@ -205,7 +228,7 @@ export default function EmployeesPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`${backendUrl}/api/employees`, {
+      const response = await fetch(`${backendUrl}/api/auth/employees`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -894,44 +917,25 @@ export default function EmployeesPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Department *
-                    </label>
-                    <select
-                      name="department"
-                      value={formData.department}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="">Select Department</option>
-                      <option value="Engineering">Engineering</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="Sales">Sales</option>
-                      <option value="Human Resources">Human Resources</option>
-                      <option value="Finance">Finance</option>
-                      <option value="Operations">Operations</option>
-                      <option value="Customer Support">Customer Support</option>
-                      <option value="Product">Product</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Position *
-                    </label>
-                    <input
-                      type="text"
-                      name="position"
-                      value={formData.position}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
+         <div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Department *
+  </label>
+  <select
+    name="department"
+    value={formData.department}
+    onChange={handleInputChange}
+    required
+    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+  >
+    <option value="">Select Department</option>
+    {departments.map((dept) => (
+      <option key={dept._id} value={dept.name} data-id={dept._id}>
+        {dept.name} ({dept.departmentCode})
+      </option>
+    ))}
+  </select>
+</div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
