@@ -67,7 +67,7 @@ export default function EmployeesPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
-   const [departments, setDepartments] = useState([])
+  const [departments, setDepartments] = useState([])
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
@@ -105,6 +105,13 @@ export default function EmployeesPage() {
         });
         const data = await response.json();
         setDepartments(data);
+        console.log("Fetched departments:", data);
+        console.log("Total departments count:", data.length);
+        console.log("Department employees mapping:", data.map(dept => ({
+          name: dept.name,
+          code: dept.departmentCode,
+          employeeIds: dept.employees
+        })));
       } catch (error) {
         setError("Failed to fetch departments");
         console.error("Failed to fetch departments:", error);
@@ -116,13 +123,44 @@ export default function EmployeesPage() {
     fetchDepartments();
   }, [backendUrl]);
 
+  // Debug effect to show employee-department mapping after both are loaded
+  useEffect(() => {
+    if (employees.length > 0 && departments.length > 0) {
+      console.log("Employee-Department Mapping:");
+      employees.forEach(emp => {
+        const employeeId = emp._id || emp.id || emp.employeeId;
+        const department = findEmployeeDepartment(employeeId);
+        console.log(`${emp.firstName} ${emp.lastName} (${employeeId}) -> ${department ? `${department.name} (${department.departmentCode})` : 'No Department'}`);
+      });
+    }
+  }, [employees, departments]);
+
+  // Function to find employee's department from departments array
+  const findEmployeeDepartment = (employeeId) => {
+    if (!employeeId || !departments.length) return null;
+    
+    const department = departments.find(dept => 
+      dept.employees && dept.employees.includes(employeeId)
+    );
+    
+    return department || null;
+  };
+
   const filteredEmployees = employees.filter((employee) => {
+    const employeeId = employee._id || employee.id || employee.employeeId;
+    const employeeDepartment = findEmployeeDepartment(employeeId);
+    
     const nameMatch = `${employee.firstName || ''} ${employee.lastName || ''}`
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
     
-    const departmentMatch = employee.department 
-      ? employee.department.toLowerCase().includes(searchTerm.toLowerCase())
+    const departmentMatch = employeeDepartment 
+      ? employeeDepartment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employeeDepartment.departmentCode.toLowerCase().includes(searchTerm.toLowerCase())
+      : false;
+    
+    const positionMatch = employee.position 
+      ? employee.position.toLowerCase().includes(searchTerm.toLowerCase())
       : false;
     
     const skillsMatch = employee.skills && Array.isArray(employee.skills) 
@@ -131,13 +169,14 @@ export default function EmployeesPage() {
         )
       : false;
     
-    return nameMatch || departmentMatch || skillsMatch;
+    return nameMatch || departmentMatch || positionMatch || skillsMatch;
   });
 
   // Calculate stats
   const totalEmployees = employees?.length || 0;
   const activeEmployees = employees?.filter(employee => employee.status === "active")?.length || 0;
-  const totalDepartments = [...new Set(employees?.map(employee => employee.department))].length;
+  // Count total departments from departments array, not from employees
+  const totalDepartments = departments?.length || 0;
   const avgTenure = employees?.length > 0 
     ? (employees.reduce((sum, employee) => {
         const hireDate = new Date(employee.hireDate);
@@ -327,6 +366,36 @@ export default function EmployeesPage() {
     setShowMenuId(null);
   };
 
+  // Predefined positions based on common roles
+  const commonPositions = [
+    "Software Engineer",
+    "Senior Software Engineer", 
+    "Lead Engineer",
+    "Product Manager",
+    "Senior Product Manager",
+    "Data Scientist",
+    "Data Analyst",
+    "UI/UX Designer",
+    "Senior Designer",
+    "DevOps Engineer",
+    "Quality Assurance Engineer",
+    "Business Analyst",
+    "Project Manager",
+    "Scrum Master",
+    "Sales Representative",
+    "Sales Manager",
+    "Marketing Specialist",
+    "Marketing Manager",
+    "HR Specialist",
+    "HR Manager",
+    "Finance Analyst",
+    "Accountant",
+    "Administrative Assistant",
+    "Office Manager",
+    "Customer Support Representative",
+    "Customer Success Manager"
+  ];
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
@@ -445,6 +514,11 @@ export default function EmployeesPage() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">Departments</p>
                 <p className="text-2xl font-bold text-gray-900">{totalDepartments}</p>
+                {departments.length > 0 && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    {departments.map(dept => dept.departmentCode).join(", ")}
+                  </div>
+                )}
               </div>
             </motion.div>
 
@@ -484,7 +558,7 @@ export default function EmployeesPage() {
                   <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search employees by name, department or skills..."
+                    placeholder="Search employees by name, department (name/code), position or skills..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
@@ -612,9 +686,20 @@ export default function EmployeesPage() {
                       </div>
 
                       <div>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                          {employee.department || "N/A"}
-                        </span>
+                        {(() => {
+                          const employeeId = employee._id || employee.id || employee.employeeId;
+                          const employeeDepartment = findEmployeeDepartment(employeeId);
+                          
+                          return employeeDepartment ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                              {employeeDepartment.name} ({employeeDepartment.departmentCode})
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                              No Department
+                            </span>
+                          );
+                        })()}
                         {employee.skills && employee.skills.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1">
                             {employee.skills.slice(0, 2).map((skill, idx) => (
@@ -917,25 +1002,47 @@ export default function EmployeesPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-         <div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Department *
-  </label>
-  <select
-    name="department"
-    value={formData.department}
-    onChange={handleInputChange}
-    required
-    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-  >
-    <option value="">Select Department</option>
-    {departments.map((dept) => (
-      <option key={dept._id} value={dept.name} data-id={dept._id}>
-        {dept.name} ({dept.departmentCode})
-      </option>
-    ))}
-  </select>
-</div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Department *
+                    </label>
+                    <select
+                      name="department"
+                      value={formData.department}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Department</option>
+                      {departments.map((dept) => (
+                        <option key={dept._id} value={dept.name} data-id={dept._id}>
+                          {dept.name} ({dept.departmentCode})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Position *
+                    </label>
+                    <select
+                      name="position"
+                      value={formData.position}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Position</option>
+                      {commonPositions.map((position) => (
+                        <option key={position} value={position}>
+                          {position}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -1003,6 +1110,12 @@ export default function EmployeesPage() {
                     <option value="Data Analysis">Data Analysis</option>
                     <option value="Sales">Sales</option>
                     <option value="Customer Service">Customer Service</option>
+                    <option value="Python">Python</option>
+                    <option value="Java">Java</option>
+                    <option value="SQL">SQL</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Finance">Finance</option>
+                    <option value="HR Management">HR Management</option>
                   </select>
                   <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple skills</p>
                 </div>
