@@ -61,6 +61,8 @@ import DepartmentEditPage from './pages/dashboard/departments/edit';
 import DepartmentPerformancePage from './pages/dashboard/departments/perfomance';
 import CompleteRegistration from './pages/dashboard/employee/complete-registration';
 import TripManagementDashboard from './pages/driver-dash/trip-management';
+import VehicleManagementDashboard from './pages/driver-dash/vehicle-management';
+import FinancialReconciliationDashboard from './pages/driver-dash/reconciliation';
 
 function App() {
   return (
@@ -150,6 +152,8 @@ function App() {
           <Route path="/driver-dash" element={<DriverDashboard/>}/>
           <Route path="/map" element={<FleetTrackingMap/>}/>
           <Route path="/trip-management" element={<TripManagementDashboard/>}/>
+          <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
+          <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
         </Routes>
       </BrowserRouter>      
       </AuthProvider>  

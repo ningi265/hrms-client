@@ -68,6 +68,8 @@ import SubmitQuotePage from "../dashboard/vendors/qoutes/submit/submit";
 //import VendorManagementDashboard from "./registration/registrationManagement";
 import UserProfilePage from "../User/user";
 import TripManagementDashboard from "./trip-management";
+import VehicleManagementDashboard from "./vehicle-management";
+import FinancialReconciliationDashboard from "./reconciliation";
 
 // Styled Components
 const Sidebar = styled(Drawer)(({ theme }) => ({
@@ -481,7 +483,8 @@ useEffect(() => {
             <Box>
               {activeSection === "trip-management" && <TripManagementDashboard />}
 
-               {activeSection === "user-profile" && <UserProfilePage />}
+               {activeSection === "vehicle-management" && <VehicleManagementDashboard />}
+               {activeSection === "driver-reconciliation" && <FinancialReconciliationDashboard />}
                
             </Box> 
           )}

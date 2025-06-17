@@ -455,7 +455,7 @@ const TripManagementDashboard = () => {
                 <XAxis dataKey="hour" axisLine={false} tickLine={false} tick={{fontSize: 12}} />
                 <YAxis axisLine={false} tickLine={false} tick={{fontSize: 12}} />
                 <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="trips" fill="#3B82F6" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="trips" fill="#3B82F6" radius={[8, 8, 8, 8]} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>
