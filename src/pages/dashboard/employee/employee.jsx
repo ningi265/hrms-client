@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useSearchParams } from "react-router-dom";
 import {
   Users,
   Search,
@@ -63,13 +63,22 @@ export default function EmployeesPage() {
     emergencyContact: "",
     skills: [],
   });
+   const [searchParams] = useSearchParams();
+    const [ activeSection, setActiveSection ] = useState(()=>{
+      return searchParams.get('section') || 'dashboard';
+    });
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
   const [departments, setDepartments] = useState([])
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
+    const handleSectionChange = (section) => {
+    setActiveSection(section);
+    navigate(`?section=${section}`, { replace: true });
+};
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
@@ -328,15 +337,23 @@ export default function EmployeesPage() {
 
   // Navigation handlers for action menu
   const handleViewDetails = (employeeId) => {
-    console.log("Navigating to details for employee ID:", employeeId);
+    console.log("Viewing details for employee ID:", employeeId);
     if (!employeeId) {
-      console.error("Employee ID is undefined!");
-      showNotificationMessage("Error: Employee ID not found", "error");
-      return;
+        console.error("Employee ID is undefined!");
+        showNotificationMessage("Error: Employee ID not found", "error");
+        return;
     }
-    navigate(`/dashboard/employees/${employeeId}`);
+    
+    // Update the URL without triggering a full navigation
+    window.history.pushState(null, "", `/dashboard/employees/${employeeId}`);
+    
+    // Change the section
+    handleSectionChange("employees-edit");
+    
+    // Close any open menus
     setShowMenuId(null);
-  };
+    setUserMenuOpen(false);
+};
 
   const handleEditEmployee = (employeeId) => {
     console.log("Navigating to edit for employee ID:", employeeId);
@@ -837,7 +854,10 @@ export default function EmployeesPage() {
               
               {/* Edit Employee */}
               <button
-                onClick={() => handleEditEmployee(showMenuId)}
+                onClick={ () => 
+                  handleEditEmployee(showMenuId)
+
+                }
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
               >
                 <Edit size={16} />
