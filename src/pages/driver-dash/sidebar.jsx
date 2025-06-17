@@ -364,7 +364,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           badge: null
         },
      {
-  id: 'registration-management',
+  id: 'trip-management',
   label: 'Trip Management',
   icon: <ModernIcons.Trip />,
 },

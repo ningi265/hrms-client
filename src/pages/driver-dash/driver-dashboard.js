@@ -67,6 +67,7 @@ import SubmitQuotePage from "../dashboard/vendors/qoutes/submit/submit";
 //import VendorRegistration from "./registration/registration";
 //import VendorManagementDashboard from "./registration/registrationManagement";
 import UserProfilePage from "../User/user";
+import TripManagementDashboard from "./trip-management";
 
 // Styled Components
 const Sidebar = styled(Drawer)(({ theme }) => ({
@@ -478,7 +479,7 @@ useEffect(() => {
             </Box>
           ) : (
             <Box>
-              {activeSection === "rfq" && <VendorRFQsPage />}
+              {activeSection === "trip-management" && <TripManagementDashboard />}
 
                {activeSection === "user-profile" && <UserProfilePage />}
                

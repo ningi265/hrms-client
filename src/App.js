@@ -60,6 +60,7 @@ import DepartmentDetailPage from './pages/dashboard/departments/view-details.';
 import DepartmentEditPage from './pages/dashboard/departments/edit';
 import DepartmentPerformancePage from './pages/dashboard/departments/perfomance';
 import CompleteRegistration from './pages/dashboard/employee/complete-registration';
+import TripManagementDashboard from './pages/driver-dash/trip-management';
 
 function App() {
   return (
@@ -148,6 +149,7 @@ function App() {
           {/*Driver Routes */}
           <Route path="/driver-dash" element={<DriverDashboard/>}/>
           <Route path="/map" element={<FleetTrackingMap/>}/>
+          <Route path="/trip-management" element={<TripManagementDashboard/>}/>
         </Routes>
       </BrowserRouter>      
       </AuthProvider>  
