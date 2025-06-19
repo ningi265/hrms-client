@@ -211,7 +211,7 @@ export default function Home() {
           src="/hrms-logo.png"
           className="h-20 w-auto mx-auto"
         />
-        <span className={`text-xl font-bold ${scrolled ? "text-white" : "text-gray-800"}`}>NEXUMWI</span>
+        <span className={`text-xl font-bold ${scrolled ? "text-white" : "text-gray-800"}`}>NEXUSMWI</span>
       </div>
 
       {/* Desktop Navigation */}

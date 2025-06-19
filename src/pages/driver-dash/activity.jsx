@@ -21,23 +21,24 @@ import {
   Gauge,
   Globe,
   ChevronRight,
-  WifiIcon,
+  Wifi,
   Zap,
   Truck,
   Signal,
   Phone,
-  Calendar
+  Calendar,
+  Battery,
+  Compass,
+  Play,
+  Pause,
+  Square
 } from 'lucide-react';
 
 // API configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:4000';
 
-// Real-time location polling interval (30 seconds)
-const LOCATION_POLL_INTERVAL = 30000;
-const DRIVER_DATA_REFRESH_INTERVAL = 60000;
-
-// API service for real driver data
+// Enhanced API service with live location features
 const fleetAPI = {
   getRealDrivers: async () => {
     const token = localStorage.getItem('token');
@@ -79,37 +80,90 @@ const fleetAPI = {
     return response.json();
   },
 
-  updateDriverLocation: async (driverId, locationData) => {
+  // NEW: Fetch live location for specific driver
+  fetchLiveLocation: async (driverId) => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/drivers/${driverId}/location`, {
+    const response = await fetch(`${API_BASE_URL}/drivers/${driverId}/fetch-live-location`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) throw new Error('Failed to fetch live location');
+    return response.json();
+  },
+
+  // NEW: Fetch live locations for all drivers
+  fetchAllLiveLocations: async () => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/drivers/fetch-all-live-locations`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) throw new Error('Failed to fetch all live locations');
+    return response.json();
+  },
+
+  // NEW: Location service control
+  getLocationServiceStatus: async () => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/location-service/status`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) throw new Error('Failed to fetch service status');
+    return response.json();
+  },
+
+  startLocationService: async (intervalMinutes = 2) => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/location-service/start`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(locationData)
+      body: JSON.stringify({ intervalMinutes })
     });
-    if (!response.ok) throw new Error('Failed to update location');
+    if (!response.ok) throw new Error('Failed to start location service');
     return response.json();
   },
 
-  updateDriverStatus: async (driverId, status) => {
+  stopLocationService: async () => {
     const token = localStorage.getItem('token');
-    const response = await fetch(`${API_BASE_URL}/drivers/${driverId}/status`, {
-      method: 'PATCH',
+    const response = await fetch(`${API_BASE_URL}/location-service/stop`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ status })
+      }
     });
-    if (!response.ok) throw new Error('Failed to update status');
+    if (!response.ok) throw new Error('Failed to stop location service');
+    return response.json();
+  },
+
+  triggerLocationUpdate: async () => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/location-service/trigger-update`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!response.ok) throw new Error('Failed to trigger location update');
     return response.json();
   }
 };
 
-// Minimalist Google Maps Fleet Tracking Component
-const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) => {
+// Enhanced Google Maps component with live location features
+const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading, serviceStatus }) => {
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersRef = useRef([]);
@@ -144,7 +198,7 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
     };
   }, []);
 
-  // Initialize map centered on Malawi
+  // Initialize map
   useEffect(() => {
     if (!isMapLoaded || !mapRef.current) return;
 
@@ -196,30 +250,24 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
     };
   }, [isMapLoaded]);
 
-  // Update driver markers with real data
+  // Enhanced marker creation with live location indicators
   useEffect(() => {
     if (!mapInstance.current || !drivers.length) return;
 
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
 
-    const getMarkerIcon = (status, isOnline, hasGPS) => {
-      const baseIcon = {
-        path: window.google.maps.SymbolPath.CIRCLE,
-        fillColor: '#ffffff',
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 2,
-        scale: 8
-      };
-
+    const getEnhancedMarkerIcon = (driver) => {
+      const { status, isOnline, hasGPSEnabled, isMoving, speed } = driver;
+      
       let color = '#9CA3AF';
       let strokeColor = '#6B7280';
+      let scale = 8;
 
       if (!isOnline) {
         color = '#9CA3AF';
         strokeColor = '#6B7280';
-      } else if (!hasGPS) {
+      } else if (!hasGPSEnabled) {
         color = '#EF4444';
         strokeColor = '#DC2626';
       } else {
@@ -243,11 +291,19 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
         }
       }
 
+      // Larger marker for moving drivers
+      if (isMoving && speed > 5) {
+        scale = 10;
+        strokeColor = '#F59E0B'; // Orange border for moving drivers
+      }
+
       return { 
-        ...baseIcon, 
-        fillColor: color, 
+        path: window.google.maps.SymbolPath.CIRCLE,
+        fillColor: color,
+        fillOpacity: 1,
         strokeColor: strokeColor,
-        strokeWeight: hasGPS ? 3 : 2
+        strokeWeight: hasGPSEnabled ? 3 : 2,
+        scale: scale
       };
     };
 
@@ -257,27 +313,52 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
       const marker = new window.google.maps.Marker({
         position: { lat: driver.lat, lng: driver.lng },
         map: mapInstance.current,
-        icon: getMarkerIcon(driver.status, driver.isOnline, driver.hasGPSEnabled),
+        icon: getEnhancedMarkerIcon(driver),
         title: `${driver.name} - ${driver.vehicle}`
       });
 
       const lastUpdateTime = driver.lastUpdate ? new Date(driver.lastUpdate).toLocaleString() : 'Never';
       const accuracyText = driver.locationAccuracy ? `±${driver.locationAccuracy}m` : 'Unknown';
+      const speedText = driver.speed ? `${driver.speed} km/h` : 'Unknown';
+      const batteryText = driver.batteryLevel ? `${driver.batteryLevel}%` : 'Unknown';
+      const headingText = driver.heading ? `${driver.heading}°` : 'Unknown';
 
       const infoWindow = new window.google.maps.InfoWindow({
         content: `
-          <div class="p-3 min-w-[220px]">
-            <div class="flex items-center gap-2 mb-2">
-              <h3 class="font-semibold text-gray-900">${driver.name}</h3>
-              ${driver.isOnline ? '<div class="w-2 h-2 bg-green-500 rounded-full"></div>' : '<div class="w-2 h-2 bg-gray-400 rounded-full"></div>'}
+          <div class="p-4 min-w-[280px]">
+            <div class="flex items-center gap-2 mb-3">
+              <h3 class="font-semibold text-gray-900 text-lg">${driver.name}</h3>
+              ${driver.isOnline ? '<div class="w-3 h-3 bg-green-500 rounded-full"></div>' : '<div class="w-3 h-3 bg-gray-400 rounded-full"></div>'}
+              ${driver.isMoving ? '<div class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">MOVING</div>' : ''}
             </div>
-            <p class="text-sm text-gray-600 mb-1">${driver.vehicle}</p>
-            <p class="text-xs font-medium ${getStatusColorClass(driver.status)} mb-3">${driver.status.replace('-', ' ').toUpperCase()}</p>
-            <div class="text-xs text-gray-500 space-y-1">
-              <p><span class="font-medium">ID:</span> ${driver.empId}</p>
-              <p><span class="font-medium">Dept:</span> ${driver.department}</p>
-              <p><span class="font-medium">Updated:</span> ${lastUpdateTime}</p>
+            
+            <p class="text-sm text-gray-600 mb-2 font-medium">${driver.vehicle}</p>
+            <p class="text-sm font-semibold ${getStatusColorClass(driver.status)} mb-3">${driver.status.replace('-', ' ').toUpperCase()}</p>
+            
+            <div class="grid grid-cols-2 gap-3 text-xs text-gray-600 mb-3">
+              <div>
+                <span class="font-medium text-gray-700">ID:</span><br>
+                <span>${driver.empId}</span>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Dept:</span><br>
+                <span>${driver.department}</span>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Speed:</span><br>
+                <span class="font-medium ${driver.isMoving ? 'text-orange-600' : 'text-gray-500'}">${speedText}</span>
+              </div>
+              <div>
+                <span class="font-medium text-gray-700">Battery:</span><br>
+                <span class="font-medium ${driver.batteryLevel < 20 ? 'text-red-600' : 'text-green-600'}">${batteryText}</span>
+              </div>
+            </div>
+            
+            <div class="text-xs text-gray-500 space-y-1 border-t pt-2">
+              <p><span class="font-medium">Last Update:</span> ${lastUpdateTime}</p>
               <p><span class="font-medium">Accuracy:</span> ${accuracyText}</p>
+              <p><span class="font-medium">Heading:</span> ${headingText}</p>
+              <p><span class="font-medium">Source:</span> ${driver.locationSource || 'manual'}</p>
             </div>
           </div>
         `
@@ -314,7 +395,15 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">Live Fleet Tracking</h3>
-            <p className="text-sm text-gray-500">Real-time driver locations</p>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>Real-time GPS tracking</span>
+              {serviceStatus?.isRunning && (
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-600 font-medium">Live</span>
+                </div>
+              )}
+            </div>
           </div>
           {isLoading && <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>}
         </div>
@@ -329,7 +418,11 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
             <span className="text-gray-600">Active ({driverStats.onAssignment})</span>
           </div>
           <div className="flex items-center gap-2">
-            <WifiIcon className="w-4 h-4 text-green-500" />
+            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+            <span className="text-gray-600">Moving ({driverStats.moving || 0})</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Wifi className="w-4 h-4 text-green-500" />
             <span className="text-gray-600">Online ({driverStats.online || 0})</span>
           </div>
         </div>
@@ -350,7 +443,7 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
           )}
         </div>
         
-        {/* Minimalist Map Controls */}
+        {/* Enhanced Map Controls */}
         <div className="absolute top-3 right-3 flex flex-col gap-2">
           <button 
             className="w-8 h-8 bg-white hover:bg-gray-50 rounded-lg shadow-md flex items-center justify-center text-gray-600 border border-gray-200"
@@ -367,17 +460,11 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
           >
             <Globe size={14} />
           </button>
-          <button 
-            className="w-8 h-8 bg-white hover:bg-gray-50 rounded-lg shadow-md flex items-center justify-center text-gray-600 border border-gray-200"
-            title="Search"
-          >
-            <Search size={14} />
-          </button>
         </div>
 
-        {/* Compact Status Legend */}
+        {/* Enhanced Status Legend */}
         <div className="absolute bottom-3 left-3 bg-white rounded-lg shadow-md border border-gray-200 p-3">
-          <div className="text-xs font-medium text-gray-700 mb-2">Status</div>
+          <div className="text-xs font-medium text-gray-700 mb-2">Driver Status</div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
@@ -396,12 +483,20 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
               <span className="text-gray-600">Maintenance</span>
             </div>
           </div>
+          <div className="mt-2 pt-2 border-t border-gray-100">
+            <div className="text-xs font-medium text-gray-700 mb-1">Live Tracking</div>
+            <div className="flex items-center gap-1 text-xs">
+              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+              <span className="text-gray-600">Moving (Larger marker)</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
+// Enhanced main dashboard component
 const DriverDashboard = () => {
   const [selectedDriver, setSelectedDriver] = useState(null);
   const [notifications, setNotifications] = useState([]);
@@ -414,16 +509,16 @@ const DriverDashboard = () => {
     maintenance: 0,
     total: 0,
     online: 0,
-    withGPS: 0
+    withGPS: 0,
+    moving: 0
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [lastLocationUpdate, setLastLocationUpdate] = useState(null);
+  const [serviceStatus, setServiceStatus] = useState(null);
   const socketRef = useRef(null);
-  const locationPollRef = useRef(null);
-  const driverRefreshRef = useRef(null);
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection with enhanced event handling
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -439,6 +534,9 @@ const DriverDashboard = () => {
 
     socket.on('connect', () => {
       console.log('Connected to WebSocket server for real-time tracking');
+      // Request current locations on connect
+      socket.emit('request-current-locations');
+      socket.emit('request-service-status');
     });
 
     socket.on('driver-location-update', (data) => {
@@ -452,35 +550,37 @@ const DriverDashboard = () => {
                 lng: data.location.longitude,
                 lastUpdate: data.timestamp,
                 locationAccuracy: data.accuracy,
-                locationSource: data.source || 'gps'
+                locationSource: data.source || 'gps',
+                speed: data.speed,
+                heading: data.heading,
+                batteryLevel: data.batteryLevel,
+                isMoving: data.speed > 5
               }
             : driver
         )
       );
+      setLastLocationUpdate(new Date());
     });
 
-    socket.on('driver-status-update', (data) => {
-      console.log('Real-time status update received:', data);
-      setDrivers(prevDrivers =>
-        prevDrivers.map(driver =>
-          driver.empId === data.driverId
-            ? { ...driver, status: data.status }
-            : driver
-        )
-      );
+    socket.on('location-service-update', (data) => {
+      console.log('Location service update:', data);
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: 'info',
+        message: `Location updated for ${data.driversUpdated}/${data.driversTotal} drivers`,
+        timestamp: data.timestamp
+      }, ...prev.slice(0, 4)]);
     });
 
-    socket.on('new-notification', (notification) => {
-      setNotifications(prev => [notification, ...prev.slice(0, 4)]);
+    socket.on('service-status', (data) => {
+      if (data.success) {
+        setServiceStatus(data.data);
+      }
     });
 
-    socket.on('emergency-notification', (notification) => {
-      setNotifications(prev => [notification, ...prev.slice(0, 4)]);
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('Emergency Alert', {
-          body: notification.message,
-          icon: '/fleet-icon.png'
-        });
+    socket.on('current-locations', (data) => {
+      if (data.success) {
+        console.log('Received current locations:', data.data.length);
       }
     });
 
@@ -491,14 +591,15 @@ const DriverDashboard = () => {
     };
   }, []);
 
-  // Fetch initial real driver data
+  // Fetch initial data
   useEffect(() => {
     const fetchInitialData = async () => {
       setIsLoading(true);
       try {
-        const [driversResponse, statsResponse] = await Promise.all([
+        const [driversResponse, statsResponse, serviceResponse] = await Promise.all([
           fleetAPI.getRealDrivers(),
-          fleetAPI.getRealStatistics()
+          fleetAPI.getRealStatistics(),
+          fleetAPI.getLocationServiceStatus()
         ]);
 
         if (driversResponse.success) {
@@ -509,6 +610,10 @@ const DriverDashboard = () => {
         if (statsResponse.success) {
           setDriverStats(statsResponse.data);
           console.log('Loaded real statistics:', statsResponse.data);
+        }
+
+        if (serviceResponse.success) {
+          setServiceStatus(serviceResponse.data);
         }
 
         setError(null);
@@ -523,90 +628,7 @@ const DriverDashboard = () => {
     fetchInitialData();
   }, []);
 
-  // Set up real-time location polling
-  useEffect(() => {
-    if (isLoading || error) return;
-
-    const pollDriverLocations = async () => {
-      try {
-        const since = lastLocationUpdate ? lastLocationUpdate.toISOString() : null;
-        const locationsResponse = await fleetAPI.getDriverLocations(since);
-        
-        if (locationsResponse.success && locationsResponse.data.length > 0) {
-          console.log(`Polling update: ${locationsResponse.data.length} location updates received`);
-          
-          setDrivers(prevDrivers => {
-            return prevDrivers.map(driver => {
-              const locationUpdate = locationsResponse.data.find(
-                loc => loc.driverId === driver.empId
-              );
-              
-              if (locationUpdate) {
-                return {
-                  ...driver,
-                  lat: locationUpdate.latitude,
-                  lng: locationUpdate.longitude,
-                  lastUpdate: locationUpdate.timestamp,
-                  locationAccuracy: locationUpdate.accuracy,
-                  locationSource: locationUpdate.source,
-                  status: locationUpdate.status,
-                  isOnline: locationUpdate.isOnline,
-                  hasGPSEnabled: !!locationUpdate.latitude
-                };
-              }
-              
-              return driver;
-            });
-          });
-          
-          setLastLocationUpdate(new Date());
-        }
-      } catch (error) {
-        console.error('Error polling driver locations:', error);
-      }
-    };
-
-    locationPollRef.current = setInterval(pollDriverLocations, LOCATION_POLL_INTERVAL);
-    
-    return () => {
-      if (locationPollRef.current) {
-        clearInterval(locationPollRef.current);
-      }
-    };
-  }, [isLoading, error, lastLocationUpdate]);
-
-  // Set up periodic driver data refresh
-  useEffect(() => {
-    if (isLoading || error) return;
-
-    const refreshDriverData = async () => {
-      try {
-        const [driversResponse, statsResponse] = await Promise.all([
-          fleetAPI.getRealDrivers(),
-          fleetAPI.getRealStatistics()
-        ]);
-
-        if (driversResponse.success) {
-          setDrivers(driversResponse.data);
-        }
-
-        if (statsResponse.success) {
-          setDriverStats(statsResponse.data);
-        }
-      } catch (error) {
-        console.error('Error refreshing driver data:', error);
-      }
-    };
-
-    driverRefreshRef.current = setInterval(refreshDriverData, DRIVER_DATA_REFRESH_INTERVAL);
-    
-    return () => {
-      if (driverRefreshRef.current) {
-        clearInterval(driverRefreshRef.current);
-      }
-    };
-  }, [isLoading, error]);
-
+  // Enhanced refresh handler
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -634,12 +656,77 @@ const DriverDashboard = () => {
     }
   };
 
+  // NEW: Trigger live location update
+  const handleTriggerLocationUpdate = async () => {
+    try {
+      setIsRefreshing(true);
+      const response = await fleetAPI.triggerLocationUpdate();
+      if (response.success) {
+        setNotifications(prev => [{
+          id: Date.now(),
+          type: 'success',
+          message: `Live locations updated for ${response.data.driversUpdated} drivers`,
+          timestamp: new Date()
+        }, ...prev.slice(0, 4)]);
+        
+        // Refresh driver data after location update
+        setTimeout(() => {
+          handleRefresh();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error triggering location update:', error);
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: 'error',
+        message: 'Failed to update live locations',
+        timestamp: new Date()
+      }, ...prev.slice(0, 4)]);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // NEW: Control location service
+  const handleServiceControl = async (action) => {
+    try {
+      let response;
+      if (action === 'start') {
+        response = await fleetAPI.startLocationService(2);
+      } else {
+        response = await fleetAPI.stopLocationService();
+      }
+      
+      if (response.success) {
+        const status = await fleetAPI.getLocationServiceStatus();
+        if (status.success) {
+          setServiceStatus(status.data);
+        }
+        
+        setNotifications(prev => [{
+          id: Date.now(),
+          type: 'success',
+          message: response.message,
+          timestamp: new Date()
+        }, ...prev.slice(0, 4)]);
+      }
+    } catch (error) {
+      console.error(`Error ${action}ing location service:`, error);
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: 'error',
+        message: `Failed to ${action} location service`,
+        timestamp: new Date()
+      }, ...prev.slice(0, 4)]);
+    }
+  };
+
   const handleDriverSelect = (driver) => {
     setSelectedDriver(driver);
     console.log('Selected real driver:', driver);
   };
 
-  // Statistics for display
+  // Enhanced statistics
   const advancedStats = {
     totalHours: driverStats.totalHours || 0,
     avgTransportTime: driverStats.avgTransportTime || 0,
@@ -709,36 +796,75 @@ const DriverDashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
-        {/* Clean Header */}
+        {/* Enhanced Header with Live Tracking Controls */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Fleet Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Live Fleet Management</h1>
             <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Signal className="w-4 h-4 text-green-500" />
-                <span>Live tracking active</span>
+                <span>GPS tracking {serviceStatus?.isRunning ? 'active' : 'inactive'}</span>
               </div>
               <div className="flex items-center gap-1">
                 <MapPin className="w-4 h-4 text-blue-500" />
                 <span>{drivers.filter(d => d.hasGPSEnabled).length} GPS enabled</span>
               </div>
               <div className="flex items-center gap-1">
-                <WifiIcon className="w-4 h-4 text-green-500" />
+                <Navigation className="w-4 h-4 text-orange-500" />
+                <span>{drivers.filter(d => d.isMoving).length} moving</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Wifi className="w-4 h-4 text-green-500" />
                 <span>{driverStats.online || 0} online</span>
               </div>
             </div>
           </div>
-          <button
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
+          
+          <div className="flex items-center gap-2">
+            {/* Location Service Controls */}
+            <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-200 p-1">
+              <button
+                onClick={() => handleServiceControl('start')}
+                disabled={serviceStatus?.isRunning}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded disabled:bg-gray-300"
+                title="Start Location Service"
+              >
+                <Play size={12} />
+                Start
+              </button>
+              <button
+                onClick={() => handleServiceControl('stop')}
+                disabled={!serviceStatus?.isRunning}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-red-500 text-white rounded disabled:bg-gray-300"
+                title="Stop Location Service"
+              >
+                <Square size={12} />
+                Stop
+              </button>
+            </div>
+            
+            <button
+              onClick={handleTriggerLocationUpdate}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-3 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50"
+              title="Fetch Live Locations Now"
+            >
+              <Zap size={16} className={isRefreshing ? 'animate-spin' : ''} />
+              Live Update
+            </button>
+            
+            <button
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
         </div>
 
-        {/* Compact Stats Grid */}
+        {/* Enhanced Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard 
             title="Active Drivers" 
@@ -757,38 +883,71 @@ const DriverDashboard = () => {
             subtitle="Real-time tracking"
           />
           <StatCard 
+            title="Currently Moving" 
+            value={driverStats.moving || drivers.filter(d => d.isMoving).length}
+            icon={Navigation} 
+            color="text-orange-600" 
+            trend={5}
+            subtitle="Live movement"
+          />
+          <StatCard 
             title="Fleet Utilization" 
             value={advancedStats.fleetUtilization}
             suffix="%"
             icon={Gauge} 
             color="text-purple-600" 
             trend={-2}
-            subtitle="Current efficiency"
-          />
-          <StatCard 
-            title="Online Drivers" 
-            value={driverStats.online || 0}
-            icon={WifiIcon} 
-            color="text-orange-600" 
-            trend={5}
-            subtitle="Last 24 hours"
+            subtitle="Efficiency rate"
           />
         </div>
 
-        {/* Main Layout - Map and Sidebar */}
+        {/* Main Layout */}
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-          {/* Map - Height will adjust to match sidebar content */}
           <div className="xl:col-span-3">
             <FleetTrackingMap 
               drivers={drivers}
               driverStats={driverStats}
               onDriverSelect={handleDriverSelect}
               isLoading={isRefreshing}
+              serviceStatus={serviceStatus}
             />
           </div>
 
-          {/* Sidebar - No scrolling, all content visible */}
+          {/* Enhanced Sidebar */}
           <div className="space-y-4">
+            {/* Live Tracking Status */}
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Signal className="w-5 h-5 text-gray-600" />
+                <h3 className="font-semibold text-gray-900">Live Tracking</h3>
+                {serviceStatus?.isRunning && (
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                )}
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Service Status:</span>
+                  <span className={`font-medium ${serviceStatus?.isRunning ? 'text-green-600' : 'text-red-600'}`}>
+                    {serviceStatus?.isRunning ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Last Update:</span>
+                  <span className="font-medium text-gray-700">
+                    {serviceStatus?.lastUpdateTime ? new Date(serviceStatus.lastUpdateTime).toLocaleTimeString() : 'Never'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">GPS Enabled:</span>
+                  <span className="font-medium text-blue-600">{driverStats.withGPS || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Moving Now:</span>
+                  <span className="font-medium text-orange-600">{drivers.filter(d => d.isMoving).length}</span>
+                </div>
+              </div>
+            </div>
+
             {/* Driver Status Summary */}
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center gap-2 mb-3">
@@ -815,33 +974,7 @@ const DriverDashboard = () => {
               </div>
             </div>
 
-            {/* Performance Metrics */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Target className="w-5 h-5 text-gray-600" />
-                <h3 className="font-semibold text-gray-900">Performance</h3>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Total Fleet</span>
-                  <span className="font-medium">{driverStats.total}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">With GPS</span>
-                  <span className="font-medium text-blue-600">{driverStats.withGPS || drivers.filter(d => d.hasGPSEnabled).length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Online Now</span>
-                  <span className="font-medium text-green-600">{driverStats.online || 0}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Utilization</span>
-                  <span className="font-medium text-purple-600">{advancedStats.fleetUtilization}%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Activity - Always visible */}
+            {/* Recent Activity */}
             {notifications.length > 0 && (
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -851,8 +984,7 @@ const DriverDashboard = () => {
                 <div className="space-y-2">
                   {notifications.slice(0, 3).map((notification) => (
                     <div key={notification.id} className={`p-2 rounded text-xs ${
-                      notification.type === 'urgent' ? 'bg-red-50 border-l-2 border-red-500' :
-                      notification.type === 'warning' ? 'bg-yellow-50 border-l-2 border-yellow-500' :
+                      notification.type === 'error' ? 'bg-red-50 border-l-2 border-red-500' :
                       notification.type === 'success' ? 'bg-green-50 border-l-2 border-green-500' :
                       'bg-blue-50 border-l-2 border-blue-500'
                     }`}>
@@ -864,7 +996,6 @@ const DriverDashboard = () => {
               </div>
             )}
 
-            {/* Show placeholder when no notifications */}
             {notifications.length === 0 && (
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -874,19 +1005,25 @@ const DriverDashboard = () => {
                 <div className="text-center py-4">
                   <Activity className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                   <p className="text-sm text-gray-500">No recent activity</p>
-                  <p className="text-xs text-gray-400">Fleet notifications will appear here</p>
+                  <p className="text-xs text-gray-400">Live tracking events will appear here</p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Compact Driver List */}
+        {/* Enhanced Driver List with Live Data */}
         <div className="bg-white rounded-lg border border-gray-200">
           <div className="flex items-center justify-between p-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <Truck className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Driver Fleet ({drivers.length})</h3>
+              {serviceStatus?.isRunning && (
+                <div className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  Live Tracking
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-500">
               <span>Updated: {lastLocationUpdate ? lastLocationUpdate.toLocaleTimeString() : 'Never'}</span>
@@ -900,10 +1037,13 @@ const DriverDashboard = () => {
                 <div key={driver.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center relative">
                         <span className="text-white text-xs font-bold">
                           {driver.name.split(' ').map(n => n[0]).join('')}
                         </span>
+                        {driver.isMoving && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                        )}
                       </div>
                       <div>
                         <h4 className="font-medium text-gray-900 text-sm">{driver.name}</h4>
@@ -911,8 +1051,9 @@ const DriverDashboard = () => {
                       </div>
                     </div>
                     <div className="flex gap-1">
-                      {driver.isOnline && <WifiIcon className="w-3 h-3 text-green-500" />}
+                      {driver.isOnline && <Wifi className="w-3 h-3 text-green-500" />}
                       {driver.hasGPSEnabled && <MapPin className="w-3 h-3 text-blue-500" />}
+                      {driver.isMoving && <Navigation className="w-3 h-3 text-orange-500" />}
                     </div>
                   </div>
                   
@@ -928,16 +1069,25 @@ const DriverDashboard = () => {
                         {driver.status.replace('-', ' ').toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Vehicle:</span>
-                      <span className="font-medium text-gray-700 truncate ml-2" title={driver.vehicle}>
-                        {driver.vehicle}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Dept:</span>
-                      <span className="font-medium text-gray-700">{driver.department}</span>
-                    </div>
+                    {driver.speed !== null && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Speed:</span>
+                        <span className={`font-medium ${driver.isMoving ? 'text-orange-600' : 'text-gray-600'}`}>
+                          {driver.speed} km/h
+                        </span>
+                      </div>
+                    )}
+                    {driver.batteryLevel && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Battery:</span>
+                        <div className="flex items-center gap-1">
+                          <Battery className={`w-3 h-3 ${driver.batteryLevel < 20 ? 'text-red-500' : 'text-green-500'}`} />
+                          <span className={`font-medium ${driver.batteryLevel < 20 ? 'text-red-600' : 'text-green-600'}`}>
+                            {driver.batteryLevel}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
                     {driver.lastUpdate && (
                       <div className="flex justify-between">
                         <span className="text-gray-500">Updated:</span>
@@ -951,8 +1101,18 @@ const DriverDashboard = () => {
                   <div className="flex justify-between mt-2 pt-2 border-t border-gray-100 text-xs text-gray-500">
                     <span>Trips: {driver.trips}</span>
                     <span>Hrs: {driver.hoursWorked}</span>
-                    <span className={driver.isOnline ? 'text-green-600' : 'text-gray-400'}>
-                      {driver.isOnline ? 'Online' : 'Offline'}
+                    <span className={`flex items-center gap-1 ${driver.isOnline ? 'text-green-600' : 'text-gray-400'}`}>
+                      {driver.isOnline ? (
+                        <>
+                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                          Online
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                          Offline
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>
