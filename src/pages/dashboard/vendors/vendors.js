@@ -111,7 +111,7 @@ export default function VendorsPage() {
   const activeVendors = vendors?.filter(vendor => vendor.status === "active")?.length || 0;
   const totalCategories = [...new Set(vendors?.flatMap(vendor => vendor.categories || []))].length;
   const avgRating = vendors?.length > 0 ? (vendors.reduce((sum, vendor) => sum + (vendor.rating || 0), 0) / vendors.length).toFixed(1) : 0;
-
+ 
   const renderRating = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);

@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  Add,
-  TrendingUp as TrendingUpMUI,
-  CheckCircle as CheckCircleMUI,
-} from "@mui/icons-material";
-import {
   CheckCircle,
   Clock,
   Activity,
@@ -19,6 +14,7 @@ import {
   Mail,
   Star,
   TrendingUp,
+  TrendingDown,
   Calendar,
   ChevronRight,
   Edit,
@@ -31,7 +27,14 @@ import {
   Zap,
   Award,
   Briefcase,
-  PieChart
+  PieChart,
+  RefreshCw,
+  Filter,
+  Plus,
+  Bell,
+  MoreVertical,
+  ExternalLink,
+  Sparkles
 } from "lucide-react";
 import {
   PieChart as RechartsPieChart,
@@ -48,36 +51,12 @@ import {
   Legend,
   ResponsiveContainer,
   AreaChart,
-  Area,
-  RadialBarChart,
-  RadialBar
+  Area
 } from "recharts";
-import {
-  Avatar,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Typography,
-  Box,
-  useTheme,
-  styled,
-  alpha,
-  Chip,
-  Grid,
-  LinearProgress,
-  Fade,
-  Slide,
-  Grow
-} from "@mui/material";
 import { useAuth } from "../../authcontext/authcontext";
 import HRMSSidebar from './sidebar';
 import DashboardHeader from './header';
-import StatsCardsGrid from './statsCard';
 import AIChatButton from '../dashboard/aiChat';
-import QuickActions from './quickActions';
-import BarChartComponent from './tasks';
-import ActivityChangelogComponent from './activity';
 import TravelExecutionReconciliation from '../../pages/dashboard/requisitions/manage/travel-exec-recon';
 import TravelDashboard from '../../pages/dashboard/requisitions/manage/travel-dash';
 import TravelReconciliation from '../../pages/dashboard/requisitions/recon';
@@ -91,1157 +70,764 @@ import VendorManagementDashboard from "./registration/registrationManagement";
 import UserProfilePage from "../User/user";
 import EmployeeRequisitionManagement from '../../pages/dashboard/requisitions/manage/manage';
 
-// Professional Color Palette
-const colors = {
-  primary: {
-    main: '#6366f1',
-    light: '#a5b4fc',
-    dark: '#4338ca',
-    gradient: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'
-  },
-  success: {
-    main: '#10b981',
-    light: '#6ee7b7',
-    dark: '#047857',
-    gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-  },
-  warning: {
-    main: '#f59e0b',
-    light: '#fbbf24',
-    dark: '#d97706',
-    gradient: 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)'
-  },
-  error: {
-    main: '#ef4444',
-    light: '#f87171',
-    dark: '#dc2626',
-    gradient: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-  },
-  info: {
-    main: '#3b82f6',
-    light: '#60a5fa',
-    dark: '#1d4ed8',
-    gradient: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
-  },
-  neutral: {
-    50: '#fafafa',
-    100: '#f5f5f5',
-    200: '#e5e5e5',
-    300: '#d4d4d4',
-    400: '#a3a3a3',
-    500: '#737373',
-    600: '#525252',
-    700: '#404040',
-    800: '#262626',
-    900: '#171717'
-  }
+// Compact Metric Card Component
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", isLoading = false }) => {
+  const colorClasses = {
+    blue: {
+      bg: 'from-blue-500 to-blue-600',
+      shadow: 'hover:shadow-blue-500/10',
+      accent: 'from-blue-50',
+      border: 'from-blue-500 to-blue-400'
+    },
+    green: {
+      bg: 'from-emerald-500 to-emerald-600',
+      shadow: 'hover:shadow-emerald-500/10',
+      accent: 'from-emerald-50',
+      border: 'from-emerald-500 to-emerald-400'
+    },
+    purple: {
+      bg: 'from-purple-500 to-purple-600',
+      shadow: 'hover:shadow-purple-500/10',
+      accent: 'from-purple-50',
+      border: 'from-purple-500 to-purple-400'
+    },
+    orange: {
+      bg: 'from-orange-500 to-orange-600',
+      shadow: 'hover:shadow-orange-500/10',
+      accent: 'from-orange-50',
+      border: 'from-orange-500 to-orange-400'
+    }
+  };
+  
+  return (
+    <div className={`group relative bg-white rounded-xl border border-gray-100 p-5 hover:shadow-lg ${colorClasses[color]?.shadow || 'hover:shadow-gray-500/10'} transition-all duration-300 hover:-translate-y-0.5`}>
+      <div className={`absolute inset-0 bg-gradient-to-br ${colorClasses[color]?.accent || 'from-gray-50'} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl`}></div>
+      
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className={`inline-flex p-3 rounded-lg bg-gradient-to-br ${colorClasses[color]?.bg || 'from-gray-500 to-gray-600'} shadow-lg`}>
+            <Icon size={20} className="text-white" />
+          </div>
+          
+          {trend && (
+            <div className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold ${
+              trend > 0 
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {trend > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+              <span>{Math.abs(trend)}%</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="space-y-2">
+          <div className="text-2xl font-bold text-gray-900 tracking-tight">
+            {isLoading ? (
+              <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
+            ) : (
+              `${prefix}${value}${suffix}`
+            )}
+          </div>
+          
+          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {title}
+          </div>
+          
+          {subtitle && (
+            <div className="text-xs text-gray-500">
+              {subtitle}
+            </div>
+          )}
+        </div>
+      </div>
+      
+      <div className={`absolute top-0 left-5 right-5 h-0.5 bg-gradient-to-r ${colorClasses[color]?.border || 'from-gray-500 to-gray-400'} rounded-b-full opacity-60`}></div>
+    </div>
+  );
 };
 
-// Enhanced Styled Components with Professional Design
-const PremiumCard = styled(Card)(({ theme }) => ({
-  borderRadius: '16px',
-  background: '#ffffff',
-  border: '1px solid #f0f0f0',
-  boxShadow: '0 2px 12px rgba(0, 0, 0, 0.04)',
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  position: 'relative',
-  overflow: 'visible',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '3px',
-    background: colors.primary.gradient,
-    borderRadius: '16px 16px 0 0',
-  },
-  '&:hover': {
-    transform: 'translateY(-4px)',
-    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.08)',
-    borderColor: '#e0e0e0',
-  },
-}));
+// Compact Chart Card Component
+const ChartCard = ({ title, children, action, subtitle, actionIcon, isLoading = false, size = "normal" }) => {
+  const cardClass = size === "large" ? "lg:col-span-2" : size === "full" ? "col-span-full" : "";
+  
+  return (
+    <div className={`bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 ${cardClass}`}>
+      <div className="p-5 border-b border-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-gray-900">{title}</h3>
+            {subtitle && (
+              <p className="text-xs text-gray-600">{subtitle}</p>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {action && (
+              <button className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200">
+                {action}
+                {actionIcon && <actionIcon size={12} />}
+              </button>
+            )}
+            <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+              <MoreVertical size={14} />
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div className="p-5">
+        {isLoading ? (
+          <div className="animate-pulse space-y-3">
+            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-32 bg-gray-100 rounded-lg"></div>
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+    </div>
+  );
+};
 
-const MetricCard = styled(Card)(({ theme, color = 'primary' }) => ({
-  borderRadius: '12px',
-  background: '#ffffff',
-  border: `1px solid ${colors[color].main}15`,
-  boxShadow: `0 2px 8px ${colors[color].main}08`,
-  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-  position: 'relative',
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '2px',
-    background: colors[color].main,
-  },
-  '&:hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: `0 4px 16px ${colors[color].main}15`,
-    borderColor: `${colors[color].main}25`,
-  },
-}));
-
-const StyledTooltip = styled('div')(({ theme }) => ({
-  background: '#ffffff',
-  border: '1px solid #e0e0e0',
-  borderRadius: '8px',
-  padding: '12px 16px',
-  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-  color: colors.neutral[700],
-  fontSize: '14px',
-  fontWeight: 500,
-}));
-
-const GradientBackground = styled(Box)(({ theme }) => ({
-  background: '#ffffff',
-  position: 'relative',
-  minHeight: '100vh',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.02) 0%, rgba(139, 92, 246, 0.01) 100%)',
-    pointer: 'none',
-  }
-}));
-
-// Custom Chart Components
+// Enhanced Custom Tooltip Component
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <StyledTooltip>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-          {label}
-        </Typography>
-        {payload.map((entry, index) => (
-          <Typography 
-            key={index} 
-            variant="body2" 
-            sx={{ color: entry.color, display: 'flex', alignItems: 'center', gap: 1 }}
-          >
-            <Box 
-              sx={{ 
-                width: 8, 
-                height: 8, 
-                borderRadius: '50%', 
-                backgroundColor: entry.color 
-              }} 
-            />
-            {entry.name}: {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
-          </Typography>
-        ))}
-      </StyledTooltip>
+      <div className="bg-white border border-gray-200 rounded-lg shadow-xl p-3 backdrop-blur-sm">
+        <p className="font-semibold text-gray-900 mb-1 text-xs">{label}</p>
+        <div className="space-y-1">
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center gap-2 text-xs">
+              <div 
+                className="w-2 h-2 rounded-full" 
+                style={{ backgroundColor: entry.color }}
+              ></div>
+              <span className="text-gray-600">{entry.name}:</span>
+              <span className="font-semibold text-gray-900">
+                {typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   }
   return null;
 };
 
-// Professional RFQ Overview with Enhanced Charts
+// Compact RFQ Overview Component
 const VendorRFQOverview = () => {
-  const [animate, setAnimate] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimate(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
   const rfqStatusData = [
-    { name: 'Won', value: 15, color: colors.success.main, percentage: 37.5 },
-    { name: 'Submitted', value: 12, color: colors.info.main, percentage: 30 },
-    { name: 'Pending', value: 8, color: colors.warning.main, percentage: 20 },
-    { name: 'Draft', value: 5, color: colors.neutral[400], percentage: 12.5 }
+    { name: 'Won', value: 15, color: '#10b981', percentage: 37.5 },
+    { name: 'Submitted', value: 12, color: '#3b82f6', percentage: 30 },
+    { name: 'Pending', value: 8, color: '#f59e0b', percentage: 20 },
+    { name: 'Draft', value: 5, color: '#6b7280', percentage: 12.5 }
   ];
 
   const rfqTrendData = [
-    { month: 'Jan', submitted: 8, won: 3, revenue: 125000 },
-    { month: 'Feb', submitted: 12, won: 5, revenue: 180000 },
-    { month: 'Mar', submitted: 15, won: 7, revenue: 245000 },
-    { month: 'Apr', submitted: 18, won: 8, revenue: 320000 },
-    { month: 'May', submitted: 22, won: 12, revenue: 420000 },
-    { month: 'Jun', submitted: 25, won: 15, revenue: 550000 }
+    { month: 'Jan', submitted: 8, won: 3 },
+    { month: 'Feb', submitted: 12, won: 5 },
+    { month: 'Mar', submitted: 15, won: 7 },
+    { month: 'Apr', submitted: 18, won: 8 },
+    { month: 'May', submitted: 22, won: 12 },
+    { month: 'Jun', submitted: 25, won: 15 }
   ];
 
   const recentRFQs = [
-    { 
-      id: "RFQ-2025-001", 
-      title: "Enterprise Cloud Infrastructure", 
-      value: 285000, 
-      status: "pending", 
-      daysLeft: 4,
-      priority: "high",
-      client: "TechCorp Solutions"
-    },
-    { 
-      id: "RFQ-2025-002", 
-      title: "Digital Transformation Suite", 
-      value: 420000, 
-      status: "submitted", 
-      daysLeft: 2,
-      priority: "critical",
-      client: "Global Industries"
-    },
-    { 
-      id: "RFQ-2025-003", 
-      title: "Cybersecurity Framework", 
-      value: 175000, 
-      status: "draft", 
-      daysLeft: 6,
-      priority: "medium",
-      client: "SecureFlow Inc"
-    }
+    { id: "RFQ-2025-001", title: "Enterprise Cloud Infrastructure", value: 285000, status: "pending", daysLeft: 4, priority: "high", client: "TechCorp Solutions" },
+    { id: "RFQ-2025-002", title: "Digital Transformation Suite", value: 420000, status: "submitted", daysLeft: 2, priority: "critical", client: "Global Industries" },
+    { id: "RFQ-2025-003", title: "Cybersecurity Framework", value: 175000, status: "draft", daysLeft: 6, priority: "medium", client: "SecureFlow Inc" }
   ];
 
-  const getStatusColor = (status) => {
+  const getStatusStyle = (status) => {
     switch (status) {
-      case 'submitted': return colors.info.main;
-      case 'pending': return colors.warning.main;
-      case 'draft': return colors.neutral[400];
-      case 'won': return colors.success.main;
-      default: return colors.neutral[400];
+      case 'submitted': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'pending': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'draft': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'won': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getPriorityColor = (priority) => {
+  const getPriorityStyle = (priority) => {
     switch (priority) {
-      case 'critical': return colors.error.main;
-      case 'high': return colors.warning.main;
-      case 'medium': return colors.info.main;
-      case 'low': return colors.neutral[400];
-      default: return colors.neutral[400];
+      case 'critical': return 'bg-red-100 text-red-800 border-red-200';
+      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'low': return 'bg-gray-100 text-gray-800 border-gray-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   return (
-    <Fade in={animate} timeout={800}>
-      <Grid container spacing={4} sx={{ mb: 6 }}>
-        {/* RFQ Status Distribution */}
-        <Grid item xs={12} lg={4}>
-          <Grow in={animate} timeout={1000}>
-            <PremiumCard>
-              <CardHeader 
-                avatar={
-                  <Avatar sx={{ 
-                    background: colors.primary.gradient,
-                    width: 48,
-                    height: 48
-                  }}>
-                    <PieChart size={24} />
-                  </Avatar>
-                }
-                title={
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                    RFQ Distribution
-                  </Typography>
-                }
-                subheader={
-                  <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                    Current pipeline status
-                  </Typography>
-                }
-              />
-              <CardContent>
-                <ResponsiveContainer width="100%" height={280}>
-                  <RechartsPieChart>
-                    <Pie
-                      data={rfqStatusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={2}
-                      dataKey="value"
-                      animationBegin={200}
-                      animationDuration={1000}
-                    >
-                      {rfqStatusData.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={entry.color}
-                          stroke={entry.color}
-                          strokeWidth={2}
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </RechartsPieChart>
-                </ResponsiveContainer>
-                <Grid container spacing={2} sx={{ mt: 2 }}>
-                  {rfqStatusData.map((item, index) => (
-                    <Grid item xs={6} key={index}>
-                      <Box sx={{ textAlign: 'center' }}>
-                        <Typography 
-                          variant="h5" 
-                          sx={{ 
-                            color: item.color, 
-                            fontWeight: 800,
-                            fontSize: '1.5rem'
-                          }}
-                        >
-                          {item.value}
-                        </Typography>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: colors.neutral[600],
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            fontWeight: 600
-                          }}
-                        >
-                          {item.name}
-                        </Typography>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            display: 'block',
-                            color: colors.neutral[500],
-                            fontSize: '0.7rem'
-                          }}
-                        >
-                          {item.percentage}%
-                        </Typography>
-                      </Box>
-                    </Grid>
-                  ))}
-                </Grid>
-              </CardContent>
-            </PremiumCard>
-          </Grow>
-        </Grid>
+    <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 mb-7">
+      {/* RFQ Status Distribution */}
+      <div className="xl:col-span-4">
+        <ChartCard 
+          title="RFQ Distribution" 
+          subtitle="Current pipeline status"
+          isLoading={isLoading}
+        >
+          <ResponsiveContainer width="100%" height={200}>
+            <RechartsPieChart>
+              <Pie
+                data={rfqStatusData}
+                cx="50%"
+                cy="50%"
+                innerRadius={40}
+                outerRadius={80}
+                paddingAngle={4}
+                dataKey="value"
+              >
+                {rfqStatusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} stroke="white" strokeWidth={2} />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+            </RechartsPieChart>
+          </ResponsiveContainer>
+          
+          <div className="grid grid-cols-2 gap-3 mt-5">
+            {rfqStatusData.map((item, index) => (
+              <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <div 
+                  className="w-3 h-3 rounded-full shadow-sm" 
+                  style={{ backgroundColor: item.color }}
+                ></div>
+                <div>
+                  <div className="text-sm font-bold text-gray-900">{item.value}</div>
+                  <div className="text-xs font-medium text-gray-600">{item.name}</div>
+                  <div className="text-xs text-gray-500">{item.percentage}%</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+      </div>
 
-        {/* RFQ Performance Trend */}
-        <Grid item xs={12} lg={8}>
-          <Grow in={animate} timeout={1200}>
-            <PremiumCard>
-              <CardHeader 
-                avatar={
-                  <Avatar sx={{ 
-                    background: colors.success.gradient,
-                    width: 48,
-                    height: 48
-                  }}>
-                    <TrendingUp size={24} />
-                  </Avatar>
-                }
-                title={
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                    Performance Analytics
-                  </Typography>
-                }
-                subheader={
-                  <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                    RFQ submissions and win rate trends
-                  </Typography>
-                }
-                action={
-                  <Chip 
-                    label="+23% Win Rate" 
-                    color="success" 
-                    variant="outlined"
-                    icon={<ArrowUp size={16} />}
-                    sx={{ fontWeight: 600 }}
-                  />
-                }
+      {/* RFQ Performance Trend */}
+      <div className="xl:col-span-8">
+        <ChartCard 
+          title="Performance Analytics" 
+          subtitle="RFQ submissions and win rate trends"
+          action="View Details"
+          actionIcon={ExternalLink}
+          isLoading={isLoading}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold border border-emerald-200">
+              <Sparkles size={12} />
+              +23% Win Rate
+            </div>
+          </div>
+          
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={rfqTrendData} margin={{ top: 15, right: 25, left: 15, bottom: 15 }}>
+              <defs>
+                <linearGradient id="submittedGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="wonGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeWidth={1} />
+              <XAxis 
+                dataKey="month" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
               />
-              <CardContent>
-                <ResponsiveContainer width="100%" height={320}>
-                  <AreaChart data={rfqTrendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <defs>
-                      <linearGradient id="submittedGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={colors.info.main} stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor={colors.info.main} stopOpacity={0.05}/>
-                      </linearGradient>
-                      <linearGradient id="wonGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={colors.success.main} stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor={colors.success.main} stopOpacity={0.05}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={colors.neutral[200]} />
-                    <XAxis 
-                      dataKey="month" 
-                      stroke={colors.neutral[500]}
-                      fontSize={12}
-                      fontWeight={500}
-                    />
-                    <YAxis 
-                      stroke={colors.neutral[500]}
-                      fontSize={12}
-                      fontWeight={500}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="submitted"
-                      stackId="1"
-                      stroke={colors.info.main}
-                      fill="url(#submittedGradient)"
-                      strokeWidth={3}
-                      dot={{ fill: colors.info.main, strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, fill: colors.info.main }}
-                      name="Submitted"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="won"
-                      stackId="2"
-                      stroke={colors.success.main}
-                      fill="url(#wonGradient)"
-                      strokeWidth={3}
-                      dot={{ fill: colors.success.main, strokeWidth: 2, r: 4 }}
-                      activeDot={{ r: 6, fill: colors.success.main }}
-                      name="Won"
-                    />
-                    <Legend 
-                      wrapperStyle={{ 
-                        paddingTop: '20px',
-                        fontSize: '14px',
-                        fontWeight: 500
-                      }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </PremiumCard>
-          </Grow>
-        </Grid>
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Area 
+                type="monotone" 
+                dataKey="submitted" 
+                stroke="#3b82f6" 
+                fillOpacity={1} 
+                fill="url(#submittedGradient)"
+                strokeWidth={2}
+                dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3 }}
+                activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: 'white' }}
+                name="Submitted"
+              />
+              <Area 
+                type="monotone" 
+                dataKey="won" 
+                stroke="#10b981" 
+                fillOpacity={1} 
+                fill="url(#wonGradient)"
+                strokeWidth={2}
+                dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                activeDot={{ r: 5, fill: '#10b981', strokeWidth: 2, stroke: 'white' }}
+                name="Won"
+              />
+              <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} iconType="circle" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
 
-        {/* Recent High-Value RFQs */}
-        <Grid item xs={12}>
-          <Slide direction="up" in={animate} timeout={1400}>
-            <PremiumCard>
-              <CardHeader 
-                avatar={
-                  <Avatar sx={{ 
-                    background: colors.warning.gradient,
-                    width: 48,
-                    height: 48
-                  }}>
-                    <Briefcase size={24} />
-                  </Avatar>
-                }
-                title={
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                    High-Value Opportunities
-                  </Typography>
-                }
-                subheader={
-                  <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                    Priority RFQs requiring immediate attention
-                  </Typography>
-                }
-                action={
-                  <Button 
-                    variant="contained" 
-                    startIcon={<Add />}
-                    sx={{
-                      background: colors.primary.gradient,
-                      borderRadius: '12px',
-                      textTransform: 'none',
-                      fontWeight: 600,
-                      boxShadow: `0 4px 16px ${colors.primary.main}40`,
-                      '&:hover': {
-                        background: colors.primary.gradient,
-                        transform: 'translateY(-2px)',
-                        boxShadow: `0 8px 24px ${colors.primary.main}50`,
-                      }
-                    }}
-                  >
-                    New Quote
-                  </Button>
-                }
-              />
-              <CardContent>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {recentRFQs.map((rfq, index) => (
-                    <Fade key={rfq.id} in={animate} timeout={1600 + (index * 200)}>
-                      <Box 
-                        sx={{ 
-                          display: 'flex', 
-                          justifyContent: 'space-between', 
-                          alignItems: 'center',
-                          p: 3,
-                          borderRadius: '12px',
-                          background: '#ffffff',
-                          border: '1px solid #f0f0f0',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          cursor: 'pointer',
-                          '&:hover': {
-                            transform: 'translateX(4px)',
-                            backgroundColor: '#fafafa',
-                            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.06)',
-                            borderColor: '#e0e0e0',
-                          }
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                          <Avatar 
-                            sx={{ 
-                              bgcolor: getStatusColor(rfq.status), 
-                              width: 56, 
-                              height: 56,
-                              background: `linear-gradient(135deg, ${getStatusColor(rfq.status)} 0%, ${getStatusColor(rfq.status)}CC 100%)`
-                            }}
-                          >
-                            <FileText size={24} />
-                          </Avatar>
-                          <Box>
-                            <Typography 
-                              variant="h6" 
-                              sx={{ 
-                                fontWeight: 700, 
-                                color: colors.neutral[800],
-                                mb: 0.5
-                              }}
-                            >
-                              {rfq.title}
-                            </Typography>
-                            <Typography 
-                              variant="body2" 
-                              sx={{ 
-                                color: colors.neutral[600],
-                                fontFamily: 'monospace',
-                                fontSize: '0.85rem'
-                              }}
-                            >
-                              {rfq.id} • {rfq.client}
-                            </Typography>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
-                              <Clock size={14} />
-                              <Typography 
-                                variant="caption" 
-                                sx={{ color: colors.neutral[500] }}
-                              >
-                                {rfq.daysLeft} days remaining
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-                        
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, textAlign: 'right' }}>
-                          <Box>
-                            <Typography 
-                              variant="h5" 
-                              sx={{ 
-                                fontWeight: 800, 
-                                color: colors.success.main,
-                                fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
-                              }}
-                            >
-                              ${(rfq.value / 1000).toFixed(0)}k
-                            </Typography>
-                            <Typography 
-                              variant="caption" 
-                              sx={{ 
-                                color: colors.neutral[500],
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.5px',
-                                fontWeight: 600
-                              }}
-                            >
-                              Potential Value
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            <Chip 
-                              label={rfq.status.toUpperCase()} 
-                              sx={{
-                                backgroundColor: getStatusColor(rfq.status),
-                                color: 'white',
-                                fontWeight: 700,
-                                fontSize: '0.7rem',
-                                height: 24,
-                                borderRadius: '8px'
-                              }}
-                            />
-                            <Chip 
-                              label={rfq.priority.toUpperCase()} 
-                              variant="outlined"
-                              sx={{
-                                borderColor: getPriorityColor(rfq.priority),
-                                color: getPriorityColor(rfq.priority),
-                                fontWeight: 600,
-                                fontSize: '0.65rem',
-                                height: 20,
-                                borderRadius: '6px'
-                              }}
-                            />
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Fade>
-                  ))}
-                </Box>
-              </CardContent>
-            </PremiumCard>
-          </Slide>
-        </Grid>
-      </Grid>
-    </Fade>
+      {/* Compact High-Value RFQs */}
+      <div className="xl:col-span-12">
+        <ChartCard 
+          title="High-Value Opportunities" 
+          subtitle="Priority RFQs requiring immediate attention"
+          action="New Quote"
+          actionIcon={Plus}
+          isLoading={isLoading}
+        >
+          <div className="space-y-5">
+            {recentRFQs.map((rfq, index) => (
+              <div 
+                key={rfq.id}
+                className="group flex items-center justify-between p-5 border border-gray-100 rounded-lg hover:border-blue-200 hover:shadow-md hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer"
+              >
+                <div className="flex items-center gap-5">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                      {rfq.title}
+                    </h4>
+                    <p className="text-xs text-gray-600 font-mono">
+                      {rfq.id} • {rfq.client}
+                    </p>
+                    <div className="flex items-center gap-1 text-xs">
+                      <Clock size={12} className="text-gray-400" />
+                      <span className="text-gray-500">{rfq.daysLeft} days remaining</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-5">
+                  <div className="text-right">
+                    <div className="text-lg font-bold bg-gradient-to-r from-emerald-600 to-emerald-500 bg-clip-text text-transparent">
+                      ${(rfq.value / 1000).toFixed(0)}k
+                    </div>
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Potential Value
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col gap-1.5">
+                    <span className={`px-2.5 py-1.5 text-xs font-semibold rounded-full border ${getStatusStyle(rfq.status)}`}>
+                      {rfq.status.toUpperCase()}
+                    </span>
+                    <span className={`px-2.5 py-1.5 text-xs font-semibold rounded-full border ${getPriorityStyle(rfq.priority)}`}>
+                      {rfq.priority.toUpperCase()}
+                    </span>
+                  </div>
+                  
+                  <ChevronRight size={16} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+      </div>
+    </div>
   );
 };
 
-// Enhanced Purchase Orders Component
+// Enhanced Purchase Orders Component with Color-Coded Bars
 const VendorPurchaseOrders = () => {
-  const [animate, setAnimate] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimate(true), 300);
-    return () => clearTimeout(timer);
-  }, []);
-
   const orderStatusData = [
-    { name: 'Delivered', value: 25, color: colors.success.main },
-    { name: 'Confirmed', value: 18, color: colors.info.main },
-    { name: 'Processing', value: 12, color: colors.warning.main },
-    { name: 'Pending', value: 8, color: colors.neutral[400] }
+    { name: 'Delivered', value: 25, color: '#10b981' },
+    { name: 'Confirmed', value: 18, color: '#3b82f6' },
+    { name: 'Processing', value: 12, color: '#f59e0b' },
+    { name: 'Pending', value: 8, color: '#6b7280' }
   ];
 
   const deliveryMetrics = [
-    { metric: 'On-Time Delivery', value: 94, target: 95, color: 'success' },
-    { metric: 'Order Accuracy', value: 98, target: 97, color: 'info' },
-    { metric: 'Customer Rating', value: 4.8, target: 4.5, color: 'warning', isRating: true },
-    { metric: 'Fulfillment Rate', value: 96, target: 95, color: 'primary' }
+    { metric: 'On-Time Delivery', value: 94, target: 95, color: 'emerald', icon: Target },
+    { metric: 'Order Accuracy', value: 98, target: 97, color: 'blue', icon: CheckCircle },
+    { metric: 'Customer Rating', value: 4.8, target: 4.5, color: 'amber', icon: Star, isRating: true },
+    { metric: 'Fulfillment Rate', value: 96, target: 95, color: 'purple', icon: Award }
   ];
 
   const performanceData = [
-    { month: 'Jan', orders: 45, onTime: 42, value: 1250000 },
-    { month: 'Feb', orders: 52, onTime: 48, value: 1480000 },
-    { month: 'Mar', orders: 48, onTime: 46, value: 1650000 },
-    { month: 'Apr', orders: 65, onTime: 61, value: 1890000 },
-    { month: 'May', orders: 58, onTime: 55, value: 2100000 },
-    { month: 'Jun', orders: 63, onTime: 59, value: 2350000 }
+    { month: 'Jan', orders: 45, onTime: 42 },
+    { month: 'Feb', orders: 52, onTime: 48 },
+    { month: 'Mar', orders: 48, onTime: 46 },
+    { month: 'Apr', orders: 65, onTime: 61 },
+    { month: 'May', orders: 58, onTime: 55 },
+    { month: 'Jun', orders: 63, onTime: 59 }
   ];
 
+  // Custom shape component for colored bars
+  const ColoredBar = (props) => {
+    const { fill, payload, ...rest } = props;
+    const color = payload?.color || fill;
+    return <Bar {...rest} fill={color} />;
+  };
+
   return (
-    <Grid container spacing={4} sx={{ mb: 6 }}>
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 mb-7">
       {/* Order Status & Metrics */}
-      <Grid item xs={12} md={6}>
-        <Grow in={animate} timeout={1000}>
-          <PremiumCard>
-            <CardHeader 
-              avatar={
-                <Avatar sx={{ 
-                  background: colors.info.gradient,
-                  width: 48,
-                  height: 48
-                }}>
-                  <Package size={24} />
-                </Avatar>
-              }
-              title={
-                <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                  Order Pipeline
-                </Typography>
-              }
-              subheader={
-                <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                  Current order distribution
-                </Typography>
-              }
-            />
-            <CardContent>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={orderStatusData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colors.neutral[200]} />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke={colors.neutral[500]}
-                    fontSize={11}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                  />
-                  <YAxis stroke={colors.neutral[500]} fontSize={12} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Bar 
-                    dataKey="value" 
-                    fill={colors.info.main}
-                    radius={[6, 6, 0, 0]}
-                    fillOpacity={0.8}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-              
-              {/* Performance Metrics */}
-              <Grid container spacing={2} sx={{ mt: 2 }}>
-                {deliveryMetrics.map((metric, index) => (
-                  <Grid item xs={6} key={index}>
-                    <MetricCard color={metric.color}>
-                      <CardContent sx={{ p: 2, textAlign: 'center' }}>
-                        <Typography 
-                          variant="h6" 
-                          sx={{ 
-                            fontWeight: 800,
-                            color: colors[metric.color].main,
-                            mb: 0.5
-                          }}
-                        >
-                          {metric.isRating ? metric.value : `${metric.value}%`}
-                        </Typography>
-                        <Typography 
-                          variant="caption" 
-                          sx={{ 
-                            color: colors.neutral[600],
-                            fontWeight: 600,
-                            display: 'block',
-                            mb: 1
-                          }}
-                        >
-                          {metric.metric}
-                        </Typography>
-                        <LinearProgress
-                          variant="determinate"
-                          value={metric.isRating ? (metric.value / 5) * 100 : metric.value}
-                          sx={{
-                            height: 4,
-                            borderRadius: 2,
-                            backgroundColor: `${colors[metric.color].main}20`,
-                            '& .MuiLinearProgress-bar': {
-                              backgroundColor: colors[metric.color].main,
-                              borderRadius: 2,
-                            }
-                          }}
-                        />
-                      </CardContent>
-                    </MetricCard>
-                  </Grid>
+      <div className="space-y-4">
+        <ChartCard 
+          title="Order Pipeline" 
+          subtitle="Current order distribution"
+          isLoading={isLoading}
+        >
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={orderStatusData} margin={{ top: 15, right: 25, left: 15, bottom: 35 }}>
+              <defs>
+                {orderStatusData.map((entry, index) => (
+                  <linearGradient key={index} id={`gradient-${entry.name}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={entry.color} />
+                    <stop offset="100%" stopColor={entry.color} stopOpacity={0.8} />
+                  </linearGradient>
                 ))}
-              </Grid>
-            </CardContent>
-          </PremiumCard>
-        </Grow>
-      </Grid>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeWidth={1} />
+              <XAxis 
+                dataKey="name" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+                angle={-45}
+                textAnchor="end"
+                height={50}
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <Bar 
+                dataKey="value" 
+                radius={[8, 8, 8, 8]}
+                stroke="white"
+                strokeWidth={1}
+              >
+                {orderStatusData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        
+        {/* Compact Performance Metrics */}
+        <div className="grid grid-cols-2 gap-4">
+          {deliveryMetrics.map((metric, index) => {
+            const colorClasses = {
+              emerald: { bg: 'bg-emerald-50', text: 'text-emerald-600', gradient: 'from-emerald-500 to-emerald-400' },
+              blue: { bg: 'bg-blue-50', text: 'text-blue-600', gradient: 'from-blue-500 to-blue-400' },
+              amber: { bg: 'bg-amber-50', text: 'text-amber-600', gradient: 'from-amber-500 to-amber-400' },
+              purple: { bg: 'bg-purple-50', text: 'text-purple-600', gradient: 'from-purple-500 to-purple-400' }
+            };
+
+            return (
+              <div key={index} className="bg-white rounded-lg border border-gray-100 p-4 hover:shadow-md transition-all duration-300">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className={`p-2 rounded-lg ${colorClasses[metric.color].bg}`}>
+                    <metric.icon className={`w-4 h-4 ${colorClasses[metric.color].text}`} />
+                  </div>
+                  <div className="flex-1">
+                    <div className={`text-lg font-bold ${colorClasses[metric.color].text}`}>
+                      {metric.isRating ? metric.value : `${metric.value}%`}
+                    </div>
+                    <div className="text-xs font-medium text-gray-600">{metric.metric}</div>
+                  </div>
+                </div>
+                
+                <div className="w-full bg-gray-100 rounded-full h-1.5">
+                  <div 
+                    className={`h-1.5 rounded-full bg-gradient-to-r ${colorClasses[metric.color].gradient} transition-all duration-500`}
+                    style={{ 
+                      width: `${metric.isRating ? (metric.value / 5) * 100 : metric.value}%` 
+                    }}
+                  ></div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Performance Trends */}
-      <Grid item xs={12} md={6}>
-        <Grow in={animate} timeout={1200}>
-          <PremiumCard>
-            <CardHeader 
-              avatar={
-                <Avatar sx={{ 
-                  background: colors.success.gradient,
-                  width: 48,
-                  height: 48
-                }}>
-                  <TrendingUp size={24} />
-                </Avatar>
-              }
-              title={
-                <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                  Delivery Excellence
-                </Typography>
-              }
-              subheader={
-                <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                  Monthly performance tracking
-                </Typography>
-              }
-              action={
-                <Chip 
-                  label="94% Success Rate" 
-                  color="success" 
-                  variant="filled"
-                  icon={<Award size={16} />}
-                  sx={{ 
-                    fontWeight: 700,
-                    background: colors.success.gradient
-                  }}
-                />
-              }
+      <ChartCard 
+        title="Delivery Excellence" 
+        subtitle="Monthly performance tracking"
+        action="View Details"
+        actionIcon={ExternalLink}
+        isLoading={isLoading}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold border border-emerald-200">
+            <Award size={12} />
+            94% Success Rate
+          </div>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={240}>
+          <LineChart data={performanceData} margin={{ top: 15, right: 25, left: 15, bottom: 15 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeWidth={1} />
+            <XAxis 
+              dataKey="month" 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
             />
-            <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colors.neutral[200]} />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke={colors.neutral[500]}
-                    fontSize={12}
-                  />
-                  <YAxis stroke={colors.neutral[500]} fontSize={12} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="orders" 
-                    stroke={colors.info.main} 
-                    strokeWidth={3}
-                    dot={{ fill: colors.info.main, strokeWidth: 2, r: 5 }}
-                    activeDot={{ r: 7, fill: colors.info.main }}
-                    name="Total Orders"
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="onTime" 
-                    stroke={colors.success.main} 
-                    strokeWidth={3}
-                    dot={{ fill: colors.success.main, strokeWidth: 2, r: 5 }}
-                    activeDot={{ r: 7, fill: colors.success.main }}
-                    name="On-Time Delivery"
-                  />
-                  <Legend />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </PremiumCard>
-        </Grow>
-      </Grid>
-    </Grid>
+            <YAxis 
+              axisLine={false} 
+              tickLine={false} 
+              tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Line 
+              type="monotone" 
+              dataKey="orders" 
+              stroke="#3b82f6" 
+              strokeWidth={2}
+              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3 }}
+              activeDot={{ r: 5, fill: '#3b82f6', strokeWidth: 2, stroke: 'white' }}
+              name="Total Orders"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="onTime" 
+              stroke="#10b981" 
+              strokeWidth={2}
+              dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+              activeDot={{ r: 5, fill: '#10b981', strokeWidth: 2, stroke: 'white' }}
+              name="On-Time Delivery"
+            />
+            <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} iconType="circle" />
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartCard>
+    </div>
   );
 };
 
-// Enhanced Payment Status Component
+// Compact Payment Status Component
 const VendorPaymentStatus = () => {
-  const [animate, setAnimate] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  useEffect(() => {
-    const timer = setTimeout(() => setAnimate(true), 500);
-    return () => clearTimeout(timer);
-  }, []);
-
   const paymentData = [
-    { name: 'Paid', value: 850000, color: colors.success.main, percentage: 68 },
-    { name: 'Pending', value: 220000, color: colors.warning.main, percentage: 18 },
-    { name: 'Processing', value: 125000, color: colors.info.main, percentage: 10 },
-    { name: 'Overdue', value: 55000, color: colors.error.main, percentage: 4 }
+    { name: 'Paid', value: 850000, color: '#10b981', percentage: 68 },
+    { name: 'Pending', value: 220000, color: '#f59e0b', percentage: 18 },
+    { name: 'Processing', value: 125000, color: '#3b82f6', percentage: 10 },
+    { name: 'Overdue', value: 55000, color: '#ef4444', percentage: 4 }
   ];
 
   const cashFlowData = [
-    { month: 'Jan', income: 745000, expenses: 385000, profit: 360000 },
-    { month: 'Feb', income: 892000, expenses: 445000, profit: 447000 },
-    { month: 'Mar', income: 1150000, expenses: 520000, profit: 630000 },
-    { month: 'Apr', income: 1340000, expenses: 580000, profit: 760000 },
-    { month: 'May', income: 1580000, expenses: 650000, profit: 930000 },
-    { month: 'Jun', income: 1750000, expenses: 720000, profit: 1030000 }
+    { month: 'Jan', income: 745000, expenses: 385000 },
+    { month: 'Feb', income: 892000, expenses: 445000 },
+    { month: 'Mar', income: 1150000, expenses: 520000 },
+    { month: 'Apr', income: 1340000, expenses: 580000 },
+    { month: 'May', income: 1580000, expenses: 650000 },
+    { month: 'Jun', income: 1750000, expenses: 720000 }
   ];
 
   const financialMetrics = [
-    { 
-      label: 'Monthly Revenue', 
-      value: 1750000, 
-      change: +18.5, 
-      icon: <DollarSign size={20} />,
-      color: 'success'
-    },
-    { 
-      label: 'Profit Margin', 
-      value: 58.9, 
-      change: +4.2, 
-      icon: <TrendingUp size={20} />,
-      color: 'info',
-      isPercentage: true
-    },
-    { 
-      label: 'Outstanding', 
-      value: 275000, 
-      change: -12.3, 
-      icon: <Clock size={20} />,
-      color: 'warning'
-    },
-    { 
-      label: 'Collection Rate', 
-      value: 96.2, 
-      change: +2.1, 
-      icon: <Target size={20} />,
-      color: 'primary',
-      isPercentage: true
-    }
+    { label: 'Monthly Revenue', value: 1750000, change: +18.5, icon: DollarSign, color: 'emerald' },
+    { label: 'Profit Margin', value: 58.9, change: +4.2, icon: TrendingUp, color: 'blue', isPercentage: true },
+    { label: 'Outstanding', value: 275000, change: -12.3, icon: Clock, color: 'amber' },
+    { label: 'Collection Rate', value: 96.2, change: +2.1, icon: Target, color: 'purple', isPercentage: true }
   ];
 
   return (
-    <Grid container spacing={4} sx={{ mb: 6 }}>
-      {/* Financial Metrics */}
-      <Grid item xs={12}>
-        <Slide direction="up" in={animate} timeout={800}>
-          <PremiumCard>
-            <CardHeader 
-              avatar={
-                <Avatar sx={{ 
-                  background: colors.success.gradient,
-                  width: 48,
-                  height: 48
-                }}>
-                  <DollarSign size={24} />
-                </Avatar>
-              }
-              title={
-                <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                  Financial Overview
-                </Typography>
-              }
-              subheader={
-                <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                  Key financial metrics and performance indicators
-                </Typography>
-              }
-            />
-            <CardContent>
-              <Grid container spacing={3}>
-                {financialMetrics.map((metric, index) => (
-                  <Grid item xs={12} sm={6} md={3} key={index}>
-                    <Grow in={animate} timeout={1000 + (index * 200)}>
-                      <MetricCard color={metric.color}>
-                        <CardContent sx={{ p: 3, textAlign: 'center' }}>
-                          <Box sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            mb: 2
-                          }}>
-                            <Avatar sx={{
-                              bgcolor: `${colors[metric.color].main}20`,
-                              color: colors[metric.color].main,
-                              width: 48,
-                              height: 48
-                            }}>
-                              {metric.icon}
-                            </Avatar>
-                          </Box>
-                          <Typography 
-                            variant="h4" 
-                            sx={{ 
-                              fontWeight: 800,
-                              color: colors[metric.color].main,
-                              mb: 1,
-                              fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif'
-                            }}
-                          >
-                            {metric.isPercentage ? 
-                              `${metric.value}%` : 
-                              `$${(metric.value / 1000).toFixed(0)}k`
-                            }
-                          </Typography>
-                          <Typography 
-                            variant="body2" 
-                            sx={{ 
-                              color: colors.neutral[700],
-                              fontWeight: 600,
-                              mb: 1
-                            }}
-                          >
-                            {metric.label}
-                          </Typography>
-                          <Chip
-                            label={`${metric.change > 0 ? '+' : ''}${metric.change}%`}
-                            color={metric.change > 0 ? 'success' : 'error'}
-                            size="small"
-                            icon={metric.change > 0 ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
-                            sx={{ 
-                              fontWeight: 700,
-                              fontSize: '0.7rem'
-                            }}
-                          />
-                        </CardContent>
-                      </MetricCard>
-                    </Grow>
-                  </Grid>
-                ))}
-              </Grid>
-            </CardContent>
-          </PremiumCard>
-        </Slide>
-      </Grid>
+    <div className="space-y-5 mb-7">
+      {/* Compact Financial Metrics */}
+      <ChartCard 
+        title="Financial Overview" 
+        subtitle="Key financial metrics and performance indicators"
+        isLoading={isLoading}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {financialMetrics.map((metric, index) => {
+            const colorClasses = {
+              emerald: { bg: 'from-emerald-500 to-emerald-600', shadow: 'shadow-emerald-500/25', text: 'text-emerald-600', accent: 'from-emerald-500/10' },
+              blue: { bg: 'from-blue-500 to-blue-600', shadow: 'shadow-blue-500/25', text: 'text-blue-600', accent: 'from-blue-500/10' },
+              amber: { bg: 'from-amber-500 to-amber-600', shadow: 'shadow-amber-500/25', text: 'text-amber-600', accent: 'from-amber-500/10' },
+              purple: { bg: 'from-purple-500 to-purple-600', shadow: 'shadow-purple-500/25', text: 'text-purple-600', accent: 'from-purple-500/10' }
+            };
+
+            return (
+              <div key={index} className="group relative bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-100 p-5 hover:shadow-md transition-all duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-2.5 rounded-lg bg-gradient-to-br ${colorClasses[metric.color].bg} shadow-lg ${colorClasses[metric.color].shadow}`}>
+                    <metric.icon className="w-5 h-5 text-white" />
+                  </div>
+                  
+                  <div className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold ${
+                    metric.change > 0 
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                      : 'bg-red-50 text-red-700 border border-red-200'
+                  }`}>
+                    {metric.change > 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                    {Math.abs(metric.change)}%
+                  </div>
+                </div>
+                
+                <div className="space-y-1">
+                  <div className={`text-xl font-bold ${colorClasses[metric.color].text}`}>
+                    {metric.isPercentage ? 
+                      `${metric.value}%` : 
+                      `$${(metric.value / 1000).toFixed(0)}k`
+                    }
+                  </div>
+                  <div className="text-xs font-semibold text-gray-600">{metric.label}</div>
+                </div>
+                
+                <div className={`absolute top-0 right-0 w-16 h-16 bg-gradient-to-br ${colorClasses[metric.color].accent} to-transparent rounded-lg pointer-events-none`}></div>
+              </div>
+            );
+          })}
+        </div>
+      </ChartCard>
 
       {/* Payment Distribution & Cash Flow */}
-      <Grid item xs={12} md={6}>
-        <Grow in={animate} timeout={1400}>
-          <PremiumCard>
-            <CardHeader 
-              avatar={
-                <Avatar sx={{ 
-                  background: colors.warning.gradient,
-                  width: 48,
-                  height: 48
-                }}>
-                  <PieChart size={24} />
-                </Avatar>
-              }
-              title={
-                <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                  Payment Distribution
-                </Typography>
-              }
-              subheader={
-                <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                  Current payment status breakdown
-                </Typography>
-              }
-            />
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <RechartsPieChart>
-                  <Pie
-                    data={paymentData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={120}
-                    paddingAngle={3}
-                    dataKey="value"
-                    animationBegin={400}
-                    animationDuration={1200}
-                  >
-                    {paymentData.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.color}
-                        stroke="white"
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    content={<CustomTooltip />}
-                    formatter={(value) => [`$${(value/1000).toFixed(0)}k`, 'Amount']}
-                  />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-              
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                {paymentData.map((item, index) => (
-                  <Grid item xs={6} key={index}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 1,
-                      p: 1.5,
-                      borderRadius: 2,
-                      backgroundColor: `${item.color}10`
-                    }}>
-                      <Box sx={{
-                        width: 12,
-                        height: 12,
-                        borderRadius: '50%',
-                        backgroundColor: item.color
-                      }} />
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: colors.neutral[800] }}>
-                          ${(item.value/1000).toFixed(0)}k
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: colors.neutral[600] }}>
-                          {item.name} ({item.percentage}%)
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        <ChartCard 
+          title="Payment Distribution" 
+          subtitle="Current payment status breakdown"
+          isLoading={isLoading}
+        >
+          <ResponsiveContainer width="100%" height={200}>
+            <RechartsPieChart>
+              <Pie
+                data={paymentData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                paddingAngle={4}
+                dataKey="value"
+              >
+                {paymentData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} stroke="white" strokeWidth={2} />
                 ))}
-              </Grid>
-            </CardContent>
-          </PremiumCard>
-        </Grow>
-      </Grid>
+              </Pie>
+              <Tooltip 
+                content={<CustomTooltip />}
+                formatter={(value) => [`$${(value/1000).toFixed(0)}k`, 'Amount']}
+              />
+            </RechartsPieChart>
+          </ResponsiveContainer>
+          
+          <div className="grid grid-cols-2 gap-3 mt-4">
+            {paymentData.map((item, index) => (
+              <div key={index} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                <div 
+                  className="w-3 h-3 rounded-full shadow-sm" 
+                  style={{ backgroundColor: item.color }}
+                ></div>
+                <div>
+                  <div className="text-sm font-bold text-gray-900">
+                    ${(item.value/1000).toFixed(0)}k
+                  </div>
+                  <div className="text-xs font-medium text-gray-600">
+                    {item.name} ({item.percentage}%)
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
 
-      {/* Cash Flow Analysis */}
-      <Grid item xs={12} md={6}>
-        <Grow in={animate} timeout={1600}>
-          <PremiumCard>
-            <CardHeader 
-              avatar={
-                <Avatar sx={{ 
-                  background: colors.info.gradient,
-                  width: 48,
-                  height: 48
-                }}>
-                  <BarChart3 size={24} />
-                </Avatar>
-              }
-              title={
-                <Typography variant="h6" sx={{ fontWeight: 700, color: colors.neutral[800] }}>
-                  Cash Flow Analysis
-                </Typography>
-              }
-              subheader={
-                <Typography variant="body2" sx={{ color: colors.neutral[600] }}>
-                  Monthly income vs expenses trend
-                </Typography>
-              }
-              action={
-                <Chip 
-                  label="$1.03M Profit" 
-                  color="success" 
-                  variant="filled"
-                  icon={<Zap size={16} />}
-                  sx={{ 
-                    fontWeight: 700,
-                    background: colors.success.gradient
-                  }}
-                />
-              }
-            />
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={cashFlowData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors.success.main} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={colors.success.main} stopOpacity={0.05}/>
-                    </linearGradient>
-                    <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors.error.main} stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor={colors.error.main} stopOpacity={0.05}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colors.neutral[200]} />
-                  <XAxis 
-                    dataKey="month" 
-                    stroke={colors.neutral[500]}
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    stroke={colors.neutral[500]} 
-                    fontSize={12}
-                    tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`}
-                  />
-                  <Tooltip 
-                    content={<CustomTooltip />}
-                    formatter={(value) => [`$${(value/1000).toFixed(0)}k`, '']}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="income"
-                    stackId="1"
-                    stroke={colors.success.main}
-                    fill="url(#incomeGradient)"
-                    strokeWidth={3}
-                    name="Income"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="expenses"
-                    stackId="2"
-                    stroke={colors.error.main}
-                    fill="url(#expenseGradient)"
-                    strokeWidth={3}
-                    name="Expenses"
-                  />
-                  <Legend />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </PremiumCard>
-        </Grow>
-      </Grid>
-    </Grid>
+        <ChartCard 
+          title="Cash Flow Analysis" 
+          subtitle="Monthly income vs expenses trend"
+          action="View Details"
+          actionIcon={ExternalLink}
+          isLoading={isLoading}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold border border-emerald-200">
+              <Zap size={12} />
+              $1.03M Profit
+            </div>
+          </div>
+          
+          <ResponsiveContainer width="100%" height={200}>
+            <AreaChart data={cashFlowData} margin={{ top: 15, right: 25, left: 15, bottom: 15 }}>
+              <defs>
+                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
+                </linearGradient>
+                <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0.1}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" strokeWidth={1} />
+              <XAxis 
+                dataKey="month" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+              />
+              <YAxis 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fontSize: 11, fill: '#64748b', fontWeight: 500 }}
+                tickFormatter={(value) => `$${(value/1000).toFixed(0)}k`}
+              />
+              <Tooltip 
+                content={<CustomTooltip />}
+                formatter={(value) => [`$${(value/1000).toFixed(0)}k`, '']}
+              />
+              <Area
+                type="monotone"
+                dataKey="income"
+                stroke="#10b981"
+                fillOpacity={1}
+                fill="url(#incomeGradient)"
+                strokeWidth={2}
+                dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
+                activeDot={{ r: 5, fill: '#10b981', strokeWidth: 2, stroke: 'white' }}
+                name="Income"
+              />
+              <Area
+                type="monotone"
+                dataKey="expenses"
+                stroke="#ef4444"
+                fillOpacity={1}
+                fill="url(#expenseGradient)"
+                strokeWidth={2}
+                dot={{ fill: '#ef4444', strokeWidth: 2, r: 3 }}
+                activeDot={{ r: 5, fill: '#ef4444', strokeWidth: 2, stroke: 'white' }}
+                name="Expenses"
+              />
+              <Legend wrapperStyle={{ paddingTop: '15px', fontSize: '12px' }} iconType="circle" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+    </div>
   );
 };
 
-// Main Dashboard Component with Enhanced Styling
+// Main Dashboard Component
 export default function VendorDashboard() {
   const navigate = useNavigate();
-  const theme = useTheme();
   const { user } = useAuth();
   
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dashboardLoaded, setDashboardLoaded] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const [stats, setStats] = useState({
     requisitions: { counts: { total: 0, pending: 0 } },
@@ -1256,6 +842,27 @@ export default function VendorDashboard() {
   });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
+
+  // Add custom CSS for animations
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes blob {
+        0% { transform: translate(0px, 0px) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.1); }
+        66% { transform: translate(-20px, 20px) scale(0.9); }
+        100% { transform: translate(0px, 0px) scale(1); }
+      }
+      .animate-blob { animation: blob 7s infinite; }
+      .animation-delay-2000 { animation-delay: 2s; }
+      .animation-delay-4000 { animation-delay: 4s; }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   // Enhanced loading effect
   useEffect(() => {
@@ -1304,6 +911,11 @@ export default function VendorDashboard() {
     navigate(`?section=${section}`, { replace: true });
   };
 
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
   const SIDEBAR_WIDTH = 256;
   const COLLAPSED_SIDEBAR_WIDTH = 70;
   
@@ -1317,12 +929,14 @@ export default function VendorDashboard() {
   }, []);
 
   return (
-    <GradientBackground sx={{
-      display: "flex", 
-      height: "100vh", 
-      overflow: "hidden",
-      backgroundColor: '#ffffff',
-    }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 flex relative overflow-hidden">
+      {/* Subtle animated background patterns */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-0 left-1/4 w-72 h-72 bg-blue-400/20 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-72 h-72 bg-purple-400/20 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+        <div className="absolute -bottom-8 left-1/3 w-72 h-72 bg-pink-400/20 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
+      </div>
+
       {/* Sidebar */}
       <HRMSSidebar 
         stats={stats} 
@@ -1332,12 +946,7 @@ export default function VendorDashboard() {
       />
 
       {/* Main Content */}
-      <Box component="main" sx={{   
-        flexGrow: 1, 
-        overflow: "auto",
-        position: 'relative',
-        backgroundColor: '#ffffff',
-      }}>
+      <main className="flex-1 overflow-auto relative z-10">
         {/* Header */}
         <DashboardHeader 
           user={user}
@@ -1349,99 +958,97 @@ export default function VendorDashboard() {
         />
 
         {/* Main Content Area */}
-        <Box sx={{  
-          paddingTop: '80px', 
-          minHeight: 'calc(100vh - 64px)',
-          position: 'relative',
-          zIndex: 1,
-          padding: '80px 2rem 2rem',
-          backgroundColor: '#ffffff',
-        }}>
+        <div className="pt-20 p-5 space-y-7 max-w-[1200px] mx-auto">
           {activeSection === "vendor-dash" ? (
-            <Fade in={dashboardLoaded} timeout={1000}>
-              <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
-                {/* Enhanced Page Title */}
-                <Box sx={{ 
-                  display: "flex", 
-                  justifyContent: "space-between", 
-                  alignItems: 'center',
-                  mb: 5,
-                  flexDirection: { xs: 'column', sm: 'row' },
-                  gap: { xs: 2, sm: 0 },
-                  textAlign: { xs: 'center', sm: 'left' }
-                }}>
-                  <Box>
-                    <Typography 
-                      variant="h3" 
-                      component="h1" 
-                      gutterBottom 
-                      sx={{ 
-                        fontWeight: 800, 
-                        color: colors.neutral[800],
-                        fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, sans-serif',
-                        letterSpacing: '-0.02em'
-                      }}
-                    >
-                      Vendor Dashboard
-                    </Typography>
-                    <Typography 
-                      variant="h6" 
-                      sx={{ 
-                        fontSize: '1.1rem', 
-                        fontWeight: 500, 
-                        color: colors.neutral[600],
-                        maxWidth: 600
-                      }}
-                    >
-                      Welcome back, {user?.firstName ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1) : 'Vendor'}. 
-                      Here's your comprehensive business performance overview with actionable insights.
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 2 }}>
-                    <Button 
-                      variant="contained"
-                      startIcon={<BarChart3 />}
-                      sx={{
-                        background: colors.primary.gradient,
-                        borderRadius: '12px',
-                        textTransform: 'none',
-                        fontWeight: 600,
-                        px: 3,
-                        py: 1.5,
-                        boxShadow: `0 8px 24px ${colors.primary.main}40`,
-                        '&:hover': {
-                          background: colors.primary.gradient,
-                          transform: 'translateY(-2px)',
-                          boxShadow: `0 12px 32px ${colors.primary.main}50`,
-                        }
-                      }}
-                    >
-                      Analytics Report
-                    </Button>
-                  </Box>
-                </Box>
-
-                
-                
-              
-
-                {/* Enhanced Business Analytics Sections */}
-                <VendorRFQOverview />
-                <VendorPurchaseOrders />
-                <VendorPaymentStatus />
-
-                {/* Recent Activity */}
-                <Box sx={{ width: "100%", mt: 6 }}>
-                  <Slide direction="up" in={dashboardLoaded} timeout={2000}>
-                    <div>
-                      <ActivityChangelogComponent />
+            <div>
+              {/* Compact Page Header */}
+              <div className="flex items-center justify-between mb-7">
+                <div className="space-y-1">
+                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
+                    Vendor Dashboard
+                  </h1>
+                  <div className="flex items-center gap-5 text-xs">
+                    <div className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full font-medium border border-emerald-200">
+                      <Activity className="w-3 h-3" />
+                      <span>Live analytics</span>
                     </div>
-                  </Slide>
-                </Box>
-              </Box>
-            </Fade>
+                    <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full font-medium border border-blue-200">
+                      <Award className="w-3 h-3" />
+                      <span>Performance tracking</span>
+                    </div>
+                  </div>
+                  <p className="text-gray-600 text-sm max-w-xl">
+                    Welcome back, <span className="font-semibold text-gray-900">{user?.firstName ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1) : 'Vendor'}</span>. 
+                    Monitor your business performance with comprehensive analytics.
+                  </p>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <button className="flex items-center gap-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm">
+                    <Filter size={14} />
+                    Filter
+                  </button>
+                  <button
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg shadow-blue-500/25 disabled:opacity-50"
+                  >
+                    <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {/* Compact Key Metrics */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
+                <MetricCard 
+                  title="Active RFQs" 
+                  value="25"
+                  icon={FileText} 
+                  color="blue" 
+                  trend={12}
+                  subtitle="Open opportunities"
+                  isLoading={loading}
+                />
+                <MetricCard 
+                  title="Win Rate" 
+                  value="68"
+                  suffix="%"
+                  icon={Target} 
+                  color="green" 
+                  trend={5}
+                  subtitle="This quarter"
+                  isLoading={loading}
+                />
+                <MetricCard 
+                  title="Active Orders" 
+                  value="18"
+                  icon={Package} 
+                  color="purple" 
+                  trend={-3}
+                  subtitle="In progress"
+                  isLoading={loading}
+                />
+                <MetricCard 
+                  title="Revenue" 
+                  value="1.75"
+                  prefix="$"
+                  suffix="M"
+                  icon={DollarSign} 
+                  color="orange" 
+                  trend={18}
+                  subtitle="This month"
+                  isLoading={loading}
+                />
+              </div>
+
+              {/* Dashboard Sections */}
+              <VendorRFQOverview />
+              <VendorPurchaseOrders />
+              <VendorPaymentStatus />
+            </div>
           ) : (
-            <Box>
+            <div>
               {activeSection === "requisitions" && <NewRequisitionPage />}
               {activeSection === "new-recon" && <TravelReconciliation />}
               {activeSection === "travel-requests" && <TravelDashboard />}
@@ -1453,11 +1060,11 @@ export default function VendorDashboard() {
               {activeSection === "registration" && <VendorRegistration />}
               {activeSection === "registration-management" && <VendorManagementDashboard/>}
               {activeSection === "user-profile" && <UserProfilePage />}
-            </Box> 
+            </div> 
           )}
-        </Box>
-      </Box>
+        </div>
+      </main>
       <AIChatButton user={user} />
-    </GradientBackground>
+    </div>
   );
 }
