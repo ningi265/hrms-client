@@ -49,8 +49,17 @@ export default function EditEmployeePage() {
     emergencyContact: "",
     skills: [],
   });
+  const [searchParams] = useSeachParams();
+  const [ activeSection, setActiveSection ] = useState(()=>{
+    return searchParams.get('section') || 'dashboard';
+  });
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    navigate(`?section=${section}`, { replace: true });
+};
 
   useEffect(() => {
     const fetchEmployee = async () => {

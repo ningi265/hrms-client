@@ -401,35 +401,35 @@ export default function FinanceReconciliationReview() {
       case "pending":
       case "pending_reconciliation":
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 border border-amber-200">
             <Clock size={14} className="mr-1" />
             {status === "pending_reconciliation" ? "Pending Reconciliation" : "Pending Review"}
           </span>
         )
       case "clarification-requested":
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
             <HelpCircle size={14} className="mr-1" />
             Clarification Requested
           </span>
         )
       case "approved":
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-200">
             <CheckCircle size={14} className="mr-1" />
             Approved
           </span>
         )
       case "rejected":
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-50 text-red-700 border border-red-200">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 border border-red-200">
             <X size={14} className="mr-1" />
             Rejected
           </span>
         )
       default:
         return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
             {status}
           </span>
         )
@@ -457,7 +457,7 @@ export default function FinanceReconciliationReview() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -479,127 +479,110 @@ export default function FinanceReconciliationReview() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white">
-                  <FileCheck size={32} />
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="p-2 bg-blue-500 rounded-lg text-white">
+                  <FileCheck size={24} />
                 </div>
                 Finance Department Reconciliations Review
               </h1>
-              <p className="text-gray-500 text-lg mt-2">
+              <p className="text-gray-500 mt-1">
                 Review and process travel expense reconciliations from employees
               </p>
             </div>
             
             <div className="flex items-center space-x-3">
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
                 <Bell size={20} />
               </button>
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
                 <RefreshCw size={20} />
               </button>
             </div>
           </div>
 
-          {/* Enhanced Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <FileText size={24} className="text-white" />
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <FileText size={20} className="text-blue-600" />
                 </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
                   {getTotalReconciliations()}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Total Reconciliations</p>
-                <p className="text-2xl font-bold text-gray-900">{getTotalReconciliations()}</p>
+                <p className="text-xl font-bold text-gray-900">{getTotalReconciliations()}</p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                  <Clock size={24} className="text-white" />
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-amber-50 rounded-lg">
+                  <Clock size={20} className="text-amber-600" />
                 </div>
-                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-sm font-medium">
                   {getPendingReconciliations()}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Pending Review</p>
-                <p className="text-2xl font-bold text-gray-900">{getPendingReconciliations()}</p>
+                <p className="text-xl font-bold text-gray-900">{getPendingReconciliations()}</p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <CheckCircle size={24} className="text-white" />
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <CheckCircle size={20} className="text-green-600" />
                 </div>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
                   {getApprovedReconciliations()}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Approved</p>
-                <p className="text-2xl font-bold text-gray-900">{getApprovedReconciliations()}</p>
+                <p className="text-xl font-bold text-gray-900">{getApprovedReconciliations()}</p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-red-500 to-pink-600 rounded-xl">
-                  <X size={24} className="text-white" />
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-red-50 rounded-lg">
+                  <X size={20} className="text-red-600" />
                 </div>
-                <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">
                   {getRejectedReconciliations()}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Rejected</p>
-                <p className="text-2xl font-bold text-gray-900">{getRejectedReconciliations()}</p>
+                <p className="text-xl font-bold text-gray-900">{getRejectedReconciliations()}</p>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-        >
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Reconciliations List */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Search and Filter */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Reconciliation Reviews</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Reconciliation Reviews</h2>
                 <select
                   value={filterDepartment}
                   onChange={(e) => setFilterDepartment(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm font-medium"
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
                 >
                   <option value="all">All Departments</option>
                   <option value="Engineering">Engineering</option>
@@ -611,13 +594,13 @@ export default function FinanceReconciliationReview() {
               </div>
 
               <div className="relative mb-4">
-                <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search reconciliations..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 />
               </div>
               
@@ -625,9 +608,9 @@ export default function FinanceReconciliationReview() {
               <div className="flex space-x-2">
                 <button
                   onClick={() => setActiveTab("pending_reconciliation")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === "pending_reconciliation"
-                      ? "bg-blue-500 text-white shadow-lg"
+                      ? "bg-blue-500 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -635,9 +618,9 @@ export default function FinanceReconciliationReview() {
                 </button>
                 <button
                   onClick={() => setActiveTab("approved")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === "approved"
-                      ? "bg-blue-500 text-white shadow-lg"
+                      ? "bg-blue-500 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -645,9 +628,9 @@ export default function FinanceReconciliationReview() {
                 </button>
                 <button
                   onClick={() => setActiveTab("rejected")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === "rejected"
-                      ? "bg-blue-500 text-white shadow-lg"
+                      ? "bg-blue-500 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -657,12 +640,12 @@ export default function FinanceReconciliationReview() {
             </div>
 
             {/* Scrollable Reconciliations List */}
-            <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
               {filteredReconciliations.length === 0 ? (
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8 shadow-xl text-center">
+                <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
                   <div className="flex flex-col items-center space-y-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                      <FileText size={32} className="text-gray-500" />
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                      <FileText size={32} className="text-gray-400" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">No {activeTab} reconciliations found</h3>
@@ -672,21 +655,18 @@ export default function FinanceReconciliationReview() {
                 </div>
               ) : (
                 filteredReconciliations.map((reconciliation, index) => (
-                  <motion.div
+                  <div
                     key={reconciliation.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
                     onClick={() => handleSelectReconciliation(reconciliation)}
-                    className={`bg-white/80 backdrop-blur-sm rounded-2xl border p-6 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] ${
+                    className={`bg-white rounded-lg border p-4 hover:shadow-md transition-shadow cursor-pointer ${
                       selectedReconciliation?.id === reconciliation.id
-                        ? "border-blue-500 bg-blue-50/50"
-                        : "border-gray-200/50 hover:border-blue-300"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:border-blue-300"
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-lg">{reconciliation.employeeName}</h3>
+                        <h3 className="font-semibold text-gray-900">{reconciliation.employeeName}</h3>
                         <p className="text-gray-600 text-sm">{reconciliation.id}</p>
                       </div>
                       {getStatusBadge(reconciliation.status)}
@@ -707,63 +687,55 @@ export default function FinanceReconciliationReview() {
 
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium border border-blue-200">
+                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
                           {reconciliation.department}
                         </span>
-                        <div className="p-1 bg-blue-100 rounded-full">
-                          <Receipt size={12} className="text-blue-600" />
-                        </div>
                       </div>
                       <span className="text-xs text-gray-500">
                         Submitted: {format(reconciliation.submittedDate, "MMM d, yyyy")}
                       </span>
                     </div>
-                  </motion.div>
+                  </div>
                 ))
               )}
             </div>
           </div>
 
           {/* Right Column - Reconciliation Details and Actions */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {selectedReconciliation ? (
               <>
                 {/* Reconciliation Details */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden"
-                >
+                <div className="bg-white rounded-lg border border-gray-200">
                   {/* Header */}
-                  <div className="bg-gradient-to-r from-blue-50/50 to-indigo-50/30 border-b border-gray-100/50 p-6">
+                  <div className="bg-gray-50 border-b border-gray-200 p-4">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl text-white">
-                          <FileText size={24} />
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-500 rounded-lg text-white">
+                          <FileText size={20} />
                         </div>
                         <div>
                           <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-bold text-gray-900">{selectedReconciliation.purpose}</h2>
+                            <h2 className="text-lg font-semibold text-gray-900">{selectedReconciliation.purpose}</h2>
                             {getStatusBadge(selectedReconciliation.status)}
                           </div>
-                          <p className="text-gray-600 mt-1">{selectedReconciliation.id} • {selectedReconciliation.department}</p>
+                          <p className="text-gray-600 text-sm mt-1">{selectedReconciliation.id} • {selectedReconciliation.department}</p>
                         </div>
                       </div>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                         <MoreHorizontal size={20} />
                       </button>
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <div className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="space-y-4">
                         <div>
                           <p className="text-sm text-gray-500 font-medium mb-2">Employee Information</p>
                           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
                               {selectedReconciliation.employeeName
                                 .split(" ")
                                 .map((n) => n[0])
@@ -844,14 +816,14 @@ export default function FinanceReconciliationReview() {
                       <div className="space-y-4">
                         <div>
                           <p className="text-sm text-gray-500 font-medium mb-2">Trip Report</p>
-                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                             <p className="text-sm text-gray-700">{selectedReconciliation.tripReport}</p>
                           </div>
                         </div>
 
                         <div>
                           <p className="text-sm text-gray-500 font-medium mb-2">Additional Notes</p>
-                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                             <p className="text-sm text-gray-700">
                               {selectedReconciliation.additionalNotes || "No additional notes provided."}
                             </p>
@@ -863,7 +835,7 @@ export default function FinanceReconciliationReview() {
                           selectedReconciliation.reconciliation?.clarificationRequest && (
                             <div>
                               <p className="text-sm text-gray-500 font-medium mb-2">Clarification Request</p>
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                                 <h4 className="font-medium text-blue-800 mb-2">
                                   {selectedReconciliation.reconciliation.clarificationRequest.reason}
                                 </h4>
@@ -889,7 +861,7 @@ export default function FinanceReconciliationReview() {
                         {selectedReconciliation.status === "approved" && selectedReconciliation.reconciliation?.approvedDate && (
                           <div>
                             <p className="text-sm text-gray-500 font-medium mb-2">Approval Details</p>
-                            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
                               <div className="flex items-center gap-2 mb-2">
                                 <CheckCircle2 size={16} className="text-green-600" />
                                 <span className="font-medium text-green-800">
@@ -917,7 +889,7 @@ export default function FinanceReconciliationReview() {
                         {selectedReconciliation.status === "rejected" && selectedReconciliation.reconciliation?.notes && (
                           <div>
                             <p className="text-sm text-gray-500 font-medium mb-2">Rejection Details</p>
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
                               <div className="flex items-center gap-2 mb-2">
                                 <X size={16} className="text-red-600" />
                                 <span className="font-medium text-red-800">
@@ -933,7 +905,7 @@ export default function FinanceReconciliationReview() {
 
                     {/* Status Alerts */}
                     {(selectedReconciliation.status === "pending" || selectedReconciliation.status === "pending_reconciliation") && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                         <div className="flex items-center gap-3">
                           <AlertCircle className="text-amber-600" size={20} />
                           <div>
@@ -948,10 +920,10 @@ export default function FinanceReconciliationReview() {
                   </div>
 
                   {/* Action Footer */}
-                  <div className="bg-gray-50/50 border-t border-gray-100 p-6 flex justify-between items-center">
+                  <div className="bg-gray-50 border-t border-gray-200 p-4 flex justify-between items-center">
                     <button
                       onClick={() => navigate("/travel-dashboard")}
-                      className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                      className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                     >
                       Back to Dashboard
                     </button>
@@ -960,14 +932,14 @@ export default function FinanceReconciliationReview() {
                       <div className="flex gap-3">
                         <button
                           onClick={() => setShowClarificationForm(true)}
-                          className="px-4 py-2 bg-blue-100 text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-200 transition-colors duration-200 flex items-center gap-2"
+                          className="px-4 py-2 bg-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-200 transition-colors flex items-center gap-2"
                         >
                           <HelpCircle size={16} />
                           Request Clarification
                         </button>
                         <button
                           onClick={() => setShowReviewForm(true)}
-                          className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center gap-2"
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
                         >
                           <FileCheck size={16} />
                           Review & Process
@@ -976,7 +948,7 @@ export default function FinanceReconciliationReview() {
                     )}
 
                     {selectedReconciliation.status === "clarification-requested" && (
-                      <button className="px-4 py-2 bg-blue-100 text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-200 transition-colors duration-200 flex items-center gap-2">
+                      <button className="px-4 py-2 bg-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-200 transition-colors flex items-center gap-2">
                         <History size={16} />
                         View Clarification History
                       </button>
@@ -986,7 +958,7 @@ export default function FinanceReconciliationReview() {
                       <button
                         onClick={handleDownloadReport}
                         disabled={isProcessing}
-                        className="px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-xl hover:bg-green-200 transition-colors duration-200 flex items-center gap-2 disabled:opacity-50"
+                        className="px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-lg hover:bg-green-200 transition-colors flex items-center gap-2 disabled:opacity-50"
                       >
                         {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
                         {isProcessing ? "Generating Report..." : "Download Approval Report"}
@@ -994,31 +966,26 @@ export default function FinanceReconciliationReview() {
                     )}
 
                     {selectedReconciliation.status === "rejected" && (
-                      <button className="px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded-xl hover:bg-red-200 transition-colors duration-200 flex items-center gap-2">
+                      <button className="px-4 py-2 bg-red-100 text-red-700 border border-red-200 rounded-lg hover:bg-red-200 transition-colors flex items-center gap-2">
                         <History size={16} />
                         View Rejection Details
                       </button>
                     )}
                   </div>
-                </motion.div>
+                </div>
 
                 {/* Expenses List */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden"
-                >
+                <div className="bg-white rounded-lg border border-gray-200">
                   {/* Header */}
-                  <div className="bg-gray-100/50 border-b border-gray-100/50 p-6">
+                  <div className="bg-gray-50 border-b border-gray-200 p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-xl">
+                        <div className="p-2 bg-blue-100 rounded-lg">
                           <Receipt size={20} className="text-blue-600" />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900">Expenses</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">Expenses</h3>
                       </div>
-                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium border border-blue-200">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
                         {selectedReconciliation.expenses.length} items
                       </span>
                     </div>
@@ -1032,13 +999,13 @@ export default function FinanceReconciliationReview() {
                       <table className="w-full">
                         <thead className="bg-gray-50 border-b border-gray-200">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                           </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -1047,12 +1014,12 @@ export default function FinanceReconciliationReview() {
                               key={expense.id}
                               className={`hover:bg-gray-50 ${isExpenseUnusual(expense) ? "bg-amber-50" : ""}`}
                             >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                                 {format(safeDateParse(expense.date), "MMM d, yyyy")}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{expense.category}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900">{expense.description}</td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{expense.category}</td>
+                              <td className="px-4 py-3 text-sm text-gray-900">{expense.description}</td>
+                              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-medium">
                                 <div className="flex items-center justify-end gap-1">
                                   {formatCurrency(expense.amount, selectedReconciliation.currency)}
                                   {isExpenseUnusual(expense) && (
@@ -1065,10 +1032,10 @@ export default function FinanceReconciliationReview() {
                                   )}
                                 </div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              <td className="px-4 py-3 whitespace-nowrap">
                                 {getExpenseStatusBadge(expense.status)}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              <td className="px-4 py-3 whitespace-nowrap">
                                 {expense.receipt ? (
                                   <button
                                     onClick={() => {
@@ -1086,7 +1053,7 @@ export default function FinanceReconciliationReview() {
                                   </span>
                                 )}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              <td className="px-4 py-3 whitespace-nowrap">
                                 <button className="text-gray-400 hover:text-gray-600 p-1">
                                   <MoreHorizontal size={16} />
                                 </button>
@@ -1094,8 +1061,8 @@ export default function FinanceReconciliationReview() {
                             </tr>
                           ))}
                           <tr className="bg-gray-100 font-medium">
-                            <td colSpan={3} className="px-6 py-4 text-right text-sm text-gray-900">Total</td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-bold">
+                            <td colSpan={3} className="px-4 py-3 text-right text-sm text-gray-900">Total</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right font-bold">
                               {formatCurrency(selectedReconciliation.totalExpenses, selectedReconciliation.currency)}
                             </td>
                             <td colSpan={3}></td>
@@ -1104,31 +1071,26 @@ export default function FinanceReconciliationReview() {
                       </table>
                     )}
                   </div>
-                </motion.div>
+                </div>
 
                 {/* Review Form Modal */}
                 {showReviewForm && (
-                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-                    >
-                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
                               <FileCheck size={24} className="text-green-500" />
                               Review & Process Reconciliation
                             </h2>
-                            <p className="text-gray-600 mt-1">
+                            <p className="text-gray-600 text-sm mt-1">
                               Review and process {selectedReconciliation?.employeeName}'s reconciliation for {selectedReconciliation?.city}
                             </p>
                           </div>
                           <button
                             onClick={() => setShowReviewForm(false)}
-                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           >
                             <X size={24} />
                           </button>
@@ -1140,7 +1102,7 @@ export default function FinanceReconciliationReview() {
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 mb-4">Decision</h3>
                           <div className="grid grid-cols-2 gap-4">
-                            <label className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                            <label className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                               reviewNotes.approvalDecision === "approve" 
                                 ? "border-green-300 bg-green-50" 
                                 : "border-gray-200 hover:border-green-200"
@@ -1167,7 +1129,7 @@ export default function FinanceReconciliationReview() {
                               </div>
                             </label>
 
-                            <label className={`p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                            <label className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                               reviewNotes.approvalDecision === "reject" 
                                 ? "border-red-300 bg-red-50" 
                                 : "border-gray-200 hover:border-red-200"
@@ -1204,7 +1166,7 @@ export default function FinanceReconciliationReview() {
                             value={reviewNotes.internalNotes}
                             onChange={(e) => setReviewNotes({ ...reviewNotes, internalNotes: e.target.value })}
                             rows={4}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                           />
                         </div>
 
@@ -1219,7 +1181,7 @@ export default function FinanceReconciliationReview() {
                                 <select
                                   value={reviewNotes.reimbursementMethod}
                                   onChange={(e) => setReviewNotes({ ...reviewNotes, reimbursementMethod: e.target.value })}
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 >
                                   <option value="bank-transfer">Bank Transfer</option>
                                   <option value="payroll">Add to Next Payroll</option>
@@ -1230,7 +1192,7 @@ export default function FinanceReconciliationReview() {
                               <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Reimbursement Amount</label>
                                 <div className="relative">
-                                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
                                     {selectedReconciliation.currency}
                                   </span>
                                   <input
@@ -1240,7 +1202,7 @@ export default function FinanceReconciliationReview() {
                                       ...reviewNotes,
                                       reimbursementAmount: Number.parseFloat(e.target.value),
                                     })}
-                                    className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                   />
                                 </div>
                                 <p className="text-sm text-gray-500 mt-1">
@@ -1254,13 +1216,13 @@ export default function FinanceReconciliationReview() {
                                   type="date"
                                   value={reviewNotes.reimbursementDate}
                                   onChange={(e) => setReviewNotes({ ...reviewNotes, reimbursementDate: e.target.value })}
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 />
                               </div>
                             </div>
 
                             {/* Payment Details */}
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                               <div className="flex items-center gap-2 mb-3">
                                 <Info size={16} className="text-blue-600" />
                                 <h4 className="font-medium text-blue-800">Payment Details</h4>
@@ -1289,7 +1251,7 @@ export default function FinanceReconciliationReview() {
 
                         {/* Positive Balance Alert */}
                         {selectedReconciliation.remainingBalance > 0 && reviewNotes.approvalDecision === "approve" && (
-                          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                             <div className="flex items-center gap-3">
                               <CheckCircle className="text-green-600" size={20} />
                               <div>
@@ -1305,7 +1267,7 @@ export default function FinanceReconciliationReview() {
 
                         {/* Rejection Alert */}
                         {reviewNotes.approvalDecision === "reject" && (
-                          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                             <div className="flex items-center gap-3">
                               <AlertCircle className="text-red-600" size={20} />
                               <div>
@@ -1325,7 +1287,7 @@ export default function FinanceReconciliationReview() {
                             {selectedReconciliation.expenses.map((expense) => (
                               <div
                                 key={expense.id}
-                                className={`p-4 border rounded-xl ${
+                                className={`p-4 border rounded-lg ${
                                   isExpenseUnusual(expense) ? "border-amber-200 bg-amber-50" : "border-gray-200"
                                 }`}
                               >
@@ -1410,17 +1372,17 @@ export default function FinanceReconciliationReview() {
                       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
                         <button
                           onClick={() => setShowReviewForm(false)}
-                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={handleApproveReconciliation}
                           disabled={isApproving}
-                          className={`px-6 py-2 text-white rounded-xl transition-all duration-200 disabled:opacity-50 flex items-center gap-2 ${
+                          className={`px-4 py-2 text-white rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 ${
                             reviewNotes.approvalDecision === "approve" 
-                              ? "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700" 
-                              : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                              ? "bg-green-500 hover:bg-green-600" 
+                              : "bg-red-500 hover:bg-red-600"
                           }`}
                         >
                           {isApproving ? (
@@ -1445,33 +1407,28 @@ export default function FinanceReconciliationReview() {
                           )}
                         </button>
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
                 )}
 
                 {/* Clarification Request Modal */}
                 {showClarificationForm && (
-                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-                    >
-                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center justify-between">
                           <div>
-                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-3">
                               <HelpCircle size={24} className="text-blue-500" />
                               Request Clarification
                             </h2>
-                            <p className="text-gray-600 mt-1">
+                            <p className="text-gray-600 text-sm mt-1">
                               Request additional information from {selectedReconciliation?.employeeName}
                             </p>
                           </div>
                           <button
                             onClick={() => setShowClarificationForm(false)}
-                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                           >
                             <X size={24} />
                           </button>
@@ -1484,7 +1441,7 @@ export default function FinanceReconciliationReview() {
                           <select
                             value={clarificationRequest.reason}
                             onChange={(e) => setClarificationRequest({ ...clarificationRequest, reason: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           >
                             <option value="">Select a reason</option>
                             <option value="Missing documentation">Missing documentation</option>
@@ -1502,7 +1459,7 @@ export default function FinanceReconciliationReview() {
                             value={clarificationRequest.details}
                             onChange={(e) => setClarificationRequest({ ...clarificationRequest, details: e.target.value })}
                             rows={6}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
 
@@ -1529,12 +1486,12 @@ export default function FinanceReconciliationReview() {
                             type="date"
                             value={clarificationRequest.dueDate}
                             onChange={(e) => setClarificationRequest({ ...clarificationRequest, dueDate: e.target.value })}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                           <p className="text-sm text-gray-500 mt-1">Default: 3 business days from today</p>
                         </div>
 
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <div className="flex items-center gap-3">
                             <Info className="text-blue-600" size={20} />
                             <div>
@@ -1550,7 +1507,7 @@ export default function FinanceReconciliationReview() {
                       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
                         <button
                           onClick={() => setShowClarificationForm(false)}
-                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           Cancel
                         </button>
@@ -1562,7 +1519,7 @@ export default function FinanceReconciliationReview() {
                             !clarificationRequest.details ||
                             clarificationRequest.requestedItems.length === 0
                           }
-                          className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
                           {isSendingClarification ? (
                             <>
@@ -1577,21 +1534,16 @@ export default function FinanceReconciliationReview() {
                           )}
                         </button>
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
                 )}
 
                 {/* Receipt Dialog */}
                 {showReceiptDialog && (
-                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-                    >
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
                       <div className="px-6 py-4 border-b border-gray-200">
-                        <h3 className="text-xl font-bold text-gray-900">Receipt</h3>
+                        <h3 className="text-xl font-semibold text-gray-900">Receipt</h3>
                         <p className="text-gray-600 text-sm mt-1">
                           {currentExpense?.description} - {currentExpense ? format(parseISO(currentExpense.date), "MMMM d, yyyy") : ""}
                         </p>
@@ -1612,24 +1564,24 @@ export default function FinanceReconciliationReview() {
                       <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
                         <button
                           onClick={() => setShowReceiptDialog(false)}
-                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                           Close
                         </button>
-                        <button className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center gap-2">
+                        <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2">
                           <Download size={16} />
                           Download
                         </button>
                       </div>
-                    </motion.div>
+                    </div>
                   </div>
                 )}
               </>
             ) : (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-12 text-center">
+              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                 <div className="flex flex-col items-center space-y-6">
-                  <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                    <FileText size={40} className="text-gray-500" />
+                  <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
+                    <FileText size={40} className="text-gray-400" />
                   </div>
                   <div>
                     <h3 className="text-xl font-semibold text-gray-900 mb-2">No Reconciliation Selected</h3>
@@ -1641,18 +1593,13 @@ export default function FinanceReconciliationReview() {
               </div>
             )}
           </div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Snackbar Notification */}
       {snackbarOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-6 right-6 z-50"
-        >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border max-w-md ${
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className={`px-4 py-3 rounded-lg border max-w-md ${
             snackbarSeverity === "success"
               ? "bg-green-50 border-green-200 text-green-800"
               : snackbarSeverity === "error"
@@ -1672,7 +1619,7 @@ export default function FinanceReconciliationReview() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   )

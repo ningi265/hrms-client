@@ -284,7 +284,7 @@ export default function PurchaseOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -300,132 +300,115 @@ export default function PurchaseOrdersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
-                  <ShoppingCart size={32} />
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <div className="p-2 bg-blue-500 rounded-lg text-white">
+                  <ShoppingCart size={24} />
                 </div>
                 Purchase Orders
               </h1>
-              <p className="text-gray-500 text-lg mt-2">Manage and track your purchase orders efficiently</p>
+              <p className="text-gray-500 mt-1">Manage and track your purchase orders efficiently</p>
             </div>
 
             <div className="flex items-center space-x-3">
               <button
                 onClick={openCreatePOModal}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
               >
-                <Plus size={20} />
+                <Plus size={16} />
                 New PO
               </button>
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
                 <Bell size={20} />
               </button>
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
+              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
                 <Settings size={20} />
               </button>
             </div>
           </div>
 
-          {/* Enhanced Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <ShoppingCart size={24} className="text-white" />
+          {/* Statistics Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-blue-50 rounded-lg">
+                  <ShoppingCart size={20} className="text-blue-600" />
                 </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">{totalPOs}</span>
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">{totalPOs}</span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Total POs</p>
-                <p className="text-2xl font-bold text-gray-900">{totalPOs}</p>
+                <p className="text-xl font-bold text-gray-900">{totalPOs}</p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <Check size={24} className="text-white" />
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <Check size={20} className="text-green-600" />
                 </div>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
                   {approvedPOs}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Approved</p>
-                <p className="text-2xl font-bold text-gray-900">{approvedPOs}</p>
+                <p className="text-xl font-bold text-gray-900">{approvedPOs}</p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                  <Package size={24} className="text-white" />
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-amber-50 rounded-lg">
+                  <Package size={20} className="text-amber-600" />
                 </div>
-                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-sm font-medium">
                   {pendingPOs}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Pending</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingPOs}</p>
+                <p className="text-xl font-bold text-gray-900">{pendingPOs}</p>
               </div>
-            </motion.div>
+            </div>
 
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-                  <DollarSign size={24} className="text-white" />
+            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <DollarSign size={20} className="text-purple-600" />
                 </div>
-                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
                   MWK {totalAmount.toFixed(0)}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Total Amount</p>
-                <p className="text-2xl font-bold text-gray-900">{totalAmount.toLocaleString()}</p>
+                <p className="text-xl font-bold text-gray-900">{totalAmount.toLocaleString()}</p>
               </div>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-8"
-        >
-          {/* Enhanced Filter Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="space-y-6">
+          {/* Filter Section */}
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
               <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
                 <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search purchase orders..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -433,7 +416,7 @@ export default function PurchaseOrdersPage() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm font-medium"
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
                   >
                     <option value="all">All Statuses</option>
                     <option value="pending">Pending</option>
@@ -441,20 +424,20 @@ export default function PurchaseOrdersPage() {
                     <option value="rejected">Rejected</option>
                   </select>
 
-                  <button className="px-4 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium flex items-center gap-2">
-                    <Filter size={18} />
+                  <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center gap-2">
+                    <Filter size={16} />
                     More Filters
                   </button>
                 </div>
               </div>
 
               <div className="flex items-center space-x-3">
-                <button className="px-4 py-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200 flex items-center gap-2">
+                <button className="px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-2 text-sm">
                   <Download size={16} />
                   Export
                 </button>
-                <button className="p-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200">
-                  <RefreshCw size={18} />
+                <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
+                  <RefreshCw size={16} />
                 </button>
               </div>
             </div>
@@ -462,13 +445,13 @@ export default function PurchaseOrdersPage() {
 
           {/* Purchase Orders Content */}
           {filteredPurchaseOrders.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-12 shadow-xl text-center">
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                  <ShoppingCart size={40} className="text-gray-500" />
+                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
+                  <ShoppingCart size={40} className="text-gray-400" />
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     {searchTerm || statusFilter !== "all"
                       ? "No purchase orders match your filters"
                       : "No Purchase Orders"}
@@ -481,18 +464,18 @@ export default function PurchaseOrdersPage() {
                 </div>
                 <button
                   onClick={openCreatePOModal}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
                 >
-                  <Plus size={20} />
+                  <Plus size={16} />
                   Create First PO
                 </button>
               </div>
             </div>
           ) : (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
               {/* Table Header */}
-              <div className="bg-gradient-to-r from-gray-50/50 to-blue-50/30 border-b border-gray-100/50 px-6 py-4">
-                <div className="grid grid-cols-7 gap-4 items-center font-semibold text-gray-700 text-sm">
+              <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
+                <div className="grid grid-cols-7 gap-4 items-center font-medium text-gray-700 text-sm">
                   <div className="flex items-center gap-2">
                     <FileText size={16} />
                     PO Number
@@ -521,21 +504,18 @@ export default function PurchaseOrdersPage() {
               {/* Table Body */}
               <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
                 {filteredPurchaseOrders.map((po, index) => (
-                  <motion.div
+                  <div
                     key={po._id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="grid grid-cols-7 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
+                    className="grid grid-cols-7 gap-4 items-center px-4 py-4 hover:bg-gray-50 transition-colors"
                   >
                     <div>
-                      <span className="font-bold text-blue-600 group-hover:text-blue-700 transition-colors duration-200">
+                      <span className="font-medium text-blue-600">
                         {po._id?.slice(-8) || "N/A"}
                       </span>
                     </div>
 
                     <div>
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
+                      <div className="font-medium text-gray-900">
                         {po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A"}
                       </div>
 
@@ -547,12 +527,12 @@ export default function PurchaseOrdersPage() {
                     </div>
 
                     <div>
-                      <span className="font-semibold text-gray-900">MWK {po.totalAmount?.toFixed(2) || "0.00"}</span>
+                      <span className="font-medium text-gray-900">MWK {po.totalAmount?.toFixed(2) || "0.00"}</span>
                     </div>
 
                     <div>
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(po.status)}`}
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border ${getStatusColor(po.status)}`}
                       >
                         {getStatusIcon(po.status)}
                         <span className="ml-2 capitalize">{po.status || "Unknown"}</span>
@@ -561,7 +541,7 @@ export default function PurchaseOrdersPage() {
 
                     <div>
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getDeliveryStatusColor(po.deliveryStatus)}`}
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border ${getDeliveryStatusColor(po.deliveryStatus)}`}
                       >
                         {getDeliveryStatusIcon(po.deliveryStatus)}
                         <span className="ml-2 capitalize">{po.deliveryStatus || "Pending"}</span>
@@ -572,20 +552,20 @@ export default function PurchaseOrdersPage() {
                       <button
                         data-po-id={po._id}
                         onClick={() => setShowMenuId(showMenuId === po._id ? null : po._id)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       >
-                        <MoreVertical size={18} />
+                        <MoreVertical size={16} />
                       </button>
                     </div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
           )}
-        </motion.div>
+        </div>
       </div>
 
-      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
+      {/* Action Dropdown Menu */}
       {showMenuId && (
         <>
           {/* Backdrop overlay */}
@@ -596,7 +576,7 @@ export default function PurchaseOrdersPage() {
           
           {/* Action Menu */}
           <div 
-            className="fixed z-[101] w-64 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            className="fixed z-[101] w-64 bg-white rounded-lg border border-gray-200"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
@@ -640,7 +620,7 @@ export default function PurchaseOrdersPage() {
                   // Handle view details action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Eye size={16} />
                 <span>View Details</span>
@@ -652,7 +632,7 @@ export default function PurchaseOrdersPage() {
                   // Handle edit action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Edit size={16} />
                 <span>Edit PO</span>
@@ -664,7 +644,7 @@ export default function PurchaseOrdersPage() {
                   // Handle track delivery action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Truck size={16} />
                 <span>Track Delivery</span>
@@ -676,7 +656,7 @@ export default function PurchaseOrdersPage() {
                   // Handle send to vendor action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Send size={16} />
                 <span>Send to Vendor</span>
@@ -690,7 +670,7 @@ export default function PurchaseOrdersPage() {
                     <button
                       onClick={() => handleApprovePO(showMenuId)}
                       disabled={actionLoading === showMenuId}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors duration-200 text-left disabled:opacity-50"
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors text-left disabled:opacity-50"
                     >
                       <Check size={16} />
                       <span>Approve PO</span>
@@ -703,7 +683,7 @@ export default function PurchaseOrdersPage() {
                     <button
                       onClick={() => handleRejectPO(showMenuId)}
                       disabled={actionLoading === showMenuId}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left disabled:opacity-50"
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left disabled:opacity-50"
                     >
                       <X size={16} />
                       <span>Reject PO</span>
@@ -723,7 +703,7 @@ export default function PurchaseOrdersPage() {
                   // Handle download PDF action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Download size={16} />
                 <span>Download PDF</span>
@@ -732,7 +712,7 @@ export default function PurchaseOrdersPage() {
               {/* Copy PO Number */}
               <button
                 onClick={() => copyToClipboard(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Copy size={16} />
                 <span>Copy PO Number</span>
@@ -744,7 +724,7 @@ export default function PurchaseOrdersPage() {
                   // Handle view history action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <History size={16} />
                 <span>View History</span>
@@ -756,7 +736,7 @@ export default function PurchaseOrdersPage() {
                   // Handle send message action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <MessageSquare size={16} />
                 <span>Message Vendor</span>
@@ -768,7 +748,7 @@ export default function PurchaseOrdersPage() {
                   // Handle manage settings action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Settings size={16} />
                 <span>Manage Settings</span>
@@ -782,7 +762,7 @@ export default function PurchaseOrdersPage() {
                   // Handle cancel PO action
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left"
               >
                 <Ban size={16} />
                 <span>Cancel PO</span>
@@ -794,34 +774,34 @@ export default function PurchaseOrdersPage() {
 
       {/* Create PO Modal */}
       {isCreatePOModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Plus size={24} className="text-blue-500" />
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
+                    <Plus size={20} className="text-blue-500" />
                     Create New Purchase Order
                   </h2>
-                  <p className="text-gray-600 mt-1">Select an RFQ to create a purchase order</p>
+                  <p className="text-gray-600 text-sm mt-1">Select an RFQ to create a purchase order</p>
                 </div>
                 <button
                   onClick={closeCreatePOModal}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <X size={24} />
+                  <X size={20} />
                 </button>
               </div>
             </div>
 
-            <div className="p-8 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Select RFQ *</label>
                   <select
                     value={selectedRfqId}
                     onChange={(e) => handleRfqSelection(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Choose an RFQ...</option>
                     {rfqs.map((rfq) => (
@@ -833,7 +813,7 @@ export default function PurchaseOrdersPage() {
                 </div>
 
                 {selectedQuote && (
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-6 border border-blue-200">
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <FileText size={20} className="text-blue-500" />
                       Selected Quote Details
@@ -862,18 +842,18 @@ export default function PurchaseOrdersPage() {
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-8">
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">
                 <button
                   onClick={closeCreatePOModal}
-                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreatePO}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
                 >
-                  <ShoppingCart size={20} />
+                  <ShoppingCart size={16} />
                   Create PO
                 </button>
               </div>
@@ -884,14 +864,9 @@ export default function PurchaseOrdersPage() {
 
       {/* Notification */}
       {showNotification && (
-        <motion.div
-          initial={{ opacity: 0, y: 50, scale: 0.3 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.5 }}
-          className="fixed bottom-4 right-4 z-50"
-        >
+        <div className="fixed bottom-4 right-4 z-50">
           <div
-            className={`px-6 py-4 rounded-xl shadow-2xl border ${
+            className={`px-4 py-3 rounded-lg border max-w-md ${
               notificationType === "success"
                 ? "bg-green-50 text-green-800 border-green-200"
                 : "bg-red-50 text-red-800 border-red-200"
@@ -899,25 +874,25 @@ export default function PurchaseOrdersPage() {
           >
             <div className="flex items-center gap-3">
               {notificationType === "success" ? (
-                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               ) : (
-                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
-                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
               )}
               <span className="font-medium">{notificationMessage}</span>
               <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   )

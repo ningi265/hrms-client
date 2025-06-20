@@ -353,6 +353,35 @@ export default function DriverDashboard() {
 };
 
 useEffect(() => {
+  // Check if geolocation is supported
+  if ('geolocation' in navigator) {
+    // Request permission
+    navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+      if (result.state === 'prompt') {
+        // Show a custom prompt explaining why we need location
+        const shouldRequest = window.confirm(
+          'For accurate fleet tracking, we need your location permission. ' +
+          'This will help us provide better service and accurate tracking. ' +
+          'Allow location access?'
+        );
+        
+        if (shouldRequest) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              console.log('Location access granted:', position);
+              // You can optionally send this to your backend
+            },
+            (error) => {
+              console.error('Location access denied:', error);
+            }
+          );
+        }
+      }
+    });
+  }
+}, []);
+
+useEffect(() => {
     const section = searchParams.get('section') || 'vendor-dash';
     setActiveSection(section);
   }, [searchParams]);

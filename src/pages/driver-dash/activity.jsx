@@ -28,6 +28,8 @@ import {
   Phone,
   Calendar
 } from 'lucide-react';
+import { useAuth } from '../../authcontext/authcontext';
+
 
 // API configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
@@ -114,6 +116,7 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
   const mapInstance = useRef(null);
   const markersRef = useRef([]);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
+  const { user } = useAuth();
 
   // Load Google Maps API
   useEffect(() => {
@@ -195,6 +198,55 @@ const FleetTrackingMap = ({ drivers, driverStats, onDriverSelect, isLoading }) =
       }
     };
   }, [isMapLoaded]);
+
+
+  useEffect(() => {
+  if (!isMapLoaded) return;
+
+  // Request user's location
+  const requestUserLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          console.log('User location obtained:', position.coords);
+          // You can use this location to center the map or send to backend
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: new Date(position.timestamp)
+          };
+          
+          // Update map center to user's location
+          if (mapInstance.current) {
+            mapInstance.current.setCenter({
+              lat: userLocation.lat,
+              lng: userLocation.lng
+            });
+            mapInstance.current.setZoom(12); // Zoom in closer
+          }
+        },
+        (error) => {
+          console.error('Error getting user location:', error);
+          // Fallback to Malawi if location access is denied
+          if (mapInstance.current) {
+            mapInstance.current.setCenter({ lat: -13.2543, lng: 34.3015 });
+            mapInstance.current.setZoom(7);
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser.');
+    }
+  };
+
+  requestUserLocation();
+}, [isMapLoaded]);
 
   // Update driver markers with real data
   useEffect(() => {
@@ -422,6 +474,7 @@ const DriverDashboard = () => {
   const socketRef = useRef(null);
   const locationPollRef = useRef(null);
   const driverRefreshRef = useRef(null);
+    const { user } = useAuth();
 
   // Initialize WebSocket connection
   useEffect(() => {
@@ -736,6 +789,38 @@ const DriverDashboard = () => {
             <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
             {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </button>
+         <button 
+  className="w-8 h-8 bg-white hover:bg-gray-50 rounded-lg shadow-md flex items-center justify-center text-gray-600 border border-gray-200"
+  onClick={async () => {
+    if (navigator.geolocation && user?._id) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const response = await fleetAPI.updateDriverLocation(
+              user._id, // Use actual user ID
+              {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                source: 'gps'
+              }
+            );
+            console.log('Location updated:', response);
+          } catch (error) {
+            console.error('Error updating location:', error);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+  }}
+  title="Update My Location"
+>
+  <MapPin size={14} />
+</button>
         </div>
 
         {/* Compact Stats Grid */}

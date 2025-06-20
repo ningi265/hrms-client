@@ -35,14 +35,227 @@ import {
   Building,
   Calendar,
   Target,
-  Sparkles,
   TrendingUp,
   Package,
   MessageSquare,
 } from "lucide-react"
-import { motion } from "framer-motion";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+// Custom Components matching vehicle-management.jsx style
+const LoadingSpinner = ({ size = "md" }) => {
+  const sizeClasses = {
+    sm: "w-4 h-4",
+    md: "w-6 h-6",
+    lg: "w-8 h-8"
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-gray-300 border-t-blue-600`}></div>
+  );
+};
+
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "" }) => {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={20} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            <TrendingUp size={14} className={trend > 0 ? 'text-emerald-500' : 'text-red-500'} />
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="text-2xl font-bold text-gray-900 mb-1">
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+const StatusBadge = ({ status }) => {
+  const getColors = (status) => {
+    switch (status) {
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "in-progress": return "bg-blue-100 text-blue-800";
+      case "completed": return "bg-green-100 text-green-800";
+      default: return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getIcon = (status) => {
+    switch (status) {
+      case "pending": return Clock;
+      case "in-progress": return Activity;
+      case "completed": return CheckCircle;
+      default: return Clock;
+    }
+  };
+
+  const Icon = getIcon(status);
+
+  return (
+    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getColors(status)}`}>
+      <Icon size={14} className="mr-1" />
+      {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+    </span>
+  );
+};
+
+const PriorityBadge = ({ priority }) => {
+  const colors = {
+    high: "bg-red-100 text-red-800",
+    medium: "bg-amber-100 text-amber-800",
+    low: "bg-green-100 text-green-800"
+  };
+
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[priority] || 'bg-gray-100 text-gray-800'}`}>
+      {priority}
+    </span>
+  );
+};
+
+const Alert = ({ type = "info", title, children, onClose }) => {
+  const typeClasses = {
+    info: "bg-blue-50 border-blue-200 text-blue-800",
+    success: "bg-green-50 border-green-200 text-green-800",
+    warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+    error: "bg-red-50 border-red-200 text-red-800"
+  };
+
+  const iconClasses = {
+    info: "text-blue-500",
+    success: "text-green-500",
+    warning: "text-yellow-500",
+    error: "text-red-500"
+  };
+
+  const icons = {
+    info: Info,
+    success: CheckCircle,
+    warning: AlertCircle,
+    error: AlertCircle
+  };
+
+  const Icon = icons[type];
+
+  return (
+    <div className={`p-4 rounded-lg border ${typeClasses[type]} mb-4`}>
+      <div className="flex items-start gap-3">
+        <Icon className={`w-5 h-5 mt-0.5 ${iconClasses[type]}`} />
+        <div className="flex-1">
+          {title && <h4 className="font-medium mb-1">{title}</h4>}
+          <div className="text-sm">{children}</div>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={16} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
+  if (!isOpen) return null;
+
+  const sizeClasses = {
+    sm: "max-w-md",
+    md: "max-w-2xl",
+    lg: "max-w-4xl",
+    xl: "max-w-6xl"
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className={`bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden`}>
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="overflow-y-auto max-h-[calc(90vh-4rem)]">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const RequestCard = ({ request, isSelected, onClick }) => {
+  return (
+    <div 
+      onClick={onClick}
+      className={`bg-white rounded-lg border p-4 cursor-pointer transition-all hover:shadow-md ${
+        isSelected ? 'border-blue-500 shadow-md' : 'border-gray-200'
+      }`}
+    >
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h3 className="font-semibold text-gray-900">{request.employeeName}</h3>
+          <p className="text-sm text-gray-500">{request.id}</p>
+        </div>
+        <PriorityBadge priority={request.priority} />
+      </div>
+      
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center gap-2 text-gray-700">
+          <Globe size={16} className="text-gray-400" />
+          <span className="text-sm">{request.city}, {request.country}</span>
+        </div>
+        <div className="flex items-center gap-2 text-gray-700">
+          <CalendarDays size={16} className="text-gray-400" />
+          <span className="text-sm">
+            {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          {request.requiresDriver && (
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Truck size={16} className="text-blue-600" />
+            </div>
+          )}
+          {request.requiresFlight && (
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Plane size={16} className="text-purple-600" />
+            </div>
+          )}
+        </div>
+        <span className="text-xs text-gray-500">
+          {format(request.submittedAt, "MMM d, yyyy")}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export default function FleetCoordinator() {
   const navigate = useNavigate()
@@ -474,51 +687,6 @@ export default function FleetCoordinator() {
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "pending":
-        return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-200">
-            <Clock size={14} className="mr-1" />
-            Pending
-          </span>
-        )
-      case "in-progress":
-        return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200">
-            <Activity size={14} className="mr-1" />
-            In Progress
-          </span>
-        )
-      case "completed":
-        return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-700 border border-green-200">
-            <CheckCircle size={14} className="mr-1" />
-            Completed
-          </span>
-        )
-      default:
-        return (
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-50 text-gray-700 border border-gray-200">
-            {status}
-          </span>
-        )
-    }
-  }
-
-  const getPriorityBadge = (priority) => {
-    switch (priority) {
-      case "high":
-        return <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">High</span>
-      case "medium":
-        return <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">Medium</span>
-      case "low":
-        return <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">Low</span>
-      default:
-        return null
-    }
-  }
-
   const getTotalRequests = () => filteredRequests.length
   const getPendingRequests = () => filteredRequests.filter(req => (!req.fleetNotification || !req.fleetNotification.sent) && req.requiresDriver).length
   const getCompletedRequests = () => filteredRequests.filter(req => req.fleetNotification && req.fleetNotification.sent).length
@@ -526,161 +694,105 @@ export default function FleetCoordinator() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <DotLottieReact
-      src="loading.lottie"
-      loop
-      autoplay
-    />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Fleet Management</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch the latest travel requests...
-          </p>
-        </motion.div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex justify-center items-center min-h-96">
+          <div className="text-center">
+            <LoadingSpinner size="lg" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 mt-4">Loading Fleet Management</h2>
+            <p className="text-gray-600">
+              Please wait while we fetch the latest travel requests...
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
-                  <Truck size={32} />
-                </div>
-                Fleet Coordinator & Air Ticket Booking
-              </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Manage driver assignments and flight bookings for travel requests
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Truck className="w-6 h-6 text-blue-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Fleet Coordinator & Air Ticket Booking</h1>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
-                <Bell size={20} />
-              </button>
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
-                <RefreshCw size={20} />
-              </button>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Activity className="w-4 h-4 text-green-500" />
+                <span>Fleet management active</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4 text-blue-500" />
+                <span>{getPendingRequests()} pending requests</span>
+              </div>
             </div>
           </div>
-
-          {/* Enhanced Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <FileText size={24} className="text-white" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getTotalRequests()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Requests</p>
-                <p className="text-2xl font-bold text-gray-900">{getTotalRequests()}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                  <Clock size={24} className="text-white" />
-                </div>
-                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getPendingRequests()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Pending Requests</p>
-                <p className="text-2xl font-bold text-gray-900">{getPendingRequests()}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <CheckCircle size={24} className="text-white" />
-                </div>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getCompletedRequests()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">{getCompletedRequests()}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-                  <Car size={24} className="text-white" />
-                </div>
-                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getActiveDrivers()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Active Drivers</p>
-                <p className="text-2xl font-bold text-gray-900">{getActiveDrivers()}</p>
-              </div>
-            </motion.div>
+          
+          <div className="flex items-center space-x-3">
+            <button className="p-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
+              <Bell size={20} />
+            </button>
+            <button className="p-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
+              <RefreshCw size={20} />
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-        >
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard 
+            title="Total Requests" 
+            value={getTotalRequests()}
+            icon={FileText} 
+            color="blue"
+          />
+          <MetricCard 
+            title="Pending Requests" 
+            value={getPendingRequests()}
+            icon={Clock} 
+            color="orange"
+          />
+          <MetricCard 
+            title="Completed" 
+            value={getCompletedRequests()}
+            icon={CheckCircle} 
+            color="green"
+          />
+          <MetricCard 
+            title="Active Drivers" 
+            value={getActiveDrivers()}
+            icon={Car} 
+            color="purple"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Travel Requests */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Search and Filter */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="relative mb-4">
-                <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search requests..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               
               {/* Tabs */}
-              <div className="flex space-x-2 mb-4">
+              <div className="flex space-x-2">
                 <button
                   onClick={() => setActiveTab("pending")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     activeTab === "pending"
-                      ? "bg-blue-500 text-white shadow-lg"
+                      ? "bg-blue-500 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -688,9 +800,9 @@ export default function FleetCoordinator() {
                 </button>
                 <button
                   onClick={() => setActiveTab("completed")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     activeTab === "completed"
-                      ? "bg-blue-500 text-white shadow-lg"
+                      ? "bg-blue-500 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -699,81 +811,30 @@ export default function FleetCoordinator() {
               </div>
             </div>
 
-            {/* Scrollable Requests List */}
-            <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+            {/* Requests List */}
+            <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
               {activeTab === "pending" && (
                 <>
                   {filteredRequests.filter(
                     (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
                   ).length === 0 ? (
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8 shadow-xl text-center">
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                          <FileText size={32} className="text-gray-500" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending requests found</h3>
-                          <p className="text-gray-600">All travel requests have been processed</p>
-                        </div>
-                      </div>
+                    <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                      <FileText size={32} className="mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending requests found</h3>
+                      <p className="text-gray-600">All travel requests have been processed</p>
                     </div>
                   ) : (
                     filteredRequests
                       .filter(
                         (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
                       )
-                      .map((request, index) => (
-                        <motion.div
+                      .map((request) => (
+                        <RequestCard
                           key={request.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          request={request}
+                          isSelected={selectedRequest?.id === request.id}
                           onClick={() => handleSelectRequest(request)}
-                          className={`bg-white/80 backdrop-blur-sm rounded-2xl border p-6 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] ${
-                            selectedRequest?.id === request.id
-                              ? "border-blue-500 bg-blue-50/50"
-                              : "border-gray-200/50 hover:border-blue-300"
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="font-semibold text-gray-900 text-lg">{request.employeeName}</h3>
-                              <p className="text-gray-600 text-sm">{request.id}</p>
-                            </div>
-                            {getPriorityBadge(request.priority)}
-                          </div>
-                          
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2 text-gray-700">
-                              <Globe size={16} className="text-gray-400" />
-                              <span className="text-sm">{request.city}, {request.country}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-700">
-                              <CalendarDays size={16} className="text-gray-400" />
-                              <span className="text-sm">
-                                {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <div className="flex gap-2">
-                              {request.requiresDriver && (
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                  <Truck size={16} className="text-blue-600" />
-                                </div>
-                              )}
-                              {request.requiresFlight && (
-                                <div className="p-2 bg-purple-100 rounded-lg">
-                                  <Plane size={16} className="text-purple-600" />
-                                </div>
-                              )}
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              {format(request.submittedAt, "MMM d, yyyy")}
-                            </span>
-                          </div>
-                        </motion.div>
+                        />
                       ))
                   )}
                 </>
@@ -782,75 +843,21 @@ export default function FleetCoordinator() {
               {activeTab === "completed" && (
                 <>
                   {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent).length === 0 ? (
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8 shadow-xl text-center">
-                      <div className="flex flex-col items-center space-y-4">
-                        <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                          <CheckCircle size={32} className="text-gray-500" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">No completed requests found</h3>
-                          <p className="text-gray-600">Completed requests will appear here</p>
-                        </div>
-                      </div>
+                    <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                      <CheckCircle size={32} className="mx-auto text-gray-400 mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No completed requests found</h3>
+                      <p className="text-gray-600">Completed requests will appear here</p>
                     </div>
                   ) : (
                     filteredRequests
                       .filter((request) => request.fleetNotification && request.fleetNotification.sent)
-                      .map((request, index) => (
-                        <motion.div
+                      .map((request) => (
+                        <RequestCard
                           key={request.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.05 }}
+                          request={request}
+                          isSelected={selectedRequest?.id === request.id}
                           onClick={() => handleSelectRequest(request)}
-                          className={`bg-white/80 backdrop-blur-sm rounded-2xl border p-6 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] ${
-                            selectedRequest?.id === request.id
-                              ? "border-green-500 bg-green-50/50"
-                              : "border-gray-200/50 hover:border-green-300"
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="font-semibold text-gray-900 text-lg">{request.employeeName}</h3>
-                              <p className="text-gray-600 text-sm">{request.id}</p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <CheckCircle size={20} className="text-green-500" />
-                              {getPriorityBadge(request.priority)}
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-2 mb-4">
-                            <div className="flex items-center gap-2 text-gray-700">
-                              <Globe size={16} className="text-gray-400" />
-                              <span className="text-sm">{request.city}, {request.country}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-700">
-                              <CalendarDays size={16} className="text-gray-400" />
-                              <span className="text-sm">
-                                {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between items-center">
-                            <div className="flex gap-2">
-                              {request.requiresDriver && (
-                                <div className="p-2 bg-blue-100 rounded-lg">
-                                  <Truck size={16} className="text-blue-600" />
-                                </div>
-                              )}
-                              {request.requiresFlight && (
-                                <div className="p-2 bg-purple-100 rounded-lg">
-                                  <Plane size={16} className="text-purple-600" />
-                                </div>
-                              )}
-                            </div>
-                            <span className="text-xs text-gray-500">
-                              Completed {format(new Date(request.fleetNotification.sentAt), "MMM d")}
-                            </span>
-                          </div>
-                        </motion.div>
+                        />
                       ))
                   )}
                 </>
@@ -859,30 +866,25 @@ export default function FleetCoordinator() {
           </div>
 
           {/* Right Column - Request Details and Actions */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {selectedRequest ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden"
-              >
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-gray-50/50 to-blue-50/30 border-b border-gray-100/50 p-6">
+                <div className="bg-gray-50 border-b border-gray-100 p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
-                        <FileText size={24} />
+                      <div className="p-3 bg-blue-100 rounded-lg">
+                        <FileText className="w-6 h-6 text-blue-600" />
                       </div>
                       <div>
                         <div className="flex items-center gap-3">
                           <h2 className="text-xl font-bold text-gray-900">{selectedRequest.employeeName}</h2>
-                          {getStatusBadge(selectedRequest.status)}
+                          <StatusBadge status={selectedRequest.status} />
                         </div>
                         <p className="text-gray-600 mt-1">{selectedRequest.id} • {selectedRequest.department}</p>
                       </div>
                     </div>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                       <MoreHorizontal size={20} />
                     </button>
                   </div>
@@ -958,55 +960,31 @@ export default function FleetCoordinator() {
 
                   {/* Status Alerts */}
                   {selectedRequest.status === "pending" && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                      <div className="flex items-center gap-3">
-                        <AlertCircle className="text-amber-600" size={20} />
-                        <div>
-                          <h4 className="font-semibold text-amber-800">Action Required</h4>
-                          <p className="text-amber-700 text-sm mt-1">
-                            This request requires your attention. Please assign a driver (if needed) and initiate the flight booking process.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <Alert type="warning" title="Action Required">
+                      This request requires your attention. Please assign a driver (if needed) and initiate the flight booking process.
+                    </Alert>
                   )}
 
                   {selectedRequest.status === "in-progress" && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                      <div className="flex items-center gap-3">
-                        <Info className="text-blue-600" size={20} />
-                        <div>
-                          <h4 className="font-semibold text-blue-800">In Progress</h4>
-                          <p className="text-blue-700 text-sm mt-1">
-                            This request is being processed. Complete the remaining steps to finalize the travel arrangements.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <Alert type="info" title="In Progress">
+                      This request is being processed. Complete the remaining steps to finalize the travel arrangements.
+                    </Alert>
                   )}
 
                   {selectedRequest.status === "completed" && (
-                    <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="text-green-600" size={20} />
-                        <div>
-                          <h4 className="font-semibold text-green-800">Completed</h4>
-                          <p className="text-green-700 text-sm mt-1">
-                            All travel arrangements have been completed for this request.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <Alert type="success" title="Completed">
+                      All travel arrangements have been completed for this request.
+                    </Alert>
                   )}
                 </div>
 
                 {/* Action Footer */}
-                <div className="bg-gray-50/50 border-t border-gray-100 p-6 flex justify-between items-center">
+                <div className="bg-gray-50 border-t border-gray-100 p-6 flex justify-between items-center">
                   {selectedRequest.status === "pending" && (
                     <>
                       <button
                         onClick={() => navigate("/travel-dashboard")}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                       >
                         Back to Dashboard
                       </button>
@@ -1014,7 +992,7 @@ export default function FleetCoordinator() {
                         {selectedRequest.requiresDriver && (
                           <button
                             onClick={() => setShowDrivers(true)}
-                            className="px-4 py-2 bg-blue-100 text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-200 transition-colors duration-200 flex items-center gap-2"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-200"
                           >
                             <Users size={16} />
                             Assign Driver
@@ -1023,11 +1001,11 @@ export default function FleetCoordinator() {
                         <button
                           onClick={handleProcessRequest}
                           disabled={isProcessing}
-                          className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
+                          className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                         >
                           {isProcessing ? (
                             <>
-                              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                              <LoadingSpinner size="sm" />
                               Processing...
                             </>
                           ) : (
@@ -1045,7 +1023,7 @@ export default function FleetCoordinator() {
                     <>
                       <button
                         onClick={() => navigate("/travel-dashboard")}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                       >
                         Back to Dashboard
                       </button>
@@ -1053,7 +1031,7 @@ export default function FleetCoordinator() {
                         {selectedRequest.requiresFlight && !showTicketBooking && !showNotification && (
                           <button
                             onClick={() => setShowTicketBooking(true)}
-                            className="px-4 py-2 bg-purple-100 text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-200 transition-colors duration-200 flex items-center gap-2"
+                            className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-200"
                           >
                             <Plane size={16} />
                             Book Flight
@@ -1062,7 +1040,7 @@ export default function FleetCoordinator() {
                         {!showTicketBooking && !showNotification && (
                           <button
                             onClick={() => setShowNotification(true)}
-                            className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center gap-2"
+                            className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                           >
                             <Send size={16} />
                             Send Notifications
@@ -1076,13 +1054,13 @@ export default function FleetCoordinator() {
                     <>
                       <button
                         onClick={() => navigate("/travel-dashboard")}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                       >
                         Back to Dashboard
                       </button>
                       <button
                         onClick={generateAndDownloadItinerary}
-                        className="px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-xl hover:bg-green-200 transition-colors duration-200 flex items-center gap-2"
+                        className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-lg hover:bg-green-200"
                       >
                         <Download size={16} />
                         Download Itinerary
@@ -1090,503 +1068,431 @@ export default function FleetCoordinator() {
                     </>
                   )}
                 </div>
-              </motion.div>
+              </div>
             ) : (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-12 text-center">
-                <div className="flex flex-col items-center space-y-6">
-                  <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                    <FileText size={40} className="text-gray-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Request Selected</h3>
-                    <p className="text-gray-600 max-w-md mx-auto">
-                      Select a travel request from the list to view details and manage fleet coordination
-                    </p>
-                  </div>
-                </div>
+              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                <FileText size={40} className="mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Request Selected</h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  Select a travel request from the list to view details and manage fleet coordination
+                </p>
               </div>
             )}
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </main>
 
       {/* Driver Assignment Modal */}
-      {showDrivers && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-          >
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Users size={24} className="text-blue-500" />
-                    Assign Driver
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    Select a driver for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDrivers(false)}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+      <Modal
+        isOpen={showDrivers}
+        onClose={() => setShowDrivers(false)}
+        title="Assign Driver"
+        size="lg"
+      >
+        <div className="p-6">
+          <p className="text-gray-600 mb-4">
+            Select a driver for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
+          </p>
+          
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search drivers by name, location, or language..."
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="max-h-96 overflow-y-auto space-y-3">
+            {drivers.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">No drivers available</p>
+              </div>
+            ) : (
+              drivers.map((driver) => (
+                <div
+                  key={driver._id}
+                  onClick={() => handleSelectDriver(driver)}
+                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                    selectedDriver?._id === driver._id
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                  }`}
                 >
-                  <X size={24} />
-                </button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
+                        {driver.firstName?.charAt(0) || 'D'}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{driver.firstName}</h3>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <MapPin size={14} />
+                          <span>{driver.location || "Location not specified"}</span>
+                        </div>
+                        {driver.phone && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Phone size={14} />
+                            <span>{driver.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {driver.rating && (
+                        <div className="flex items-center gap-1 mb-1">
+                          <Star size={16} className="text-yellow-500 fill-current" />
+                          <span className="font-semibold">{driver.rating}</span>
+                        </div>
+                      )}
+                      {driver.experience && (
+                        <p className="text-sm text-gray-600">{driver.experience}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex justify-between mt-6 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowDrivers(false)}
+              className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleAssignDriver}
+              disabled={!selectedDriver || isProcessing}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  Assigning...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Confirm Driver
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Flight Booking Modal */}
+      <Modal
+        isOpen={showTicketBooking}
+        onClose={() => setShowTicketBooking(false)}
+        title="Air Ticket Booking"
+        size="lg"
+      >
+        <div className="p-6">
+          <p className="text-gray-600 mb-6">
+            Book flight for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}, {selectedRequest?.country}
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Airline</label>
+                <select
+                  value={bookingDetails.airline}
+                  onChange={(e) => setBookingDetails({ ...bookingDetails, airline: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                >
+                  <option value="" disabled>Select Airline</option>
+                  <option value="japan-airlines">Japan Airlines</option>
+                  <option value="ana">All Nippon Airways</option>
+                  <option value="delta">Delta Airlines</option>
+                  <option value="united">United Airlines</option>
+                  <option value="emirates">Emirates</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Flight Number</label>
+                <input
+                  type="text"
+                  placeholder="e.g., JL123"
+                  value={bookingDetails.flightNumber}
+                  onChange={(e) => setBookingDetails({ ...bookingDetails, flightNumber: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Ticket Class</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {["economy", "business", "first"].map((classType) => (
+                    <label
+                      key={classType}
+                      className={`relative flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors ${
+                        bookingDetails.ticketClass === classType
+                          ? "border-purple-500 bg-purple-50"
+                          : "border-gray-300 hover:border-purple-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="ticketClass"
+                        value={classType}
+                        checked={bookingDetails.ticketClass === classType}
+                        onChange={(e) => setBookingDetails({ ...bookingDetails, ticketClass: e.target.value })}
+                        className="sr-only"
+                      />
+                      <span className="font-medium capitalize">{classType}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
-            
-            <div className="p-6">
-              <div className="mb-6">
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Departure Time</label>
+                <input
+                  type="datetime-local"
+                  value={bookingDetails.departureTime}
+                  onChange={(e) => setBookingDetails({ ...bookingDetails, departureTime: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Arrival Time</label>
+                <input
+                  type="datetime-local"
+                  value={bookingDetails.arrivalTime}
+                  onChange={(e) => setBookingDetails({ ...bookingDetails, arrivalTime: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ticket Price</label>
                 <div className="relative">
-                  <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                   <input
-                    type="text"
-                    placeholder="Search drivers by name, location, or language..."
-                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    type="number"
+                    placeholder="0.00"
+                    value={bookingDetails.price}
+                    onChange={(e) => setBookingDetails({ ...bookingDetails, price: e.target.value })}
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                   />
                 </div>
               </div>
-
-              <div className="max-h-96 overflow-y-auto space-y-4">
-                {drivers.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No drivers available</p>
-                  </div>
-                ) : (
-                  drivers.map((driver) => (
-                    <motion.div
-                      key={driver._id}
-                      whileHover={{ scale: 1.02 }}
-                      onClick={() => handleSelectDriver(driver)}
-                      className={`p-4 border rounded-xl cursor-pointer transition-all duration-200 ${
-                        selectedDriver?._id === driver._id
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                            {driver.firstName?.charAt(0) || 'D'}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900">{driver.firstName}</h3>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <MapPin size={14} />
-                              <span>{driver.location || "Location not specified"}</span>
-                            </div>
-                            {driver.phone && (
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <Phone size={14} />
-                                <span>{driver.phone}</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          {driver.rating && (
-                            <div className="flex items-center gap-1 mb-1">
-                              <Star size={16} className="text-yellow-500 fill-current" />
-                              <span className="font-semibold">{driver.rating}</span>
-                            </div>
-                          )}
-                          {driver.experience && (
-                            <p className="text-sm text-gray-600">{driver.experience}</p>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
             </div>
+          </div>
 
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-              <button
-                onClick={() => setShowDrivers(false)}
-                className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAssignDriver}
-                disabled={!selectedDriver || isProcessing}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Assigning...
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    Confirm Driver
-                  </>
-                )}
-              </button>
-            </div>
-          </motion.div>
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
+            <textarea
+              placeholder="Any special requirements or notes for the booking"
+              rows={4}
+              value={bookingDetails.notes}
+              onChange={(e) => setBookingDetails({ ...bookingDetails, notes: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            />
+          </div>
+
+          <div className="flex justify-between mt-6 pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowTicketBooking(false)}
+              className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleBookTicket}
+              disabled={
+                isBookingTicket ||
+                !bookingDetails.airline ||
+                !bookingDetails.flightNumber ||
+                !bookingDetails.departureTime
+              }
+              className="flex items-center gap-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+            >
+              {isBookingTicket ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  Booking Ticket...
+                </>
+              ) : (
+                <>
+                  <Check size={16} />
+                  Confirm Booking
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      )}
-
-      {/* Flight Booking Modal */}
-      {showTicketBooking && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-          >
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Plane size={24} className="text-purple-500" />
-                    Air Ticket Booking
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    Book flight for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}, {selectedRequest?.country}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowTicketBooking(false)}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Airline</label>
-                    <select
-                      value={bookingDetails.airline}
-                      onChange={(e) => setBookingDetails({ ...bookingDetails, airline: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    >
-                      <option value="" disabled>Select Airline</option>
-                      <option value="japan-airlines">Japan Airlines</option>
-                      <option value="ana">All Nippon Airways</option>
-                      <option value="delta">Delta Airlines</option>
-                      <option value="united">United Airlines</option>
-                      <option value="emirates">Emirates</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Flight Number</label>
-                    <input
-                      type="text"
-                      placeholder="e.g., JL123"
-                      value={bookingDetails.flightNumber}
-                      onChange={(e) => setBookingDetails({ ...bookingDetails, flightNumber: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">Ticket Class</label>
-                    <div className="grid grid-cols-3 gap-3">
-                      {["economy", "business", "first"].map((classType) => (
-                        <label
-                          key={classType}
-                          className={`relative flex items-center justify-center p-3 border rounded-xl cursor-pointer transition-all duration-200 ${
-                            bookingDetails.ticketClass === classType
-                              ? "border-purple-500 bg-purple-50"
-                              : "border-gray-300 hover:border-purple-300"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="ticketClass"
-                            value={classType}
-                            checked={bookingDetails.ticketClass === classType}
-                            onChange={(e) => setBookingDetails({ ...bookingDetails, ticketClass: e.target.value })}
-                            className="sr-only"
-                          />
-                          <span className="font-medium capitalize">{classType}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Departure Time</label>
-                    <input
-                      type="datetime-local"
-                      value={bookingDetails.departureTime}
-                      onChange={(e) => setBookingDetails({ ...bookingDetails, departureTime: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Arrival Time</label>
-                    <input
-                      type="datetime-local"
-                      value={bookingDetails.arrivalTime}
-                      onChange={(e) => setBookingDetails({ ...bookingDetails, arrivalTime: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Ticket Price</label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={bookingDetails.price}
-                        onChange={(e) => setBookingDetails({ ...bookingDetails, price: e.target.value })}
-                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
-                <textarea
-                  placeholder="Any special requirements or notes for the booking"
-                  rows={4}
-                  value={bookingDetails.notes}
-                  onChange={(e) => setBookingDetails({ ...bookingDetails, notes: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-              <button
-                onClick={() => setShowTicketBooking(false)}
-                className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBookTicket}
-                disabled={
-                  isBookingTicket ||
-                  !bookingDetails.airline ||
-                  !bookingDetails.flightNumber ||
-                  !bookingDetails.departureTime
-                }
-                className="px-6 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isBookingTicket ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Booking Ticket...
-                  </>
-                ) : (
-                  <>
-                    <Check size={16} />
-                    Confirm Booking
-                  </>
-                )}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
+      </Modal>
 
       {/* Notification Modal */}
-      {showNotification && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-          >
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Send size={24} className="text-green-500" />
-                    Send Notifications
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    Notify relevant parties about the travel arrangements
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowNotification(false)}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Recipients</label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={notificationDetails.recipients.includes("employee")}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setNotificationDetails({
-                            ...notificationDetails,
-                            recipients: [...notificationDetails.recipients, "employee"],
-                          })
-                        } else {
-                          setNotificationDetails({
-                            ...notificationDetails,
-                            recipients: notificationDetails.recipients.filter((r) => r !== "employee"),
-                          })
-                        }
-                      }}
-                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <span className="text-gray-700">Employee ({selectedRequest?.employee.email})</span>
-                  </label>
-                  
-                  {selectedRequest?.assignedDriver && (
-                    <label className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={notificationDetails.recipients.includes("driver")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNotificationDetails({
-                              ...notificationDetails,
-                              recipients: [...notificationDetails.recipients, "driver"],
-                            })
-                          } else {
-                            setNotificationDetails({
-                              ...notificationDetails,
-                              recipients: notificationDetails.recipients.filter((r) => r !== "driver"),
-                            })
-                          }
-                        }}
-                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                      />
-                      <span className="text-gray-700">Driver ({selectedRequest.assignedDriver.email})</span>
-                    </label>
-                  )}
-                  
-                  <label className="flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      checked={notificationDetails.recipients.includes("manager")}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setNotificationDetails({
-                            ...notificationDetails,
-                            recipients: [...notificationDetails.recipients, "manager"],
-                          })
-                        } else {
-                          setNotificationDetails({
-                            ...notificationDetails,
-                            recipients: notificationDetails.recipients.filter((r) => r !== "manager"),
-                          })
-                        }
-                      }}
-                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                    />
-                    <span className="text-gray-700">Department Manager</span>
-                  </label>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                <input
-                  type="text"
-                  placeholder="Notification subject"
-                  value={notificationDetails.subject}
-                  onChange={(e) => setNotificationDetails({ ...notificationDetails, subject: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                <textarea
-                  placeholder="Enter notification message"
-                  rows={6}
-                  value={notificationDetails.message}
-                  onChange={(e) => setNotificationDetails({ ...notificationDetails, message: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                />
-              </div>
-
+      <Modal
+        isOpen={showNotification}
+        onClose={() => setShowNotification(false)}
+        title="Send Notifications"
+        size="lg"
+      >
+        <div className="p-6 space-y-6">
+          <p className="text-gray-600">
+            Notify relevant parties about the travel arrangements
+          </p>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">Recipients</label>
+            <div className="space-y-2">
               <label className="flex items-center gap-3">
                 <input
                   type="checkbox"
-                  checked={notificationDetails.includeItinerary}
-                  onChange={(e) =>
-                    setNotificationDetails({
-                      ...notificationDetails,
-                      includeItinerary: e.target.checked,
-                    })
-                  }
+                  checked={notificationDetails.recipients.includes("employee")}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setNotificationDetails({
+                        ...notificationDetails,
+                        recipients: [...notificationDetails.recipients, "employee"],
+                      })
+                    } else {
+                      setNotificationDetails({
+                        ...notificationDetails,
+                        recipients: notificationDetails.recipients.filter((r) => r !== "employee"),
+                      })
+                    }
+                  }}
                   className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                 />
-                <span className="text-gray-700">Include full travel itinerary</span>
+                <span className="text-gray-700">Employee ({selectedRequest?.employee.email})</span>
+              </label>
+              
+              {selectedRequest?.assignedDriver && (
+                <label className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={notificationDetails.recipients.includes("driver")}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setNotificationDetails({
+                          ...notificationDetails,
+                          recipients: [...notificationDetails.recipients, "driver"],
+                        })
+                      } else {
+                        setNotificationDetails({
+                          ...notificationDetails,
+                          recipients: notificationDetails.recipients.filter((r) => r !== "driver"),
+                        })
+                      }
+                    }}
+                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                  />
+                  <span className="text-gray-700">Driver ({selectedRequest.assignedDriver.email})</span>
+                </label>
+              )}
+              
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={notificationDetails.recipients.includes("manager")}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setNotificationDetails({
+                        ...notificationDetails,
+                        recipients: [...notificationDetails.recipients, "manager"],
+                      })
+                    } else {
+                      setNotificationDetails({
+                        ...notificationDetails,
+                        recipients: notificationDetails.recipients.filter((r) => r !== "manager"),
+                      })
+                    }
+                  }}
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="text-gray-700">Department Manager</span>
               </label>
             </div>
+          </div>
 
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-              <button
-                onClick={() => setShowNotification(false)}
-                className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSendNotifications}
-                disabled={
-                  isSendingNotification ||
-                  notificationDetails.recipients.length === 0 ||
-                  !notificationDetails.subject ||
-                  !notificationDetails.message
-                }
-                className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-              >
-                {isSendingNotification ? (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Send size={16} />
-                    Send Notifications
-                  </>
-                )}
-              </button>
-            </div>
-          </motion.div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+            <input
+              type="text"
+              placeholder="Notification subject"
+              value={notificationDetails.subject}
+              onChange={(e) => setNotificationDetails({ ...notificationDetails, subject: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+            <textarea
+              placeholder="Enter notification message"
+              rows={6}
+              value={notificationDetails.message}
+              onChange={(e) => setNotificationDetails({ ...notificationDetails, message: e.target.value })}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+          </div>
+
+          <label className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={notificationDetails.includeItinerary}
+              onChange={(e) =>
+                setNotificationDetails({
+                  ...notificationDetails,
+                  includeItinerary: e.target.checked,
+                })
+              }
+              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+            />
+            <span className="text-gray-700">Include full travel itinerary</span>
+          </label>
+
+          <div className="flex justify-between pt-4 border-t border-gray-100">
+            <button
+              onClick={() => setShowNotification(false)}
+              className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSendNotifications}
+              disabled={
+                isSendingNotification ||
+                notificationDetails.recipients.length === 0 ||
+                !notificationDetails.subject ||
+                !notificationDetails.message
+              }
+              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              {isSendingNotification ? (
+                <>
+                  <LoadingSpinner size="sm" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send size={16} />
+                  Send Notifications
+                </>
+              )}
+            </button>
+          </div>
         </div>
-      )}
+      </Modal>
 
       {/* Snackbar Notification */}
       {snackbarOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-6 right-6 z-50"
-        >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border max-w-md ${
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className={`px-6 py-4 rounded-lg shadow-lg border max-w-md ${
             snackbarSeverity === "success"
               ? "bg-green-50 border-green-200 text-green-800"
               : snackbarSeverity === "error"
@@ -1606,7 +1512,7 @@ export default function FleetCoordinator() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   )

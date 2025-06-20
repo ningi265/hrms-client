@@ -437,7 +437,7 @@ export default function EmployeesPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -460,7 +460,7 @@ export default function EmployeesPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
@@ -469,332 +469,302 @@ export default function EmployeesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
-                  <User size={32} />
-                </div>
-                Employee Management
-              </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Manage and organize your workforce efficiently
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={openAddEmployeeModal}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-              >
-                <Plus size={20} />
-                Add New Employee
-              </button>
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
-                <Bell size={20} />
-              </button>
+    <div className="min-h-screen bg-gray-50">
+      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
+            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Activity className="w-4 h-4 text-green-500" />
+                <span>Active monitoring</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span>Total employees: {totalEmployees}</span>
+              </div>
             </div>
           </div>
-
-          {/* Enhanced Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openAddEmployeeModal}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <Users size={24} className="text-white" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {totalEmployees}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Employees</p>
-                <p className="text-2xl font-bold text-gray-900">{totalEmployees}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <Activity size={24} className="text-white" />
-                </div>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {activeEmployees}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Active Employees</p>
-                <p className="text-2xl font-bold text-gray-900">{activeEmployees}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-                  <Briefcase size={24} className="text-white" />
-                </div>
-                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {totalDepartments}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Departments</p>
-                <p className="text-2xl font-bold text-gray-900">{totalDepartments}</p>
-                {departments.length > 0 && (
-                  <div className="mt-1 text-xs text-gray-500">
-                    {departments.map(dept => dept.departmentCode).join(", ")}
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                  <Clock size={24} className="text-white" />
-                </div>
-                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {avgTenure}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Avg Tenure (years)</p>
-                <p className="text-2xl font-bold text-gray-900">{avgTenure}</p>
-              </div>
-            </motion.div>
+              <Plus size={16} />
+              Add Employee
+            </button>
+            <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
+              <Bell size={20} />
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-8"
-        >
-          {/* Enhanced Filter Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search employees by name, department (name/code), position or skills..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
-                  />
-                </div>
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <Users size={20} className="text-blue-600" />
+              </div>
+              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                {totalEmployees}
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{totalEmployees}</div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Employees</div>
+          </div>
 
-                <div className="flex items-center space-x-3">
-                  <button className="px-4 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium flex items-center gap-2">
-                    <Filter size={18} />
-                    More Filters
-                  </button>
-                </div>
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <Activity size={20} className="text-green-600" />
+              </div>
+              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
+                {activeEmployees}
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{activeEmployees}</div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Employees</div>
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-purple-50 rounded-lg">
+                <Briefcase size={20} className="text-purple-600" />
+              </div>
+              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
+                {totalDepartments}
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{totalDepartments}</div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Departments</div>
+            {departments.length > 0 && (
+              <div className="mt-1 text-xs text-gray-400">
+                {departments.map(dept => dept.departmentCode).join(", ")}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <Clock size={20} className="text-orange-600" />
+              </div>
+              <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm font-medium">
+                {avgTenure}
+              </span>
+            </div>
+            <div className="text-2xl font-bold text-gray-900 mb-1">{avgTenure}</div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Avg Tenure (years)</div>
+          </div>
+        </div>
+
+        {/* Filter Section */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search employees by name, department, position or skills..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
               </div>
 
               <div className="flex items-center space-x-3">
-                <button className="px-4 py-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200 flex items-center gap-2">
-                  <Download size={16} />
-                  Export
-                </button>
-                <button className="p-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200">
-                  <RefreshCw size={18} />
+                <button className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2">
+                  <Filter size={18} />
+                  More Filters
                 </button>
               </div>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <button className="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-2">
+                <Download size={16} />
+                Export
+              </button>
+              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
+                <RefreshCw size={18} />
+              </button>
             </div>
           </div>
+        </div>
 
-          {/* Employees Content */}
-          {filteredEmployees.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-12 shadow-xl text-center">
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                  <User size={40} className="text-gray-500" />
+        {/* Employees Content */}
+        {filteredEmployees.length === 0 ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <div className="flex flex-col items-center space-y-6">
+              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                <User size={40} className="text-gray-500" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {searchTerm ? "No employees match your search" : "No employees found"}
+                </h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  {searchTerm 
+                    ? "Try adjusting your search criteria to find what you're looking for."
+                    : "Start by adding your first employee to begin building your team."
+                  }
+                </p>
+              </div>
+              <button
+                onClick={openAddEmployeeModal}
+                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Add First Employee
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            {/* Table Header */}
+            <div className="bg-gray-50 border-b border-gray-100 px-6 py-4">
+              <div className="grid grid-cols-6 gap-4 items-center font-semibold text-gray-700 text-sm">
+                <div className="flex items-center gap-2">
+                  <User size={16} />
+                  Employee Name
                 </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {searchTerm ? "No employees match your search" : "No employees found"}
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm 
-                      ? "Try adjusting your search criteria to find what you're looking for."
-                      : "Start by adding your first employee to begin building your team."
-                    }
-                  </p>
+                <div className="flex items-center gap-2">
+                  <Mail size={16} />
+                  Contact Info
                 </div>
-                <button
-                  onClick={openAddEmployeeModal}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-                >
-                  <Plus size={20} />
-                  Add First Employee
-                </button>
+                <div className="flex items-center gap-2">
+                  <Briefcase size={16} />
+                  Position
+                </div>
+                <div className="flex items-center gap-2">
+                  <Shield size={16} />
+                  Department
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar size={16} />
+                  Hire Date
+                </div>
+                <div className="text-center">Actions</div>
               </div>
             </div>
-          ) : (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gradient-to-r from-gray-50/50 to-blue-50/30 border-b border-gray-100/50 px-6 py-4">
-                <div className="grid grid-cols-6 gap-4 items-center font-semibold text-gray-700 text-sm">
-                  <div className="flex items-center gap-2">
-                    <User size={16} />
-                    Employee Name
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Mail size={16} />
-                    Contact Info
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Briefcase size={16} />
-                    Position
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Shield size={16} />
-                    Department
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} />
-                    Hire Date
-                  </div>
-                  <div className="text-center">Actions</div>
-                </div>
-              </div>
 
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100">
-                {filteredEmployees.map((employee, index) => {
-                  // Get employee ID - check multiple possible field names
-                  const employeeId = employee._id || employee.id || employee.employeeId;
-                  console.log("Processing employee:", employee.firstName, employee.lastName, "ID:", employeeId);
-                  
-                  return (
-                    <motion.div
-                      key={employeeId || index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
-                    >
-                      <div>
-                        <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                          {`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || "N/A"}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ID: {employeeId || "N/A"}
-                        </div>
+            {/* Table Body */}
+            <div className="divide-y divide-gray-100">
+              {filteredEmployees.map((employee, index) => {
+                // Get employee ID - check multiple possible field names
+                const employeeId = employee._id || employee.id || employee.employeeId;
+                console.log("Processing employee:", employee.firstName, employee.lastName, "ID:", employeeId);
+                
+                return (
+                  <motion.div
+                    key={employeeId || index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50 transition-colors"
+                  >
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        {`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || "N/A"}
                       </div>
-
-                      <div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                          <Mail size={14} />
-                          <span>{employee.email || "N/A"}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                          <Phone size={14} />
-                          <span>{employee.phoneNumber || employee.phone || "N/A"}</span>
-                        </div>
+                      <div className="text-sm text-gray-500">
+                        ID: {employeeId || "N/A"}
                       </div>
+                    </div>
 
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {employee.position || "N/A"}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ${employee.salary ? employee.salary.toLocaleString() : "N/A"}
-                        </div>
+                    <div>
+                      <div className="flex items-center gap-2 text-sm text-gray-700 mb-1">
+                        <Mail size={14} />
+                        <span>{employee.email || "N/A"}</span>
                       </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                        <Phone size={14} />
+                        <span>{employee.phoneNumber || employee.phone || "N/A"}</span>
+                      </div>
+                    </div>
 
-                      <div>
-                        {(() => {
-                          const employeeId = employee._id || employee.id || employee.employeeId;
-                          const employeeDepartment = findEmployeeDepartment(employeeId);
-                          
-                          return employeeDepartment ? (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                              {employeeDepartment.name} ({employeeDepartment.departmentCode})
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {employee.position || "N/A"}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        ${employee.salary ? employee.salary.toLocaleString() : "N/A"}
+                      </div>
+                    </div>
+
+                    <div>
+                      {(() => {
+                        const employeeId = employee._id || employee.id || employee.employeeId;
+                        const employeeDepartment = findEmployeeDepartment(employeeId);
+                        
+                        return employeeDepartment ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                            {employeeDepartment.name} ({employeeDepartment.departmentCode})
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                            No Department
+                          </span>
+                        );
+                      })()}
+                      {employee.skills && employee.skills.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {employee.skills.slice(0, 2).map((skill, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium"
+                            >
+                              {skill}
                             </span>
-                          ) : (
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                              No Department
+                          ))}
+                          {employee.skills.length > 2 && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                              +{employee.skills.length - 2}
                             </span>
-                          );
-                        })()}
-                        {employee.skills && employee.skills.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {employee.skills.slice(0, 2).map((skill, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))}
-                            {employee.skills.length > 2 && (
-                              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-                                +{employee.skills.length - 2}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
 
-                      <div>
-                        <div className="text-sm text-gray-700">
-                          {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "N/A"}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {employee.hireDate 
-                            ? `${Math.floor((new Date() - new Date(employee.hireDate)) / (1000 * 60 * 60 * 24 * 365))} yrs` 
-                            : "N/A"}
-                        </div>
+                    <div>
+                      <div className="text-sm text-gray-700">
+                        {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "N/A"}
                       </div>
+                      <div className="text-sm text-gray-500">
+                        {employee.hireDate 
+                          ? `${Math.floor((new Date() - new Date(employee.hireDate)) / (1000 * 60 * 60 * 24 * 365))} yrs` 
+                          : "N/A"}
+                      </div>
+                    </div>
 
-                      <div className="text-center">
-                        <div className="relative">
-                          <button
-                            data-employee-id={employeeId}
-                            onClick={() => {
-                              console.log("Clicked action menu for employee:", employee);
-                              console.log("Employee ID:", employeeId);
-                              console.log("Employee name:", employee.firstName, employee.lastName);
-                              setShowMenuId(showMenuId === employeeId ? null : employeeId);
-                            }}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                          >
-                            <MoreVertical size={18} />
-                          </button>
-                        </div>
+                    <div className="text-center">
+                      <div className="relative">
+                        <button
+                          data-employee-id={employeeId}
+                          onClick={() => {
+                            console.log("Clicked action menu for employee:", employee);
+                            console.log("Employee ID:", employeeId);
+                            console.log("Employee name:", employee.firstName, employee.lastName);
+                            setShowMenuId(showMenuId === employeeId ? null : employeeId);
+                          }}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
-          )}
-        </motion.div>
-      </div>
+          </div>
+        )}
+      </main>
 
-      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
+      {/* Action Dropdown Menu */}
       {showMenuId && (
         <>
           {/* Backdrop overlay */}
@@ -805,7 +775,7 @@ export default function EmployeesPage() {
           
           {/* Action Menu */}
           <div 
-            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            className="fixed z-[101] w-56 bg-white rounded-lg border border-gray-200"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
@@ -846,7 +816,7 @@ export default function EmployeesPage() {
               {/* View Details */}
               <button
                 onClick={() => handleViewDetails(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Eye size={16} />
                 <span>View Details</span>
@@ -854,11 +824,8 @@ export default function EmployeesPage() {
               
               {/* Edit Employee */}
               <button
-                onClick={ () => 
-                  handleEditEmployee(showMenuId)
-
-                }
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                onClick={() => handleEditEmployee(showMenuId)}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Edit size={16} />
                 <span>Edit Employee</span>
@@ -867,7 +834,7 @@ export default function EmployeesPage() {
               {/* Send Message */}
               <button
                 onClick={() => handleSendMessage(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <MessageSquare size={16} />
                 <span>Send Message</span>
@@ -876,7 +843,7 @@ export default function EmployeesPage() {
               {/* View Performance */}
               <button
                 onClick={() => handleViewPerformance(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <TrendingUp size={16} />
                 <span>View Performance</span>
@@ -885,7 +852,7 @@ export default function EmployeesPage() {
               {/* Generate Report */}
               <button
                 onClick={() => handleGenerateReport(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <FileText size={16} />
                 <span>Generate Report</span>
@@ -897,7 +864,7 @@ export default function EmployeesPage() {
                   copyToClipboard(showMenuId);
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Copy size={16} />
                 <span>Copy Employee ID</span>
@@ -906,7 +873,7 @@ export default function EmployeesPage() {
               {/* Manage Access */}
               <button
                 onClick={() => handleManageAccess(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Settings size={16} />
                 <span>Manage Access</span>
@@ -920,7 +887,7 @@ export default function EmployeesPage() {
                   handleDeleteEmployee(showMenuId);
                 }}
                 disabled={actionLoading === showMenuId}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left disabled:opacity-50"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left disabled:opacity-50"
               >
                 <Trash2 size={16} />
                 <span>Delete Employee</span>
@@ -937,9 +904,9 @@ export default function EmployeesPage() {
 
       {/* Add Employee Modal */}
       {isAddEmployeeModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div className="px-8 py-6 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -950,7 +917,7 @@ export default function EmployeesPage() {
                 </div>
                 <button
                   onClick={closeAddEmployeeModal}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                  className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X size={24} />
                 </button>
@@ -970,7 +937,7 @@ export default function EmployeesPage() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -983,7 +950,7 @@ export default function EmployeesPage() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -998,7 +965,7 @@ export default function EmployeesPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -1013,7 +980,7 @@ export default function EmployeesPage() {
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -1026,7 +993,7 @@ export default function EmployeesPage() {
                       value={formData.emergencyContact}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1041,7 +1008,7 @@ export default function EmployeesPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -1055,7 +1022,7 @@ export default function EmployeesPage() {
                       value={formData.department}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Department</option>
                       {departments.map((dept) => (
@@ -1074,7 +1041,7 @@ export default function EmployeesPage() {
                       value={formData.position}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Position</option>
                       {commonPositions.map((position) => (
@@ -1097,7 +1064,7 @@ export default function EmployeesPage() {
                       value={formData.hireDate}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -1110,7 +1077,7 @@ export default function EmployeesPage() {
                       value={formData.salary}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1124,7 +1091,7 @@ export default function EmployeesPage() {
                     value={formData.status}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="active">Active</option>
                     <option value="on-leave">On Leave</option>
@@ -1142,7 +1109,7 @@ export default function EmployeesPage() {
                     onChange={handleInputChange}
                     multiple
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
                   >
                     <option value="JavaScript">JavaScript</option>
                     <option value="React">React</option>
@@ -1166,14 +1133,14 @@ export default function EmployeesPage() {
                   <button
                     type="button"
                     onClick={closeAddEmployeeModal}
-                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
+                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isFormSubmitting}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isFormSubmitting ? (
                       <>
@@ -1202,7 +1169,7 @@ export default function EmployeesPage() {
           exit={{ opacity: 0, y: 20, scale: 0.5 }}
           className="fixed bottom-4 right-4 z-50"
         >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
+          <div className={`px-6 py-4 rounded-lg border ${
             notificationType === 'success' 
               ? 'bg-green-50 text-green-800 border-green-200' 
               : 'bg-red-50 text-red-800 border-red-200'

@@ -35,9 +35,130 @@ import {
   Plus,
   Building
 } from "lucide-react"
-import { motion } from "framer-motion";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+// Custom Components matching vehicle-management.jsx style
+const LoadingSpinner = ({ size = "md" }) => {
+  const sizeClasses = {
+    sm: "w-4 h-4",
+    md: "w-6 h-6",
+    lg: "w-8 h-8"
+  };
+
+  return (
+    <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-gray-300 border-t-blue-600`}></div>
+  );
+};
+
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "" }) => {
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={20} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            <TrendingUp size={14} className={trend > 0 ? 'text-emerald-500' : 'text-red-500'} />
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="text-2xl font-bold text-gray-900 mb-1">
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+const Alert = ({ type = "info", title, children, onClose }) => {
+  const typeClasses = {
+    info: "bg-blue-50 border-blue-200 text-blue-800",
+    success: "bg-green-50 border-green-200 text-green-800",
+    warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
+    error: "bg-red-50 border-red-200 text-red-800"
+  };
+
+  const iconClasses = {
+    info: "text-blue-500",
+    success: "text-green-500",
+    warning: "text-yellow-500",
+    error: "text-red-500"
+  };
+
+  const icons = {
+    info: AlertCircle,
+    success: Check,
+    warning: AlertCircle,
+    error: AlertCircle
+  };
+
+  const Icon = icons[type];
+
+  return (
+    <div className={`p-4 rounded-lg border ${typeClasses[type]} mb-4`}>
+      <div className="flex items-start gap-3">
+        <Icon className={`w-5 h-5 mt-0.5 ${iconClasses[type]}`} />
+        <div className="flex-1">
+          {title && <h4 className="font-medium mb-1">{title}</h4>}
+          <div className="text-sm">{children}</div>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X size={16} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
+  if (!isOpen) return null;
+
+  const sizeClasses = {
+    sm: "max-w-md",
+    md: "max-w-2xl",
+    lg: "max-w-4xl",
+    xl: "max-w-6xl"
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className={`bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden`}>
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <div className="overflow-y-auto max-h-[calc(90vh-4rem)]">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function FinanceProcessing() {
   const navigate = useNavigate()
@@ -461,149 +582,90 @@ export default function FinanceProcessing() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-        <DotLottieReact
-      src="loading.lottie"
-      loop
-      autoplay
-    />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Financial Processing</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch the latest travel requests...
-          </p>
-        </motion.div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="flex justify-center items-center min-h-96">
+          <div className="text-center">
+            <LoadingSpinner size="lg" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-2 mt-4">Loading Financial Processing</h2>
+            <p className="text-gray-600">
+              Please wait while we fetch the latest travel requests...
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl text-white">
-                  <DollarSign size={32} />
-                </div>
-                Financial Requests Processing
-              </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Process per diem calculations and fund transfers for approved travel requests
-              </p>
+    <div className="min-h-screen bg-gray-50">
+      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-green-50 rounded-lg">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900">Financial Requests Processing</h1>
             </div>
-            
-            <div className="flex items-center space-x-3">
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
-                <Bell size={20} />
-              </button>
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
-                <RefreshCw size={20} />
-              </button>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span>Process per diem calculations and fund transfers for approved travel requests</span>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span>{getTotalRequests()} requests</span>
+              </div>
             </div>
           </div>
-
-          {/* Enhanced Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <FileText size={24} className="text-white" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getTotalRequests()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Requests</p>
-                <p className="text-2xl font-bold text-gray-900">{getTotalRequests()}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                  <Clock size={24} className="text-white" />
-                </div>
-                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getPendingRequests()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Pending Processing</p>
-                <p className="text-2xl font-bold text-gray-900">{getPendingRequests()}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
-                  <Activity size={24} className="text-white" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getProcessedRequests()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Processed</p>
-                <p className="text-2xl font-bold text-gray-900">{getProcessedRequests()}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <CheckCircle size={24} className="text-white" />
-                </div>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {getCompletedRequests()}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Completed</p>
-                <p className="text-2xl font-bold text-gray-900">{getCompletedRequests()}</p>
-              </div>
-            </motion.div>
+          
+          <div className="flex items-center space-x-3">
+            <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-200">
+              <Bell size={20} />
+            </button>
+            <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-200">
+              <RefreshCw size={20} />
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-        >
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard 
+            title="Total Requests" 
+            value={getTotalRequests()}
+            icon={FileText} 
+            color="blue"
+          />
+          <MetricCard 
+            title="Pending Processing" 
+            value={getPendingRequests()}
+            icon={Clock} 
+            color="orange"
+          />
+          <MetricCard 
+            title="Processed" 
+            value={getProcessedRequests()}
+            icon={Activity} 
+            color="blue"
+          />
+          <MetricCard 
+            title="Completed" 
+            value={getCompletedRequests()}
+            icon={CheckCircle} 
+            color="green"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Column - Travel Requests */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Search and Filter */}
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Financial Requests</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Financial Requests</h2>
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm font-medium"
+                  className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Requests</option>
                   <option value="pending">Pending</option>
@@ -613,13 +675,13 @@ export default function FinanceProcessing() {
               </div>
 
               <div className="relative mb-4">
-                <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   placeholder="Search requests..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
               
@@ -627,9 +689,9 @@ export default function FinanceProcessing() {
               <div className="flex space-x-2">
                 <button
                   onClick={() => setActiveTab("pending")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     activeTab === "pending"
-                      ? "bg-blue-500 text-white shadow-lg"
+                      ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -637,9 +699,9 @@ export default function FinanceProcessing() {
                 </button>
                 <button
                   onClick={() => setActiveTab("processed")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     activeTab === "processed"
-                      ? "bg-blue-500 text-white shadow-lg"
+                      ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -649,40 +711,31 @@ export default function FinanceProcessing() {
             </div>
 
             {/* Scrollable Requests List */}
-            <div className="space-y-4 max-h-[calc(100vh-400px)] overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
               {filteredRequests
                 .filter((req) => activeTab === "all" || req.financialStatus === activeTab)
                 .length === 0 ? (
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-8 shadow-xl text-center">
-                  <div className="flex flex-col items-center space-y-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                      <FileText size={32} className="text-gray-500" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No {activeTab} requests found</h3>
-                      <p className="text-gray-600">All travel requests have been processed</p>
-                    </div>
-                  </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                  <FileText size={40} className="mx-auto text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No {activeTab} requests found</h3>
+                  <p className="text-gray-600">All travel requests have been processed</p>
                 </div>
               ) : (
                 filteredRequests
                   .filter((req) => activeTab === "all" || req.financialStatus === activeTab)
-                  .map((request, index) => (
-                    <motion.div
+                  .map((request) => (
+                    <div
                       key={request.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
                       onClick={() => handleSelectRequest(request)}
-                      className={`bg-white/80 backdrop-blur-sm rounded-2xl border p-6 shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:scale-[1.02] ${
+                      className={`bg-white rounded-lg border p-4 hover:shadow-md transition-all cursor-pointer ${
                         selectedRequest?.id === request.id
-                          ? "border-blue-500 bg-blue-50/50"
-                          : "border-gray-200/50 hover:border-blue-300"
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-blue-300"
                       }`}
                     >
                       <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="font-semibold text-gray-900 text-lg">{request.employeeName}</h3>
+                          <h3 className="font-semibold text-gray-900">{request.employeeName}</h3>
                           <p className="text-gray-600 text-sm">{request.id.substring(0, 8)}</p>
                         </div>
                         {getPriorityBadge(request.priority)}
@@ -718,46 +771,41 @@ export default function FinanceProcessing() {
                             : `Approved: ${format(request.approvedAt, "MMM d, yyyy")}`}
                         </span>
                       </div>
-                    </motion.div>
+                    </div>
                   ))
               )}
             </div>
           </div>
 
           {/* Right Column - Request Details and Actions */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {selectedRequest ? (
               <>
                 {/* Request Details */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden"
-                >
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
                   {/* Header */}
-                  <div className="bg-gradient-to-r from-blue-50/50 to-purple-50/30 border-b border-gray-100/50 p-6">
+                  <div className="bg-blue-50 border-b border-gray-100 p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
-                          <FileText size={24} />
+                        <div className="p-2 bg-blue-600 rounded-lg text-white">
+                          <FileText size={20} />
                         </div>
                         <div>
                           <div className="flex items-center gap-3">
-                            <h2 className="text-xl font-bold text-gray-900">{selectedRequest.employeeName}</h2>
+                            <h2 className="text-lg font-semibold text-gray-900">{selectedRequest.employeeName}</h2>
                             {getStatusBadge(selectedRequest.financialStatus)}
                           </div>
-                          <p className="text-gray-600 mt-1">{selectedRequest.id.substring(0, 8)} • {selectedRequest.department}</p>
+                          <p className="text-gray-600 text-sm">{selectedRequest.id.substring(0, 8)} • {selectedRequest.department}</p>
                         </div>
                       </div>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200">
+                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                         <MoreHorizontal size={20} />
                       </button>
                     </div>
                   </div>
 
                   {/* Content */}
-                  <div className="p-6">
+                  <div className="p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                       <div className="space-y-4">
                         <div>
@@ -846,61 +894,37 @@ export default function FinanceProcessing() {
 
                     {/* Status Alerts */}
                     {selectedRequest.financialStatus === "pending" && (
-                      <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                        <div className="flex items-center gap-3">
-                          <AlertCircle className="text-amber-600" size={20} />
-                          <div>
-                            <h4 className="font-semibold text-amber-800">Action Required</h4>
-                            <p className="text-amber-700 text-sm mt-1">
-                              This request requires per diem calculation and fund transfer to the employee's {selectedRequest.cardDetails.type} card.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <Alert type="warning" title="Action Required">
+                        This request requires per diem calculation and fund transfer to the employee's {selectedRequest.cardDetails.type} card.
+                      </Alert>
                     )}
 
                     {selectedRequest.financialStatus === "processed" && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                        <div className="flex items-center gap-3">
-                          <Info className="text-blue-600" size={20} />
-                          <div>
-                            <h4 className="font-semibold text-blue-800">In Progress</h4>
-                            <p className="text-blue-700 text-sm mt-1">
-                              Funds have been processed. Please notify the employee about the transfer.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <Alert type="info" title="In Progress">
+                        Funds have been processed. Please notify the employee about the transfer.
+                      </Alert>
                     )}
 
                     {selectedRequest.financialStatus === "completed" && (
-                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="text-green-600" size={20} />
-                          <div>
-                            <h4 className="font-semibold text-green-800">Completed</h4>
-                            <p className="text-green-700 text-sm mt-1">
-                              All financial processing has been completed for this travel request.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      <Alert type="success" title="Completed">
+                        All financial processing has been completed for this travel request.
+                      </Alert>
                     )}
                   </div>
 
                   {/* Action Footer */}
-                  <div className="bg-gray-50/50 border-t border-gray-100 p-6 flex justify-between items-center">
+                  <div className="bg-gray-50 border-t border-gray-100 p-4 flex justify-between items-center">
                     {selectedRequest.financialStatus === "pending" && (
                       <>
                         <button
                           onClick={() => navigate("/")}
-                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                         >
                           Back to Dashboard
                         </button>
                         <button
                           onClick={() => setShowPerDiem(true)}
-                          className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 flex items-center gap-2"
+                          className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         >
                           <Calculator size={16} />
                           Calculate Per Diem
@@ -912,13 +936,13 @@ export default function FinanceProcessing() {
                       <>
                         <button
                           onClick={() => navigate("/travel-dashboard")}
-                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                         >
                           Back to Dashboard
                         </button>
                         <button
                           onClick={() => setShowNotification(true)}
-                          className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 flex items-center gap-2"
+                          className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
                         >
                           <Send size={16} />
                           Notify Employee
@@ -930,714 +954,639 @@ export default function FinanceProcessing() {
                       <>
                         <button
                           onClick={() => navigate("/travel-dashboard")}
-                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                          className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                         >
                           Back to Dashboard
                         </button>
-                        <button className="px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-xl hover:bg-green-200 transition-colors duration-200 flex items-center gap-2">
+                        <button className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-lg hover:bg-green-200">
                           <FileText size={16} />
                           View Transaction Record
                         </button>
                       </>
                     )}
                   </div>
-                </motion.div>
-
-                {/* Per Diem Calculation Modal */}
-                {showPerDiem && (
-                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-                    >
-                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-amber-50 to-orange-50">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                              <Calculator size={24} className="text-amber-500" />
-                              Per Diem Calculation
-                            </h2>
-                            <p className="text-gray-600 mt-1">
-                              Calculate per diem allowance for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => setShowPerDiem(false)}
-                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-                          >
-                            <X size={24} />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="p-6 max-h-[70vh] overflow-y-auto">
-                        {/* Expense Categories Section */}
-                        <div className="mb-8">
-                          <div className="flex items-center gap-2 mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Expense Categories</h3>
-                            <button className="text-gray-400 hover:text-gray-600">
-                              <HelpCircle size={16} />
-                            </button>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            {/* Food Category */}
-                            <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:border-green-300 cursor-pointer transition-colors duration-200">
-                              <input
-                                type="checkbox"
-                                checked={perDiemDetails.categories?.food?.included || false}
-                                onChange={(e) => setPerDiemDetails({
-                                  ...perDiemDetails,
-                                  categories: {
-                                    ...perDiemDetails.categories,
-                                    food: {
-                                      ...perDiemDetails.categories?.food,
-                                      included: e.target.checked,
-                                      amount: e.target.checked 
-                                        ? (perDiemDetails.categories?.food?.amount || Math.round(perDiemDetails.dailyRate * 0.4))
-                                        : 0
-                                    }
-                                  }
-                                })}
-                                className="rounded border-gray-300 text-green-600 focus:ring-green-500 mt-1"
-                              />
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green-600">
-                                    <path d="M15 11H20L18 7H15M13 3H7V9H13M11 11H4C4 13.6 5 16 7 16V21H11V16C13 16 14 13.6 14 11M19 3H15.5L12.5 11H19C19 11 22 11 22 8C22 5 19 3 19 3Z" fill="currentColor" />
-                                  </svg>
-                                </div>
-                                <span className="font-medium text-gray-900">Food & Meals</span>
-                              </div>
-                            </label>
-
-                            {/* Accommodation Category */}
-                            <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:border-blue-300 cursor-pointer transition-colors duration-200">
-                              <input
-                                type="checkbox"
-                                checked={perDiemDetails.categories?.accommodation?.included || false}
-                                onChange={(e) => setPerDiemDetails({
-                                  ...perDiemDetails,
-                                  categories: {
-                                    ...perDiemDetails.categories,
-                                    accommodation: {
-                                      ...perDiemDetails.categories?.accommodation,
-                                      included: e.target.checked,
-                                      amount: e.target.checked 
-                                        ? (perDiemDetails.categories?.accommodation?.amount || Math.round(perDiemDetails.dailyRate * 0.5))
-                                        : 0
-                                    }
-                                  }
-                                })}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
-                              />
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
-                                  <Building className="text-blue-600" size={20} />
-                                </div>
-                                <span className="font-medium text-gray-900">Accommodation</span>
-                              </div>
-                            </label>
-
-                            {/* Transportation Category */}
-                            <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-xl hover:border-amber-300 cursor-pointer transition-colors duration-200">
-                              <input
-                                type="checkbox"
-                                checked={perDiemDetails.categories?.transportation?.included || false}
-                                onChange={(e) => setPerDiemDetails({
-                                  ...perDiemDetails,
-                                  categories: {
-                                    ...perDiemDetails.categories,
-                                    transportation: {
-                                      ...perDiemDetails.categories?.transportation,
-                                      included: e.target.checked,
-                                      amount: e.target.checked 
-                                        ? (perDiemDetails.categories?.transportation?.amount || Math.round(perDiemDetails.dailyRate * 0.2))
-                                        : 0
-                                    }
-                                  }
-                                })}
-                                className="rounded border-gray-300 text-amber-600 focus:ring-amber-500 mt-1"
-                              />
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center">
-                                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-amber-600">
-                                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.29 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01M6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16M17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16M5 12L6.5 6.5H17.5L19 12H5Z" fill="currentColor" />
-                                  </svg>
-                                </div>
-                                <span className="font-medium text-gray-900">Transportation</span>
-                              </div>
-                            </label>
-
-                            {/* Additional categories can be added here */}
-                          </div>
-                        </div>
-
-                        {/* Calculation Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate</label>
-                              <div className="relative">
-                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                  {selectedRequest.currency}
-                                </span>
-                                <input
-                                  type="number"
-                                  value={perDiemDetails.dailyRate}
-                                  onChange={(e) => {
-                                    const newRate = Number.parseFloat(e.target.value) || 0;
-                                    setPerDiemDetails({
-                                      ...perDiemDetails,
-                                      dailyRate: newRate,
-                                    });
-                                  }}
-                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                                />
-                              </div>
-                              <p className="text-sm text-gray-500 mt-1">Standard rate for {selectedRequest.country}</p>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Number of Days</label>
-                              <input
-                                type="number"
-                                value={perDiemDetails.days}
-                                onChange={(e) =>
-                                  setPerDiemDetails({ ...perDiemDetails, days: Number.parseInt(e.target.value) || 0 })
-                                }
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                              />
-                              <p className="text-sm text-gray-500 mt-1">
-                                Based on travel dates: {format(selectedRequest.departureDate, "MMM d")} - {format(selectedRequest.returnDate, "MMM d")}
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Allowance</label>
-                              <div className="relative">
-                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                  {selectedRequest.currency}
-                                </span>
-                                <input
-                                  type="number"
-                                  placeholder="0.00"
-                                  value={perDiemDetails.additionalAllowance}
-                                  onChange={(e) =>
-                                    setPerDiemDetails({
-                                      ...perDiemDetails,
-                                      additionalAllowance: Number.parseFloat(e.target.value) || 0,
-                                    })
-                                  }
-                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
-                              <textarea
-                                placeholder="Any notes about this per diem calculation"
-                                value={perDiemDetails.notes}
-                                onChange={(e) => setPerDiemDetails({ ...perDiemDetails, notes: e.target.value })}
-                                rows={4}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Calculation Summary */}
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-semibold text-gray-900 mb-2">Calculation Summary</h4>
-                              <div className="space-y-1">
-                                {Object.entries(perDiemDetails.categories || {})
-                                  .filter(([_, category]) => category.included)
-                                  .map(([key, category]) => (
-                                    <div key={key} className="flex justify-between text-sm">
-                                      <span className="text-gray-600 capitalize">{key}:</span>
-                                      <span className="font-medium">
-                                        {formatCurrency(category.amount * perDiemDetails.days, selectedRequest.currency)}
-                                      </span>
-                                    </div>
-                                  ))}
-                                
-                                {Object.entries(perDiemDetails.categories || {}).some(([_, category]) => category.included) && (
-                                  <hr className="my-2" />
-                                )}
-                                
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-gray-600">Additional Allowance:</span>
-                                  <span className="font-medium">
-                                    {formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-gray-500 mb-1">Total Amount</p>
-                              <p className="text-3xl font-bold text-gray-900">
-                                {formatCurrency(
-                                  (Object.values(perDiemDetails.categories || {})
-                                    .filter(category => category.included)
-                                    .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
-                                  Number.parseFloat(perDiemDetails.additionalAllowance || 0),
-                                  selectedRequest.currency,
-                                )}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Approx. {formatCurrency(
-                                  ((Object.values(perDiemDetails.categories || {})
-                                    .filter(category => category.included)
-                                    .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
-                                    Number.parseFloat(perDiemDetails.additionalAllowance || 0)) /
-                                    exchangeRates[selectedRequest.currency],
-                                  "USD",
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-                        <button
-                          onClick={() => setShowPerDiem(false)}
-                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={calculatePerDiem}
-                          disabled={
-                            isCalculating || 
-                            perDiemDetails.dailyRate <= 0 || 
-                            perDiemDetails.days <= 0 ||
-                            !Object.values(perDiemDetails.categories || {}).some(cat => cat.included)
-                          }
-                          className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-xl hover:from-amber-600 hover:to-orange-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {isCalculating ? (
-                            <>
-                              <Loader2 size={16} className="animate-spin" />
-                              Calculating...
-                            </>
-                          ) : (
-                            <>
-                              <Check size={16} />
-                              Confirm Calculation
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-
-                {/* Fund Transfer Modal */}
-                {showTransfer && (
-                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-                    >
-                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                              <CreditCard size={24} className="text-blue-500" />
-                              Fund Transfer
-                            </h2>
-                            <p className="text-gray-600 mt-1">
-                              Transfer per diem funds to {selectedRequest?.employeeName}'s {selectedRequest?.cardDetails.type} card
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => setShowTransfer(false)}
-                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-                          >
-                            <X size={24} />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Card Details</label>
-                              <div className="p-4 border border-gray-200 rounded-xl bg-gray-50 flex items-center gap-3">
-                                <div className="p-2 bg-blue-100 rounded-full">
-                                  <CreditCard className="text-blue-600" size={20} />
-                                </div>
-                                <div>
-                                  <p className="font-medium text-gray-900">{transferDetails.cardNumber}</p>
-                                  <p className="text-sm text-gray-600">Holder: {transferDetails.accountHolder}</p>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Amount</label>
-                              <div className="relative">
-                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                  {selectedRequest.currency}
-                                </span>
-                                <input
-                                  type="number"
-                                  value={transferDetails.amount}
-                                  onChange={(e) =>
-                                    setTransferDetails({
-                                      ...transferDetails,
-                                      amount: Number.parseFloat(e.target.value) || 0,
-                                    })
-                                  }
-                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                />
-                              </div>
-                              <p className="text-sm text-gray-500 mt-1">Amount calculated from per diem</p>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Date</label>
-                              <input
-                                type="date"
-                                value={transferDetails.transferDate}
-                                onChange={(e) =>
-                                  setTransferDetails({ ...transferDetails, transferDate: e.target.value })
-                                }
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="space-y-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                              <select
-                                value={transferDetails.currency}
-                                onChange={(e) =>
-                                  setTransferDetails({ ...transferDetails, currency: e.target.value })
-                                }
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              >
-                                <option value={selectedRequest.currency}>{selectedRequest.currency}</option>
-                              </select>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Exchange rate: 1 USD = {exchangeRates[selectedRequest.currency]} {selectedRequest.currency}
-                              </p>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Processing Fee</label>
-                              <div className="relative">
-                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
-                                  {selectedRequest.currency}
-                                </span>
-                                <input
-                                  type="text"
-                                  value={transferDetails.processingFee.toFixed(2)}
-                                  readOnly
-                                  className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
-                                />
-                              </div>
-                              <p className="text-sm text-gray-500 mt-1">
-                                Automatically calculated (0.5% of transfer amount)
-                              </p>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Notes</label>
-                              <textarea
-                                placeholder="Any notes about this transfer"
-                                value={transferDetails.notes}
-                                onChange={(e) => setTransferDetails({ ...transferDetails, notes: e.target.value })}
-                                rows={4}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Transfer Summary */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <h4 className="font-semibold text-blue-800 mb-2">Transfer Summary</h4>
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-blue-700">Transfer Amount:</span>
-                                  <span className="font-medium text-blue-700">
-                                    {formatCurrency(transferDetails.amount, selectedRequest.currency)}
-                                  </span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-blue-700">Processing Fee:</span>
-                                  <span className="font-medium text-blue-700">
-                                    {formatCurrency(transferDetails.processingFee, selectedRequest.currency)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-blue-700 mb-1">Total to Transfer</p>
-                              <p className="text-3xl font-bold text-blue-800">
-                                {formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}
-                              </p>
-                              <p className="text-sm text-blue-600">
-                                Approx. {formatCurrency(
-                                  transferDetails.totalAmount / exchangeRates[selectedRequest.currency],
-                                  "USD",
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Warning Alert */}
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                          <div className="flex items-center gap-3">
-                            <AlertCircle className="text-amber-600" size={20} />
-                            <div>
-                              <h4 className="font-semibold text-amber-800">Important</h4>
-                              <p className="text-amber-700 text-sm mt-1">
-                                By proceeding, you confirm that the transfer details are correct and funds will be sent to
-                                the employee's {selectedRequest.cardDetails.type} card. This action cannot be undone.
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-                        <button
-                          onClick={() => setShowTransfer(false)}
-                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          Back
-                        </button>
-                        <button
-                          onClick={processTransfer}
-                          disabled={isTransferring || transferDetails.amount <= 0}
-                          className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {isTransferring ? (
-                            <>
-                              <Loader2 size={16} className="animate-spin" />
-                              Processing Transfer...
-                            </>
-                          ) : (
-                            <>
-                              <ArrowRight size={16} />
-                              Process Transfer
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
-
-                {/* Notification Modal */}
-                {showNotification && (
-                  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-                    >
-                      <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                              <Send size={24} className="text-green-500" />
-                              Notify Employee
-                            </h2>
-                            <p className="text-gray-600 mt-1">
-                              Send notification to {selectedRequest?.employeeName} about the fund transfer
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => setShowNotification(false)}
-                            className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-                          >
-                            <X size={24} />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="p-6 space-y-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Recipient</label>
-                          <input
-                            type="email"
-                            value={notificationDetails.recipient}
-                            onChange={(e) =>
-                              setNotificationDetails({ ...notificationDetails, recipient: e.target.value })
-                            }
-                            readOnly
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-700"
-                          />
-                          <p className="text-sm text-gray-500 mt-1">Employee's email address</p>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                          <input
-                            type="text"
-                            placeholder="Notification subject"
-                            value={notificationDetails.subject}
-                            onChange={(e) =>
-                              setNotificationDetails({ ...notificationDetails, subject: e.target.value })
-                            }
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                          <textarea
-                            placeholder="Enter notification message"
-                            value={notificationDetails.message}
-                            onChange={(e) =>
-                              setNotificationDetails({ ...notificationDetails, message: e.target.value })
-                            }
-                            rows={6}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={notificationDetails.includeBreakdown}
-                              onChange={(e) =>
-                                setNotificationDetails({ ...notificationDetails, includeBreakdown: e.target.checked })
-                              }
-                              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                            />
-                            <span className="text-gray-700">Include per diem breakdown in notification</span>
-                          </label>
-                          <label className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={notificationDetails.sendCopy}
-                              onChange={(e) =>
-                                setNotificationDetails({ ...notificationDetails, sendCopy: e.target.checked })
-                              }
-                              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                            />
-                            <span className="text-gray-700">Send copy to finance department</span>
-                          </label>
-                        </div>
-
-                        {/* Preview */}
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-                          <h4 className="font-semibold text-gray-900 mb-4">Preview</h4>
-                          <div className="bg-white border border-gray-200 rounded-lg p-4">
-                            <p className="font-medium text-gray-900 mb-1">To: {notificationDetails.recipient}</p>
-                            <p className="font-medium text-gray-900 mb-1">Subject: {notificationDetails.subject}</p>
-                            <hr className="my-3" />
-                            <p className="text-gray-700 whitespace-pre-line mb-4">{notificationDetails.message}</p>
-
-                            {notificationDetails.includeBreakdown && (
-                              <>
-                                <hr className="my-3" />
-                                <h5 className="font-medium text-gray-900 mb-2">Per Diem Breakdown:</h5>
-                                <div className="space-y-1">
-                                  <div className="flex justify-between text-sm">
-                                    <span>Daily Rate:</span>
-                                    <span>{formatCurrency(perDiemDetails.dailyRate, selectedRequest.currency)}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Number of Days:</span>
-                                    <span>{perDiemDetails.days}</span>
-                                  </div>
-                                  <div className="flex justify-between text-sm">
-                                    <span>Additional Allowance:</span>
-                                    <span>{formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}</span>
-                                  </div>
-                                  <hr className="my-2" />
-                                  <div className="flex justify-between text-sm font-medium">
-                                    <span>Total Amount:</span>
-                                    <span>{formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}</span>
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-                        <button
-                          onClick={() => setShowNotification(false)}
-                          className="px-6 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                        >
-                          Back
-                        </button>
-                        <button
-                          onClick={sendNotification}
-                          disabled={
-                            isSendingNotification || !notificationDetails.subject || !notificationDetails.message
-                          }
-                          className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 disabled:opacity-50 flex items-center gap-2"
-                        >
-                          {isSendingNotification ? (
-                            <>
-                              <Loader2 size={16} className="animate-spin" />
-                              Sending...
-                            </>
-                          ) : (
-                            <>
-                              <Send size={16} />
-                              Send Notification
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </motion.div>
-                  </div>
-                )}
+                </div>
               </>
             ) : (
-              <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl p-12 text-center">
-                <div className="flex flex-col items-center space-y-6">
-                  <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                    <FileText size={40} className="text-gray-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No Request Selected</h3>
-                    <p className="text-gray-600 max-w-md mx-auto">
-                      Select a travel request from the list to view details and process financial requirements
-                    </p>
-                  </div>
-                </div>
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-12 text-center">
+                <FileText size={40} className="mx-auto text-gray-400 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Request Selected</h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  Select a travel request from the list to view details and process financial requirements
+                </p>
               </div>
             )}
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </main>
+
+      {/* Per Diem Calculation Modal */}
+      <Modal
+        isOpen={showPerDiem}
+        onClose={() => setShowPerDiem(false)}
+        title="Per Diem Calculation"
+        size="xl"
+      >
+        <div className="p-6">
+          <div className="mb-6">
+            <p className="text-gray-600">
+              Calculate per diem allowance for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
+            </p>
+          </div>
+
+          {/* Expense Categories Section */}
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Expense Categories</h3>
+              <button className="text-gray-400 hover:text-gray-600">
+                <HelpCircle size={16} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {/* Food Category */}
+              <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={perDiemDetails.categories?.food?.included || false}
+                  onChange={(e) => setPerDiemDetails({
+                    ...perDiemDetails,
+                    categories: {
+                      ...perDiemDetails.categories,
+                      food: {
+                        ...perDiemDetails.categories?.food,
+                        included: e.target.checked,
+                        amount: e.target.checked 
+                          ? (perDiemDetails.categories?.food?.amount || Math.round(perDiemDetails.dailyRate * 0.4))
+                          : 0
+                      }
+                    }
+                  })}
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500 mt-1"
+                />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-green-600">
+                      <path d="M15 11H20L18 7H15M13 3H7V9H13M11 11H4C4 13.6 5 16 7 16V21H11V16C13 16 14 13.6 14 11M19 3H15.5L12.5 11H19C19 11 22 11 22 8C22 5 19 3 19 3Z" fill="currentColor" />
+                    </svg>
+                  </div>
+                  <span className="font-medium text-gray-900">Food & Meals</span>
+                </div>
+              </label>
+
+              {/* Accommodation Category */}
+              <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-blue-300 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={perDiemDetails.categories?.accommodation?.included || false}
+                  onChange={(e) => setPerDiemDetails({
+                    ...perDiemDetails,
+                    categories: {
+                      ...perDiemDetails.categories,
+                      accommodation: {
+                        ...perDiemDetails.categories?.accommodation,
+                        included: e.target.checked,
+                        amount: e.target.checked 
+                          ? (perDiemDetails.categories?.accommodation?.amount || Math.round(perDiemDetails.dailyRate * 0.5))
+                          : 0
+                      }
+                    }
+                  })}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
+                />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center">
+                    <Building className="text-blue-600" size={20} />
+                  </div>
+                  <span className="font-medium text-gray-900">Accommodation</span>
+                </div>
+              </label>
+
+              {/* Transportation Category */}
+              <label className="flex items-start gap-3 p-4 border border-gray-200 rounded-lg hover:border-amber-300 cursor-pointer transition-colors">
+                <input
+                  type="checkbox"
+                  checked={perDiemDetails.categories?.transportation?.included || false}
+                  onChange={(e) => setPerDiemDetails({
+                    ...perDiemDetails,
+                    categories: {
+                      ...perDiemDetails.categories,
+                      transportation: {
+                        ...perDiemDetails.categories?.transportation,
+                        included: e.target.checked,
+                        amount: e.target.checked 
+                          ? (perDiemDetails.categories?.transportation?.amount || Math.round(perDiemDetails.dailyRate * 0.2))
+                          : 0
+                      }
+                    }
+                  })}
+                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500 mt-1"
+                />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" className="text-amber-600">
+                      <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5H6.5C5.84 5 5.29 5.42 5.08 6.01L3 12V20C3 20.55 3.45 21 4 21H5C5.55 21 6 20.55 6 20V19H18V20C18 20.55 18.45 21 19 21H20C20.55 21 21 20.55 21 20V12L18.92 6.01M6.5 16C5.67 16 5 15.33 5 14.5S5.67 13 6.5 13 8 13.67 8 14.5 7.33 16 6.5 16M17.5 16C16.67 16 16 15.33 16 14.5S16.67 13 17.5 13 19 13.67 19 14.5 18.33 16 17.5 16M5 12L6.5 6.5H17.5L19 12H5Z" fill="currentColor" />
+                    </svg>
+                  </div>
+                  <span className="font-medium text-gray-900">Transportation</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Calculation Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Daily Rate</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    {selectedRequest?.currency}
+                  </span>
+                  <input
+                    type="number"
+                    value={perDiemDetails.dailyRate}
+                    onChange={(e) => {
+                      const newRate = Number.parseFloat(e.target.value) || 0;
+                      setPerDiemDetails({
+                        ...perDiemDetails,
+                        dailyRate: newRate,
+                      });
+                    }}
+                    className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-1">Standard rate for {selectedRequest?.country}</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Number of Days</label>
+                <input
+                  type="number"
+                  value={perDiemDetails.days}
+                  onChange={(e) =>
+                    setPerDiemDetails({ ...perDiemDetails, days: Number.parseInt(e.target.value) || 0 })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Based on travel dates: {selectedRequest && format(selectedRequest.departureDate, "MMM d")} - {selectedRequest && format(selectedRequest.returnDate, "MMM d")}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Additional Allowance</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    {selectedRequest?.currency}
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="0.00"
+                    value={perDiemDetails.additionalAllowance}
+                    onChange={(e) =>
+                      setPerDiemDetails({
+                        ...perDiemDetails,
+                        additionalAllowance: Number.parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                <textarea
+                  placeholder="Any notes about this per diem calculation"
+                  value={perDiemDetails.notes}
+                  onChange={(e) => setPerDiemDetails({ ...perDiemDetails, notes: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Calculation Summary */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Calculation Summary</h4>
+                <div className="space-y-1">
+                  {Object.entries(perDiemDetails.categories || {})
+                    .filter(([_, category]) => category.included)
+                    .map(([key, category]) => (
+                      <div key={key} className="flex justify-between text-sm">
+                        <span className="text-gray-600 capitalize">{key}:</span>
+                        <span className="font-medium">
+                          {selectedRequest && formatCurrency(category.amount * perDiemDetails.days, selectedRequest.currency)}
+                        </span>
+                      </div>
+                    ))}
+                  
+                  {Object.entries(perDiemDetails.categories || {}).some(([_, category]) => category.included) && (
+                    <hr className="my-2" />
+                  )}
+                  
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Additional Allowance:</span>
+                    <span className="font-medium">
+                      {selectedRequest && formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                <p className="text-3xl font-bold text-gray-900">
+                  {selectedRequest && formatCurrency(
+                    (Object.values(perDiemDetails.categories || {})
+                      .filter(category => category.included)
+                      .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
+                    Number.parseFloat(perDiemDetails.additionalAllowance || 0),
+                    selectedRequest.currency,
+                  )}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Approx. {selectedRequest && formatCurrency(
+                    ((Object.values(perDiemDetails.categories || {})
+                      .filter(category => category.included)
+                      .reduce((sum, category) => sum + (Number(category.amount) || 0), 0) * perDiemDetails.days) +
+                      Number.parseFloat(perDiemDetails.additionalAllowance || 0)) /
+                      exchangeRates[selectedRequest.currency],
+                    "USD",
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+          <button
+            onClick={() => setShowPerDiem(false)}
+            className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={calculatePerDiem}
+            disabled={
+              isCalculating || 
+              perDiemDetails.dailyRate <= 0 || 
+              perDiemDetails.days <= 0 ||
+              !Object.values(perDiemDetails.categories || {}).some(cat => cat.included)
+            }
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isCalculating ? (
+              <>
+                <LoadingSpinner size="sm" />
+                Calculating...
+              </>
+            ) : (
+              <>
+                <Check size={16} />
+                Confirm Calculation
+              </>
+            )}
+          </button>
+        </div>
+      </Modal>
+
+      {/* Fund Transfer Modal */}
+      <Modal
+        isOpen={showTransfer}
+        onClose={() => setShowTransfer(false)}
+        title="Fund Transfer"
+        size="lg"
+      >
+        <div className="p-6">
+          <div className="mb-6">
+            <p className="text-gray-600">
+              Transfer per diem funds to {selectedRequest?.employeeName}'s {selectedRequest?.cardDetails.type} card
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Card Details</label>
+                <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-full">
+                    <CreditCard className="text-blue-600" size={20} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{transferDetails.cardNumber}</p>
+                    <p className="text-sm text-gray-600">Holder: {transferDetails.accountHolder}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Amount</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    {selectedRequest?.currency}
+                  </span>
+                  <input
+                    type="number"
+                    value={transferDetails.amount}
+                    onChange={(e) =>
+                      setTransferDetails({
+                        ...transferDetails,
+                        amount: Number.parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-1">Amount calculated from per diem</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Date</label>
+                <input
+                  type="date"
+                  value={transferDetails.transferDate}
+                  onChange={(e) =>
+                    setTransferDetails({ ...transferDetails, transferDate: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <select
+                  value={transferDetails.currency}
+                  onChange={(e) =>
+                    setTransferDetails({ ...transferDetails, currency: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value={selectedRequest?.currency}>{selectedRequest?.currency}</option>
+                </select>
+                <p className="text-sm text-gray-500 mt-1">
+                  Exchange rate: 1 USD = {selectedRequest && exchangeRates[selectedRequest.currency]} {selectedRequest?.currency}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Processing Fee</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    {selectedRequest?.currency}
+                  </span>
+                  <input
+                    type="text"
+                    value={transferDetails.processingFee.toFixed(2)}
+                    readOnly
+                    className="w-full pl-16 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Automatically calculated (0.5% of transfer amount)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Transfer Notes</label>
+                <textarea
+                  placeholder="Any notes about this transfer"
+                  value={transferDetails.notes}
+                  onChange={(e) => setTransferDetails({ ...transferDetails, notes: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Transfer Summary */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="font-semibold text-blue-800 mb-2">Transfer Summary</h4>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-700">Transfer Amount:</span>
+                    <span className="font-medium text-blue-700">
+                      {selectedRequest && formatCurrency(transferDetails.amount, selectedRequest.currency)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-700">Processing Fee:</span>
+                    <span className="font-medium text-blue-700">
+                      {selectedRequest && formatCurrency(transferDetails.processingFee, selectedRequest.currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-blue-700 mb-1">Total to Transfer</p>
+                <p className="text-3xl font-bold text-blue-800">
+                  {selectedRequest && formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}
+                </p>
+                <p className="text-sm text-blue-600">
+                  Approx. {selectedRequest && formatCurrency(
+                    transferDetails.totalAmount / exchangeRates[selectedRequest.currency],
+                    "USD",
+                  )}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning Alert */}
+          <Alert type="warning" title="Important">
+            By proceeding, you confirm that the transfer details are correct and funds will be sent to
+            the employee's {selectedRequest?.cardDetails.type} card. This action cannot be undone.
+          </Alert>
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+          <button
+            onClick={() => setShowTransfer(false)}
+            className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Back
+          </button>
+          <button
+            onClick={processTransfer}
+            disabled={isTransferring || transferDetails.amount <= 0}
+            className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {isTransferring ? (
+              <>
+                <LoadingSpinner size="sm" />
+                Processing Transfer...
+              </>
+            ) : (
+              <>
+                <ArrowRight size={16} />
+                Process Transfer
+              </>
+            )}
+          </button>
+        </div>
+      </Modal>
+
+      {/* Notification Modal */}
+      <Modal
+        isOpen={showNotification}
+        onClose={() => setShowNotification(false)}
+        title="Notify Employee"
+        size="lg"
+      >
+        <div className="p-6 space-y-6">
+          <div className="mb-6">
+            <p className="text-gray-600">
+              Send notification to {selectedRequest?.employeeName} about the fund transfer
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Recipient</label>
+            <input
+              type="email"
+              value={notificationDetails.recipient}
+              onChange={(e) =>
+                setNotificationDetails({ ...notificationDetails, recipient: e.target.value })
+              }
+              readOnly
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+            />
+            <p className="text-sm text-gray-500 mt-1">Employee's email address</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
+            <input
+              type="text"
+              placeholder="Notification subject"
+              value={notificationDetails.subject}
+              onChange={(e) =>
+                setNotificationDetails({ ...notificationDetails, subject: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
+            <textarea
+              placeholder="Enter notification message"
+              value={notificationDetails.message}
+              onChange={(e) =>
+                setNotificationDetails({ ...notificationDetails, message: e.target.value })
+              }
+              rows={6}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={notificationDetails.includeBreakdown}
+                onChange={(e) =>
+                  setNotificationDetails({ ...notificationDetails, includeBreakdown: e.target.checked })
+                }
+                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <span className="text-gray-700">Include per diem breakdown in notification</span>
+            </label>
+            <label className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={notificationDetails.sendCopy}
+                onChange={(e) =>
+                  setNotificationDetails({ ...notificationDetails, sendCopy: e.target.checked })
+                }
+                className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+              />
+              <span className="text-gray-700">Send copy to finance department</span>
+            </label>
+          </div>
+
+          {/* Preview */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+            <h4 className="font-semibold text-gray-900 mb-4">Preview</h4>
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <p className="font-medium text-gray-900 mb-1">To: {notificationDetails.recipient}</p>
+              <p className="font-medium text-gray-900 mb-1">Subject: {notificationDetails.subject}</p>
+              <hr className="my-3" />
+              <p className="text-gray-700 whitespace-pre-line mb-4">{notificationDetails.message}</p>
+
+              {notificationDetails.includeBreakdown && (
+                <>
+                  <hr className="my-3" />
+                  <h5 className="font-medium text-gray-900 mb-2">Per Diem Breakdown:</h5>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>Daily Rate:</span>
+                      <span>{selectedRequest && formatCurrency(perDiemDetails.dailyRate, selectedRequest.currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Number of Days:</span>
+                      <span>{perDiemDetails.days}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Additional Allowance:</span>
+                      <span>{selectedRequest && formatCurrency(perDiemDetails.additionalAllowance, selectedRequest.currency)}</span>
+                    </div>
+                    <hr className="my-2" />
+                    <div className="flex justify-between text-sm font-medium">
+                      <span>Total Amount:</span>
+                      <span>{selectedRequest && formatCurrency(transferDetails.totalAmount, selectedRequest.currency)}</span>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
+          <button
+            onClick={() => setShowNotification(false)}
+            className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            Back
+          </button>
+          <button
+            onClick={sendNotification}
+            disabled={
+              isSendingNotification || !notificationDetails.subject || !notificationDetails.message
+            }
+            className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+          >
+            {isSendingNotification ? (
+              <>
+                <LoadingSpinner size="sm" />
+                Sending...
+              </>
+            ) : (
+              <>
+                <Send size={16} />
+                Send Notification
+              </>
+            )}
+          </button>
+        </div>
+      </Modal>
 
       {/* Snackbar Notification */}
       {snackbarOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-6 right-6 z-50"
-        >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border max-w-md ${
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className={`px-6 py-4 rounded-lg shadow-lg border max-w-md ${
             snackbarSeverity === "success"
               ? "bg-green-50 border-green-200 text-green-800"
               : snackbarSeverity === "error"
@@ -1657,7 +1606,7 @@ export default function FinanceProcessing() {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   )
