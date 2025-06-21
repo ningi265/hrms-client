@@ -17,16 +17,220 @@ import {
   Calendar,
   Activity,
   TrendingUp,
+  TrendingDown,
   AlertCircle,
   Clock,
   Plus,
-  MoreVertical
+  MoreVertical,
+  Shield,
+  Save,
+  Edit,
+  Send,
+  Copy,
+  History,
+  MessageSquare
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { useNavigate } from "react-router-dom";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+// MetricCard Component (styled like vendors.js)
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
+  const cardClass = size === "large" ? "col-span-2" : "";
+  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  
+  return (
+    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'amber' ? 'bg-amber-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={20} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'amber' ? 'text-amber-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            {trend > 0 ? (
+              <TrendingUp size={14} className="text-emerald-500" />
+            ) : (
+              <TrendingDown size={14} className="text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+// Invoice Card Component (styled like vendor cards)
+const InvoiceCard = ({ invoice, onMenuClick, showMenuId, onAction }) => {
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      case 'paid': return 'bg-blue-100 text-blue-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return <Check size={14} />;
+      case "pending":
+        return <Clock size={14} />;
+      case "rejected":
+        return <X size={14} />;
+      case "paid":
+        return <CreditCard size={14} />;
+      default:
+        return <FileText size={14} />;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount || 0);
+  };
+
+  const vendorName = `${invoice.vendor?.firstName || ""} ${invoice.vendor?.lastName || ""}`.trim() || "N/A";
+  const invoiceNumber = invoice.invoiceNumber || "N/A";
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <FileText className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900">
+              {invoiceNumber}
+            </h4>
+            <p className="text-sm text-gray-500">{vendorName}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${getStatusColor(invoice.status)}`}>
+            {getStatusIcon(invoice.status)}
+            {invoice.status}
+          </span>
+          <button
+            data-invoice-id={invoice._id}
+            onClick={() => onMenuClick(invoice._id)}
+            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+          >
+            <MoreVertical size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
+            <DollarSign className="w-4 h-4 text-green-500" />
+            {invoice.amountDue?.toFixed(0) || 0}
+          </div>
+          <div className="text-xs text-gray-500">Amount Due (USD)</div>
+        </div>
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
+            <Package className="w-4 h-4 text-blue-500" />
+            {invoice.po?.poNumber || "N/A"}
+          </div>
+          <div className="text-xs text-gray-500">PO Number</div>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Created</span>
+          <span className="text-xs font-medium">
+            {formatDate(invoice.createdAt)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Vendor Email</span>
+          <span className="text-xs font-medium truncate">{invoice.vendor?.email || "N/A"}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Due Date</span>
+          <span className="text-xs font-medium">{invoice.dueDate ? formatDate(invoice.dueDate) : "N/A"}</span>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div className="text-xs text-gray-600 mb-1">Payment Status</div>
+        <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 w-fit ${getStatusColor(invoice.status)}`}>
+          {getStatusIcon(invoice.status)}
+          {invoice.status || "Unknown"}
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500">
+            {formatCurrency(invoice.amountDue)}
+          </span>
+        </div>
+        <div className="flex gap-1">
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Eye size={14} />
+          </button>
+          {invoice.status === 'pending' && (
+            <button 
+              onClick={() => onAction(invoice, 'approve')}
+              className="p-1 text-gray-400 hover:text-green-600"
+            >
+              <Check size={14} />
+            </button>
+          )}
+          {invoice.status === 'approved' && (
+            <button 
+              onClick={() => onAction(invoice, 'pay')}
+              className="p-1 text-gray-400 hover:text-blue-600"
+            >
+              <CreditCard size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function InvoicesPage() {
   const { token, user, logout } = useAuth();
@@ -81,7 +285,7 @@ export default function InvoicesPage() {
     const viewportWidth = window.innerWidth;
     
     // Menu dimensions (approximate)
-    const menuHeight = 280; // Adjust based on menu content
+    const menuHeight = 280;
     const menuWidth = 200;
     
     // Calculate position
@@ -230,42 +434,10 @@ export default function InvoicesPage() {
     setTimeout(() => setShowNotification(false), 5000);
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return "text-green-700 bg-green-50 border-green-200";
-      case "pending":
-        return "text-amber-700 bg-amber-50 border-amber-200";
-      case "rejected":
-        return "text-red-700 bg-red-50 border-red-200";
-      case "paid":
-        return "text-blue-700 bg-blue-50 border-blue-200";
-      default:
-        return "text-gray-700 bg-gray-50 border-gray-200";
-    }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return <Check size={14} />;
-      case "pending":
-        return <Clock size={14} />;
-      case "rejected":
-        return <X size={14} />;
-      case "paid":
-        return <CreditCard size={14} />;
-      default:
-        return <FileText size={14} />;
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+    window.location.reload();
   };
 
   const formatCurrency = (amount) => {
@@ -284,15 +456,9 @@ export default function InvoicesPage() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-           <DotLottieReact
-                src="loading.lottie"
-                loop
-                autoplay
-              />
+          <DotLottieReact src="loading.lottie" loop autoplay />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Invoices</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch invoice data...
-          </p>
+          <p className="text-gray-600">Please wait while we fetch invoice data...</p>
         </motion.div>
       </div>
     );
@@ -325,387 +491,280 @@ export default function InvoicesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-2 bg-blue-500 rounded-lg text-white">
-                  <FileText size={24} />
-                </div>
-                Invoice Management
-              </h1>
-              <p className="text-gray-500 mt-1">
-                Review, approve, and process vendor invoices
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                <Bell size={20} />
-              </button>
-              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                <Settings size={20} />
-              </button>
+      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Invoice Management</h1>
+            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Activity className="w-4 h-4 text-green-500" />
+                <span>Payment processing</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span>Approval rate: {totalInvoices > 0 ? Math.round((approvedInvoices / totalInvoices) * 100) : 0}%</span>
+              </div>
             </div>
           </div>
-
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <FileText size={20} className="text-blue-600" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {totalInvoices}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Invoices</p>
-                <p className="text-xl font-bold text-gray-900">{totalInvoices}</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search invoices..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
             </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-amber-50 rounded-lg">
-                  <Clock size={20} className="text-amber-600" />
-                </div>
-                <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {pendingInvoices}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Pending</p>
-                <p className="text-xl font-bold text-gray-900">{pendingInvoices}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <Check size={20} className="text-green-600" />
-                </div>
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {approvedInvoices}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Approved</p>
-                <p className="text-xl font-bold text-gray-900">{approvedInvoices}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <CreditCard size={20} className="text-blue-600" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {paidInvoices}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Paid</p>
-                <p className="text-xl font-bold text-gray-900">{paidInvoices}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-purple-50 rounded-lg">
-                  <DollarSign size={20} className="text-purple-600" />
-                </div>
-                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {formatCurrency(totalAmount).replace('$', '$')}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Amount</p>
-                <p className="text-xl font-bold text-gray-900">{formatCurrency(totalAmount)}</p>
-              </div>
-            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="paid">Paid</option>
+            </select>
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
+              <Plus size={16} />
+              New Invoice
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="space-y-6">
-          {/* Filter Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search invoices..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <MetricCard 
+            title="Total Invoices" 
+            value={totalInvoices}
+            icon={FileText} 
+            color="blue" 
+            subtitle="All invoices"
+          />
+          <MetricCard 
+            title="Pending" 
+            value={pendingInvoices}
+            icon={Clock} 
+            color="amber" 
+            subtitle="Awaiting review"
+          />
+          <MetricCard 
+            title="Approved" 
+            value={approvedInvoices}
+            icon={Check} 
+            color="green" 
+            trend={12}
+            subtitle="Ready to pay"
+          />
+          <MetricCard 
+            title="Paid" 
+            value={paidInvoices}
+            icon={CreditCard} 
+            color="blue" 
+            trend={8}
+            subtitle="Completed"
+          />
+          <MetricCard 
+            title="Total Amount" 
+            value={totalAmount.toFixed(0)}
+            prefix="$"
+            icon={DollarSign} 
+            color="purple" 
+            trend={15}
+            subtitle="Outstanding value"
+          />
+        </div>
 
-                <div className="flex items-center space-x-3">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="paid">Paid</option>
-                  </select>
-
-                  <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center gap-2">
-                    <Filter size={16} />
-                    More Filters
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <button className="px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-2 text-sm">
-                  <Download size={16} />
-                  Export
-                </button>
-                <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                  <RefreshCw size={16} />
-                </button>
-              </div>
+        {/* Invoice Cards */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Invoices</h3>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{filteredInvoices.length} of {totalInvoices} invoices</span>
             </div>
           </div>
 
-          {/* Invoices Content */}
           {filteredInvoices.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
-                  <FileText size={40} className="text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {searchTerm || statusFilter !== "all" ? "No invoices match your filters" : "No Invoices Found"}
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm || statusFilter !== "all" 
-                      ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : "Invoices will appear here when vendors submit them for processing."
-                    }
-                  </p>
-                </div>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                >
-                  <RefreshCw size={16} />
-                  Refresh
-                </button>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText size={32} className="text-gray-400" />
               </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm || statusFilter !== "all" ? "No invoices match your filters" : "No Invoices Found"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm || statusFilter !== "all" 
+                  ? "Try adjusting your search criteria or filters."
+                  : "Invoices will appear here when vendors submit them for processing."}
+              </p>
+              <button
+                onClick={handleRefresh}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+              >
+                <RefreshCw size={16} />
+                Refresh
+              </button>
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
-                <div className="grid grid-cols-6 gap-4 items-center font-medium text-gray-700 text-sm">
-                  <div className="flex items-center gap-2">
-                    <FileText size={16} />
-                    Invoice Number
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Package size={16} />
-                    PO Number
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Building size={16} />
-                    Vendor
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign size={16} />
-                    Amount Due
-                  </div>
-                  <div>Status</div>
-                  <div className="text-center">Actions</div>
-                </div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
-                {filteredInvoices.map((invoice, index) => (
-                  <div
-                    key={invoice._id}
-                    className="grid grid-cols-6 gap-4 items-center px-4 py-4 hover:bg-gray-50 transition-colors relative"
-                  >
-                    <div>
-                      <span className="font-medium text-blue-600">
-                        {invoice.invoiceNumber || "N/A"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="font-medium text-gray-900">
-                        {invoice.po?.poNumber || "N/A"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {invoice.vendor?.firstName || "N/A"}
-                      </div>
-                      {invoice.vendor?.email && (
-                        <div className="text-sm text-gray-500">
-                          {invoice.vendor.email}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <span className="font-medium text-gray-900">
-                        {formatCurrency(invoice.amountDue)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border ${getStatusColor(invoice.status)}`}>
-                        {getStatusIcon(invoice.status)}
-                        <span className="ml-2 capitalize">{invoice.status || "Unknown"}</span>
-                      </span>
-                    </div>
-
-                    <div className="text-center relative">
-                      <button
-                        onClick={(e) => handleMenuToggle(invoice._id, e)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredInvoices.map((invoice) => (
+                <InvoiceCard
+                  key={invoice._id}
+                  invoice={invoice}
+                  onMenuClick={setShowMenuId}
+                  showMenuId={showMenuId}
+                  onAction={openDialog}
+                />
+              ))}
             </div>
           )}
         </div>
-      </div>
+      </main>
 
-      {/* Dropdown Menu */}
+      {/* Action Dropdown Menu */}
       <AnimatePresence>
         {showMenuId && (
-          <motion.div
-            ref={menuRef}
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            transition={{ duration: 0.15 }}
-            className="fixed z-50 w-64 bg-white rounded-lg border border-gray-200"
-            style={{
-              top: menuPosition.top,
-              bottom: menuPosition.bottom,
-              right: menuPosition.right,
-              left: menuPosition.left
-            }}
-          >
-            <div className="py-2">
-              {/* View Details */}
-              <button className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+          <>
+            <div
+              className="fixed inset-0 z-[100] bg-transparent"
+              onClick={() => setShowMenuId(null)}
+            ></div>
+            
+            <motion.div
+              ref={menuRef}
+              initial={{ opacity: 0, scale: 0.95, y: -10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+              style={{
+                top: menuPosition.top,
+                bottom: menuPosition.bottom,
+                right: menuPosition.right,
+                left: menuPosition.left
+              }}
+            >
+              <div className="py-2">
+                <button
+                  onClick={() => setShowMenuId(null)}
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                >
                   <Eye size={16} />
-                </div>
-                <div className="text-left">
-                  <span className="font-medium">View Details</span>
-                  <p className="text-xs text-gray-500">See full invoice information</p>
-                </div>
-              </button>
-              
-              {/* Status-based actions */}
-              {(() => {
-                const invoice = invoices.find(inv => inv._id === showMenuId);
-                if (!invoice) return null;
+                  <span>View Details</span>
+                </button>
+                
+                {(() => {
+                  const invoice = invoices.find(inv => inv._id === showMenuId);
+                  if (!invoice) return null;
 
-                return (
-                  <>
-                    {invoice.status === "pending" && (
-                      <>
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <button
-                          onClick={() => openDialog(invoice, "approve")}
-                          className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors"
-                        >
-                          <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                  return (
+                    <>
+                      {invoice.status === "pending" && (
+                        <>
+                          <button
+                            onClick={() => openDialog(invoice, "approve")}
+                            className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors text-left"
+                          >
                             <Check size={16} />
-                          </div>
-                          <div className="text-left">
-                            <span className="font-medium">Approve</span>
-                            <p className="text-xs text-gray-500">Approve this invoice</p>
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => openDialog(invoice, "reject")}
-                          className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            onClick={() => openDialog(invoice, "reject")}
+                            className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left"
+                          >
                             <X size={16} />
-                          </div>
-                          <div className="text-left">
-                            <span className="font-medium">Reject</span>
-                            <p className="text-xs text-gray-500">Reject this invoice</p>
-                          </div>
-                        </button>
-                      </>
-                    )}
-                    
-                    {invoice.status === "approved" && (
-                      <>
-                        <div className="border-t border-gray-100 my-1"></div>
-                        <button
-                          onClick={() => handlePayInvoice(invoice)}
-                          className="w-full flex items-center space-x-3 px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors"
-                        >
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span>Reject</span>
+                          </button>
+                        </>
+                      )}
+                      
+                      {invoice.status === "approved" && (
+                        <>
+                          <button
+                            onClick={() => handlePayInvoice(invoice)}
+                            className="w-full flex items-center space-x-3 px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors text-left"
+                          >
                             <CreditCard size={16} />
-                          </div>
-                          <div className="text-left">
-                            <span className="font-medium">Pay Invoice</span>
-                            <p className="text-xs text-gray-500">Process payment</p>
-                          </div>
-                        </button>
-                        <button
-                          onClick={() => openDialog(invoice, "mark-as-paid")}
-                          className="w-full flex items-center space-x-3 px-4 py-3 text-purple-600 hover:bg-purple-50 transition-colors"
-                        >
-                          <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span>Pay Invoice</span>
+                          </button>
+                          <button
+                            onClick={() => openDialog(invoice, "mark-as-paid")}
+                            className="w-full flex items-center space-x-3 px-4 py-3 text-purple-600 hover:bg-purple-50 transition-colors text-left"
+                          >
                             <Check size={16} />
-                          </div>
-                          <div className="text-left">
-                            <span className="font-medium">Mark as Paid</span>
-                            <p className="text-xs text-gray-500">Mark payment complete</p>
-                          </div>
-                        </button>
-                      </>
-                    )}
-                    
-                    <div className="border-t border-gray-100 my-1"></div>
-                    <button 
-                      onClick={() => setShowMenuId(null)}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                    >
-                      <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                            <span>Mark as Paid</span>
+                          </button>
+                        </>
+                      )}
+                      
+                      <button
+                        onClick={() => setShowMenuId(null)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                      >
                         <Download size={16} />
-                      </div>
-                      <div className="text-left">
-                        <span className="font-medium">Download PDF</span>
-                        <p className="text-xs text-gray-500">Export invoice</p>
-                      </div>
-                    </button>
-                  </>
-                );
-              })()}
-            </div>
-          </motion.div>
+                        <span>Download PDF</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowMenuId(null)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                      >
+                        <Edit size={16} />
+                        <span>Edit Invoice</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowMenuId(null)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                      >
+                        <Send size={16} />
+                        <span>Send Reminder</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowMenuId(null)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                      >
+                        <Copy size={16} />
+                        <span>Copy Details</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowMenuId(null)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                      >
+                        <History size={16} />
+                        <span>View History</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowMenuId(null)}
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                      >
+                        <MessageSquare size={16} />
+                        <span>Message Vendor</span>
+                      </button>
+                    </>
+                  );
+                })()}
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
@@ -716,34 +775,34 @@ export default function InvoicesPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-white rounded-lg max-w-md w-full"
+              className="bg-white rounded-2xl max-w-md w-full shadow-2xl"
             >
-              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+              <div className="px-8 py-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-                    {actionType === "approve" && <Check size={20} className="text-green-500" />}
-                    {actionType === "reject" && <X size={20} className="text-red-500" />}
-                    {actionType === "mark-as-paid" && <CreditCard size={20} className="text-blue-500" />}
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    {actionType === "approve" && <Check size={24} className="text-green-500" />}
+                    {actionType === "reject" && <X size={24} className="text-red-500" />}
+                    {actionType === "mark-as-paid" && <CreditCard size={24} className="text-blue-500" />}
                     Confirm {actionType.replace("-", " ")}
                   </h2>
                   <button
                     onClick={closeDialog}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
                   >
-                    <X size={16} />
+                    <X size={24} />
                   </button>
                 </div>
               </div>
               
-              <div className="p-6">
-                <p className="text-gray-700 mb-6">
+              <div className="p-8">
+                <p className="text-gray-700 mb-6 text-lg">
                   Are you sure you want to {actionType.replace("-", " ")} invoice{" "}
                   <span className="font-semibold text-gray-900">
                     {selectedInvoice?.invoiceNumber || "N/A"}
@@ -753,14 +812,14 @@ export default function InvoicesPage() {
                 <div className="flex justify-end space-x-4">
                   <button
                     onClick={closeDialog}
-                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     onClick={handleInvoiceAction}
                     disabled={isProcessing}
-                    className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    className={`px-6 py-3 rounded-xl transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
                       actionType === "approve" 
                         ? "bg-green-500 hover:bg-green-600 text-white"
                         : actionType === "reject"
@@ -770,14 +829,14 @@ export default function InvoicesPage() {
                   >
                     {isProcessing ? (
                       <>
-                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
                         Processing...
                       </>
                     ) : (
                       <>
-                        {actionType === "approve" && <Check size={16} />}
-                        {actionType === "reject" && <X size={16} />}
-                        {actionType === "mark-as-paid" && <CreditCard size={16} />}
+                        {actionType === "approve" && <Check size={20} />}
+                        {actionType === "reject" && <X size={20} />}
+                        {actionType === "mark-as-paid" && <CreditCard size={20} />}
                         Confirm
                       </>
                     )}
@@ -792,22 +851,27 @@ export default function InvoicesPage() {
       {/* Notification */}
       <AnimatePresence>
         {showNotification && (
-          <div className="fixed bottom-4 right-4 z-50">
-            <div className={`px-4 py-3 rounded-lg border max-w-md ${
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.3 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.5 }}
+            className="fixed bottom-4 right-4 z-50"
+          >
+            <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
               notificationType === 'success' 
                 ? 'bg-green-50 text-green-800 border-green-200' 
                 : 'bg-red-50 text-red-800 border-red-200'
             }`}>
               <div className="flex items-center gap-3">
                 {notificationType === 'success' ? (
-                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
                 ) : (
-                  <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </div>
@@ -815,23 +879,15 @@ export default function InvoicesPage() {
                 <span className="font-medium">{notificationMessage}</span>
                 <button
                   onClick={() => setShowNotification(false)}
-                  className="ml-4 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="ml-4 text-gray-400 hover:text-gray-600"
                 >
-                  <X size={16} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Background overlay to close menu */}
-      {showMenuId && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setShowMenuId(null)}
-        ></div>
-      )}
     </div>
   );
 }
