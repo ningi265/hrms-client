@@ -32,6 +32,7 @@ import {
   Zap,
   Shield,
   TrendingUp,
+  TrendingDown,
   Bell,
   BookOpen,
   MessageSquare,
@@ -56,6 +57,196 @@ import { useAuth } from "../../../../authcontext/authcontext";
 import CreateRFQForm from "../create/create";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+// MetricCard Component (styled like vendors.js)
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
+  const cardClass = size === "large" ? "col-span-2" : "";
+  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  
+  return (
+    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'amber' ? 'bg-amber-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={20} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'amber' ? 'text-amber-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            {trend > 0 ? (
+              <TrendingUp size={14} className="text-emerald-500" />
+            ) : (
+              <TrendingDown size={14} className="text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+// RFQ Card Component (styled like vendor cards)
+const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId }) => {
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'open': return 'bg-green-100 text-green-800';
+      case 'closed': return 'bg-blue-100 text-blue-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status?.toLowerCase()) {
+      case "open":
+        return <CheckCircle size={14} />;
+      case "pending":
+        return <Clock size={14} />;
+      case "closed":
+        return <Shield size={14} />;
+      default:
+        return <AlertCircle size={14} />;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const isDeadlineNear = (deadline) => {
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    const diffTime = deadlineDate - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 3 && diffDays > 0;
+  };
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <FileText className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900">
+              {rfqId}
+            </h4>
+            <p className="text-sm text-gray-500">{rfq.itemName || "N/A"}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${getStatusColor(rfq.status)}`}>
+            {getStatusIcon(rfq.status)}
+            {rfq.status}
+          </span>
+          <button
+            data-rfq-id={rfqId}
+            onClick={() => onMenuClick(rfqId)}
+            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+          >
+            <MoreVertical size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900">
+            {rfq.quantity || 0}
+          </div>
+          <div className="text-xs text-gray-500">Quantity</div>
+        </div>
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
+            <MessageSquare className="w-4 h-4 text-blue-500" />
+            {rfq.quotes?.length || 0}
+          </div>
+          <div className="text-xs text-gray-500">Quotes</div>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Created</span>
+          <span className="text-xs font-medium">
+            {rfq.createdAt ? formatDate(rfq.createdAt) : "N/A"}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Deadline</span>
+          <div className="flex items-center gap-1">
+            <span className="text-xs font-medium">
+              {rfq.deadline ? formatDate(rfq.deadline) : "No deadline"}
+            </span>
+            {rfq.deadline && isDeadlineNear(rfq.deadline) && (
+              <span className="bg-amber-100 text-amber-800 px-1 py-0.5 rounded text-xs font-medium">
+                Soon
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Vendors</span>
+          <span className="text-xs font-medium">{rfq.vendors?.length || 0}</span>
+        </div>
+      </div>
+
+      {rfq.description && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 mb-1">Description</div>
+          <div className="text-sm text-gray-800 line-clamp-2">
+            {rfq.description}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500">
+            Progress: {rfq.quotes?.length || 0}/{rfq.vendors?.length || 0}
+          </span>
+        </div>
+        <div className="flex gap-1">
+          <Link
+            to={`/dashboard/rfqs/${rfq.id || rfq._id}`}
+            className="p-1 text-gray-400 hover:text-blue-600"
+          >
+            <Eye size={14} />
+          </Link>
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Edit size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function RFQsPage() {
   const { user } = useAuth();
@@ -117,46 +308,35 @@ export default function RFQsPage() {
   const closedRFQs = rfqs?.filter(rfq => rfq.status === "closed")?.length || 0;
   const totalQuotes = rfqs?.reduce((sum, rfq) => sum + (rfq.quotes?.length || 0), 0) || 0;
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showNotificationMessage("RFQ ID copied to clipboard!", "success");
+    setShowMenuId(null);
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "open":
-        return "text-green-700 bg-green-50 border-green-200";
-      case "closed":
-        return "text-blue-700 bg-blue-50 border-blue-200";
-      case "pending":
-        return "text-amber-700 bg-amber-50 border-amber-200";
-      default:
-        return "text-gray-700 bg-gray-50 border-gray-200";
+  const showNotificationMessage = (message, type = "success") => {
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setShowNotification(true);
+    setTimeout(() => setShowNotification(false), 5000);
+  };
+
+  const handleDeleteRFQ = async (rfqId) => {
+    setActionLoading(rfqId);
+    try {
+      // Simulate API call for delete
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      
+      // Remove from local state
+      setRfqs((prev) => prev.filter((rfq) => (rfq.id || rfq._id) !== rfqId));
+      showNotificationMessage("RFQ deleted successfully!", "success");
+    } catch (error) {
+      showNotificationMessage("Failed to delete RFQ", "error");
+      console.error("Failed to delete RFQ:", error);
+    } finally {
+      setActionLoading(null);
+      setShowMenuId(null);
     }
-  };
-
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case "open":
-        return <CheckCircle size={14} />;
-      case "pending":
-        return <Clock size={14} />;
-      case "closed":
-        return <Shield size={14} />;
-      default:
-        return <AlertCircle size={14} />;
-    }
-  };
-
-  const isDeadlineNear = (deadline) => {
-    const deadlineDate = new Date(deadline);
-    const today = new Date();
-    const diffTime = deadlineDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 3 && diffDays > 0;
   };
 
   const handleOpenModal = () => {
@@ -194,35 +374,10 @@ export default function RFQsPage() {
     handleCloseModal();
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    showNotificationMessage("RFQ ID copied to clipboard!", "success");
-    setShowMenuId(null);
-  };
-
-  const showNotificationMessage = (message, type = "success") => {
-    setNotificationMessage(message);
-    setNotificationType(type);
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 5000);
-  };
-
-  const handleDeleteRFQ = async (rfqId) => {
-    setActionLoading(rfqId);
-    try {
-      // Simulate API call for delete
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Remove from local state
-      setRfqs((prev) => prev.filter((rfq) => (rfq.id || rfq._id) !== rfqId));
-      showNotificationMessage("RFQ deleted successfully!", "success");
-    } catch (error) {
-      showNotificationMessage("Failed to delete RFQ", "error");
-      console.error("Failed to delete RFQ:", error);
-    } finally {
-      setActionLoading(null);
-      setShowMenuId(null);
-    }
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+    window.location.reload();
   };
 
   if (isLoading) {
@@ -234,11 +389,11 @@ export default function RFQsPage() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-           <DotLottieReact
-      src="loading.lottie"
-      loop
-      autoplay
-    />
+          <DotLottieReact
+            src="loading.lottie"
+            loop
+            autoplay
+          />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading RFQs</h2>
           <p className="text-gray-600">
             Please wait while we fetch the latest requests...
@@ -250,315 +405,168 @@ export default function RFQsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-2 bg-blue-500 rounded-lg text-white">
-                  <FileText size={24} />
-                </div>
-                Request for Quotations
-              </h1>
-              <p className="text-gray-500 mt-1">
-                Create and manage requests for quotations from vendors
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={handleOpenModal}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
-              >
-                <Plus size={16} />
-                Create New RFQ
-              </button>
-              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                <Bell size={20} />
-              </button>
+      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Request for Quotations</h1>
+            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Activity className="w-4 h-4 text-green-500" />
+                <span>RFQ monitoring</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span>Response rate: {totalRFQs > 0 ? Math.round((totalQuotes / totalRFQs) * 100) : 0}%</span>
+              </div>
             </div>
           </div>
-
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <FileText size={20} className="text-blue-600" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {totalRFQs}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total RFQs</p>
-                <p className="text-xl font-bold text-gray-900">{totalRFQs}</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search RFQs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
             </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <TrendingUp size={20} className="text-green-600" />
-                </div>
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {openRFQs}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Active RFQs</p>
-                <p className="text-xl font-bold text-gray-900">{openRFQs}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-purple-50 rounded-lg">
-                  <Package size={20} className="text-purple-600" />
-                </div>
-                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {closedRFQs}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Completed</p>
-                <p className="text-xl font-bold text-gray-900">{closedRFQs}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-amber-50 rounded-lg">
-                  <MessageSquare size={20} className="text-amber-600" />
-                </div>
-                <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {totalQuotes}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Quotes</p>
-                <p className="text-xl font-bold text-gray-900">{totalQuotes}</p>
-              </div>
-            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+            >
+              <option value="all">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+              <option value="pending">Pending</option>
+            </select>
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            <button
+              onClick={handleOpenModal}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+            >
+              <Plus size={16} />
+              Create RFQ
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="space-y-6">
-          {/* Filter Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search RFQs by item name..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard 
+            title="Total RFQs" 
+            value={totalRFQs}
+            icon={FileText} 
+            color="blue" 
+            subtitle="All requests"
+          />
+          <MetricCard 
+            title="Active RFQs" 
+            value={openRFQs}
+            icon={CheckCircle} 
+            color="green" 
+            trend={12}
+            subtitle="Currently open"
+          />
+          <MetricCard 
+            title="Completed" 
+            value={closedRFQs}
+            icon={Package} 
+            color="purple" 
+            subtitle="Finished RFQs"
+          />
+          <MetricCard 
+            title="Total Quotes" 
+            value={totalQuotes}
+            icon={MessageSquare} 
+            color="amber" 
+            trend={8}
+            subtitle="Received responses"
+          />
+        </div>
 
-                <div className="flex items-center space-x-3">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="open">Open</option>
-                    <option value="closed">Closed</option>
-                    <option value="pending">Pending</option>
-                  </select>
-
-                  <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center gap-2">
-                    <Filter size={16} />
-                    More Filters
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <button className="px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-2 text-sm">
-                  <Download size={16} />
-                  Export
-                </button>
-                <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                  <RefreshCw size={16} />
-                </button>
-              </div>
+        {/* RFQ Cards */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Request for Quotations</h3>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{filteredRFQs.length} of {totalRFQs} RFQs</span>
             </div>
           </div>
 
-          {/* RFQs Content */}
           {filteredRFQs.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
-                  <FileText size={40} className="text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {searchTerm || statusFilter !== "all" ? "No RFQs match your filters" : "No RFQs found"}
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm || statusFilter !== "all" 
-                      ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : "Start by creating your first RFQ to begin receiving quotes from vendors."
-                    }
-                  </p>
-                </div>
-                <button
-                  onClick={handleOpenModal}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                >
-                  <Plus size={16} />
-                  Create First RFQ
-                </button>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText size={32} className="text-gray-400" />
               </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm || statusFilter !== "all" ? "No RFQs match your filters" : "No RFQs found"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm || statusFilter !== "all"
+                  ? "Try adjusting your search criteria or filters."
+                  : "Start by creating your first RFQ to begin receiving quotes."}
+              </p>
+              <button
+                onClick={handleOpenModal}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+              >
+                <Plus size={16} />
+                Create RFQ
+              </button>
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
-                <div className="grid grid-cols-8 gap-4 items-center font-medium text-gray-700 text-sm">
-                  <div className="flex items-center gap-2">
-                    <FileText size={16} />
-                    RFQ ID
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Package size={16} />
-                    Item Details
-                  </div>
-                  <div>Quantity</div>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} />
-                    Created
-                  </div>
-                  <div>Deadline</div>
-                  <div>Status</div>
-                  <div className="flex items-center gap-2">
-                    <MessageSquare size={16} />
-                    Quotes
-                  </div>
-                  <div className="text-center">Actions</div>
-                </div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100">
-                {filteredRFQs.map((rfq, index) => {
-                  const rfqId = `rfq-${String(index + 1).padStart(3, '0')}`;
-                  return (
-                    <div
-                      key={rfq.id || rfq._id}
-                      className="grid grid-cols-8 gap-4 items-center px-4 py-4 hover:bg-gray-50 transition-colors"
-                    >
-                      <div>
-                        <span className="font-medium text-blue-600">
-                          {rfqId}
-                        </span>
-                      </div>
-
-                      <div>
-                        <div className="max-w-48 overflow-hidden text-ellipsis whitespace-nowrap font-medium text-gray-900">
-                          {rfq.itemName || "N/A"}
-                        </div>
-                        {rfq.description && (
-                          <div className="text-sm text-gray-500 max-w-48 overflow-hidden text-ellipsis whitespace-nowrap">
-                            {rfq.description}
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <span className="font-medium text-gray-900">
-                          {rfq.quantity || "N/A"}
-                        </span>
-                      </div>
-
-                      <div>
-                        <span className="text-gray-700">
-                          {rfq.createdAt ? formatDate(rfq.createdAt) : "N/A"}
-                        </span>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-gray-700">
-                            {rfq.deadline ? formatDate(rfq.deadline) : "No deadline"}
-                          </span>
-                          {rfq.deadline && isDeadlineNear(rfq.deadline) && (
-                            <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-xs font-medium">
-                              Due Soon
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border ${getStatusColor(rfq.status)}`}>
-                          {getStatusIcon(rfq.status)}
-                          <span className="ml-2 capitalize">{rfq.status || "Unknown"}</span>
-                        </span>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900">
-                            {rfq.quotes?.length || 0} / {rfq.vendors?.length || 0}
-                          </span>
-                          {rfq.quotes?.length === rfq.vendors?.length && rfq.status === "open" && (
-                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                              Complete
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="text-center">
-                        <button
-                          data-rfq-id={rfqId}
-                          onClick={() => setShowMenuId(showMenuId === rfqId ? null : rfqId)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <MoreVertical size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredRFQs.map((rfq, index) => {
+                const rfqId = `rfq-${String(index + 1).padStart(3, '0')}`;
+                return (
+                  <RFQCard
+                    key={rfq.id || rfq._id}
+                    rfq={rfq}
+                    rfqId={rfqId}
+                    onMenuClick={setShowMenuId}
+                    showMenuId={showMenuId}
+                    onDelete={handleDeleteRFQ}
+                    actionLoading={actionLoading}
+                  />
+                );
+              })}
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* Action Dropdown Menu */}
       {showMenuId && (
         <>
-          {/* Backdrop overlay */}
           <div
             className="fixed inset-0 z-[100] bg-transparent"
             onClick={() => setShowMenuId(null)}
           ></div>
           
-          {/* Action Menu */}
           <div 
-            className="fixed z-[101] w-64 bg-white rounded-lg border border-gray-200"
+            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-rfq-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuHeight = 450; // Approximate menu height
+                  const menuHeight = 450;
                   const spaceBelow = window.innerHeight - rect.bottom;
                   const spaceAbove = rect.top;
                   
-                  // If there's more space above or menu would go off screen below
                   if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
                     return `${rect.top - menuHeight + window.scrollY}px`;
                   } else {
@@ -571,10 +579,9 @@ export default function RFQsPage() {
                 const button = document.querySelector(`[data-rfq-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuWidth = 256; // w-64
+                  const menuWidth = 224;
                   const spaceRight = window.innerWidth - rect.right;
                   
-                  // If menu would go off screen on right, position it to the left of button
                   if (spaceRight < menuWidth) {
                     return `${rect.left - menuWidth + 8}px`;
                   } else {
@@ -586,30 +593,26 @@ export default function RFQsPage() {
             }}
           >
             <div className="py-2">
-              {/* View Details */}
               <Link
                 to={`/dashboard/rfqs/${filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id}`}
                 onClick={() => setShowMenuId(null)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <Eye size={16} />
                 <span>View Details</span>
               </Link>
               
-              {/* Submit Quote */}
               <Link
                 to={`/dashboard/rfqs/${filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id}/quote`}
                 onClick={() => setShowMenuId(null)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
               >
                 <MessageSquare size={16} />
                 <span>Submit Quote</span>
               </Link>
               
-              {/* Edit RFQ */}
               <button
                 onClick={() => {
-                  // Handle edit action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -618,10 +621,8 @@ export default function RFQsPage() {
                 <span>Edit RFQ</span>
               </button>
               
-              {/* View Quotes */}
               <button
                 onClick={() => {
-                  // Handle view quotes action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -630,27 +631,18 @@ export default function RFQsPage() {
                 <span>View All Quotes</span>
               </button>
               
-              {/* Select Vendor */}
-              {(() => {
-                const rfq = filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId);
-                return rfq?.status === "open" && (rfq.quotes?.length || 0) > 0 && (
-                  <button
-                    onClick={() => {
-                      // Handle select vendor action
-                      setShowMenuId(null);
-                    }}
-                    className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                  >
-                    <Users size={16} />
-                    <span>Select Vendor</span>
-                  </button>
-                );
-              })()}
-              
-              {/* Send Reminder */}
               <button
                 onClick={() => {
-                  // Handle send reminder action
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+              >
+                <Users size={16} />
+                <span>Select Vendor</span>
+              </button>
+              
+              <button
+                onClick={() => {
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -659,10 +651,8 @@ export default function RFQsPage() {
                 <span>Send Reminder</span>
               </button>
               
-              {/* Download Report */}
               <button
                 onClick={() => {
-                  // Handle download report action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -671,7 +661,6 @@ export default function RFQsPage() {
                 <span>Download Report</span>
               </button>
               
-              {/* Copy RFQ ID */}
               <button
                 onClick={() => copyToClipboard(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -680,10 +669,8 @@ export default function RFQsPage() {
                 <span>Copy RFQ ID</span>
               </button>
               
-              {/* Share RFQ */}
               <button
                 onClick={() => {
-                  // Handle share action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -692,10 +679,8 @@ export default function RFQsPage() {
                 <span>Share RFQ</span>
               </button>
               
-              {/* Manage Settings */}
               <button
                 onClick={() => {
-                  // Handle manage settings action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -703,10 +688,9 @@ export default function RFQsPage() {
                 <Settings size={16} />
                 <span>Manage Settings</span>
               </button>
-              
+
               <div className="border-t border-gray-100 my-1"></div>
               
-              {/* Delete RFQ */}
               <button
                 onClick={() => {
                   const rfq = filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId);
@@ -732,22 +716,22 @@ export default function RFQsPage() {
 
       {/* Create RFQ Modal */}
       {openModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-                    <Plus size={20} className="text-blue-500" />
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <Plus size={24} className="text-blue-500" />
                     Create New RFQ
                   </h2>
-                  <p className="text-gray-600 text-sm mt-1">Request quotes from vendors for your procurement needs</p>
+                  <p className="text-gray-600 mt-1">Request quotes from vendors for your procurement needs</p>
                 </div>
                 <button
                   onClick={handleCloseModal}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
                 >
-                  <X size={20} />
+                  <X size={24} />
                 </button>
               </div>
             </div>
@@ -761,35 +745,41 @@ export default function RFQsPage() {
 
       {/* Notification */}
       {showNotification && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div
-            className={`px-4 py-3 rounded-lg border max-w-md ${
-              notificationType === "success"
-                ? "bg-green-50 text-green-800 border-green-200"
-                : "bg-red-50 text-red-800 border-red-200"
-            }`}
-          >
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.3 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.5 }}
+          className="fixed bottom-4 right-4 z-50"
+        >
+          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
+            notificationType === 'success' 
+              ? 'bg-green-50 text-green-800 border-green-200' 
+              : 'bg-red-50 text-red-800 border-red-200'
+          }`}>
             <div className="flex items-center gap-3">
-              {notificationType === "success" ? (
-                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {notificationType === 'success' ? (
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               ) : (
-                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
               )}
               <span className="font-medium">{notificationMessage}</span>
-              <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
-                <X size={16} />
+              <button
+                onClick={() => setShowNotification(false)}
+                className="ml-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

@@ -27,12 +27,216 @@ import {
   Copy,
   History,
   Ban,
-  MessageSquare
+  MessageSquare,
+  Activity,
+  Shield,
+  TrendingUp,
+  TrendingDown,
+  Save
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 
+// MetricCard Component (styled like vendors.js)
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
+  const cardClass = size === "large" ? "col-span-2" : "";
+  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  
+  return (
+    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'amber' ? 'bg-amber-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={20} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'amber' ? 'text-amber-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            {trend > 0 ? (
+              <TrendingUp size={14} className="text-emerald-500" />
+            ) : (
+              <TrendingDown size={14} className="text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+// Purchase Order Card Component (styled like vendor cards)
+const PurchaseOrderCard = ({ po, onMenuClick, showMenuId, onApprove, onReject, actionLoading }) => {
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return <Check size={14} />;
+      case "pending":
+        return <Package size={14} />;
+      case "rejected":
+        return <X size={14} />;
+      default:
+        return <Package size={14} />;
+    }
+  };
+
+  const getDeliveryStatusColor = (deliveryStatus) => {
+    switch (deliveryStatus?.toLowerCase()) {
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "shipped":
+        return "bg-blue-100 text-blue-800";
+      case "confirmed":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getDeliveryStatusIcon = (deliveryStatus) => {
+    switch (deliveryStatus?.toLowerCase()) {
+      case "delivered":
+        return <Check size={14} />;
+      case "shipped":
+        return <Truck size={14} />;
+      case "confirmed":
+        return <FileText size={14} />;
+      default:
+        return <Package size={14} />;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const vendorName = po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A";
+  const poNumber = po._id?.slice(-8) || "N/A";
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <ShoppingCart className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900">
+              PO-{poNumber}
+            </h4>
+            <p className="text-sm text-gray-500">{vendorName}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${getStatusColor(po.status)}`}>
+            {getStatusIcon(po.status)}
+            {po.status}
+          </span>
+          <button
+            data-po-id={po._id}
+            onClick={() => onMenuClick(po._id)}
+            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+          >
+            <MoreVertical size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
+            <DollarSign className="w-4 h-4 text-green-500" />
+            {po.totalAmount?.toFixed(0) || 0}
+          </div>
+          <div className="text-xs text-gray-500">Amount (MWK)</div>
+        </div>
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
+            <Truck className="w-4 h-4 text-blue-500" />
+            {po.deliveryStatus || "Pending"}
+          </div>
+          <div className="text-xs text-gray-500">Delivery</div>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Created</span>
+          <span className="text-xs font-medium">
+            {formatDate(po.createdAt)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Vendor Email</span>
+          <span className="text-xs font-medium truncate">{po.vendor?.email || "N/A"}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Items</span>
+          <span className="text-xs font-medium">{po.items?.length || 0}</span>
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div className="text-xs text-gray-600 mb-1">Delivery Status</div>
+        <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 w-fit ${getDeliveryStatusColor(po.deliveryStatus)}`}>
+          {getDeliveryStatusIcon(po.deliveryStatus)}
+          {po.deliveryStatus || "Pending"}
+        </span>
+      </div>
+
+      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-gray-500">
+            Status: {po.status || "Unknown"}
+          </span>
+        </div>
+        <div className="flex gap-1">
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Eye size={14} />
+          </button>
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Edit size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function PurchaseOrdersPage() {
   const { token } = useAuth();
@@ -222,65 +426,11 @@ export default function PurchaseOrdersPage() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return "text-green-700 bg-green-50 border-green-200"
-      case "pending":
-        return "text-amber-700 bg-amber-50 border-amber-200"
-      case "rejected":
-        return "text-red-700 bg-red-50 border-red-200"
-      default:
-        return "text-gray-700 bg-gray-50 border-gray-200"
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status?.toLowerCase()) {
-      case "approved":
-        return <Check size={14} />
-      case "pending":
-        return <Package size={14} />
-      case "rejected":
-        return <X size={14} />
-      default:
-        return <Package size={14} />
-    }
-  }
-
-  const getDeliveryStatusColor = (deliveryStatus) => {
-    switch (deliveryStatus?.toLowerCase()) {
-      case "delivered":
-        return "text-green-700 bg-green-50 border-green-200"
-      case "shipped":
-        return "text-blue-700 bg-blue-50 border-blue-200"
-      case "confirmed":
-        return "text-purple-700 bg-purple-50 border-purple-200"
-      default:
-        return "text-gray-700 bg-gray-50 border-gray-200"
-    }
-  }
-
-  const getDeliveryStatusIcon = (deliveryStatus) => {
-    switch (deliveryStatus?.toLowerCase()) {
-      case "delivered":
-        return <Check size={14} />
-      case "shipped":
-        return <Truck size={14} />
-      case "confirmed":
-        return <FileText size={14} />
-      default:
-        return <Package size={14} />
-    }
-  }
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-  }
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+    window.location.reload();
+  };
 
   if (isLoading) {
     return (
@@ -301,292 +451,166 @@ export default function PurchaseOrdersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-2 bg-blue-500 rounded-lg text-white">
-                  <ShoppingCart size={24} />
-                </div>
-                Purchase Orders
-              </h1>
-              <p className="text-gray-500 mt-1">Manage and track your purchase orders efficiently</p>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={openCreatePOModal}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
-              >
-                <Plus size={16} />
-                New PO
-              </button>
-              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                <Bell size={20} />
-              </button>
-              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                <Settings size={20} />
-              </button>
+      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
+            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Activity className="w-4 h-4 text-green-500" />
+                <span>Order tracking</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span>Approval rate: {totalPOs > 0 ? Math.round((approvedPOs / totalPOs) * 100) : 0}%</span>
+              </div>
             </div>
           </div>
-
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-blue-50 rounded-lg">
-                  <ShoppingCart size={20} className="text-blue-600" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">{totalPOs}</span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total POs</p>
-                <p className="text-xl font-bold text-gray-900">{totalPOs}</p>
-              </div>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search purchase orders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
             </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-green-50 rounded-lg">
-                  <Check size={20} className="text-green-600" />
-                </div>
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {approvedPOs}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Approved</p>
-                <p className="text-xl font-bold text-gray-900">{approvedPOs}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-amber-50 rounded-lg">
-                  <Package size={20} className="text-amber-600" />
-                </div>
-                <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded-full text-sm font-medium">
-                  {pendingPOs}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Pending</p>
-                <p className="text-xl font-bold text-gray-900">{pendingPOs}</p>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <div className="p-2 bg-purple-50 rounded-lg">
-                  <DollarSign size={20} className="text-purple-600" />
-                </div>
-                <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
-                  MWK {totalAmount.toFixed(0)}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Amount</p>
-                <p className="text-xl font-bold text-gray-900">{totalAmount.toLocaleString()}</p>
-              </div>
-            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            <button
+              onClick={openCreatePOModal}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+            >
+              <Plus size={16} />
+              New PO
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="space-y-6">
-          {/* Filter Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search purchase orders..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard 
+            title="Total POs" 
+            value={totalPOs}
+            icon={ShoppingCart} 
+            color="blue" 
+            subtitle="All orders"
+          />
+          <MetricCard 
+            title="Approved" 
+            value={approvedPOs}
+            icon={Check} 
+            color="green" 
+            trend={15}
+            subtitle="Ready to ship"
+          />
+          <MetricCard 
+            title="Pending" 
+            value={pendingPOs}
+            icon={Package} 
+            color="amber" 
+            subtitle="Awaiting approval"
+          />
+          <MetricCard 
+            title="Total Amount" 
+            value={totalAmount.toFixed(0)}
+            prefix="MWK "
+            icon={DollarSign} 
+            color="purple" 
+            trend={8}
+            subtitle="Order value"
+          />
+        </div>
 
-                <div className="flex items-center space-x-3">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
-                  >
-                    <option value="all">All Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-
-                  <button className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm flex items-center gap-2">
-                    <Filter size={16} />
-                    More Filters
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <button className="px-3 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-2 text-sm">
-                  <Download size={16} />
-                  Export
-                </button>
-                <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                  <RefreshCw size={16} />
-                </button>
-              </div>
+        {/* Purchase Order Cards */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Purchase Orders</h3>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{filteredPurchaseOrders.length} of {totalPOs} orders</span>
             </div>
           </div>
 
-          {/* Purchase Orders Content */}
           {filteredPurchaseOrders.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center">
-                  <ShoppingCart size={40} className="text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {searchTerm || statusFilter !== "all"
-                      ? "No purchase orders match your filters"
-                      : "No Purchase Orders"}
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm || statusFilter !== "all"
-                      ? "Try adjusting your search criteria or filters to find what you're looking for."
-                      : "Start by creating your first purchase order from an approved RFQ."}
-                  </p>
-                </div>
-                <button
-                  onClick={openCreatePOModal}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
-                >
-                  <Plus size={16} />
-                  Create First PO
-                </button>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ShoppingCart size={32} className="text-gray-400" />
               </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm || statusFilter !== "all" ? "No purchase orders match your filters" : "No Purchase Orders"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm || statusFilter !== "all"
+                  ? "Try adjusting your search criteria or filters."
+                  : "Start by creating your first purchase order from an approved RFQ."}
+              </p>
+              <button
+                onClick={openCreatePOModal}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+              >
+                <Plus size={16} />
+                Create PO
+              </button>
             </div>
           ) : (
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gray-50 border-b border-gray-200 px-4 py-3">
-                <div className="grid grid-cols-7 gap-4 items-center font-medium text-gray-700 text-sm">
-                  <div className="flex items-center gap-2">
-                    <FileText size={16} />
-                    PO Number
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Building size={16} />
-                    Vendor
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar size={16} />
-                    Date
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign size={16} />
-                    Amount
-                  </div>
-                  <div>Status</div>
-                  <div className="flex items-center gap-2">
-                    <Truck size={16} />
-                    Delivery Status
-                  </div>
-                  <div className="text-center">Actions</div>
-                </div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
-                {filteredPurchaseOrders.map((po, index) => (
-                  <div
-                    key={po._id}
-                    className="grid grid-cols-7 gap-4 items-center px-4 py-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <span className="font-medium text-blue-600">
-                        {po._id?.slice(-8) || "N/A"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A"}
-                      </div>
-
-                      {po.vendor?.email && <div className="text-sm text-gray-500">{po.vendor.email}</div>}
-                    </div>
-
-                    <div>
-                      <span className="text-gray-700">{formatDate(po.createdAt)}</span>
-                    </div>
-
-                    <div>
-                      <span className="font-medium text-gray-900">MWK {po.totalAmount?.toFixed(2) || "0.00"}</span>
-                    </div>
-
-                    <div>
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border ${getStatusColor(po.status)}`}
-                      >
-                        {getStatusIcon(po.status)}
-                        <span className="ml-2 capitalize">{po.status || "Unknown"}</span>
-                      </span>
-                    </div>
-
-                    <div>
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium border ${getDeliveryStatusColor(po.deliveryStatus)}`}
-                      >
-                        {getDeliveryStatusIcon(po.deliveryStatus)}
-                        <span className="ml-2 capitalize">{po.deliveryStatus || "Pending"}</span>
-                      </span>
-                    </div>
-
-                    <div className="text-center">
-                      <button
-                        data-po-id={po._id}
-                        onClick={() => setShowMenuId(showMenuId === po._id ? null : po._id)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredPurchaseOrders.map((po) => (
+                <PurchaseOrderCard
+                  key={po._id}
+                  po={po}
+                  onMenuClick={setShowMenuId}
+                  showMenuId={showMenuId}
+                  onApprove={handleApprovePO}
+                  onReject={handleRejectPO}
+                  actionLoading={actionLoading}
+                />
+              ))}
             </div>
           )}
         </div>
-      </div>
+      </main>
 
       {/* Action Dropdown Menu */}
       {showMenuId && (
         <>
-          {/* Backdrop overlay */}
           <div
             className="fixed inset-0 z-[100] bg-transparent"
             onClick={() => setShowMenuId(null)}
           ></div>
           
-          {/* Action Menu */}
           <div 
-            className="fixed z-[101] w-64 bg-white rounded-lg border border-gray-200"
+            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuHeight = 500; // Approximate menu height
+                  const menuHeight = 500;
                   const spaceBelow = window.innerHeight - rect.bottom;
                   const spaceAbove = rect.top;
                   
-                  // If there's more space above or menu would go off screen below
                   if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
                     return `${rect.top - menuHeight + window.scrollY}px`;
                   } else {
@@ -599,10 +623,9 @@ export default function PurchaseOrdersPage() {
                 const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuWidth = 256; // w-64
+                  const menuWidth = 224;
                   const spaceRight = window.innerWidth - rect.right;
                   
-                  // If menu would go off screen on right, position it to the left of button
                   if (spaceRight < menuWidth) {
                     return `${rect.left - menuWidth + 8}px`;
                   } else {
@@ -614,10 +637,8 @@ export default function PurchaseOrdersPage() {
             }}
           >
             <div className="py-2">
-              {/* View Details */}
               <button
                 onClick={() => {
-                  // Handle view details action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -626,10 +647,8 @@ export default function PurchaseOrdersPage() {
                 <span>View Details</span>
               </button>
               
-              {/* Edit PO */}
               <button
                 onClick={() => {
-                  // Handle edit action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -638,10 +657,8 @@ export default function PurchaseOrdersPage() {
                 <span>Edit PO</span>
               </button>
               
-              {/* Track Delivery */}
               <button
                 onClick={() => {
-                  // Handle track delivery action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -650,10 +667,8 @@ export default function PurchaseOrdersPage() {
                 <span>Track Delivery</span>
               </button>
               
-              {/* Send to Vendor */}
               <button
                 onClick={() => {
-                  // Handle send to vendor action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -662,7 +677,6 @@ export default function PurchaseOrdersPage() {
                 <span>Send to Vendor</span>
               </button>
               
-              {/* Conditional Approve/Reject for pending POs */}
               {(() => {
                 const po = purchaseOrders.find(po => po._id === showMenuId);
                 return po?.status === "pending" && (
@@ -697,10 +711,8 @@ export default function PurchaseOrdersPage() {
                 );
               })()}
               
-              {/* Download PDF */}
               <button
                 onClick={() => {
-                  // Handle download PDF action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -709,7 +721,6 @@ export default function PurchaseOrdersPage() {
                 <span>Download PDF</span>
               </button>
               
-              {/* Copy PO Number */}
               <button
                 onClick={() => copyToClipboard(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -718,10 +729,8 @@ export default function PurchaseOrdersPage() {
                 <span>Copy PO Number</span>
               </button>
               
-              {/* View History */}
               <button
                 onClick={() => {
-                  // Handle view history action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -730,10 +739,8 @@ export default function PurchaseOrdersPage() {
                 <span>View History</span>
               </button>
               
-              {/* Send Message */}
               <button
                 onClick={() => {
-                  // Handle send message action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -742,10 +749,8 @@ export default function PurchaseOrdersPage() {
                 <span>Message Vendor</span>
               </button>
               
-              {/* Manage Settings */}
               <button
                 onClick={() => {
-                  // Handle manage settings action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -753,13 +758,11 @@ export default function PurchaseOrdersPage() {
                 <Settings size={16} />
                 <span>Manage Settings</span>
               </button>
-              
+
               <div className="border-t border-gray-100 my-1"></div>
               
-              {/* Cancel PO */}
               <button
                 onClick={() => {
-                  // Handle cancel PO action
                   setShowMenuId(null);
                 }}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left"
@@ -774,34 +777,34 @@ export default function PurchaseOrdersPage() {
 
       {/* Create PO Modal */}
       {isCreatePOModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-                    <Plus size={20} className="text-blue-500" />
+                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <Plus size={24} className="text-blue-500" />
                     Create New Purchase Order
                   </h2>
-                  <p className="text-gray-600 text-sm mt-1">Select an RFQ to create a purchase order</p>
+                  <p className="text-gray-600 mt-1">Select an RFQ to create a purchase order</p>
                 </div>
                 <button
                   onClick={closeCreatePOModal}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
                 >
-                  <X size={20} />
+                  <X size={24} />
                 </button>
               </div>
             </div>
 
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-8 max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Select RFQ *</label>
                   <select
                     value={selectedRfqId}
                     onChange={(e) => handleRfqSelection(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="">Choose an RFQ...</option>
                     {rfqs.map((rfq) => (
@@ -813,7 +816,7 @@ export default function PurchaseOrdersPage() {
                 </div>
 
                 {selectedQuote && (
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                       <FileText size={20} className="text-blue-500" />
                       Selected Quote Details
@@ -845,15 +848,15 @@ export default function PurchaseOrdersPage() {
               <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">
                 <button
                   onClick={closeCreatePOModal}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreatePO}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                  className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
                 >
-                  <ShoppingCart size={16} />
+                  <Save size={20} />
                   Create PO
                 </button>
               </div>
@@ -864,35 +867,41 @@ export default function PurchaseOrdersPage() {
 
       {/* Notification */}
       {showNotification && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div
-            className={`px-4 py-3 rounded-lg border max-w-md ${
-              notificationType === "success"
-                ? "bg-green-50 text-green-800 border-green-200"
-                : "bg-red-50 text-red-800 border-red-200"
-            }`}
-          >
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.3 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.5 }}
+          className="fixed bottom-4 right-4 z-50"
+        >
+          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
+            notificationType === 'success' 
+              ? 'bg-green-50 text-green-800 border-green-200' 
+              : 'bg-red-50 text-red-800 border-red-200'
+          }`}>
             <div className="flex items-center gap-3">
-              {notificationType === "success" ? (
-                <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {notificationType === 'success' ? (
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               ) : (
-                <div className="w-5 h-5 bg-red-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
               )}
               <span className="font-medium">{notificationMessage}</span>
-              <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
-                <X size={16} />
+              <button
+                onClick={() => setShowNotification(false)}
+                className="ml-4 text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   )
