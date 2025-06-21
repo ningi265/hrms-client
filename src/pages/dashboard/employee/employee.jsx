@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate,useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Users,
   Search,
@@ -23,6 +23,7 @@ import {
   Tag,
   Activity,
   TrendingUp,
+  TrendingDown,
   Target,
   User,
   Clock,
@@ -32,11 +33,171 @@ import {
   MessageSquare,
   Settings,
   FileText,
-  UserPlus
+  UserPlus,
+  CheckCircle,
+  DollarSign
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+// MetricCard Component (styled like vehicle-management.jsx)
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
+  const cardClass = size === "large" ? "col-span-2" : "";
+  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  
+  return (
+    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={20} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            {trend > 0 ? (
+              <TrendingUp size={14} className="text-emerald-500" />
+            ) : (
+              <TrendingDown size={14} className="text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+// Employee Card Component (styled like vehicle cards)
+const EmployeeCard = ({ employee, onMenuClick, showMenuId, onDelete, actionLoading, findEmployeeDepartment }) => {
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'on-leave': return 'bg-yellow-100 text-yellow-800';
+      case 'terminated': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const employeeId = employee._id || employee.id || employee.employeeId;
+  const employeeDepartment = findEmployeeDepartment(employeeId);
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <User className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900">
+              {`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || "N/A"}
+            </h4>
+            <p className="text-sm text-gray-500">{employee.position || "N/A"}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(employee.status)}`}>
+            {employee.status}
+          </span>
+          <button
+            data-employee-id={employeeId}
+            onClick={() => onMenuClick(employeeId)}
+            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+          >
+            <MoreVertical size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900">
+            ${employee.salary ? employee.salary.toLocaleString() : 0}
+          </div>
+          <div className="text-xs text-gray-500">Salary</div>
+        </div>
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900">
+            {employee.hireDate 
+              ? `${Math.floor((new Date() - new Date(employee.hireDate)) / (1000 * 60 * 60 * 24 * 365))}` 
+              : 0}
+          </div>
+          <div className="text-xs text-gray-500">Years</div>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Email</span>
+          <span className="text-xs font-medium truncate">{employee.email || "N/A"}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Phone</span>
+          <span className="text-xs font-medium">{employee.phoneNumber || employee.phone || "N/A"}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Department</span>
+          <span className="text-xs font-medium">
+            {employeeDepartment ? employeeDepartment.departmentCode : "N/A"}
+          </span>
+        </div>
+      </div>
+
+      {employee.skills && employee.skills.length > 0 && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 mb-1">Skills</div>
+          <div className="flex flex-wrap gap-1">
+            {employee.skills.slice(0, 2).map((skill, idx) => (
+              <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                {skill}
+              </span>
+            ))}
+            {employee.skills.length > 2 && (
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                +{employee.skills.length - 2}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+        <span className="text-xs text-gray-500">
+          Hired: {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "N/A"}
+        </span>
+        <div className="flex gap-1">
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Eye size={14} />
+          </button>
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Edit size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function EmployeesPage() {
   const { user } = useAuth();
@@ -63,22 +224,23 @@ export default function EmployeesPage() {
     emergencyContact: "",
     skills: [],
   });
-   const [searchParams] = useSearchParams();
-    const [ activeSection, setActiveSection ] = useState(()=>{
-      return searchParams.get('section') || 'dashboard';
-    });
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    return searchParams.get('section') || 'dashboard';
+  });
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
   const [departments, setDepartments] = useState([])
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
-   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
-    const handleSectionChange = (section) => {
+  const handleSectionChange = (section) => {
     setActiveSection(section);
     navigate(`?section=${section}`, { replace: true });
-};
+  };
+
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
@@ -184,7 +346,6 @@ export default function EmployeesPage() {
   // Calculate stats
   const totalEmployees = employees?.length || 0;
   const activeEmployees = employees?.filter(employee => employee.status === "active")?.length || 0;
-  // Count total departments from departments array, not from employees
   const totalDepartments = departments?.length || 0;
   const avgTenure = employees?.length > 0 
     ? (employees.reduce((sum, employee) => {
@@ -270,58 +431,58 @@ export default function EmployeesPage() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsFormSubmitting(true);
-  setError(null);
+    e.preventDefault();
+    setIsFormSubmitting(true);
+    setError(null);
 
-  try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${backendUrl}/api/auth/employees`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData),
-    });
-    const data = await response.json();
-
-    if (response.ok) {
-      setEmployees((prev) => [...prev, data.employee]);
-      showNotificationMessage(
-        `Employee ${data.employee.firstName} ${data.employee.lastName} has been created successfully! A registration email has been sent to ${data.employee.email}.`, 
-        "success"
-      );
-      closeAddEmployeeModal();
-      
-      // Reset form data
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phoneNumber: '',
-        address: '',
-        department: '',
-        position: '',
-        hireDate: '',
-        salary: '',
-        status: 'active',
-        emergencyContact: {},
-        skills: [],
-        employmentType: 'full-time',
-        workLocation: 'office',
-        manager: null
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/auth/employees`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       });
-    } else {
-      throw new Error(data.message || "Failed to add employee");
+      const data = await response.json();
+
+      if (response.ok) {
+        setEmployees((prev) => [...prev, data.employee]);
+        showNotificationMessage(
+          `Employee ${data.employee.firstName} ${data.employee.lastName} has been created successfully! A registration email has been sent to ${data.employee.email}.`, 
+          "success"
+        );
+        closeAddEmployeeModal();
+        
+        // Reset form data
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          phoneNumber: '',
+          address: '',
+          department: '',
+          position: '',
+          hireDate: '',
+          salary: '',
+          status: 'active',
+          emergencyContact: {},
+          skills: [],
+          employmentType: 'full-time',
+          workLocation: 'office',
+          manager: null
+        });
+      } else {
+        throw new Error(data.message || "Failed to add employee");
+      }
+    } catch (err) {
+      showNotificationMessage(err.message || "Failed to add employee", "error");
+      console.error("Failed to add employee:", err);
+    } finally {
+      setIsFormSubmitting(false);
     }
-  } catch (err) {
-    showNotificationMessage(err.message || "Failed to add employee", "error");
-    console.error("Failed to add employee:", err);
-  } finally {
-    setIsFormSubmitting(false);
-  }
-};
+  };
 
   const showNotificationMessage = (message, type = "success") => {
     setNotificationMessage(message);
@@ -353,7 +514,7 @@ export default function EmployeesPage() {
     // Close any open menus
     setShowMenuId(null);
     setUserMenuOpen(false);
-};
+  };
 
   const handleEditEmployee = (employeeId) => {
     console.log("Navigating to edit for employee ID:", employeeId);
@@ -403,6 +564,12 @@ export default function EmployeesPage() {
     // This could open a message modal or navigate to a messaging interface
     showNotificationMessage("Message feature coming soon!", "info");
     setShowMenuId(null);
+  };
+
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+    window.location.reload();
   };
 
   // Predefined positions based on common roles
@@ -478,15 +645,33 @@ export default function EmployeesPage() {
             <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
               <div className="flex items-center gap-1">
                 <Activity className="w-4 h-4 text-green-500" />
-                <span>Active monitoring</span>
+                <span>Real-time monitoring</span>
               </div>
               <div className="flex items-center gap-1">
                 <Shield className="w-4 h-4 text-blue-500" />
-                <span>Total employees: {totalEmployees}</span>
+                <span>Team health: {Math.round((activeEmployees / totalEmployees) * 100) || 0}%</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
             <button
               onClick={openAddEmployeeModal}
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
@@ -494,298 +679,114 @@ export default function EmployeesPage() {
               <Plus size={16} />
               Add Employee
             </button>
-            <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-              <Bell size={20} />
-            </button>
           </div>
         </div>
 
-        {/* Statistics Cards */}
+        {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Users size={20} className="text-blue-600" />
-              </div>
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                {totalEmployees}
-              </span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{totalEmployees}</div>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Total Employees</div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <Activity size={20} className="text-green-600" />
-              </div>
-              <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                {activeEmployees}
-              </span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{activeEmployees}</div>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Active Employees</div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Briefcase size={20} className="text-purple-600" />
-              </div>
-              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
-                {totalDepartments}
-              </span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{totalDepartments}</div>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Departments</div>
-            {departments.length > 0 && (
-              <div className="mt-1 text-xs text-gray-400">
-                {departments.map(dept => dept.departmentCode).join(", ")}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Clock size={20} className="text-orange-600" />
-              </div>
-              <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full text-sm font-medium">
-                {avgTenure}
-              </span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{avgTenure}</div>
-            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Avg Tenure (years)</div>
-          </div>
+          <MetricCard 
+            title="Total Employees" 
+            value={totalEmployees}
+            icon={Users} 
+            color="blue" 
+            subtitle="In organization"
+          />
+          <MetricCard 
+            title="Active Employees" 
+            value={activeEmployees}
+            icon={CheckCircle} 
+            color="green" 
+            trend={5}
+            subtitle="Currently working"
+          />
+          <MetricCard 
+            title="Departments" 
+            value={totalDepartments}
+            icon={Briefcase} 
+            color="purple" 
+            subtitle="Active departments"
+          />
+          <MetricCard 
+            title="Avg Tenure" 
+            value={avgTenure}
+            suffix=" years"
+            icon={Clock} 
+            color="orange" 
+            trend={2}
+            subtitle="Company experience"
+          />
         </div>
 
-        {/* Filter Section */}
+        {/* Employee Cards */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search employees by name, department, position or skills..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <button className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2">
-                  <Filter size={18} />
-                  More Filters
-                </button>
-              </div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Team Members</h3>
             </div>
-
-            <div className="flex items-center space-x-3">
-              <button className="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200 flex items-center gap-2">
-                <Download size={16} />
-                Export
-              </button>
-              <button className="p-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-                <RefreshCw size={18} />
-              </button>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{filteredEmployees.length} of {totalEmployees} employees</span>
             </div>
           </div>
-        </div>
 
-        {/* Employees Content */}
-        {filteredEmployees.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <div className="flex flex-col items-center space-y-6">
-              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
-                <User size={40} className="text-gray-500" />
+          {filteredEmployees.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <User size={32} className="text-gray-400" />
               </div>
-              <div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                  {searchTerm ? "No employees match your search" : "No employees found"}
-                </h3>
-                <p className="text-gray-600 max-w-md mx-auto">
-                  {searchTerm 
-                    ? "Try adjusting your search criteria to find what you're looking for."
-                    : "Start by adding your first employee to begin building your team."
-                  }
-                </p>
-              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? "No employees match your search" : "No employees found"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm
+                  ? "Try adjusting your search criteria."
+                  : "Start by adding your first employee."}
+              </p>
               <button
                 onClick={openAddEmployeeModal}
-                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
               >
-                <Plus size={20} />
-                Add First Employee
+                <Plus size={16} />
+                Add Employee
               </button>
             </div>
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            {/* Table Header */}
-            <div className="bg-gray-50 border-b border-gray-100 px-6 py-4">
-              <div className="grid grid-cols-6 gap-4 items-center font-semibold text-gray-700 text-sm">
-                <div className="flex items-center gap-2">
-                  <User size={16} />
-                  Employee Name
-                </div>
-                <div className="flex items-center gap-2">
-                  <Mail size={16} />
-                  Contact Info
-                </div>
-                <div className="flex items-center gap-2">
-                  <Briefcase size={16} />
-                  Position
-                </div>
-                <div className="flex items-center gap-2">
-                  <Shield size={16} />
-                  Department
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar size={16} />
-                  Hire Date
-                </div>
-                <div className="text-center">Actions</div>
-              </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredEmployees.map((employee) => (
+                <EmployeeCard
+                  key={employee._id || employee.id || employee.employeeId}
+                  employee={employee}
+                  onMenuClick={setShowMenuId}
+                  showMenuId={showMenuId}
+                  onDelete={handleDeleteEmployee}
+                  actionLoading={actionLoading}
+                  findEmployeeDepartment={findEmployeeDepartment}
+                />
+              ))}
             </div>
-
-            {/* Table Body */}
-            <div className="divide-y divide-gray-100">
-              {filteredEmployees.map((employee, index) => {
-                // Get employee ID - check multiple possible field names
-                const employeeId = employee._id || employee.id || employee.employeeId;
-                console.log("Processing employee:", employee.firstName, employee.lastName, "ID:", employeeId);
-                
-                return (
-                  <motion.div
-                    key={employeeId || index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="grid grid-cols-6 gap-4 items-center px-6 py-6 hover:bg-gray-50 transition-colors"
-                  >
-                    <div>
-                      <div className="font-semibold text-gray-900">
-                        {`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ID: {employeeId || "N/A"}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm text-gray-700 mb-1">
-                        <Mail size={14} />
-                        <span>{employee.email || "N/A"}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Phone size={14} />
-                        <span>{employee.phoneNumber || employee.phone || "N/A"}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {employee.position || "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ${employee.salary ? employee.salary.toLocaleString() : "N/A"}
-                      </div>
-                    </div>
-
-                    <div>
-                      {(() => {
-                        const employeeId = employee._id || employee.id || employee.employeeId;
-                        const employeeDepartment = findEmployeeDepartment(employeeId);
-                        
-                        return employeeDepartment ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                            {employeeDepartment.name} ({employeeDepartment.departmentCode})
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
-                            No Department
-                          </span>
-                        );
-                      })()}
-                      {employee.skills && employee.skills.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {employee.skills.slice(0, 2).map((skill, idx) => (
-                            <span
-                              key={idx}
-                              className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full font-medium"
-                            >
-                              {skill}
-                            </span>
-                          ))}
-                          {employee.skills.length > 2 && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-                              +{employee.skills.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="text-sm text-gray-700">
-                        {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "N/A"}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {employee.hireDate 
-                          ? `${Math.floor((new Date() - new Date(employee.hireDate)) / (1000 * 60 * 60 * 24 * 365))} yrs` 
-                          : "N/A"}
-                      </div>
-                    </div>
-
-                    <div className="text-center">
-                      <div className="relative">
-                        <button
-                          data-employee-id={employeeId}
-                          onClick={() => {
-                            console.log("Clicked action menu for employee:", employee);
-                            console.log("Employee ID:", employeeId);
-                            console.log("Employee name:", employee.firstName, employee.lastName);
-                            setShowMenuId(showMenuId === employeeId ? null : employeeId);
-                          }}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <MoreVertical size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </main>
 
       {/* Action Dropdown Menu */}
       {showMenuId && (
         <>
-          {/* Backdrop overlay */}
           <div
             className="fixed inset-0 z-[100] bg-transparent"
             onClick={() => setShowMenuId(null)}
           ></div>
           
-          {/* Action Menu */}
           <div 
-            className="fixed z-[101] w-56 bg-white rounded-lg border border-gray-200"
+            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuHeight = 350; // Approximate menu height
+                  const menuHeight = 350;
                   const spaceBelow = window.innerHeight - rect.bottom;
                   const spaceAbove = rect.top;
                   
-                  // If there's more space above or menu would go off screen below
                   if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
                     return `${rect.top - menuHeight + window.scrollY}px`;
                   } else {
@@ -798,10 +799,9 @@ export default function EmployeesPage() {
                 const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuWidth = 224; // 56 * 4 (w-56)
+                  const menuWidth = 224;
                   const spaceRight = window.innerWidth - rect.right;
                   
-                  // If menu would go off screen on right, position it to the left of button
                   if (spaceRight < menuWidth) {
                     return `${rect.left - menuWidth + 8}px`;
                   } else {
@@ -813,7 +813,6 @@ export default function EmployeesPage() {
             }}
           >
             <div className="py-2">
-              {/* View Details */}
               <button
                 onClick={() => handleViewDetails(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -822,7 +821,6 @@ export default function EmployeesPage() {
                 <span>View Details</span>
               </button>
               
-              {/* Edit Employee */}
               <button
                 onClick={() => handleEditEmployee(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -831,7 +829,6 @@ export default function EmployeesPage() {
                 <span>Edit Employee</span>
               </button>
               
-              {/* Send Message */}
               <button
                 onClick={() => handleSendMessage(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -840,7 +837,6 @@ export default function EmployeesPage() {
                 <span>Send Message</span>
               </button>
               
-              {/* View Performance */}
               <button
                 onClick={() => handleViewPerformance(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -849,7 +845,6 @@ export default function EmployeesPage() {
                 <span>View Performance</span>
               </button>
               
-              {/* Generate Report */}
               <button
                 onClick={() => handleGenerateReport(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -858,7 +853,6 @@ export default function EmployeesPage() {
                 <span>Generate Report</span>
               </button>
               
-              {/* Copy Employee ID */}
               <button
                 onClick={() => {
                   copyToClipboard(showMenuId);
@@ -870,7 +864,6 @@ export default function EmployeesPage() {
                 <span>Copy Employee ID</span>
               </button>
               
-              {/* Manage Access */}
               <button
                 onClick={() => handleManageAccess(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
@@ -881,7 +874,6 @@ export default function EmployeesPage() {
               
               <div className="border-t border-gray-100 my-1"></div>
               
-              {/* Delete Employee */}
               <button
                 onClick={() => {
                   handleDeleteEmployee(showMenuId);
@@ -904,9 +896,9 @@ export default function EmployeesPage() {
 
       {/* Add Employee Modal */}
       {isAddEmployeeModalOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden">
-            <div className="px-8 py-6 border-b border-gray-200 bg-gray-50">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="px-8 py-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -917,7 +909,7 @@ export default function EmployeesPage() {
                 </div>
                 <button
                   onClick={closeAddEmployeeModal}
-                  className="p-3 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
                 >
                   <X size={24} />
                 </button>
@@ -937,7 +929,7 @@ export default function EmployeesPage() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -950,7 +942,7 @@ export default function EmployeesPage() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -965,7 +957,7 @@ export default function EmployeesPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -980,7 +972,7 @@ export default function EmployeesPage() {
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -993,7 +985,7 @@ export default function EmployeesPage() {
                       value={formData.emergencyContact}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1008,7 +1000,7 @@ export default function EmployeesPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
@@ -1022,7 +1014,7 @@ export default function EmployeesPage() {
                       value={formData.department}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Department</option>
                       {departments.map((dept) => (
@@ -1041,7 +1033,7 @@ export default function EmployeesPage() {
                       value={formData.position}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Position</option>
                       {commonPositions.map((position) => (
@@ -1064,7 +1056,7 @@ export default function EmployeesPage() {
                       value={formData.hireDate}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -1077,7 +1069,7 @@ export default function EmployeesPage() {
                       value={formData.salary}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1091,7 +1083,7 @@ export default function EmployeesPage() {
                     value={formData.status}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="active">Active</option>
                     <option value="on-leave">On Leave</option>
@@ -1109,7 +1101,7 @@ export default function EmployeesPage() {
                     onChange={handleInputChange}
                     multiple
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
                   >
                     <option value="JavaScript">JavaScript</option>
                     <option value="React">React</option>
@@ -1133,14 +1125,14 @@ export default function EmployeesPage() {
                   <button
                     type="button"
                     onClick={closeAddEmployeeModal}
-                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isFormSubmitting}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isFormSubmitting ? (
                       <>
@@ -1169,7 +1161,7 @@ export default function EmployeesPage() {
           exit={{ opacity: 0, y: 20, scale: 0.5 }}
           className="fixed bottom-4 right-4 z-50"
         >
-          <div className={`px-6 py-4 rounded-lg border ${
+          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
             notificationType === 'success' 
               ? 'bg-green-50 text-green-800 border-green-200' 
               : 'bg-red-50 text-red-800 border-red-200'

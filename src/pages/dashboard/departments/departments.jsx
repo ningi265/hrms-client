@@ -29,10 +29,182 @@ import {
   Settings,
   FileText,
   TrendingUp,
+  TrendingDown,
+  Shield,
+  CheckCircle,
+  AlertTriangle,
+  Calendar
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { DotLottieReact } from "@lottiefiles/dotlottie-react"
 import { useAuth } from "../../../authcontext/authcontext"
+
+// MetricCard Component (styled like vehicle-management.jsx)
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
+  const cardClass = size === "large" ? "col-span-2" : "";
+  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  
+  return (
+    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-2">
+        <div className={`p-2 rounded-lg ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={20} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            {trend > 0 ? (
+              <TrendingUp size={14} className="text-emerald-500" />
+            ) : (
+              <TrendingDown size={14} className="text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+// Department Card Component (styled like vehicle cards)
+const DepartmentCard = ({ department, onMenuClick, showMenuId, onDelete, actionLoading }) => {
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'active': return 'bg-green-100 text-green-800';
+      case 'restructuring': return 'bg-yellow-100 text-yellow-800';
+      case 'inactive': return 'bg-red-100 text-red-800';
+      case 'merging': return 'bg-blue-100 text-blue-800';
+      case 'dissolving': return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPerformanceColor = (score) => {
+    if (score >= 90) return 'text-green-600';
+    if (score >= 70) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const formatBudget = (budget) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(budget)
+  };
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-50 rounded-lg">
+            <Building2 className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900">{department.name}</h4>
+            <p className="text-sm text-gray-500">{department.departmentHead}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(department.status)}`}>
+            {department.status}
+          </span>
+          <button
+            data-department-id={department._id}
+            onClick={() => onMenuClick(department._id)}
+            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+          >
+            <MoreVertical size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900">{department.employeeCount || 0}</div>
+          <div className="text-xs text-gray-500">Employees</div>
+        </div>
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className={`text-lg font-bold ${getPerformanceColor(department.performance || 0)}`}>
+            {department.performance || 0}%
+          </div>
+          <div className="text-xs text-gray-500">Performance</div>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Budget</span>
+          <span className="text-xs font-medium">{formatBudget(department.budget || 0)}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Location</span>
+          <span className="text-xs font-medium">{department.location}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Established</span>
+          <span className="text-xs font-medium">
+            {department.establishedDate ? new Date(department.establishedDate).getFullYear() : 'N/A'}
+          </span>
+        </div>
+      </div>
+
+      {department.goals && department.goals.length > 0 && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 mb-1">Goals</div>
+          <div className="flex flex-wrap gap-1">
+            {department.goals.slice(0, 2).map((goal, idx) => (
+              <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                {goal}
+              </span>
+            ))}
+            {department.goals.length > 2 && (
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                +{department.goals.length - 2}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-2 text-xs text-gray-500">
+          <Mail size={12} />
+          <span className="truncate">{department.headEmail}</span>
+        </div>
+        <div className="flex gap-1">
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Eye size={14} />
+          </button>
+          <button className="p-1 text-gray-400 hover:text-blue-600">
+            <Edit size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function DepartmentsPage() {
   const navigate = useNavigate()
@@ -239,33 +411,15 @@ export default function DepartmentsPage() {
     }).format(budget)
   }
 
-  const getPerformanceColor = (performance) => {
-    if (performance >= 90) return "text-green-700 bg-green-50 border-green-200"
-    if (performance >= 80) return "text-blue-700 bg-blue-50 border-blue-200"
-    if (performance >= 70) return "text-yellow-700 bg-yellow-50 border-yellow-200"
-    return "text-red-700 bg-red-50 border-red-200"
-  }
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "active":
-        return "bg-green-100 text-green-800"
-      case "restructuring":
-        return "bg-yellow-100 text-yellow-800"
-      case "inactive":
-        return "bg-red-100 text-red-800"
-      case "merging":
-        return "bg-blue-100 text-blue-800"
-      case "dissolving":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
-  }
+  const handleRefresh = () => {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 1000);
+    window.location.reload();
+  };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -282,360 +436,152 @@ export default function DepartmentsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl text-white">
-                  <Building2 size={32} />
-                </div>
-                Department Management
-              </h1>
-              <p className="text-gray-500 text-lg mt-2">Organize and manage your company departments</p>
-            </div>
-
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={openAddDepartmentModal}
-                className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-              >
-                <Plus size={20} />
-                Add New Department
-              </button>
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
-                <Bell size={20} />
-              </button>
+    <div className="min-h-screen bg-gray-50">
+      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Department Management</h1>
+            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+              <div className="flex items-center gap-1">
+                <Activity className="w-4 h-4 text-green-500" />
+                <span>Real-time monitoring</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span>Active departments: {activeDepartments}</span>
+              </div>
             </div>
           </div>
-
-          {/* Enhanced Statistics Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search departments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl">
-                  <Building2 size={24} className="text-white" />
-                </div>
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {totalDepartments}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Departments</p>
-                <p className="text-2xl font-bold text-gray-900">{totalDepartments}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            <button
+              onClick={openAddDepartmentModal}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <Activity size={24} className="text-white" />
-                </div>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {activeDepartments}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Active Departments</p>
-                <p className="text-2xl font-bold text-gray-900">{activeDepartments}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-                  <Users size={24} className="text-white" />
-                </div>
-                <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {totalEmployees}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Employees</p>
-                <p className="text-2xl font-bold text-gray-900">{totalEmployees}</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              whileHover={{ y: -2, scale: 1.02 }}
-              className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50 shadow-xl hover:shadow-2xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl">
-                  <DollarSign size={24} className="text-white" />
-                </div>
-                <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {formatBudget(totalBudget)}
-                </span>
-              </div>
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Total Budget</p>
-                <p className="text-2xl font-bold text-gray-900">{formatBudget(totalBudget)}</p>
-              </div>
-            </motion.div>
+              <Plus size={16} />
+              Add Department
+            </button>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="space-y-8"
-        >
-          {/* Enhanced Filter Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-6 shadow-xl">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-              <div className="flex flex-col sm:flex-row gap-4 items-center flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search departments by name, head, or location..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
-                  />
-                </div>
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <MetricCard 
+            title="Total Departments" 
+            value={totalDepartments}
+            icon={Building2} 
+            color="blue" 
+            subtitle="In organization"
+          />
+          <MetricCard 
+            title="Active Departments" 
+            value={activeDepartments}
+            icon={CheckCircle} 
+            color="green" 
+            trend={5}
+            subtitle="Currently operational"
+          />
+          <MetricCard 
+            title="Total Employees" 
+            value={totalEmployees}
+            icon={Users} 
+            color="purple" 
+            trend={12}
+            subtitle="Across all departments"
+          />
+          <MetricCard 
+            title="Total Budget" 
+            value={formatBudget(totalBudget)}
+            icon={DollarSign} 
+            color="orange" 
+            trend={-2}
+            subtitle="Annual allocation"
+          />
+        </div>
 
-                <div className="flex items-center space-x-3">
-                  <button className="px-4 py-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium flex items-center gap-2">
-                    <Filter size={18} />
-                    More Filters
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3">
-                <button className="px-4 py-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200 flex items-center gap-2">
-                  <Download size={16} />
-                  Export
-                </button>
-                <button 
-                  onClick={() => window.location.reload()}
-                  className="p-2 bg-white/80 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 border border-gray-200"
-                >
-                  <RefreshCw size={18} />
-                </button>
-              </div>
+        {/* Department Cards */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Departments</h3>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{filteredDepartments.length} of {totalDepartments} departments</span>
             </div>
           </div>
 
-          {/* Departments Content */}
           {filteredDepartments.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 p-12 shadow-xl text-center">
-              <div className="flex flex-col items-center space-y-6">
-                <div className="w-24 h-24 bg-gradient-to-br from-gray-200 to-gray-300 rounded-full flex items-center justify-center">
-                  <Building2 size={40} className="text-gray-500" />
-                </div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {searchTerm ? "No departments match your search" : "No departments found"}
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto">
-                    {searchTerm
-                      ? "Try adjusting your search criteria to find what you're looking for."
-                      : "Start by adding your first department to organize your company structure."}
-                  </p>
-                </div>
-                <button
-                  onClick={openAddDepartmentModal}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
-                >
-                  <Plus size={20} />
-                  Add First Department
-                </button>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Building2 size={32} className="text-gray-400" />
               </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? "No departments match your search" : "No departments found"}
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm
+                  ? "Try adjusting your search criteria."
+                  : "Start by adding your first department."}
+              </p>
+              <button
+                onClick={openAddDepartmentModal}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+              >
+                <Plus size={16} />
+                Add Department
+              </button>
             </div>
           ) : (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-xl overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gradient-to-r from-gray-50/50 to-blue-50/30 border-b border-gray-100/50 px-6 py-4">
-                <div className="grid grid-cols-7 gap-4 items-center font-semibold text-gray-700 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Building2 size={16} />
-                    Department
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Crown size={16} />
-                    Department Head
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin size={16} />
-                    Location
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users size={16} />
-                    Employees
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <DollarSign size={16} />
-                    Budget
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BarChart3 size={16} />
-                    Performance
-                  </div>
-                  <div className="text-center">Actions</div>
-                </div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100">
-                {filteredDepartments.map((department, index) => (
-                  <motion.div
-                    key={department._id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    className="grid grid-cols-7 gap-4 items-center px-6 py-6 hover:bg-gray-50/50 transition-all duration-200 group"
-                  >
-                    <div>
-                      <div className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-200">
-                        {department.name}
-                      </div>
-                      <div className="text-sm text-gray-500 line-clamp-2">{department.description}</div>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {department.goals && Array.isArray(department.goals)
-                          ? department.goals.slice(0, 2).map((goal, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium"
-                              >
-                                {goal}
-                              </span>
-                            ))
-                          : null}
-                        {department.goals && department.goals.length > 2 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-                            +{department.goals.length - 2}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-2">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(department.status)}`}>
-                          {department.status}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="font-medium text-gray-900">{department.departmentHead}</div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-                        <Mail size={12} />
-                        <span className="truncate">{department.headEmail}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <Phone size={12} />
-                        <span>{department.headPhone}</span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 text-sm text-gray-700">
-                        <MapPin size={14} />
-                        <span>{department.location}</span>
-                      </div>
-                      {(department.building || department.floor) && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          {department.building && `${department.building}`}
-                          {department.building && department.floor && ", "}
-                          {department.floor && `${department.floor}`}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Users size={14} className="text-blue-600" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900">{department.employeeCount || 0}</div>
-                          <div className="text-xs text-gray-500">
-                            {department.activeProjects || 0} projects
-                          </div>
-                        </div>
-                      </div>
-                      {department.maxCapacity && (
-                        <div className="text-xs text-gray-500 mt-1">
-                          of {department.maxCapacity} capacity
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div className="font-semibold text-gray-900">{formatBudget(department.budget || 0)}</div>
-                      <div className="text-xs text-gray-500">
-                        Est. {department.establishedDate ? new Date(department.establishedDate).getFullYear() : "N/A"}
-                      </div>
-                      {department.actualSpending && (
-                        <div className="text-xs text-gray-500">
-                          {formatBudget(department.actualSpending)} spent
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <div
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getPerformanceColor(department.performance || 0)}`}
-                      >
-                        {department.performance || 0}%
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${department.performance || 0}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    <div className="text-center">
-                      <button
-                        data-department-id={department._id}
-                        onClick={() => setShowMenuId(showMenuId === department._id ? null : department._id)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                      >
-                        <MoreVertical size={18} />
-                      </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredDepartments.map((department) => (
+                <DepartmentCard
+                  key={department._id}
+                  department={department}
+                  onMenuClick={setShowMenuId}
+                  showMenuId={showMenuId}
+                  onDelete={handleDeleteDepartment}
+                  actionLoading={actionLoading}
+                />
+              ))}
             </div>
           )}
-        </motion.div>
-      </div>
+        </div>
+      </main>
 
-      {/* Enhanced Action Dropdown Menu - Positioned Above Everything */}
+      {/* Action Dropdown Menu */}
       {showMenuId && (
         <>
-          {/* Backdrop overlay */}
           <div
             className="fixed inset-0 z-[100] bg-transparent"
             onClick={() => setShowMenuId(null)}
           ></div>
           
-          {/* Action Menu */}
           <div 
             className="fixed z-[101] w-64 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
             style={{
@@ -643,11 +589,10 @@ export default function DepartmentsPage() {
                 const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuHeight = 400; // Approximate menu height
+                  const menuHeight = 400;
                   const spaceBelow = window.innerHeight - rect.bottom;
                   const spaceAbove = rect.top;
                   
-                  // If there's more space above or menu would go off screen below
                   if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
                     return `${rect.top - menuHeight + window.scrollY}px`;
                   } else {
@@ -660,10 +605,9 @@ export default function DepartmentsPage() {
                 const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuWidth = 256; // w-64
+                  const menuWidth = 256;
                   const spaceRight = window.innerWidth - rect.right;
                   
-                  // If menu would go off screen on right, position it to the left of button
                   if (spaceRight < menuWidth) {
                     return `${rect.left - menuWidth + 8}px`;
                   } else {
@@ -675,7 +619,6 @@ export default function DepartmentsPage() {
             }}
           >
             <div className="py-2">
-              {/* View Details */}
               <button
                 onClick={() => {
                   navigate(`/dashboard/departments/${showMenuId}`);
@@ -687,7 +630,6 @@ export default function DepartmentsPage() {
                 <span>View Details</span>
               </button>
               
-              {/* Edit Department */}
               <button
                 onClick={() => {
                   navigate(`/dashboard/departments/${showMenuId}/edit`);
@@ -699,7 +641,6 @@ export default function DepartmentsPage() {
                 <span>Edit Department</span>
               </button>
               
-              {/* View Employees */}
               <button
                 onClick={() => {
                   navigate(`/dashboard/departments/${showMenuId}/employees`);
@@ -711,43 +652,6 @@ export default function DepartmentsPage() {
                 <span>View Employees</span>
               </button>
               
-              {/* View Performance */}
-              <button
-                onClick={() => {
-                  navigate(`/dashboard/departments/${showMenuId}/performance`);
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <TrendingUp size={16} />
-                <span>View Performance</span>
-              </button>
-              
-              {/* Send Message */}
-              <button
-                onClick={() => {
-                  // Handle send message action
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <MessageSquare size={16} />
-                <span>Send Message to Head</span>
-              </button>
-              
-              {/* Generate Report */}
-              <button
-                onClick={() => {
-                  // Handle generate report action
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <FileText size={16} />
-                <span>Generate Report</span>
-              </button>
-              
-              {/* Copy Department ID */}
               <button
                 onClick={() => copyToClipboard(showMenuId)}
                 className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
@@ -756,21 +660,8 @@ export default function DepartmentsPage() {
                 <span>Copy Department ID</span>
               </button>
               
-              {/* Manage Settings */}
-              <button
-                onClick={() => {
-                  // Handle manage settings action
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <Settings size={16} />
-                <span>Manage Settings</span>
-              </button>
-              
               <div className="border-t border-gray-100 my-1"></div>
               
-              {/* Delete Department */}
               <button
                 onClick={() => handleDeleteDepartment(showMenuId)}
                 disabled={actionLoading === showMenuId}
@@ -793,7 +684,7 @@ export default function DepartmentsPage() {
       {isAddDepartmentModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+            <div className="px-8 py-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
@@ -1017,7 +908,7 @@ export default function DepartmentsPage() {
                   <button
                     type="submit"
                     disabled={isFormSubmitting}
-                    className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-200 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isFormSubmitting ? (
                       <>
