@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate ,useSearchParams} from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Building,
   FileText,
@@ -49,25 +49,219 @@ export default function VendorManagementDashboard() {
   const [notificationType, setNotificationType] = useState("info");
   const [isNewUser, setIsNewUser] = useState(false);
   const [showNewUserAlert, setShowNewUserAlert] = useState(false);
- const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => {
     return searchParams.get('section') || 'vendor-dash';
   });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  
+  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+  // Helper function to transform API data to component format
+  const transformApiData = (apiData) => {
+    try {
+      // Validate required fields
+      if (!apiData._id) {
+        throw new Error('Missing vendor ID in API response');
+      }
+      
+      // Safely parse dates with fallbacks
+      const parseDate = (dateString) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        return isNaN(date.getTime()) ? null : date;
+      };
+      
+      const submissionDate = parseDate(apiData.submissionDate);
+      const approvalDate = parseDate(apiData.approvalDate);
+      
+      // Calculate days in review with null check
+      const daysInReview = submissionDate 
+        ? Math.floor((new Date() - submissionDate) / (1000 * 60 * 60 * 24))
+        : 0;
+
+      // Calculate completion percentage based on status
+      const getCompletionPercentage = (status) => {
+        switch (status) {
+          case 'pending': return 25;
+          case 'under_review': return 75;
+          case 'approved': return 100;
+          case 'rejected': return 50;
+          default: return 0;
+        }
+      };
+
+      // Generate timeline based on current status and dates
+      const generateTimeline = (status, submissionDate, approvalDate) => {
+        const timeline = [];
+        const submissionDateObj = new Date(submissionDate);
+        
+        // Submitted step
+        timeline.push({
+          status: "submitted",
+          date: submissionDateObj.toLocaleDateString(),
+          time: submissionDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          description: "Registration submitted successfully",
+          completed: true
+        });
+
+        // Document verification step
+        const docVerificationDate = new Date(submissionDateObj);
+        docVerificationDate.setDate(docVerificationDate.getDate() + 1);
+        
+        timeline.push({
+          status: "document_verification",
+          date: docVerificationDate.toLocaleDateString(),
+          time: docVerificationDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          description: "Documents under verification",
+          completed: ['under_review', 'approved', 'rejected'].includes(status)
+        });
+
+        // Review step
+        if (['under_review', 'approved', 'rejected'].includes(status)) {
+          const reviewDate = new Date(submissionDateObj);
+          reviewDate.setDate(reviewDate.getDate() + 2);
+          
+          timeline.push({
+            status: status,
+            date: reviewDate.toLocaleDateString(),
+            time: reviewDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            description: status === 'rejected' 
+              ? "Application was rejected - please review feedback"
+              : "Application under review by compliance team",
+            completed: ['approved', 'rejected'].includes(status),
+            current: status === 'under_review'
+          });
+        } else if (status === 'pending') {
+          timeline.push({
+            status: "under_review",
+            date: "Pending",
+            time: "",
+            description: "Waiting for review by compliance team",
+            completed: false,
+            current: true
+          });
+        }
+
+        // Final approval step
+        if (status === 'approved' && approvalDate) {
+          const approvalDateObj = new Date(approvalDate);
+          timeline.push({
+            status: "final_approval",
+            date: approvalDateObj.toLocaleDateString(),
+            time: approvalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            description: "Final approval and account activation completed",
+            completed: true
+          });
+        } else if (status !== 'rejected') {
+          timeline.push({
+            status: "final_approval",
+            date: "Pending",
+            time: "",
+            description: "Final approval and account activation",
+            completed: false
+          });
+        }
+
+        return timeline;
+      };
+
+      // Format file size safely
+      const formatFileSize = (bytes) => {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+      };
+
+      // Build transformed data with correct property mapping
+      return {
+        id: apiData._id,
+        registrationStatus: apiData.registrationStatus || 'pending',
+        submissionDate: submissionDate ? submissionDate.toLocaleDateString() : 'N/A',
+        approvalDate: approvalDate ? approvalDate.toLocaleDateString() : null,
+        isNewUser: false,
+        
+        basicInfo: {
+          countryOfRegistration: apiData.countryOfRegistration || 'N/A',
+          businessName: apiData.businessName || 'N/A',
+          taxpayerIdentificationNumber: apiData.taxpayerIdentificationNumber || 'N/A',
+          tinIssuedDate: parseDate(apiData.tinIssuedDate)?.toLocaleDateString() || 'N/A',
+          companyType: apiData.companyType || 'N/A',
+          formOfBusiness: apiData.formOfBusiness || 'N/A',
+          ownershipType: apiData.ownershipType || 'N/A',
+          businessCategory: apiData.businessCategory || 'N/A',
+          registrationNumber: apiData.registrationNumber || 'N/A',
+          registrationIssuedDate: parseDate(apiData.registrationIssuedDate)?.toLocaleDateString() || 'N/A'
+        },
+        
+        // FIXED: Use vendor object instead of authorizedContact
+        contactInfo: apiData.vendor ? {
+          authorizedUser: `${apiData.vendor.firstName || ''} ${apiData.vendor.lastName || ''}`.trim() || 'N/A',
+          phone: apiData.vendor.phoneNumber || 'N/A',
+          email: apiData.vendor.email || 'N/A'
+        } : {
+          authorizedUser: 'N/A',
+          phone: 'N/A',
+          email: 'N/A'
+        },
+        
+        documents: apiData.powerOfAttorney ? {
+          powerOfAttorney: {
+            name: apiData.powerOfAttorney.fileName || 'Unknown Document',
+            uploadDate: parseDate(apiData.powerOfAttorney.uploadDate)?.toLocaleDateString() || 'N/A',
+            status: apiData.registrationStatus === 'approved' ? 'verified' : 
+                    apiData.registrationStatus === 'rejected' ? 'rejected' : 'pending',
+            size: formatFileSize(apiData.powerOfAttorney.fileSize),
+            filePath: apiData.powerOfAttorney.filePath || ''
+          }
+        } : null,
+        
+        timeline: generateTimeline(
+          apiData.registrationStatus || 'pending', 
+          apiData.submissionDate, 
+          apiData.approvalDate
+        ),
+        
+        metrics: {
+          completionPercentage: getCompletionPercentage(apiData.registrationStatus),
+          daysInReview: daysInReview,
+          averageProcessingTime: "5-7 days"
+        },
+        
+        vendor: apiData.vendor || null
+      };
+      
+    } catch (err) {
+      console.error('Error transforming API data:', err);
+      throw new Error('Failed to process vendor data: ' + err.message);
+    }
+  };
+
   // Fetch vendor data from API
   useEffect(() => {
     const fetchVendorData = async () => {
       try {
         const token = localStorage.getItem("token");
-      const response = await fetch(`${backendUrl}/api/vendors/vendor-data`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
+        
+        // Check if backend URL is configured
+        if (!backendUrl) {
+          throw new Error('Backend URL is not configured. Please check your .env file.');
+        }
+        
+        console.log('Fetching from:', `${backendUrl}/api/vendors/vendor-data`);
+        console.log('Token exists:', !!token);
 
+        const response = await fetch(`${backendUrl}/api/vendors/vendor-data`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        });
+
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -116,11 +310,25 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
               }
             });
             return;
+          } else if (response.status === 401) {
+            throw new Error('Authentication failed. Please login again.');
+          } else if (response.status === 403) {
+            throw new Error('Access denied. You do not have permission to view this data.');
+          } else if (response.status >= 500) {
+            throw new Error('Server error. Please try again later.');
+          } else {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText || 'Unknown error'}`);
           }
-          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const apiData = await response.json();
+        console.log('API Response:', apiData);
+        
+        // Validate API data structure
+        if (!apiData || typeof apiData !== 'object') {
+          throw new Error('Invalid API response format');
+        }
         
         // Transform API data to component format
         const transformedData = transformApiData(apiData);
@@ -129,7 +337,13 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
         
       } catch (err) {
         console.error('Error fetching vendor data:', err);
-        if (err.message.includes('404') || err.message.includes('Not Found')) {
+        
+        // Enhanced error handling
+        if (err.message.includes('fetch')) {
+          setError('Network error. Please check your internet connection and try again.');
+        } else if (err.message.includes('Authentication')) {
+          setError('Authentication failed. Please login again.');
+        } else if (err.message.includes('404') || err.message.includes('Not Found')) {
           // Handle as new user
           setIsNewUser(true);
           setShowNewUserAlert(true);
@@ -175,7 +389,7 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
             }
           });
         } else {
-          setError("Failed to load vendor data");
+          setError(err.message || "Failed to load vendor data");
         }
       } finally {
         setIsLoading(false);
@@ -183,152 +397,7 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
     };
 
     fetchVendorData();
-  }, []);
-
-  // Helper function to transform API data to component format
-  const transformApiData = (apiData) => {
-    // Calculate days in review
-    const submissionDate = new Date(apiData.submissionDate);
-    const currentDate = new Date();
-    const daysInReview = Math.floor((currentDate - submissionDate) / (1000 * 60 * 60 * 24));
-
-    // Calculate completion percentage based on status
-    const getCompletionPercentage = (status) => {
-      switch (status) {
-        case 'pending': return 25;
-        case 'under_review': return 75;
-        case 'approved': return 100;
-        case 'rejected': return 50; // Partial completion before rejection
-        default: return 0;
-      }
-    };
-
-    // Generate timeline based on current status and dates
-    const generateTimeline = (status, submissionDate, approvalDate) => {
-      const timeline = [];
-      const submissionDateObj = new Date(submissionDate);
-      
-      // Submitted step
-      timeline.push({
-        status: "submitted",
-        date: submissionDateObj.toLocaleDateString(),
-        time: submissionDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        description: "Registration submitted successfully",
-        completed: true
-      });
-
-      // Document verification step
-      const docVerificationDate = new Date(submissionDateObj);
-      docVerificationDate.setDate(docVerificationDate.getDate() + 1);
-      
-      timeline.push({
-        status: "document_verification",
-        date: docVerificationDate.toLocaleDateString(),
-        time: docVerificationDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        description: "Documents under verification",
-        completed: ['under_review', 'approved', 'rejected'].includes(status)
-      });
-
-      // Review step
-      if (['under_review', 'approved', 'rejected'].includes(status)) {
-        const reviewDate = new Date(submissionDateObj);
-        reviewDate.setDate(reviewDate.getDate() + 2);
-        
-        timeline.push({
-          status: status,
-          date: reviewDate.toLocaleDateString(),
-          time: reviewDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          description: status === 'rejected' 
-            ? "Application was rejected - please review feedback"
-            : "Application under review by compliance team",
-          completed: ['approved', 'rejected'].includes(status),
-          current: status === 'under_review'
-        });
-      } else if (status === 'pending') {
-        timeline.push({
-          status: "under_review",
-          date: "Pending",
-          time: "",
-          description: "Waiting for review by compliance team",
-          completed: false,
-          current: true
-        });
-      }
-
-      // Final approval step
-      if (status === 'approved' && approvalDate) {
-        const approvalDateObj = new Date(approvalDate);
-        timeline.push({
-          status: "final_approval",
-          date: approvalDateObj.toLocaleDateString(),
-          time: approvalDateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          description: "Final approval and account activation completed",
-          completed: true
-        });
-      } else if (status !== 'rejected') {
-        timeline.push({
-          status: "final_approval",
-          date: "Pending",
-          time: "",
-          description: "Final approval and account activation",
-          completed: false
-        });
-      }
-
-      return timeline;
-    };
-
-    // Format file size
-    const formatFileSize = (bytes) => {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
-
-    return {
-      id: apiData._id,
-      registrationStatus: apiData.registrationStatus,
-      submissionDate: new Date(apiData.submissionDate).toLocaleDateString(),
-      approvalDate: apiData.approvalDate ? new Date(apiData.approvalDate).toLocaleDateString() : null,
-      isNewUser: false,
-      basicInfo: {
-        countryOfRegistration: apiData.countryOfRegistration,
-        businessName: apiData.businessName,
-        taxpayerIdentificationNumber: apiData.taxpayerIdentificationNumber,
-        tinIssuedDate: new Date(apiData.tinIssuedDate).toLocaleDateString(),
-        companyType: apiData.companyType,
-        formOfBusiness: apiData.formOfBusiness,
-        ownershipType: apiData.ownershipType,
-        businessCategory: apiData.businessCategory,
-        registrationNumber: apiData.registrationNumber,
-        registrationIssuedDate: new Date(apiData.registrationIssuedDate).toLocaleDateString()
-      },
-      contactInfo: {
-        authorizedUser: apiData.authorizedContact.name,
-        phone: apiData.authorizedContact.phone,
-        email: apiData.authorizedContact.email
-      },
-      documents: {
-        powerOfAttorney: {
-          name: apiData.powerOfAttorney.fileName,
-          uploadDate: new Date(apiData.powerOfAttorney.uploadDate).toLocaleDateString(),
-          status: apiData.registrationStatus === 'approved' ? 'verified' : 
-                  apiData.registrationStatus === 'rejected' ? 'rejected' : 'pending',
-          size: formatFileSize(apiData.powerOfAttorney.fileSize),
-          filePath: apiData.powerOfAttorney.filePath
-        }
-      },
-      timeline: generateTimeline(apiData.registrationStatus, apiData.submissionDate, apiData.approvalDate),
-      metrics: {
-        completionPercentage: getCompletionPercentage(apiData.registrationStatus),
-        daysInReview: daysInReview,
-        averageProcessingTime: "5-7 days"
-      },
-      vendor: apiData.vendor
-    };
-  };
+  }, [backendUrl]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -378,12 +447,12 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
     try {
       showNotificationMessage(`Downloading ${docName}...`, "info");
       
-      const response = await fetch(`/api/vendors/download-document`, {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/vendors/download-document`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add authorization header if needed
-          // 'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({ filePath })
       });
@@ -612,13 +681,13 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
                   <Award size={24} className="text-white" />
                 </div>
                 <span className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {isNewUser ? "Not Assigned" : `ID: ${vendorData.id}`}
+                  {isNewUser ? "Not Assigned" : `ID: ${vendorData.id?.slice(-8)}`}
                 </span>
               </div>
               <div>
                 <p className="text-gray-600 text-sm font-medium">Vendor ID</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {isNewUser ? "N/A" : vendorData.id}
+                <p className="text-lg font-bold text-gray-900">
+                  {isNewUser ? "N/A" : vendorData.id?.slice(-8)}
                 </p>
               </div>
             </motion.div>
@@ -822,18 +891,16 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
                           <div className="flex items-center gap-3">
                             <User size={20} className="text-blue-600" />
                             <div>
-  <p className="font-semibold text-gray-900">Authorized User</p>
-  <p className="text-gray-700">
-    {vendorData?.vendor?.firstName} {vendorData?.vendor?.lastName}
-  </p>
-</div>
+                              <p className="font-semibold text-gray-900">Authorized User</p>
+                              <p className="text-gray-700">{vendorData.contactInfo.authorizedUser}</p>
+                            </div>
                           </div>
                           
                           <div className="flex items-center gap-3">
                             <Phone size={20} className="text-blue-600" />
                             <div>
                               <p className="font-semibold text-gray-900">Phone Number</p>
-  <p className="text-gray-700">{vendorData?.vendor?.phoneNumber}</p>
+                              <p className="text-gray-700">{vendorData.contactInfo.phone}</p>
                             </div>
                           </div>
                           
@@ -841,7 +908,7 @@ const backendUrl = process.env.REACT_APP_BACKEND_URL;
                             <Mail size={20} className="text-blue-600" />
                             <div>
                               <p className="font-semibold text-gray-900">Email Address</p>
-                               <p className="text-gray-700">{vendorData?.vendor?.email}</p>
+                              <p className="text-gray-700">{vendorData.contactInfo.email}</p>
                             </div>
                           </div>
                         </div>
