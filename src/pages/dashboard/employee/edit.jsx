@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Save,
@@ -18,7 +18,8 @@ import {
   Edit,
   Building,
   Users,
-  Tag
+  Tag,
+  AlignHorizontalDistributeCenter
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
@@ -49,7 +50,8 @@ export default function EditEmployeePage() {
     emergencyContact: "",
     skills: [],
   });
-  const [searchParams] = useSeachParams();
+  
+  const [searchParams] = useSearchParams();
   const [ activeSection, setActiveSection ] = useState(()=>{
     return searchParams.get('section') || 'dashboard';
   });

@@ -501,6 +501,18 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           icon: <ModernIcons.Reconciliation />,
           badge: null
         },
+         { 
+          id: 'budget', 
+          label: 'Budgeting', 
+          icon: <ModernIcons.Invoices />,
+          badge: stats.invoices?.counts?.pending || null
+        },
+        { 
+          id: 'budgeting', 
+          label: 'Budget Code', 
+          icon: <ModernIcons.Invoices />,
+          badge: stats.invoices?.counts?.pending || null
+        },
       ]
     },
     {

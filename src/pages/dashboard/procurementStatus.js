@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 
 const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = null, onPieEnter, onPieLeave, stats = {} }) => {
-  const [chartType, setChartType] = useState('line');
+  const [chartType, setChartType] = useState('pie');
   const [activeCategory, setActiveCategory] = useState('Overall');
 
   // Define default colors for different statuses
@@ -206,16 +206,6 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
           <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg self-start sm:self-auto">
             
              <button 
-              onClick={() => setChartType('line')} 
-              className={`p-2 rounded-md transition-colors ${
-                chartType === 'line' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-transparent text-gray-600 hover:bg-gray-100'
-              }`}
-            >
-              <LineChartIcon size={16} />
-            </button>
-            <button 
               onClick={() => setChartType('pie')} 
               className={`p-2 rounded-md transition-colors ${
                 chartType === 'pie' 
@@ -225,6 +215,18 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
             >
               <PieChartIcon size={16} />
             </button>
+             
+             <button 
+              onClick={() => setChartType('line')} 
+              className={`p-2 rounded-md transition-colors ${
+                chartType === 'line' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-transparent text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              <LineChartIcon size={16} />
+            </button>
+            
            
             <button 
               onClick={() => setChartType('bar')} 

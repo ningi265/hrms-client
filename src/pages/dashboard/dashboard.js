@@ -113,6 +113,8 @@ import VendorApprovalPage from "./vendors/registration";
 import EmployeeDetailPage from "./employee/view-details";
 import EmployeePerformancePage from "./employee/performance";
 import EditEmployeePage from "./employee/edit";
+import BudgetOverviewDashboard from "./finance/budget";
+import ApprovalWorkflow from "./finance/budgeting";
 
 
 // Sample data for RevenueChart
@@ -923,6 +925,8 @@ export default function ProcurementDashboard() {
       {activeSection === "employees-details" && <EmployeeDetailPage />}
        {activeSection === "employees-edit" && <EditEmployeePage/>}
        {activeSection === "employee-performance" && <EmployeePerformancePage />}
+         {activeSection === "budget" && <BudgetOverviewDashboard/>}
+         {activeSection === "budgeting" && <ApprovalWorkflow/>}
        
       {/* other sections */}
 

@@ -1130,7 +1130,7 @@ export default function FleetCoordinator() {
                         <h3 className="font-semibold text-gray-900">{driver.firstName}</h3>
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <MapPin size={14} />
-                          <span>{driver.location || "Location not specified"}</span>
+                        <span>{driver.location?.coordinates?.city || "Location not specified"}</span>
                         </div>
                         {driver.phone && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
