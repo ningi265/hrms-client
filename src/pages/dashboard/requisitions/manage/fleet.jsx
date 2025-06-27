@@ -254,7 +254,7 @@ const RequestCard = ({ request, isSelected, onClick }) => {
         </span>
       </div>
     </div>
-  );
+  ); 
 };
 
 export default function FleetCoordinator() {
