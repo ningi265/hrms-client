@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   PieChart,
   Pie,
@@ -37,155 +38,27 @@ import {
   BarChart3,
   Activity,
   Settings,
-  Plus
+  Plus,
+  Wallet,
+  Eye,
+  Edit,
+  X,
+  Loader
 } from 'lucide-react';
 
-// Sample budget data
-const budgetData = {
-  totalAllocated: 325000,
-  totalSpent: 178500,
-  totalRemaining: 146500,
-  pendingRequisitions: 24500,
-  approvedThisMonth: 52000,
-  utilizationRate: 55,
-  totalRequisitions: 127,
-  pendingApprovals: 8
-};
-
-// Department budget data
-const departmentBudgets = [
-  { 
-    code: 'IT-Q1-2024', 
-    department: 'Information Technology', 
-    allocated: 100000, 
-    spent: 55000, 
-    remaining: 45000,
-    utilizationRate: 55,
-    color: '#3B82F6',
-    manager: 'John Smith'
-  },
-  { 
-    code: 'HR-Q1-2024', 
-    department: 'Human Resources', 
-    allocated: 50000, 
-    spent: 32000, 
-    remaining: 18000,
-    utilizationRate: 64,
-    color: '#10B981',
-    manager: 'Sarah Johnson'
-  },
-  { 
-    code: 'MKT-Q1-2024', 
-    department: 'Marketing', 
-    allocated: 75000, 
-    spent: 41500, 
-    remaining: 33500,
-    utilizationRate: 55,
-    color: '#F59E0B',
-    manager: 'Mike Wilson'
-  },
-  { 
-    code: 'FIN-Q1-2024', 
-    department: 'Finance', 
-    allocated: 40000, 
-    spent: 18000, 
-    remaining: 22000,
-    utilizationRate: 45,
-    color: '#EF4444',
-    manager: 'Lisa Brown'
-  },
-  { 
-    code: 'OPS-Q1-2024', 
-    department: 'Operations', 
-    allocated: 60000, 
-    spent: 32000, 
-    remaining: 28000,
-    utilizationRate: 53,
-    color: '#8B5CF6',
-    manager: 'David Chen'
-  }
-];
-
-// Monthly spending trend
-const spendingTrendData = [
-  { month: 'Jan', allocated: 325000, spent: 28500, target: 27000 },
-  { month: 'Feb', spent: 45200, target: 54000 },
-  { month: 'Mar', spent: 52800, target: 65000 },
-  { month: 'Apr', spent: 52000, target: 81000 }
-];
-
-// Budget utilization by category
-const utilizationData = [
-  { name: 'IT Equipment', value: 45000, color: '#3B82F6' },
-  { name: 'Software Licenses', value: 32000, color: '#10B981' },
-  { name: 'Training', value: 28000, color: '#F59E0B' },
-  { name: 'Office Supplies', value: 23500, color: '#EF4444' },
-  { name: 'Travel', value: 35000, color: '#8B5CF6' },
-  { name: 'Consulting', value: 15000, color: '#06B6D4' }
-];
-
-// Recent requisitions
-const recentRequisitions = [
-  {
-    id: 'REQ-2024-087',
-    description: 'Dell Laptops (5 units)',
-    department: 'IT',
-    budgetCode: 'IT-Q1-2024',
-    amount: 6000,
-    status: 'approved',
-    requestedBy: 'John Smith',
-    date: '2024-06-17',
-    approver: 'CFO'
-  },
-  {
-    id: 'REQ-2024-088',
-    description: 'Marketing Campaign Software',
-    department: 'Marketing',
-    budgetCode: 'MKT-Q1-2024',
-    amount: 12000,
-    status: 'pending',
-    requestedBy: 'Mike Wilson',
-    date: '2024-06-16',
-    approver: 'CFO'
-  },
-  {
-    id: 'REQ-2024-089',
-    description: 'HR Training Materials',
-    department: 'HR',
-    budgetCode: 'HR-Q1-2024',
-    amount: 2500,
-    status: 'approved',
-    requestedBy: 'Sarah Johnson',
-    date: '2024-06-15',
-    approver: 'Dept Head'
-  },
-  {
-    id: 'REQ-2024-090',
-    description: 'Office Furniture',
-    department: 'Operations',
-    budgetCode: 'OPS-Q1-2024',
-    amount: 4200,
-    status: 'rejected',
-    requestedBy: 'David Chen',
-    date: '2024-06-14',
-    approver: 'Finance'
-  }
-];
-
-// Approval workflow data
-const approvalWorkflowData = [
-  { stage: 'Department Head', pending: 12, avgTime: '2.3 days' },
-  { stage: 'Finance Review', pending: 5, avgTime: '1.8 days' },
-  { stage: 'CFO Approval', pending: 3, avgTime: '3.1 days' }
-];
+// API configuration
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
 
 // Metric Card Component
-const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal", onClick }) => {
   const cardClass = size === "large" ? "col-span-2" : "";
   const valueSize = size === "large" ? "text-4xl" : "text-2xl";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
+    <div 
+      className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer ${cardClass}`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between mb-2">
         <div className={`p-2 rounded-lg ${
           color === 'blue' ? 'bg-blue-50' :
@@ -214,7 +87,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
         )}
       </div>
       <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
-        {prefix}{value.toLocaleString()}{suffix}
+        {prefix}{typeof value === 'number' ? value.toLocaleString() : value}{suffix}
       </div>
       <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
       {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
@@ -258,17 +131,237 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
+// Budget Allocation Modal Component
+const BudgetAllocationModal = ({ isOpen, onClose, onNavigate }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-900">Budget Allocation</h3>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
+            <Wallet className="w-8 h-8 text-blue-600" />
+            <div>
+              <h4 className="font-semibold text-gray-900">Allocate Department Budgets</h4>
+              <p className="text-sm text-gray-600">Distribute budget across departments for the current period</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
+            <BarChart3 className="w-8 h-8 text-green-600" />
+            <div>
+              <h4 className="font-semibold text-gray-900">Auto-Distribution Available</h4>
+              <p className="text-sm text-gray-600">Use smart algorithms to distribute budget automatically</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
+            <CheckCircle className="w-8 h-8 text-purple-600" />
+            <div>
+              <h4 className="font-semibold text-gray-900">Approval Workflow</h4>
+              <p className="text-sm text-gray-600">Submit allocations for management approval</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              onNavigate();
+              onClose();
+            }}
+            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            Start Allocation
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
+
 const BudgetOverviewDashboard = () => {
+  const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState('quarter');
   const [isLoading, setIsLoading] = useState(false);
+  const [budgetData, setBudgetData] = useState(null);
+  const [showNewUserAlert, setShowNewUserAlert] = useState(true);
+  const handleSectionChange = (section) => {
+    navigate(`?section=${section}`, { replace: true });
+  };
+  const [departmentBudgets, setDepartmentBudgets] = useState([]);
+  const [recentRequisitions, setRecentRequisitions] = useState([]);
+  const [showAllocationModal, setShowAllocationModal] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fetch budget overview data
+  const fetchBudgetOverview = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/api/budget/overview`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setBudgetData(data.data);
+      } else {
+        throw new Error('Failed to fetch budget overview');
+      }
+    } catch (error) {
+      setError(error.message);
+      console.error('Error fetching budget overview:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch departments data
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/api/departments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const departments = await response.json();
+        setDepartmentBudgets(departments.slice(0, 5)); // Show top 5 departments
+      }
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  };
+
+  // Fetch recent requisitions
+  const fetchRecentRequisitions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/api/requisitions?limit=4&sort=createdAt&order=desc`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRecentRequisitions(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching requisitions:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBudgetOverview();
+    fetchDepartments();
+    fetchRecentRequisitions();
+  }, [timeRange]);
 
   const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000);
+    fetchBudgetOverview();
+    fetchDepartments();
+    fetchRecentRequisitions();
   };
+
+  const handleAllocateBudget = () => {
+    setShowNewUserAlert(false);
+    handleSectionChange('budget-allocation'); 
+  };
+
+  // Default data when API data is not available
+  const defaultBudgetData = budgetData || {
+    totalBudget: 325000,
+    totalAllocated: 178500,
+    remainingBudget: 146500,
+    allocationEfficiency: 55,
+    currentPeriod: 'Q1 2024',
+    status: 'active'
+  };
+
+  const utilizationData = [
+    { name: 'IT Equipment', value: 45000, color: '#3B82F6' },
+    { name: 'Software Licenses', value: 32000, color: '#10B981' },
+    { name: 'Training', value: 28000, color: '#F59E0B' },
+    { name: 'Office Supplies', value: 23500, color: '#EF4444' },
+    { name: 'Travel', value: 35000, color: '#8B5CF6' },
+    { name: 'Consulting', value: 15000, color: '#06B6D4' }
+  ];
+
+  const spendingTrendData = [
+    { month: 'Jan', allocated: 325000, spent: 28500, target: 27000 },
+    { month: 'Feb', spent: 45200, target: 54000 },
+    { month: 'Mar', spent: 52800, target: 65000 },
+    { month: 'Apr', spent: 52000, target: 81000 }
+  ];
+
+  const approvalWorkflowData = [
+    { stage: 'Department Head', pending: 12, avgTime: '2.3 days' },
+    { stage: 'Finance Review', pending: 5, avgTime: '1.8 days' },
+    { stage: 'CFO Approval', pending: 3, avgTime: '3.1 days' }
+  ];
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg max-w-md">
+          <h3 className="font-semibold mb-2">Error Loading Budget Data</h3>
+          <p className="text-sm">{error}</p>
+          <button 
+            onClick={handleRefresh}
+            className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 rounded text-sm font-medium"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
+       <LoadingOverlay 
+      isVisible={isLoading} 
+      message="Loading Budget Data..." 
+    />
+    
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -281,14 +374,21 @@ const BudgetOverviewDashboard = () => {
               </div>
               <div className="flex items-center gap-1">
                 <Calendar className="w-4 h-4 text-blue-500" />
-                <span>Q1 2024</span>
+                <span>{defaultBudgetData.currentPeriod}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Target className="w-4 h-4 text-purple-500" />
+                <span>Status: {defaultBudgetData.status}</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
-              <Plus size={16} />
-              New Requisition
+            <button 
+              onClick={() => setShowAllocationModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+            >
+              <Wallet size={16} />
+              Allocate Budget
             </button>
             <select 
               value={timeRange}
@@ -313,72 +413,73 @@ const BudgetOverviewDashboard = () => {
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard 
-            title="Total Allocated" 
-            value={budgetData.totalAllocated}
+            title="Total Budget" 
+            value={defaultBudgetData.totalBudget}
             prefix="MWK "
             icon={Target} 
             color="blue" 
-            subtitle="Q1 2024 Budget"
+            subtitle={defaultBudgetData.currentPeriod}
           />
           <MetricCard 
-            title="Total Spent" 
-            value={budgetData.totalSpent}
+            title="Total Allocated" 
+            value={defaultBudgetData.totalAllocated}
             prefix="MWK "
-            icon={CreditCard} 
+            icon={DollarSign} 
             color="green" 
             trend={12}
-            subtitle="Approved expenditure"
+            subtitle="Distributed to departments"
           />
           <MetricCard 
             title="Remaining Budget" 
-            value={budgetData.totalRemaining}
+            value={defaultBudgetData.remainingBudget}
             prefix="MWK "
-            icon={DollarSign} 
+            icon={CreditCard} 
             color="purple" 
-            subtitle="Available to spend"
+            subtitle="Available for allocation"
           />
           <MetricCard 
-            title="Pending Approvals" 
-            value={budgetData.pendingApprovals}
-            icon={Clock} 
+            title="Allocation Efficiency" 
+            value={defaultBudgetData.allocationEfficiency}
+            suffix="%"
+            icon={BarChart3} 
             color="orange" 
-            trend={-15}
-            subtitle="Awaiting review"
+            trend={8}
+            subtitle="Budget utilization"
           />
         </div>
 
         {/* Secondary Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard 
-            title="Utilization Rate" 
-            value={budgetData.utilizationRate}
-            suffix="%"
-            icon={BarChart3} 
-            color="green" 
-            trend={8}
+            title="Active Departments" 
+            value={departmentBudgets.length}
+            icon={Building2} 
+            color="blue" 
+            subtitle="With budget allocations"
           />
           <MetricCard 
-            title="Total Requisitions" 
-            value={budgetData.totalRequisitions}
-            icon={FileText} 
-            color="blue" 
-            trend={22}
+            title="Pending Approvals" 
+            value={8}
+            icon={Clock} 
+            color="orange" 
+            trend={-15}
+            subtitle="Awaiting review"
           />
           <MetricCard 
             title="Approved This Month" 
-            value={budgetData.approvedThisMonth}
+            value={52000}
             prefix="MWK "
             icon={CheckCircle} 
             color="green" 
             trend={18}
+            subtitle="Recent allocations"
           />
           <MetricCard 
-            title="Pending Amount" 
-            value={budgetData.pendingRequisitions}
-            prefix="MWK "
+            title="Budget Alerts" 
+            value={3}
             icon={AlertTriangle} 
-            color="orange" 
-            trend={-5}
+            color="red" 
+            subtitle="Require attention"
           />
         </div>
 
@@ -475,38 +576,37 @@ const BudgetOverviewDashboard = () => {
               <div key={index} className="bg-gray-50 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: dept.color }}></div>
-                    <span className="text-sm font-medium text-gray-900">{dept.department}</span>
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span className="text-sm font-medium text-gray-900">{dept.name}</span>
                   </div>
-                  <span className="text-xs text-gray-500">{dept.code}</span>
+                  <span className="text-xs text-gray-500">{dept.departmentCode}</span>
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-gray-500">Allocated</span>
-                    <span className="font-medium">MWK {dept.allocated.toLocaleString()}</span>
+                    <span className="text-gray-500">Budget</span>
+                    <span className="font-medium">MWK {(dept.budget || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Spent</span>
-                    <span className="font-medium">MWK {dept.spent.toLocaleString()}</span>
+                    <span className="font-medium">MWK {(dept.actualSpending || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Remaining</span>
-                    <span className="font-medium text-green-600">MWK {dept.remaining.toLocaleString()}</span>
+                    <span className="font-medium text-green-600">MWK {((dept.budget || 0) - (dept.actualSpending || 0)).toLocaleString()}</span>
                   </div>
                   <div className="w-full h-2 bg-gray-200 rounded-full mt-2">
                     <div 
-                      className="h-2 rounded-full" 
+                      className="h-2 rounded-full bg-blue-500" 
                       style={{ 
-                        backgroundColor: dept.color, 
-                        width: `${dept.utilizationRate}%` 
+                        width: `${dept.budget > 0 ? ((dept.actualSpending || 0) / dept.budget) * 100 : 0}%` 
                       }}
                     ></div>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Utilization</span>
-                    <span className="font-medium">{dept.utilizationRate}%</span>
+                    <span className="font-medium">{dept.budget > 0 ? Math.round(((dept.actualSpending || 0) / dept.budget) * 100) : 0}%</span>
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">Manager: {dept.manager}</div>
+                  <div className="text-xs text-gray-500 mt-1">Head: {dept.departmentHead}</div>
                 </div>
               </div>
             ))}
@@ -533,36 +633,51 @@ const BudgetOverviewDashboard = () => {
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Requested By</th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                   <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {recentRequisitions.map((req, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm font-medium text-blue-600">{req.id}</td>
-                    <td className="py-3 px-4 text-sm text-gray-900">{req.description}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{req.department}</td>
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900">MWK {req.amount.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{req.requestedBy}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                        req.status === 'approved' ? 'bg-green-100 text-green-800' :
-                        req.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {req.status}
-                      </span>
+                {recentRequisitions.length > 0 ? (
+                  recentRequisitions.map((req, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="py-3 px-4 text-sm font-medium text-blue-600">{req.requisitionNumber || `REQ-${index + 1}`}</td>
+                      <td className="py-3 px-4 text-sm text-gray-900">{req.description || req.itemName}</td>
+                      <td className="py-3 px-4 text-sm text-gray-600">{req.department}</td>
+                      <td className="py-3 px-4 text-sm font-medium text-gray-900">MWK {(req.estimatedCost || req.totalCost || 0).toLocaleString()}</td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          req.status === 'approved' ? 'bg-green-100 text-green-800' :
+                          req.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {req.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A'}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-gray-500">
+                      No recent requisitions found
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{req.date}</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </main>
+
+      {/* Budget Allocation Modal */}
+      <BudgetAllocationModal 
+        isOpen={showAllocationModal}
+        onClose={() => setShowAllocationModal(false)}
+        onNavigate={handleAllocateBudget}
+      />
     </div>
   );
 };

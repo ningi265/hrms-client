@@ -38,6 +38,7 @@ import {
   TrendingUp,
   Package,
   MessageSquare,
+  Loader
 } from "lucide-react"
 
 // Custom Components matching vehicle-management.jsx style
@@ -255,6 +256,19 @@ const RequestCard = ({ request, isSelected, onClick }) => {
       </div>
     </div>
   ); 
+};
+
+
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
 };
 
 export default function FleetCoordinator() {
@@ -692,24 +706,14 @@ export default function FleetCoordinator() {
   const getCompletedRequests = () => filteredRequests.filter(req => req.fleetNotification && req.fleetNotification.sent).length
   const getActiveDrivers = () => drivers.length
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex justify-center items-center min-h-96">
-          <div className="text-center">
-            <LoadingSpinner size="lg" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 mt-4">Loading Fleet Management</h2>
-            <p className="text-gray-600">
-              Please wait while we fetch the latest travel requests...
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  
 
   return (
     <div className="min-h-screen bg-gray-50">
+       <LoadingOverlay 
+      isVisible={isLoading} 
+      message="Loading Fleet Management Data..." 
+    />
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">

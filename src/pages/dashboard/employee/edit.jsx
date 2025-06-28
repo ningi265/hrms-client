@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Save,
@@ -50,7 +50,7 @@ export default function EditEmployeePage() {
     emergencyContact: "",
     skills: [],
   });
-  const [searchParams] = useSeachParams();
+  const [searchParams] = useSearchParams();
   const [ activeSection, setActiveSection ] = useState(()=>{
     return searchParams.get('section') || 'dashboard';
   });

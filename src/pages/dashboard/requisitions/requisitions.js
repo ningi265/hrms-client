@@ -12,6 +12,7 @@ import {
   Upload,
   CheckCircle,
   AlertCircle,
+  AlertTriangle,
   Clock,
   Plus,
   Sparkles,
@@ -60,11 +61,15 @@ import {
   Printer,
   Keyboard,
   Mouse,
-  Activity
+  Activity,
+  Loader
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
 import { debounce } from "lodash";
+
+// API configuration
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
 
 const steps = [
   { 
@@ -199,52 +204,6 @@ const templates = [
   }
 ];
 
-const requisitionHistory = [
-  { 
-    id: "REQ-2024-001", 
-    itemName: "MacBook Pro 16\" M3", 
-    quantity: 5, 
-    status: "Approved", 
-    date: "2024-01-15",
-    budgetCode: "IT-Q1-2024",
-    amount: "$14,995",
-    urgency: "Medium",
-    department: "Engineering",
-    approver: "Sarah Chen",
-    deliveryDate: "2024-01-20",
-    category: "Computing Hardware"
-  },
-  { 
-    id: "REQ-2024-002", 
-    itemName: "Herman Miller Office Chairs", 
-    quantity: 10, 
-    status: "Pending", 
-    date: "2024-01-18",
-    budgetCode: "HR-Q1-2024",
-    amount: "$4,500",
-    urgency: "Low",
-    department: "Human Resources",
-    approver: "Mike Johnson",
-    deliveryDate: "2024-01-25",
-    category: "Furniture & Workspace"
-  },
-  { 
-    id: "REQ-2024-003", 
-    itemName: "Adobe Creative Cloud Licenses", 
-    quantity: 20, 
-    status: "Rejected", 
-    date: "2024-01-12",
-    budgetCode: "MKT-Q1-2024",
-    amount: "$12,000",
-    urgency: "High",
-    department: "Marketing",
-    approver: "Lisa Wang",
-    deliveryDate: "2024-01-15",
-    category: "Software & Licenses",
-    rejectionReason: "Budget exceeded for Q1"
-  }
-];
-
 const forms = [
   { 
     name: "Standard Requisition Form", 
@@ -286,14 +245,6 @@ const forms = [
     lastUpdated: "Jan 12, 2024",
     required: false
   }
-];
-
-const budgetCodes = [
-  { code: "IT-Q1-2024", department: "Information Technology", remaining: "$45,000", total: "$100,000" },
-  { code: "HR-Q1-2024", department: "Human Resources", remaining: "$22,000", total: "$50,000" },
-  { code: "MKT-Q1-2024", department: "Marketing", remaining: "$8,500", total: "$75,000" },
-  { code: "OPS-Q1-2024", department: "Operations", remaining: "$35,000", total: "$80,000" },
-  { code: "FIN-Q1-2024", department: "Finance", remaining: "$15,000", total: "$30,000" }
 ];
 
 // Metric Card Component (matching vehicle management style)
@@ -380,7 +331,161 @@ export default function NewRequisition() {
   const [estimatedTotal, setEstimatedTotal] = useState(0);
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
+  
+  // Dynamic budget data states
+  const [budgetCodes, setBudgetCodes] = useState([]);
+  const [departmentBudgets, setDepartmentBudgets] = useState([]);
+  const [requisitionHistory, setRequisitionHistory] = useState([]);
+  const [isLoadingBudgets, setIsLoadingBudgets] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [budgetError, setBudgetError] = useState(null);
+
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+  // Fetch departments and budget data
+  const fetchBudgetData = async () => {
+    try {
+      setIsLoadingBudgets(true);
+      setBudgetError(null);
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      // Fetch departments data
+      const deptResponse = await fetch(`${API_BASE_URL}/api/departments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (deptResponse.ok) {
+        const departments = await deptResponse.json();
+        setDepartmentBudgets(departments);
+        
+        // Transform department data into budget codes format
+        const budgetCodesFromDepts = departments.map(dept => ({
+          code: dept.departmentCode || `${dept.name.replace(/\s+/g, '').toUpperCase()}-Q1-2024`,
+          department: dept.name,
+          remaining: `MWK ${((dept.budget || 0) - (dept.actualSpending || 0)).toLocaleString()}`,
+          total: `MWK ${(dept.budget || 0).toLocaleString()}`,
+          actualSpending: dept.actualSpending || 0,
+          budget: dept.budget || 0
+        }));
+        
+        setBudgetCodes(budgetCodesFromDepts);
+      } else {
+        // Fallback to default budget codes if API fails
+        const defaultBudgetCodes = [
+          { code: "IT-Q1-2024", department: "Information Technology", remaining: "MWK 45,000", total: "MWK 100,000", budget: 100000, actualSpending: 55000 },
+          { code: "HR-Q1-2024", department: "Human Resources", remaining: "MWK 22,000", total: "MWK 50,000", budget: 50000, actualSpending: 28000 },
+          { code: "MKT-Q1-2024", department: "Marketing", remaining: "MWK 8,500", total: "MWK 75,000", budget: 75000, actualSpending: 66500 },
+          { code: "OPS-Q1-2024", department: "Operations", remaining: "MWK 35,000", total: "MWK 80,000", budget: 80000, actualSpending: 45000 },
+          { code: "FIN-Q1-2024", department: "Finance", remaining: "MWK 15,000", total: "MWK 30,000", budget: 30000, actualSpending: 15000 }
+        ];
+        setBudgetCodes(defaultBudgetCodes);
+      }
+    } catch (error) {
+      console.error('Error fetching budget data:', error);
+      setBudgetError(error.message);
+      
+      // Fallback to default budget codes
+      const defaultBudgetCodes = [
+        { code: "IT-Q1-2024", department: "Information Technology", remaining: "MWK 45,000", total: "MWK 100,000", budget: 100000, actualSpending: 55000 },
+        { code: "HR-Q1-2024", department: "Human Resources", remaining: "MWK 22,000", total: "MWK 50,000", budget: 50000, actualSpending: 28000 },
+        { code: "MKT-Q1-2024", department: "Marketing", remaining: "MWK 8,500", total: "MWK 75,000", budget: 75000, actualSpending: 66500 },
+        { code: "OPS-Q1-2024", department: "Operations", remaining: "MWK 35,000", total: "MWK 80,000", budget: 80000, actualSpending: 45000 },
+        { code: "FIN-Q1-2024", department: "Finance", remaining: "MWK 15,000", total: "MWK 30,000", budget: 30000, actualSpending: 15000 }
+      ];
+      setBudgetCodes(defaultBudgetCodes);
+    } finally {
+      setIsLoadingBudgets(false);
+    }
+  };
+
+  // Fetch requisition history
+  const fetchRequisitionHistory = async () => {
+    try {
+      setIsLoadingHistory(true);
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/requisitions?limit=10&sort=createdAt&order=desc`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const formattedHistory = (data.data || []).map((req, index) => ({
+          id: req.requisitionNumber || `REQ-2024-${String(index + 1).padStart(3, '0')}`,
+          itemName: req.description || req.itemName || 'Unknown Item',
+          quantity: req.quantity || 1,
+          status: req.status || 'pending',
+          date: req.createdAt ? new Date(req.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          budgetCode: req.budgetCode || 'N/A',
+          amount: `MWK ${(req.estimatedCost || req.totalCost || 0).toLocaleString()}`,
+          urgency: req.urgency || 'Medium',
+          department: req.department || 'Unknown',
+          approver: req.approver || 'Pending Assignment',
+          deliveryDate: req.deliveryDate || null,
+          category: req.category || 'General',
+          rejectionReason: req.rejectionReason || null
+        }));
+        
+        setRequisitionHistory(formattedHistory);
+      } else {
+        // Fallback to default history if API fails
+        const defaultHistory = [
+          { 
+            id: "REQ-2024-001", 
+            itemName: "MacBook Pro 16\" M3", 
+            quantity: 5, 
+            status: "approved", 
+            date: "2024-01-15",
+            budgetCode: "IT-Q1-2024",
+            amount: "MWK 14,995",
+            urgency: "Medium",
+            department: "Engineering",
+            approver: "Sarah Chen",
+            deliveryDate: "2024-01-20",
+            category: "Computing Hardware"
+          }
+        ];
+        setRequisitionHistory(defaultHistory);
+      }
+    } catch (error) {
+      console.error('Error fetching requisition history:', error);
+      
+      // Fallback to default history
+      const defaultHistory = [
+        { 
+          id: "REQ-2024-001", 
+          itemName: "MacBook Pro 16\" M3", 
+          quantity: 5, 
+          status: "approved", 
+          date: "2024-01-15",
+          budgetCode: "IT-Q1-2024",
+          amount: "MWK 14,995",
+          urgency: "Medium",
+          department: "Engineering",
+          approver: "Sarah Chen",
+          deliveryDate: "2024-01-20",
+          category: "Computing Hardware"
+        }
+      ];
+      setRequisitionHistory(defaultHistory);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   // Enhanced auto-save with better UX
   useEffect(() => {
@@ -394,12 +499,16 @@ export default function NewRequisition() {
     return () => saveDraft.cancel();
   }, [formData]);
 
-  // Load draft on component mount
+  // Load draft on component mount and fetch dynamic data
   useEffect(() => {
     const savedDraft = localStorage.getItem("requisitionDraft");
     if (savedDraft) {
       setFormData(JSON.parse(savedDraft));
     }
+    
+    // Fetch dynamic data
+    fetchBudgetData();
+    fetchRequisitionHistory();
   }, []);
 
   // Calculate estimated total
@@ -583,6 +692,10 @@ export default function NewRequisition() {
       setActiveStep(0);
       setUseCustomItem(false);
 
+      // Refresh data after successful submission
+      fetchBudgetData();
+      fetchRequisitionHistory();
+
     } catch (error) {
       console.error('Submission error:', error);
       setValidationErrors(prev => ({
@@ -630,18 +743,18 @@ export default function NewRequisition() {
 
   const getStatusColor = (status) => {
     switch(status) {
-      case 'Approved': return 'text-emerald-700 bg-emerald-50 border-emerald-200';
-      case 'Pending': return 'text-amber-700 bg-amber-50 border-amber-200';
-      case 'Rejected': return 'text-red-700 bg-red-50 border-red-200';
+      case 'approved': return 'text-emerald-700 bg-emerald-50 border-emerald-200';
+      case 'pending': return 'text-amber-700 bg-amber-50 border-amber-200';
+      case 'rejected': return 'text-red-700 bg-red-50 border-red-200';
       default: return 'text-gray-700 bg-gray-50 border-gray-200';
     }
   };
 
   const getStatusIcon = (status) => {
     switch(status) {
-      case 'Approved': return <CheckCircle size={14} />;
-      case 'Pending': return <Clock size={14} />;
-      case 'Rejected': return <X size={14} />;
+      case 'approved': return <CheckCircle size={14} />;
+      case 'pending': return <Clock size={14} />;
+      case 'rejected': return <X size={14} />;
       default: return <AlertCircle size={14} />;
     }
   };
@@ -652,6 +765,10 @@ export default function NewRequisition() {
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const refreshBudgetData = () => {
+    fetchBudgetData();
   };
 
   return (
@@ -682,6 +799,12 @@ export default function NewRequisition() {
                   <Shield className="w-4 h-4 text-blue-500" />
                   <span>Secure procurement</span>
                 </div>
+                {budgetError && (
+                  <div className="flex items-center gap-1">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span>Using cached budget data</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -705,8 +828,20 @@ export default function NewRequisition() {
                 onClick={() => setShowHistoryModal(true)}
                 className="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm font-medium border border-gray-200"
               >
-                <History size={16} className="mr-2" />
+                {isLoadingHistory ? (
+                  <Loader size={16} className="mr-2 animate-spin" />
+                ) : (
+                  <History size={16} className="mr-2" />
+                )}
                 History
+              </button>
+              <button 
+                onClick={refreshBudgetData}
+                disabled={isLoadingBudgets}
+                className="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm font-medium border border-gray-200"
+              >
+                <RefreshCw size={16} className={isLoadingBudgets ? "mr-2 animate-spin" : "mr-2"} />
+                Refresh
               </button>
             </div>
           </div>
@@ -779,7 +914,7 @@ export default function NewRequisition() {
                   {estimatedTotal > 0 && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                       <span className="text-sm text-blue-600 font-medium">
-                        Estimated Total: ${estimatedTotal.toLocaleString()}
+                        Estimated Total: MWK {estimatedTotal.toLocaleString()}
                       </span>
                     </div>
                   )}
@@ -872,16 +1007,16 @@ export default function NewRequisition() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Estimated Unit Cost
+                                Estimated Unit Cost (MWK)
                               </label>
                               <div className="relative">
-                                <span className="absolute left-3 top-2 text-gray-400">$</span>
+                                <span className="absolute left-3 top-2 text-gray-400">MWK</span>
                                 <input
                                   type="number"
                                   name="estimatedCost"
                                   value={formData.estimatedCost}
                                   onChange={handleChange}
-                                  className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                   placeholder="0.00"
                                 />
                               </div>
@@ -1045,7 +1180,7 @@ export default function NewRequisition() {
                                           />
                                         </div>
                                         <span className="font-medium text-gray-900 text-sm">
-                                          ${(parseFloat(item.avgCost.replace(/[$,]/g, '')) * item.quantity).toLocaleString()}
+                                          MWK {(parseFloat(item.avgCost.replace(/[$,]/g, '')) * item.quantity).toLocaleString()}
                                         </span>
                                         <button
                                           type="button"
@@ -1062,7 +1197,7 @@ export default function NewRequisition() {
                                   <div className="flex items-center justify-between">
                                     <span className="font-bold text-blue-900">Estimated Total:</span>
                                     <span className="text-xl font-bold text-blue-900">
-                                      ${estimatedTotal.toLocaleString()}
+                                      MWK {estimatedTotal.toLocaleString()}
                                     </span>
                                   </div>
                                 </div>
@@ -1087,9 +1222,14 @@ export default function NewRequisition() {
                       <div className="space-y-4">
                         {/* Budget Information */}
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Budget Code
-                          </label>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Budget Code
+                            </label>
+                            {isLoadingBudgets && (
+                              <Loader size={14} className="text-blue-500 animate-spin" />
+                            )}
+                          </div>
                           <div className="relative">
                             <CreditCard className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                             <select
@@ -1099,9 +1239,10 @@ export default function NewRequisition() {
                                 handleChange(e);
                                 setShowBudgetInfo(true);
                               }}
+                              disabled={isLoadingBudgets}
                               className={`w-full pl-10 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                                 validationErrors.budgetCode ? 'border-red-300' : 'border-gray-300'
-                              }`}
+                              } ${isLoadingBudgets ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                               <option value="">Select Budget Code</option>
                               {budgetCodes.map((budget) => (
@@ -1115,6 +1256,15 @@ export default function NewRequisition() {
                             <p className="mt-1 text-sm text-red-600">{validationErrors.budgetCode}</p>
                           )}
                           
+                          {budgetError && (
+                            <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                              <div className="flex items-center gap-1 text-amber-800 text-sm">
+                                <AlertTriangle size={12} />
+                                Budget data connection issue - using cached data
+                              </div>
+                            </div>
+                          )}
+                          
                           {/* Budget Info Display */}
                           {formData.budgetCode && getBudgetInfo(formData.budgetCode) && (
                             <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
@@ -1126,19 +1276,19 @@ export default function NewRequisition() {
                               </div>
                               {(() => {
                                 const budget = getBudgetInfo(formData.budgetCode);
-                                const remaining = parseFloat(budget.remaining.replace(/[$,]/g, ''));
-                                const total = parseFloat(budget.total.replace(/[$,]/g, ''));
-                                const percentage = (remaining / total) * 100;
+                                const remaining = budget.budget - budget.actualSpending;
+                                const total = budget.budget;
+                                const percentage = total > 0 ? (remaining / total) * 100 : 0;
                                 return (
                                   <div>
                                     <div className="flex items-center justify-between text-sm">
-                                      <span className="text-emerald-700">Remaining: {budget.remaining}</span>
-                                      <span className="text-emerald-600">Total: {budget.total}</span>
+                                      <span className="text-emerald-700">Remaining: MWK {remaining.toLocaleString()}</span>
+                                      <span className="text-emerald-600">Total: MWK {total.toLocaleString()}</span>
                                     </div>
                                     <div className="mt-2 w-full bg-emerald-200 rounded-full h-2">
                                       <div 
                                         className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
-                                        style={{ width: `${percentage}%` }}
+                                        style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
                                       ></div>
                                     </div>
                                   </div>
@@ -1164,6 +1314,11 @@ export default function NewRequisition() {
                               }`}
                             >
                               <option value="">Select Department</option>
+                              {budgetCodes.map((budget) => (
+                                <option key={budget.department} value={budget.department}>
+                                  {budget.department}
+                                </option>
+                              ))}
                               <option value="Information Technology">Information Technology</option>
                               <option value="Human Resources">Human Resources</option>
                               <option value="Finance & Accounting">Finance & Accounting</option>
@@ -1414,7 +1569,7 @@ export default function NewRequisition() {
                               <div className="mt-2 flex items-center space-x-4 text-sm">
                                 <span className="text-amber-700">Quantity: {formData.quantity}</span>
                                 {formData.estimatedCost && (
-                                  <span className="text-amber-700">Est. Cost: ${formData.estimatedCost}</span>
+                                  <span className="text-amber-700">Est. Cost: MWK {formData.estimatedCost}</span>
                                 )}
                               </div>
                             </div>
@@ -1441,7 +1596,7 @@ export default function NewRequisition() {
                                   {item.quantity} × {item.avgCost}
                                 </p>
                                 <p className="text-sm font-bold text-blue-600">
-                                  ${(parseFloat(item.avgCost.replace(/[$,]/g, '')) * item.quantity).toLocaleString()}
+                                  MWK {(parseFloat(item.avgCost.replace(/[$,]/g, '')) * item.quantity).toLocaleString()}
                                 </p>
                               </div>
                             </div>
@@ -1450,7 +1605,7 @@ export default function NewRequisition() {
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-gray-900">Total Estimated Cost:</span>
                               <span className="text-xl font-bold text-blue-600">
-                                ${estimatedTotal.toLocaleString()}
+                                MWK {estimatedTotal.toLocaleString()}
                               </span>
                             </div>
                           </div>
@@ -1535,11 +1690,11 @@ export default function NewRequisition() {
                           <div className="space-y-3">
                             {(() => {
                               const budget = getBudgetInfo(formData.budgetCode);
-                              const remaining = parseFloat(budget.remaining.replace(/[$,]/g, ''));
-                              const total = parseFloat(budget.total.replace(/[$,]/g, ''));
+                              const remaining = budget.budget - budget.actualSpending;
+                              const total = budget.budget;
                               const afterPurchase = remaining - estimatedTotal;
-                              const percentage = (remaining / total) * 100;
-                              const afterPercentage = (afterPurchase / total) * 100;
+                              const percentage = total > 0 ? (remaining / total) * 100 : 0;
+                              const afterPercentage = total > 0 ? (afterPurchase / total) * 100 : 0;
                               
                               return (
                                 <>
@@ -1553,17 +1708,17 @@ export default function NewRequisition() {
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                       <div>
                                         <span className="text-emerald-700">Available:</span>
-                                        <span className="ml-1 font-bold">{budget.remaining}</span>
+                                        <span className="ml-1 font-bold">MWK {remaining.toLocaleString()}</span>
                                       </div>
                                       <div>
                                         <span className="text-emerald-700">Total Budget:</span>
-                                        <span className="ml-1 font-bold">{budget.total}</span>
+                                        <span className="ml-1 font-bold">MWK {total.toLocaleString()}</span>
                                       </div>
                                     </div>
                                     <div className="mt-2 w-full bg-emerald-200 rounded-full h-2">
                                       <div 
                                         className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
-                                        style={{ width: `${percentage}%` }}
+                                        style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
                                       ></div>
                                     </div>
                                   </div>
@@ -1582,14 +1737,14 @@ export default function NewRequisition() {
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                       <div>
                                         <span className="text-blue-700">Request Cost:</span>
-                                        <span className="ml-1 font-bold">${estimatedTotal.toLocaleString()}</span>
+                                        <span className="ml-1 font-bold">MWK {estimatedTotal.toLocaleString()}</span>
                                       </div>
                                       <div>
                                         <span className="text-blue-700">Remaining:</span>
                                         <span className={`ml-1 font-bold ${
                                           afterPurchase >= 0 ? 'text-blue-900' : 'text-red-600'
                                         }`}>
-                                          ${afterPurchase.toLocaleString()}
+                                          MWK {afterPurchase.toLocaleString()}
                                         </span>
                                       </div>
                                     </div>
@@ -1648,6 +1803,17 @@ export default function NewRequisition() {
                             <ExternalLink size={16} />
                           </button>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Validation Errors */}
+                    {validationErrors.submission && (
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 text-red-800">
+                          <AlertTriangle size={18} />
+                          <span className="font-medium">Submission Error</span>
+                        </div>
+                        <p className="text-red-700 mt-1">{validationErrors.submission}</p>
                       </div>
                     )}
                   </div>
@@ -1713,14 +1879,15 @@ export default function NewRequisition() {
               <div className="grid grid-cols-1 gap-3">
                 <MetricCard 
                   title="Pending Requests" 
-                  value="3"
+                  value={requisitionHistory.filter(req => req.status === 'pending').length}
                   icon={Clock} 
                   color="amber" 
                   size="normal"
                 />
                 <MetricCard 
                   title="This Month" 
-                  value="$8,450"
+                  value={requisitionHistory.reduce((sum, req) => sum + (parseFloat(req.amount.replace(/[MWK\s,]/g, '')) || 0), 0)}
+                  prefix="MWK "
                   icon={TrendingUp} 
                   color="emerald" 
                   trend={12}
@@ -1786,24 +1953,30 @@ export default function NewRequisition() {
                 Recent Activity
               </h3>
               
-              <div className="space-y-3">
-                {requisitionHistory.slice(0, 3).map((req) => (
-                  <div key={req.id} className="flex items-start space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {getStatusIcon(req.status)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{req.itemName}</p>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(req.status)}`}>
-                          {req.status}
-                        </span>
-                        <span className="text-xs text-gray-500">{req.date}</span>
+              {isLoadingHistory ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader size={24} className="animate-spin text-gray-400" />
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {requisitionHistory.slice(0, 3).map((req) => (
+                    <div key={req.id} className="flex items-start space-x-2 p-3 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors duration-200">
+                      <div className="flex-shrink-0 mt-0.5">
+                        {getStatusIcon(req.status)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">{req.itemName}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(req.status)}`}>
+                            {req.status}
+                          </span>
+                          <span className="text-xs text-gray-500">{req.date}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
               
               <button
                 onClick={() => setShowHistoryModal(true)}
@@ -1824,9 +1997,9 @@ export default function NewRequisition() {
                 
                 {(() => {
                   const budget = getBudgetInfo(formData.budgetCode);
-                  const remaining = parseFloat(budget.remaining.replace(/[$,]/g, ''));
-                  const total = parseFloat(budget.total.replace(/[$,]/g, ''));
-                  const percentage = (remaining / total) * 100;
+                  const remaining = budget.budget - budget.actualSpending;
+                  const total = budget.budget;
+                  const percentage = total > 0 ? (remaining / total) * 100 : 0;
                   
                   return (
                     <div className="space-y-3">
@@ -1848,11 +2021,11 @@ export default function NewRequisition() {
                               percentage > 25 ? 'bg-amber-500' :
                               'bg-red-500'
                             }`}
-                            style={{ width: `${percentage}%` }}
+                            style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
                           ></div>
                         </div>
                         <div className="text-xs text-emerald-700">
-                          {budget.remaining} of {budget.total} remaining
+                          MWK {remaining.toLocaleString()} of MWK {total.toLocaleString()} remaining
                         </div>
                       </div>
                       
@@ -1998,6 +2171,14 @@ export default function NewRequisition() {
                   <p className="text-gray-600 text-sm mt-1">Track all your previous requests and their status</p>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={fetchRequisitionHistory}
+                    disabled={isLoadingHistory}
+                    className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-200 text-sm font-medium flex items-center gap-1"
+                  >
+                    <RefreshCw size={14} className={isLoadingHistory ? "animate-spin" : ""} />
+                    Refresh
+                  </button>
                   <button className="px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors duration-200 text-sm font-medium flex items-center gap-1">
                     <Filter size={14} />
                     Filter
@@ -2013,80 +2194,87 @@ export default function NewRequisition() {
             </div>
             
             <div className="p-6 max-h-[60vh] overflow-y-auto">
-              <div className="space-y-3">
-                {requisitionHistory.map((req) => (
-                  <div key={req.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200 bg-white">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
-                          <h3 className="font-bold text-gray-900">{req.itemName}</h3>
-                          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getStatusColor(req.status)}`}>
-                            {getStatusIcon(req.status)}
-                            <span className="ml-1">{req.status}</span>
-                          </span>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm mb-3">
-                          <div className="bg-blue-50 rounded-lg p-2">
-                            <span className="text-blue-600 font-medium text-xs">Request ID</span>
-                            <p className="font-bold text-blue-900 text-sm">{req.id}</p>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-2">
-                            <span className="text-gray-600 font-medium text-xs">Quantity</span>
-                            <p className="font-bold text-gray-900 text-sm">{req.quantity}</p>
-                          </div>
-                          <div className="bg-emerald-50 rounded-lg p-2">
-                            <span className="text-emerald-600 font-medium text-xs">Amount</span>
-                            <p className="font-bold text-emerald-900 text-sm">{req.amount}</p>
-                          </div>
-                          <div className="bg-purple-50 rounded-lg p-2">
-                            <span className="text-purple-600 font-medium text-xs">Department</span>
-                            <p className="font-bold text-purple-900 text-sm">{req.department}</p>
-                          </div>
-                          <div className="bg-amber-50 rounded-lg p-2">
-                            <span className="text-amber-600 font-medium text-xs">Priority</span>
-                            <p className="font-bold text-amber-900 text-sm">{req.urgency}</p>
-                          </div>
-                          <div className="bg-indigo-50 rounded-lg p-2">
-                            <span className="text-indigo-600 font-medium text-xs">Submitted</span>
-                            <p className="font-bold text-indigo-900 text-sm">{req.date}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3 text-sm text-gray-600">
-                            <span>Budget: {req.budgetCode}</span>
-                            <span>Approver: {req.approver}</span>
-                            {req.deliveryDate && <span>Expected: {req.deliveryDate}</span>}
+              {isLoadingHistory ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader size={32} className="animate-spin text-gray-400" />
+                  <span className="ml-3 text-gray-600">Loading history...</span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {requisitionHistory.map((req) => (
+                    <div key={req.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200 bg-white">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-bold text-gray-900">{req.itemName}</h3>
+                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getStatusColor(req.status)}`}>
+                              {getStatusIcon(req.status)}
+                              <span className="ml-1">{req.status}</span>
+                            </span>
                           </div>
                           
-                          <div className="flex items-center space-x-1">
-                            <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
-                              <Eye size={14} />
-                            </button>
-                            <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
-                              <Copy size={14} />
-                            </button>
-                            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200">
-                              <MoreVertical size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {req.rejectionReason && (
-                          <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-                            <div className="flex items-center gap-1 text-red-800 text-sm font-medium mb-1">
-                              <AlertCircle size={12} />
-                              Rejection Reason
+                          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 text-sm mb-3">
+                            <div className="bg-blue-50 rounded-lg p-2">
+                              <span className="text-blue-600 font-medium text-xs">Request ID</span>
+                              <p className="font-bold text-blue-900 text-sm">{req.id}</p>
                             </div>
-                            <p className="text-red-700 text-sm">{req.rejectionReason}</p>
+                            <div className="bg-gray-50 rounded-lg p-2">
+                              <span className="text-gray-600 font-medium text-xs">Quantity</span>
+                              <p className="font-bold text-gray-900 text-sm">{req.quantity}</p>
+                            </div>
+                            <div className="bg-emerald-50 rounded-lg p-2">
+                              <span className="text-emerald-600 font-medium text-xs">Amount</span>
+                              <p className="font-bold text-emerald-900 text-sm">{req.amount}</p>
+                            </div>
+                            <div className="bg-purple-50 rounded-lg p-2">
+                              <span className="text-purple-600 font-medium text-xs">Department</span>
+                              <p className="font-bold text-purple-900 text-sm">{req.department}</p>
+                            </div>
+                            <div className="bg-amber-50 rounded-lg p-2">
+                              <span className="text-amber-600 font-medium text-xs">Priority</span>
+                              <p className="font-bold text-amber-900 text-sm">{req.urgency}</p>
+                            </div>
+                            <div className="bg-indigo-50 rounded-lg p-2">
+                              <span className="text-indigo-600 font-medium text-xs">Submitted</span>
+                              <p className="font-bold text-indigo-900 text-sm">{req.date}</p>
+                            </div>
                           </div>
-                        )}
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3 text-sm text-gray-600">
+                              <span>Budget: {req.budgetCode}</span>
+                              <span>Approver: {req.approver}</span>
+                              {req.deliveryDate && <span>Expected: {req.deliveryDate}</span>}
+                            </div>
+                            
+                            <div className="flex items-center space-x-1">
+                              <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                                <Eye size={14} />
+                              </button>
+                              <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+                                <Copy size={14} />
+                              </button>
+                              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors duration-200">
+                                <MoreVertical size={14} />
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {req.rejectionReason && (
+                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                              <div className="flex items-center gap-1 text-red-800 text-sm font-medium mb-1">
+                                <AlertCircle size={12} />
+                                Rejection Reason
+                              </div>
+                              <p className="text-red-700 text-sm">{req.rejectionReason}</p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -2224,7 +2412,7 @@ export default function NewRequisition() {
                     {useCustomItem ? formData.itemName : selectedItems.map(item => item.name).join(', ')}
                   </div>
                   <div className="text-sm text-blue-700 mt-1">
-                    Estimated Total: ${estimatedTotal.toLocaleString()}
+                    Estimated Total: MWK {estimatedTotal.toLocaleString()}
                   </div>
                 </div>
                 <p className="text-sm">This action cannot be undone once submitted.</p>

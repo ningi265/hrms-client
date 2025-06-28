@@ -35,7 +35,8 @@ import {
   Bell,
   Plus,
   Activity,
-  CheckCircle
+  CheckCircle,
+  Loader
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { generateApprovalReport } from "../../../../utils/generatedPdfReport";
@@ -52,7 +53,20 @@ const safeDateParse = (dateString) => {
     console.warn('Invalid date string:', dateString)
     return new Date()
   }
-}
+};
+
+
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
 
 export default function FinanceReconciliationReview() {
   const navigate = useNavigate()
@@ -455,31 +469,14 @@ export default function FinanceReconciliationReview() {
   const getApprovedReconciliations = () => filteredReconciliations.filter(req => req.status === "approved").length
   const getRejectedReconciliations = () => filteredReconciliations.filter(req => req.status === "rejected").length
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <DotLottieReact
-               src="loading.lottie"
-               loop
-               autoplay
-             />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Reconciliation Reviews</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch the latest reconciliation data...
-          </p>
-        </motion.div>
-      </div>
-    )
-  }
-
+  
   return (
     <div className="min-h-screen bg-gray-50">
+       <LoadingOverlay 
+      isVisible={isLoading} 
+      message="Loading Reconciliation Data..." 
+    />
+    
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="max-w-7xl mx-auto">

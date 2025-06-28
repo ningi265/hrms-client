@@ -65,6 +65,7 @@ import VehicleManagementDashboard from './pages/driver-dash/vehicle-management';
 import FinancialReconciliationDashboard from './pages/driver-dash/reconciliation';
 import BudgetOverviewDashboard from './pages/dashboard/finance/budget';
 import ApprovalWorkflow from './pages/dashboard/finance/budgeting';
+import BudgetAllocationPage from './pages/dashboard/finance/allocate';
 
 function App() {
   return (
@@ -106,6 +107,7 @@ function App() {
           <Route path="/food" element={<FoodBudgetPlanner/>}/>
           <Route path="/budget" element={<BudgetOverviewDashboard/>}/>
           <Route path="/budgeting" element={<ApprovalWorkflow/>}/>
+          <Route path="/budget-allocation" element={<BudgetAllocationPage/>}/>
           
           
           {/* Employee Management Routes - Updated with proper parameter handling */}

@@ -115,6 +115,7 @@ import EmployeePerformancePage from "./employee/performance";
 import EditEmployeePage from "./employee/edit";
 import BudgetOverviewDashboard from "./finance/budget";
 import ApprovalWorkflow from "./finance/budgeting";
+import BudgetAllocationPage from "./finance/allocate";
 
 
 // Sample data for RevenueChart
@@ -927,7 +928,9 @@ export default function ProcurementDashboard() {
        {activeSection === "employee-performance" && <EmployeePerformancePage />}
          {activeSection === "budget" && <BudgetOverviewDashboard/>}
          {activeSection === "budgeting" && <ApprovalWorkflow/>}
-       
+          {activeSection === "budget-allocation" && <BudgetAllocationPage/>}
+         
+ 
       {/* other sections */}
 
     </Box>

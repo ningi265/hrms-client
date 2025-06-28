@@ -35,11 +35,24 @@ import {
   FileText,
   UserPlus,
   CheckCircle,
-  DollarSign
+  DollarSign,
+  Loader
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+// LoadingOverlay Component
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
 
 // MetricCard Component (styled like vehicle-management.jsx)
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
@@ -602,29 +615,6 @@ export default function EmployeesPage() {
     "Customer Success Manager"
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <DotLottieReact
-            src="loading.lottie"
-            loop
-            autoplay
-          />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Employees</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch employee information...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -637,6 +627,9 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Loading Overlay */}
+      <LoadingOverlay isVisible={isLoading} message="Loading employees..." />
+
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
