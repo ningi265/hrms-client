@@ -35,11 +35,24 @@ import {
   FileText,
   UserPlus,
   CheckCircle,
-  DollarSign
+  DollarSign,
+  Loader
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+// LoadingOverlay Component
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
 
 // MetricCard Component (styled like vehicle-management.jsx)
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
@@ -602,29 +615,6 @@ export default function EmployeesPage() {
     "Customer Success Manager"
   ];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <DotLottieReact
-            src="loading.lottie"
-            loop
-            autoplay
-          />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Employees</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch employee information...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -637,6 +627,9 @@ export default function EmployeesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Loading Overlay */}
+      <LoadingOverlay isVisible={isLoading} message="Loading employees..." />
+
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -769,130 +762,100 @@ export default function EmployeesPage() {
       </main>
 
       {/* Action Dropdown Menu */}
-      {showMenuId && (
-        <>
-          <div
-            className="fixed inset-0 z-[100] bg-transparent"
-            onClick={() => setShowMenuId(null)}
-          ></div>
-          
-          <div 
-            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
-            style={{
-              top: (() => {
-                const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuHeight = 350;
-                  const spaceBelow = window.innerHeight - rect.bottom;
-                  const spaceAbove = rect.top;
-                  
-                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-                    return `${rect.top - menuHeight + window.scrollY}px`;
-                  } else {
-                    return `${rect.bottom + 8 + window.scrollY}px`;
-                  }
-                }
-                return '50px';
-              })(),
-              left: (() => {
-                const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuWidth = 224;
-                  const spaceRight = window.innerWidth - rect.right;
-                  
-                  if (spaceRight < menuWidth) {
-                    return `${rect.left - menuWidth + 8}px`;
-                  } else {
-                    return `${rect.right - menuWidth}px`;
-                  }
-                }
-                return '50px';
-              })()
-            }}
-          >
-            <div className="py-2">
-              <button
-                onClick={() => handleViewDetails(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Eye size={16} />
-                <span>View Details</span>
-              </button>
-              
-              <button
-                onClick={() => handleEditEmployee(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Edit size={16} />
-                <span>Edit Employee</span>
-              </button>
-              
-              <button
-                onClick={() => handleSendMessage(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <MessageSquare size={16} />
-                <span>Send Message</span>
-              </button>
-              
-              <button
-                onClick={() => handleViewPerformance(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <TrendingUp size={16} />
-                <span>View Performance</span>
-              </button>
-              
-              <button
-                onClick={() => handleGenerateReport(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <FileText size={16} />
-                <span>Generate Report</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  copyToClipboard(showMenuId);
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Copy size={16} />
-                <span>Copy Employee ID</span>
-              </button>
-              
-              <button
-                onClick={() => handleManageAccess(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Settings size={16} />
-                <span>Manage Access</span>
-              </button>
-              
-              <div className="border-t border-gray-100 my-1"></div>
-              
-              <button
-                onClick={() => {
-                  handleDeleteEmployee(showMenuId);
-                }}
-                disabled={actionLoading === showMenuId}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left disabled:opacity-50"
-              >
-                <Trash2 size={16} />
-                <span>Delete Employee</span>
-                {actionLoading === showMenuId && (
-                  <div className="ml-auto">
-                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+     {showMenuId && (
+  <>
+    {/* Backdrop with subtle fade */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] bg-black/5"
+      onClick={() => setShowMenuId(null)}
+      transition={{ duration: 0.1 }}
+    />
+    
+    {/* Menu positioned exactly at button edge */}
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed z-[101] w-56 bg-white rounded-lg shadow-lg border border-gray-200"
+      style={{
+        top: (() => {
+          const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
+          }
+          return '50px';
+        })(),
+        left: (() => {
+          const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            const menuWidth = 224; // 56rem = 224px
+            const rightEdge = rect.right + window.scrollX;
+            
+            // If menu would go offscreen right, align to viewport edge
+            if (rightEdge + menuWidth > window.innerWidth) {
+              return `${window.innerWidth - menuWidth - 8}px`; // 8px padding from edge
+            }
+            return `${rect.right - menuWidth + window.scrollX}px`; // Align to button right
+          }
+          return '50px';
+        })()
+      }}
+      transition={{
+        duration: 0.1,
+        ease: "easeOut"
+      }}
+    >
+      <div className="py-1">
+        {[
+          { icon: Eye, label: "View Details", action: () => handleViewDetails(showMenuId) },
+          { icon: Edit, label: "Edit Employee", action: () => handleEditEmployee(showMenuId) },
+          { icon: MessageSquare, label: "Send Message", action: () => handleSendMessage(showMenuId) },
+          { icon: TrendingUp, label: "View Performance", action: () => handleViewPerformance(showMenuId) },
+          { icon: FileText, label: "Generate Report", action: () => handleGenerateReport(showMenuId) },
+          { icon: Copy, label: "Copy Employee ID", action: () => copyToClipboard(showMenuId) },
+          { icon: Settings, label: "Manage Access", action: () => handleManageAccess(showMenuId) },
+          { type: "divider" },
+          { 
+            icon: Trash2, 
+            label: "Delete Employee", 
+            action: () => handleDeleteEmployee(showMenuId),
+            destructive: true
+          }
+        ].map((item, index) => (
+          item.type === "divider" ? (
+            <div key={`divider-${index}`} className="border-t border-gray-100 my-1" />
+          ) : (
+            <button
+              key={item.label}
+              onClick={() => {
+                item.action();
+                setShowMenuId(null);
+              }}
+              disabled={actionLoading === showMenuId && item.destructive}
+              className={`w-full flex items-center gap-3 px-4 py-2 text-left text-sm ${
+                item.destructive 
+                  ? 'text-red-600 hover:bg-red-50' 
+                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+              }`}
+            >
+              <item.icon size={16} className="text-gray-500" />
+              <span>{item.label}</span>
+              {actionLoading === showMenuId && item.destructive && (
+                <div className="ml-auto">
+                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+            </button>
+          )
+        ))}
+      </div>
+    </motion.div>
+  </>
+)}
 
       {/* Add Employee Modal */}
       {isAddEmployeeModalOpen && (

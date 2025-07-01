@@ -38,6 +38,7 @@ import {
   TrendingUp,
   Package,
   MessageSquare,
+  Loader
 } from "lucide-react"
 
 // Custom Components matching vehicle-management.jsx style
@@ -257,6 +258,18 @@ const RequestCard = ({ request, isSelected, onClick }) => {
   ); 
 };
 
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
+
 export default function FleetCoordinator() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState("pending")
@@ -286,7 +299,7 @@ export default function FleetCoordinator() {
     notes: "",
   })
   const [notificationDetails, setNotificationDetails] = useState({
-    recipients: ["driver", "employee"],
+    recipients: ["employee"],
     subject: "",
     message: "",
     includeItinerary: true,
@@ -353,6 +366,138 @@ export default function FleetCoordinator() {
       }
     })
   }
+
+  // Auto-generate notification messages based on recipient and travel context
+  const generateNotificationContent = (recipientType) => {
+    if (!selectedRequest) return { subject: "", message: "" };
+
+    const travelDuration = Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1;
+    const departureDate = format(selectedRequest.departureDate, "EEEE, MMMM d, yyyy");
+    const returnDate = format(selectedRequest.returnDate, "EEEE, MMMM d, yyyy");
+
+    switch (recipientType) {
+      case "employee":
+        return {
+          subject: `Travel Arrangements Confirmed - ${selectedRequest.city}, ${selectedRequest.country}`,
+          message: `Dear ${selectedRequest.employeeName},
+
+Your travel arrangements for your trip to ${selectedRequest.city}, ${selectedRequest.country} have been finalized. Here are the details:
+
+🗓️ TRAVEL PERIOD:
+• Departure: ${departureDate}
+• Return: ${returnDate}
+• Duration: ${travelDuration} days
+
+📍 DESTINATION:
+• Location: ${selectedRequest.city}, ${selectedRequest.country}
+• Purpose: ${selectedRequest.purpose}
+
+${selectedRequest.requiresFlight && bookingDetails.airline ? `✈️ FLIGHT DETAILS:
+• Airline: ${bookingDetails.airline}
+• Flight Number: ${bookingDetails.flightNumber}
+• Departure Time: ${bookingDetails.departureTime ? format(new Date(bookingDetails.departureTime), "MMM d, yyyy 'at' h:mm a") : "TBD"}
+• Arrival Time: ${bookingDetails.arrivalTime ? format(new Date(bookingDetails.arrivalTime), "MMM d, yyyy 'at' h:mm a") : "TBD"}
+• Class: ${bookingDetails.ticketClass.charAt(0).toUpperCase() + bookingDetails.ticketClass.slice(1)}
+${bookingDetails.notes ? `• Special Notes: ${bookingDetails.notes}` : ""}
+
+` : ""}${selectedRequest.assignedDriver ? `🚗 GROUND TRANSPORTATION:
+• Driver Assigned: ${selectedRequest.assignedDriver.firstName || selectedDriver?.firstName || selectedDriver?.name}
+• Contact: ${selectedRequest.assignedDriver.phone || selectedDriver?.phone || "Contact details will be provided"}
+• Your driver will coordinate pickup times and locations with you directly.
+
+` : ""}📄 IMPORTANT REMINDERS:
+• Please carry all required travel documents
+• Confirm your accommodation arrangements
+• Review company travel policies
+• Keep all receipts for expense reporting
+
+If you have any questions or need assistance, please contact the travel department immediately.
+
+Safe travels!
+
+Best regards,
+HRMS Travel Department`
+        };
+
+      case "driver":
+        return {
+          subject: `New Assignment - Transport Service for ${selectedRequest.employeeName}`,
+          message: `Dear ${selectedDriver?.firstName || selectedDriver?.name || "Driver"},
+
+You have been assigned to provide transportation services for the following travel request:
+
+👤 PASSENGER DETAILS:
+• Name: ${selectedRequest.employeeName}
+• Department: ${selectedRequest.department}
+• Contact: ${selectedRequest.email}
+
+🗓️ TRAVEL SCHEDULE:
+• Trip Start: ${departureDate}
+• Trip End: ${returnDate}
+• Duration: ${travelDuration} days
+• Destination: ${selectedRequest.city}, ${selectedRequest.country}
+
+📍 SERVICE REQUIREMENTS:
+• Purpose: ${selectedRequest.purpose}
+• Type: ${selectedRequest.travelType === "international" ? "International Travel" : "Local Travel"}
+
+${selectedRequest.requiresFlight && bookingDetails.airline ? `✈️ FLIGHT COORDINATION:
+• Airline: ${bookingDetails.airline} ${bookingDetails.flightNumber}
+• Departure: ${bookingDetails.departureTime ? format(new Date(bookingDetails.departureTime), "MMM d, yyyy 'at' h:mm a") : "TBD"}
+• Return Flight: ${bookingDetails.arrivalTime ? format(new Date(bookingDetails.arrivalTime), "MMM d, yyyy 'at' h:mm a") : "TBD"}
+• Please coordinate airport transfers with the passenger
+
+` : ""}📋 NEXT STEPS:
+• Contact the passenger to arrange pickup details
+• Confirm vehicle readiness and fuel
+• Plan optimal routes to destinations
+• Maintain professional service standards
+
+⚠️ IMPORTANT:
+• Arrive 15 minutes early for all pickups
+• Keep vehicle clean and presentable
+• Follow all company safety protocols
+• Report any issues immediately to fleet management
+
+Please confirm receipt of this assignment and contact the passenger within 24 hours to coordinate arrangements.
+
+Best regards,
+Fleet Management Team`
+        };
+
+      case "manager":
+        return {
+          subject: `Travel Arrangements Summary - ${selectedRequest.employeeName}`,
+          message: `Dear Manager,
+
+This is to inform you that travel arrangements have been completed for ${selectedRequest.employeeName}'s business trip.
+
+📊 TRAVEL SUMMARY:
+• Employee: ${selectedRequest.employeeName} (${selectedRequest.department})
+• Destination: ${selectedRequest.city}, ${selectedRequest.country}
+• Purpose: ${selectedRequest.purpose}
+• Travel Period: ${departureDate} to ${returnDate} (${travelDuration} days)
+
+💼 ARRANGEMENTS MADE:
+${selectedRequest.requiresFlight ? "• Flight booking completed" : "• No flight required"}
+${selectedRequest.assignedDriver ? `• Driver assigned: ${selectedRequest.assignedDriver.firstName || selectedDriver?.firstName || selectedDriver?.name}` : "• No driver assigned"}
+• All notifications sent to relevant parties
+• Travel request ID: ${selectedRequest.id}
+
+💰 BUDGET INFORMATION:
+• Per Diem: ${selectedRequest.currency === "MWK" ? "MWK" : "$"}${selectedRequest.perDiemAmount?.toLocaleString()}
+${bookingDetails.price ? `• Flight Cost: $${bookingDetails.price}` : ""}
+
+The employee has been notified of all arrangements and is ready for travel.
+
+Best regards,
+HRMS Travel Department`
+        };
+
+      default:
+        return { subject: "", message: "" };
+    }
+  };
 
   useEffect(() => {
     const fetchDrivers = async () => {
@@ -424,6 +569,22 @@ export default function FleetCoordinator() {
 
     fetchLatestRequest();
   }, [showNotification, selectedRequest?.id, backendUrl]);
+
+  // Auto-populate notification details when modal opens or recipients change
+  useEffect(() => {
+    if (showNotification && selectedRequest) {
+      // Generate content based on primary recipient (employee is default)
+      const primaryRecipient = notificationDetails.recipients.includes("employee") ? "employee" : 
+                             notificationDetails.recipients.includes("driver") ? "driver" : "manager";
+      
+      const content = generateNotificationContent(primaryRecipient);
+      setNotificationDetails(prev => ({
+        ...prev,
+        subject: content.subject,
+        message: content.message
+      }));
+    }
+  }, [showNotification, selectedRequest, notificationDetails.recipients]);
 
   const filteredRequests = travelRequests.filter((request) => {
     const employeeName = request.employeeName || ""
@@ -620,39 +781,46 @@ export default function FleetCoordinator() {
       setIsSendingNotification(true);
       const token = localStorage.getItem("token");
 
-      const recipients = notificationDetails.recipients.map(recipientType => {
+      // Send individual notifications with personalized messages
+      const notificationPromises = notificationDetails.recipients.map(async (recipientType) => {
+        let recipientId;
+        
         if (recipientType === "employee") {
-          return selectedRequest.employee._id;
+          recipientId = selectedRequest.employee._id;
         } else if (recipientType === "driver" && selectedRequest.assignedDriver) {
-          return selectedRequest.assignedDriver._id;
+          recipientId = selectedRequest.assignedDriver._id;
         } else if (recipientType === "manager") {
-          return selectedRequest.supervisor;
+          recipientId = selectedRequest.supervisor;
         }
-        return null;
-      }).filter(id => id);
 
-      const requestBody = {
-        subject: notificationDetails.subject,
-        message: notificationDetails.message,
-        includeItinerary: notificationDetails.includeItinerary,
-        recipients: recipients
-      };
+        if (!recipientId) return null;
 
-      const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/send-notifications`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestBody),
+        const content = generateNotificationContent(recipientType);
+        
+        return fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/send-notifications`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            subject: content.subject,
+            message: content.message,
+            includeItinerary: notificationDetails.includeItinerary,
+            recipients: [recipientId],
+            recipientType: recipientType
+          }),
+        });
       });
+
+      const responses = await Promise.all(notificationPromises.filter(Boolean));
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Server returned ${response.status}: ${response.statusText}`);
+      // Check if all requests were successful
+      const failedResponses = responses.filter(response => !response.ok);
+      
+      if (failedResponses.length > 0) {
+        throw new Error(`Failed to send ${failedResponses.length} notification(s)`);
       }
-      
-      const data = await response.json();
       
       const updatedRequest = {
         ...selectedRequest,
@@ -661,8 +829,8 @@ export default function FleetCoordinator() {
           sent: true,
           sentAt: new Date().toISOString(),
           recipients: notificationDetails.recipients,
-          subject: notificationDetails.subject,
-          message: notificationDetails.message,
+          subject: "Multiple personalized notifications sent",
+          message: "Automated context-aware messages sent to all recipients",
           includeItinerary: notificationDetails.includeItinerary,
           sentBy: "currentUserId",
         },
@@ -674,7 +842,7 @@ export default function FleetCoordinator() {
       );
       
       setShowNotification(false);
-      setSnackbarMessage("Notifications sent successfully");
+      setSnackbarMessage(`Personalized notifications sent successfully to ${notificationDetails.recipients.length} recipient(s)`);
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
     } catch (error) {
@@ -692,24 +860,12 @@ export default function FleetCoordinator() {
   const getCompletedRequests = () => filteredRequests.filter(req => req.fleetNotification && req.fleetNotification.sent).length
   const getActiveDrivers = () => drivers.length
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex justify-center items-center min-h-96">
-          <div className="text-center">
-            <LoadingSpinner size="lg" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2 mt-4">Loading Fleet Management</h2>
-            <p className="text-gray-600">
-              Please wait while we fetch the latest travel requests...
-            </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
+       <LoadingOverlay 
+      isVisible={isLoading} 
+      message="Loading Fleet Management Data..." 
+    />
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -1130,7 +1286,7 @@ export default function FleetCoordinator() {
                         <h3 className="font-semibold text-gray-900">{driver.firstName}</h3>
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <MapPin size={14} />
-                          <span>{driver.location || "Location not specified"}</span>
+                        <span>{driver.location?.coordinates?.city || "Location not specified"}</span>
                         </div>
                         {driver.phone && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -1338,18 +1494,30 @@ export default function FleetCoordinator() {
       <Modal
         isOpen={showNotification}
         onClose={() => setShowNotification(false)}
-        title="Send Notifications"
-        size="lg"
+        title="Send Travel Notifications"
+        size="xl"
       >
         <div className="p-6 space-y-6">
-          <p className="text-gray-600">
-            Notify relevant parties about the travel arrangements
-          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-900 mb-1">Automated Notifications</h4>
+                <p className="text-blue-700 text-sm">
+                  Personalized messages will be automatically generated for each recipient based on their role and the travel details.
+                </p>
+              </div>
+            </div>
+          </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Recipients</label>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3">
+            <label className="block text-sm font-medium text-gray-700 mb-3">Select Recipients</label>
+            <div className="space-y-3">
+              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                notificationDetails.recipients.includes("employee") 
+                  ? "border-green-500 bg-green-50" 
+                  : "border-gray-300 hover:border-green-300"
+              }`}>
                 <input
                   type="checkbox"
                   checked={notificationDetails.recipients.includes("employee")}
@@ -1368,11 +1536,26 @@ export default function FleetCoordinator() {
                   }}
                   className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                 />
-                <span className="text-gray-700">Employee ({selectedRequest?.employee.email})</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-gray-600" />
+                    <span className="font-medium text-gray-900">Employee</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {selectedRequest?.employeeName} ({selectedRequest?.employee.email})
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Will receive: Travel itinerary, flight details, driver contact, and travel reminders
+                  </p>
+                </div>
               </label>
               
               {selectedRequest?.assignedDriver && (
-                <label className="flex items-center gap-3">
+                <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                  notificationDetails.recipients.includes("driver") 
+                    ? "border-green-500 bg-green-50" 
+                    : "border-gray-300 hover:border-green-300"
+                }`}>
                   <input
                     type="checkbox"
                     checked={notificationDetails.recipients.includes("driver")}
@@ -1391,11 +1574,27 @@ export default function FleetCoordinator() {
                     }}
                     className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                   />
-                  <span className="text-gray-700">Driver ({selectedRequest.assignedDriver.email})</span>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Car className="w-4 h-4 text-gray-600" />
+                      <span className="font-medium text-gray-900">Assigned Driver</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {selectedRequest.assignedDriver.firstName || selectedDriver?.firstName || selectedDriver?.name} 
+                      ({selectedRequest.assignedDriver.email || selectedDriver?.email || "Email TBD"})
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Will receive: Passenger details, pickup schedule, flight coordination, and service requirements
+                    </p>
+                  </div>
                 </label>
               )}
               
-              <label className="flex items-center gap-3">
+              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
+                notificationDetails.recipients.includes("manager") 
+                  ? "border-green-500 bg-green-50" 
+                  : "border-gray-300 hover:border-green-300"
+              }`}>
                 <input
                   type="checkbox"
                   checked={notificationDetails.recipients.includes("manager")}
@@ -1414,31 +1613,74 @@ export default function FleetCoordinator() {
                   }}
                   className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                 />
-                <span className="text-gray-700">Department Manager</span>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <Building className="w-4 h-4 text-gray-600" />
+                    <span className="font-medium text-gray-900">Department Manager</span>
+                  </div>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {selectedRequest?.department} Department Head
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Will receive: Travel summary, arrangements overview, and budget information
+                  </p>
+                </div>
               </label>
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-            <input
-              type="text"
-              placeholder="Notification subject"
-              value={notificationDetails.subject}
-              onChange={(e) => setNotificationDetails({ ...notificationDetails, subject: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            />
-          </div>
+          {/* Message Preview */}
+          {notificationDetails.recipients.length > 0 && (
+            <div className="space-y-4">
+              <h4 className="font-medium text-gray-900">Message Preview</h4>
+              
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {notificationDetails.recipients.map((recipient) => {
+                  const content = generateNotificationContent(recipient);
+                  return (
+                    <div key={recipient} className="border border-gray-200 rounded-lg overflow-hidden">
+                      <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                        <div className="flex items-center gap-2">
+                          {recipient === "employee" && <Users className="w-4 h-4 text-blue-600" />}
+                          {recipient === "driver" && <Car className="w-4 h-4 text-purple-600" />}
+                          {recipient === "manager" && <Building className="w-4 h-4 text-orange-600" />}
+                          <span className="font-medium text-gray-900 capitalize">{recipient} Notification</span>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="mb-3">
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
+                          <p className="text-sm font-medium text-gray-900 bg-gray-50 p-2 rounded border">
+                            {content.subject}
+                          </p>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Message</label>
+                          <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-48 overflow-y-auto whitespace-pre-line">
+                            {content.message}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
-            <textarea
-              placeholder="Enter notification message"
-              rows={6}
-              value={notificationDetails.message}
-              onChange={(e) => setNotificationDetails({ ...notificationDetails, message: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            />
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-yellow-900 mb-1">Before Sending</h4>
+                <ul className="text-yellow-700 text-sm space-y-1">
+                  <li>• Verify all travel details are accurate</li>
+                  <li>• Ensure flight bookings are confirmed (if applicable)</li>
+                  <li>• Confirm driver assignment details</li>
+                  <li>• Check recipient email addresses</li>
+                </ul>
+              </div>
+            </div>
           </div>
 
           <label className="flex items-center gap-3">
@@ -1453,7 +1695,7 @@ export default function FleetCoordinator() {
               }
               className="rounded border-gray-300 text-green-600 focus:ring-green-500"
             />
-            <span className="text-gray-700">Include full travel itinerary</span>
+            <span className="text-gray-700">Include downloadable travel itinerary (PDF attachment)</span>
           </label>
 
           <div className="flex justify-between pt-4 border-t border-gray-100">
@@ -1467,21 +1709,19 @@ export default function FleetCoordinator() {
               onClick={handleSendNotifications}
               disabled={
                 isSendingNotification ||
-                notificationDetails.recipients.length === 0 ||
-                !notificationDetails.subject ||
-                !notificationDetails.message
+                notificationDetails.recipients.length === 0
               }
               className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
             >
               {isSendingNotification ? (
                 <>
                   <LoadingSpinner size="sm" />
-                  Sending...
+                  Sending Notifications...
                 </>
               ) : (
                 <>
                   <Send size={16} />
-                  Send Notifications
+                  Send to {notificationDetails.recipients.length} Recipient{notificationDetails.recipients.length !== 1 ? 's' : ''}
                 </>
               )}
             </button>

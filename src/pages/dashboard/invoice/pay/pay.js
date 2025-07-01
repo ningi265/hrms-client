@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   CreditCard,
@@ -21,15 +20,26 @@ import {
   Clock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuth } from "../../../../authcontext/authcontext";
+import { useLocation, useNavigate } from "react-router-dom";
 
-export default function PaymentPage() {
-  const { logout } = useAuth();
+export default function PaymentPage({ 
+  invoiceData: propInvoiceData, 
+  onBack, 
+  onPaymentSuccess = null,
+  authContext = null 
+}) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { invoice: initialInvoice } = location.state || {};
+  
+  // Get invoice data from props or location state
+  const invoiceData = propInvoiceData || location.state?.paymentData;
+  
+  // Handle both single invoice and bulk payment data structures
+  const isBulkPayment = invoiceData?.isBulkPayment || false;
+  const invoices = isBulkPayment ? invoiceData?.invoices : [invoiceData?.invoice];
+  const primaryInvoice = invoices?.[0];
+  const paymentMethod = invoiceData?.paymentMethod;
 
-  const [invoice, setInvoice] = useState(initialInvoice);
   const [paymentDetails, setPaymentDetails] = useState({
     cardNumber: "",
     expiryDate: "",
@@ -45,6 +55,19 @@ export default function PaymentPage() {
 
   const token = localStorage.getItem("token");
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
+
+  // Calculate total amount
+  const totalAmount = invoices?.reduce((sum, invoice) => sum + (invoice?.amountDue || 0), 0) || 0;
+
+  // Handle back navigation
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      // Fallback navigation
+      navigate("/dashboard?section=invoice-payment");
+    }
+  };
 
   // Detect card type
   const detectCardType = (number) => {
@@ -106,8 +129,8 @@ export default function PaymentPage() {
   };
 
   const handlePaymentSubmit = async () => {
-    if (!invoice || !token) {
-      setError("Invalid invoice or session. Please try again.");
+    if (!invoices || invoices.length === 0 || !token) {
+      setError("Invalid invoice data or session. Please try again.");
       return;
     }
 
@@ -115,35 +138,57 @@ export default function PaymentPage() {
     setError("");
 
     try {
-      const response = await fetch(
-        `${backendUrl}/api/invoices/${invoice._id}/status/pay`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(paymentDetails),
-        }
-      );
+      // Process payments for all invoices
+      const paymentPromises = invoices.map(async (invoice) => {
+        const response = await fetch(
+          `${backendUrl}/api/invoices/${invoice._id}/status/pay`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              ...paymentDetails,
+              paymentMethod: paymentMethod
+            }),
+          }
+        );
 
-      const data = await response.json();
-      if (!response.ok) {
-        if (data.message === "Invalid or expired token") {
-          setSuccessMessage("Your session has expired. Please log in again.");
-          logout();
-          return;
+        const data = await response.json();
+        if (!response.ok) {
+          if (data.message === "Invalid or expired token") {
+            // Handle logout if auth context is provided
+            if (authContext && authContext.logout) {
+              authContext.logout();
+            }
+            throw new Error("Your session has expired. Please log in again.");
+          }
+          throw new Error(data.message || "Failed to process payment");
         }
-        throw new Error(data.message || "Failed to process payment");
+
+        return data;
+      });
+
+      await Promise.all(paymentPromises);
+
+      setSuccessMessage(
+        isBulkPayment 
+          ? `Successfully processed payment for ${invoices.length} invoices!`
+          : "Payment processed successfully!"
+      );
+      setIsPaymentSuccessful(true);
+
+      // Call success callback if provided
+      if (onPaymentSuccess) {
+        onPaymentSuccess(invoices);
       }
 
-      setSuccessMessage("Payment processed successfully!");
-      setIsPaymentSuccessful(true);
-      setInvoice((prev) => ({ ...prev, status: "paid" }));
-
+      // Auto redirect back after 3 seconds
       setTimeout(() => {
-        navigate("/invoices");
+        handleBack();
       }, 3000);
+
     } catch (error) {
       console.error("Payment error:", error);
       setError(error.message);
@@ -179,26 +224,53 @@ export default function PaymentPage() {
     }
   };
 
-  if (!invoice) {
+  // Render vendor name safely
+  const getVendorName = (invoice) => {
+    if (!invoice?.vendor) return 'N/A';
+    return `${invoice.vendor.firstName || ''} ${invoice.vendor.lastName || ''}`.trim() || 
+           invoice.vendor.name || 
+           'N/A';
+  };
+
+  // Show error state if no invoice data
+  if (!invoiceData || !invoices || invoices.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center"
+          className="text-center max-w-md mx-auto p-8"
         >
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle size={32} className="text-red-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Invoice Not Found</h2>
-          <p className="text-gray-600 mb-6">No invoice data found. Please go back and try again.</p>
-          <button
-            onClick={() => navigate("/invoices")}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-          >
-            Back to Invoices
-          </button>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Payment Data</h2>
+          <p className="text-gray-600 mb-6">
+            No invoice data found for payment processing. This could happen if:
+          </p>
+          <div className="text-left bg-gray-50 rounded-lg p-4 mb-6">
+            <ul className="text-sm text-gray-600 space-y-2">
+              <li>• The payment session has expired</li>
+              <li>• You navigated directly to this page</li>
+              <li>• There was an error loading the invoice data</li>
+            </ul>
+          </div>
+          <div className="space-y-3">
+            <button
+              onClick={handleBack}
+              className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <ArrowLeft size={20} className="inline mr-2" />
+              Back to Invoice Payments
+            </button>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="w-full px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
+            >
+              Go to Dashboard
+            </button>
+          </div>
         </motion.div>
       </div>
     );
@@ -211,7 +283,12 @@ export default function PaymentPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
-             
+              <button
+                onClick={handleBack}
+                className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md"
+              >
+                <ArrowLeft size={20} />
+              </button>
               
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -221,7 +298,10 @@ export default function PaymentPage() {
                   Secure Payment
                 </h1>
                 <p className="text-gray-500 text-lg mt-2">
-                  Complete your payment securely
+                  {isBulkPayment 
+                    ? `Complete payment for ${invoices.length} invoices securely`
+                    : "Complete your payment securely"
+                  }
                 </p>
               </div>
             </div>
@@ -254,32 +334,47 @@ export default function PaymentPage() {
               </div>
               
               <div className="space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-600">Recipient</span>
-                  <span className="font-semibold text-gray-900">{invoice.vendor?.name}</span>
-                </div>
+                {isBulkPayment ? (
+                  <>
+                    <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                      <span className="text-gray-600">Invoices</span>
+                      <span className="font-semibold text-gray-900">{invoices.length} invoices</span>
+                    </div>
+                    
+                    <div className="max-h-32 overflow-y-auto">
+                      {invoices.map((invoice, index) => (
+                        <div key={index} className="flex justify-between items-center py-2 text-sm">
+                          <span className="text-gray-600">{invoice.invoiceNumber}</span>
+                          <span className="font-medium text-gray-900">{formatCurrency(invoice.amountDue)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                      <span className="text-gray-600">Recipient</span>
+                      <span className="font-semibold text-gray-900">{getVendorName(primaryInvoice)}</span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                      <span className="text-gray-600">Invoice Number</span>
+                      <span className="font-mono font-semibold text-gray-900">{primaryInvoice?.invoiceNumber}</span>
+                    </div>
+                  </>
+                )}
                 
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-600">Invoice Number</span>
-                  <span className="font-mono font-semibold text-gray-900">{invoice.invoiceNumber}</span>
-                </div>
-                
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-600">Status</span>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
-                    invoice.status === 'paid' 
-                      ? 'text-green-700 bg-green-50 border-green-200'
-                      : 'text-blue-700 bg-blue-50 border-blue-200'
-                  }`}>
-                    {invoice.status === 'paid' ? <CheckCircle size={14} /> : <Clock size={14} />}
-                    <span className="ml-2 capitalize">{invoice.status}</span>
+                  <span className="text-gray-600">Payment Method</span>
+                  <span className="font-semibold text-gray-900 capitalize">
+                    {paymentMethod?.replace('_', ' ') || 'Credit Card'}
                   </span>
                 </div>
                 
                 <div className="pt-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold text-gray-900">{formatCurrency(invoice.amountDue)}</span>
+                    <span className="font-semibold text-gray-900">{formatCurrency(totalAmount)}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-600">Processing Fee</span>
@@ -287,7 +382,7 @@ export default function PaymentPage() {
                   </div>
                   <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                     <span className="text-xl font-bold text-gray-900">Total Amount</span>
-                    <span className="text-2xl font-bold text-green-600">{formatCurrency(invoice.amountDue)}</span>
+                    <span className="text-2xl font-bold text-green-600">{formatCurrency(totalAmount)}</span>
                   </div>
                 </div>
               </div>
@@ -467,7 +562,7 @@ export default function PaymentPage() {
                         ) : (
                           <>
                             <Lock size={20} />
-                            Pay {formatCurrency(invoice.amountDue)}
+                            Pay {formatCurrency(totalAmount)}
                             <ArrowRight size={20} />
                           </>
                         )}
@@ -505,11 +600,14 @@ export default function PaymentPage() {
                   </h2>
                   
                   <p className="text-gray-600 mb-2 text-lg">
-                    Your payment of <span className="font-bold text-gray-900">{formatCurrency(invoice.amountDue)}</span> has been processed successfully.
+                    Your payment of <span className="font-bold text-gray-900">{formatCurrency(totalAmount)}</span> has been processed successfully.
                   </p>
                   
                   <p className="text-gray-500 mb-8">
-                    Invoice #{invoice.invoiceNumber} is now marked as paid.
+                    {isBulkPayment 
+                      ? `${invoices.length} invoices have been marked as paid.`
+                      : `Invoice #${primaryInvoice?.invoiceNumber} is now marked as paid.`
+                    }
                   </p>
 
                   <div className="bg-green-50 rounded-xl p-6 border border-green-200 mb-8">
@@ -521,44 +619,29 @@ export default function PaymentPage() {
                         <h4 className="font-semibold text-green-900 mb-1">Transaction Complete</h4>
                         <p className="text-green-800 text-sm">
                           A payment confirmation has been sent to all relevant parties. 
-                          You will be redirected to the invoices page shortly.
+                          You will be redirected back shortly.
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-center gap-2 text-gray-500">
-                    <div className="animate-spin w-4 h-4 border-2 border-gray-300 border-t-green-500 rounded-full"></div>
-                    <span>Redirecting to invoices...</span>
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="flex items-center gap-2 text-gray-500">
+                      <div className="animate-spin w-4 h-4 border-2 border-gray-300 border-t-green-500 rounded-full"></div>
+                      <span>Auto-redirecting...</span>
+                    </div>
+                    <button
+                      onClick={handleBack}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Back Now
+                    </button>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </motion.div>
-      </div>
-
-      {/* Enhanced Footer */}
-      <div className="bg-white/80 backdrop-blur-lg border-t border-gray-200/50 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200">
-                Terms of Service
-              </button>
-              <button className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200">
-                Privacy Policy
-              </button>
-              <button className="text-sm text-gray-600 hover:text-blue-600 transition-colors duration-200">
-                Support
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">Powered by</span>
-              <span className="text-sm font-semibold text-blue-600">SecurePay</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Success Notification */}

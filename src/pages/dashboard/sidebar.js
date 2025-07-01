@@ -489,7 +489,12 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
       id: 'finance',
       label: 'Finance Processing',
       items: [
-        { 
+         { 
+          id: 'invoice-payment', 
+          label: 'Invoice Payment', 
+          icon: <ModernIcons.Processing />,
+          badge: null
+        },{ 
           id: 'finance-processing', 
           label: 'Processing', 
           icon: <ModernIcons.Processing />,
@@ -500,6 +505,18 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           label: 'Reconciliation', 
           icon: <ModernIcons.Reconciliation />,
           badge: null
+        },
+         { 
+          id: 'budget', 
+          label: 'Budgeting', 
+          icon: <ModernIcons.Invoices />,
+          badge: stats.invoices?.counts?.pending || null
+        },
+        { 
+          id: 'budgeting', 
+          label: 'Budget Code', 
+          icon: <ModernIcons.Invoices />,
+          badge: stats.invoices?.counts?.pending || null
         },
       ]
     },
@@ -709,15 +726,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
               }}
             >
               {user?.companyName?.toUpperCase() || 'NexusMWI'} {/* Ensures uppercase */}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{
-                color: sidebarColors.textSecondary,
-                fontSize: '0.75rem'
-              }}
-            >
-              ORGANIZATION {/* Changed to uppercase */}
             </Typography>
           </Box>
         </Box>

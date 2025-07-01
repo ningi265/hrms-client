@@ -47,9 +47,23 @@ import {
   Paperclip,
   ArrowRight,
   X,
+  Loader
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
+
+
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
 
 export default function VendorApprovalPage() {
   const { user } = useAuth();
@@ -222,29 +236,14 @@ export default function VendorApprovalPage() {
     document.body.removeChild(link);
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Vendor Registrations</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch the vendor registration requests...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
+ 
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
+       <LoadingOverlay 
+      isVisible={isLoading} 
+      message="Loading Registration Data..." 
+    />
       {/* Enhanced Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">

@@ -32,11 +32,34 @@ import {
   Shield,
   TrendingUp,
   TrendingDown,
-  Save
+  Save,
+  CheckCircle,
+  MapPin,
+  Clock,
+  AlertCircle,
+  Star,
+  ThumbsUp,
+  ThumbsDown,
+  MessageCircle,
+  Camera,
+  Upload,
+  Loader
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+// LoadingOverlay Component
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
 
 // MetricCard Component (styled like vendors.js)
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
@@ -87,6 +110,532 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   );
 };
 
+// Delivery Status Timeline Component
+const DeliveryTimeline = ({ currentStatus, orderDate, estimatedDelivery, isConfirmed }) => {
+  const statuses = [
+    { key: 'order_confirmed', label: 'Order Confirmed', icon: FileText, date: orderDate },
+    { key: 'processing', label: 'Processing', icon: Settings, date: null },
+    { key: 'shipped', label: 'Shipped', icon: Truck, date: null },
+    { key: 'out_for_delivery', label: 'Out for Delivery', icon: MapPin, date: null },
+    { key: 'delivered', label: 'Delivered', icon: CheckCircle, date: estimatedDelivery },
+    { key: 'confirmed', label: 'Receipt Confirmed', icon: Star, date: null }
+  ];
+
+  const getCurrentStatusIndex = () => {
+    // If delivery is confirmed by customer, show all steps complete
+    if (currentStatus?.toLowerCase() === 'confirmed' || isConfirmed) {
+      return 5;
+    }
+    
+    switch(currentStatus?.toLowerCase()) {
+      case 'pending': return 0;
+      case 'processing': return 1;
+      case 'shipped': return 2;
+      case 'out_for_delivery': return 3;
+      case 'delivered': return 4;
+      default: return 0;
+    }
+  };
+
+  const currentIndex = getCurrentStatusIndex();
+
+  return (
+    <div className="relative">
+      {statuses.map((status, index) => {
+        const isCompleted = index <= currentIndex;
+        const isCurrent = index === currentIndex;
+        const Icon = status.icon;
+
+        return (
+          <div key={status.key} className="flex items-center mb-6 last:mb-0">
+            <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 ${
+              isCompleted 
+                ? 'bg-green-500 border-green-500 text-white' 
+                : isCurrent
+                  ? 'bg-blue-500 border-blue-500 text-white animate-pulse'
+                  : 'bg-white border-gray-300 text-gray-400'
+            }`}>
+              <Icon size={20} />
+            </div>
+            
+            {index < statuses.length - 1 && (
+              <div className={`absolute left-5 w-0.5 h-16 ${
+                index < currentIndex ? 'bg-green-500' : 'bg-gray-200'
+              }`} style={{ top: '40px' }} />
+            )}
+            
+            <div className="ml-4 flex-1">
+              <h3 className={`font-medium ${isCompleted ? 'text-gray-900' : 'text-gray-500'}`}>
+                {status.label}
+              </h3>
+              {status.date && (
+                <p className="text-sm text-gray-500">
+                  {new Date(status.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric", 
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </p>
+              )}
+              {isCurrent && !isCompleted && (
+                <p className="text-sm text-blue-600 font-medium">In Progress</p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+// Delivery Tracking Modal Component
+const DeliveryTrackingModal = ({ po, isOpen, onClose, onConfirmReceipt }) => {
+  if (!isOpen || !po) return null;
+
+  const getStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'delivered': return 'text-green-600 bg-green-100';
+      case 'shipped': return 'text-blue-600 bg-blue-100';
+      case 'processing': return 'text-amber-600 bg-amber-100';
+      case 'confirmed': return 'text-purple-600 bg-purple-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const poNumber = po._id?.slice(-8) || "N/A";
+  const vendorName = po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A";
+  const isDelivered = po.deliveryStatus?.toLowerCase() === 'delivered';
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+        <div className="px-8 py-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <Truck size={24} className="text-blue-500" />
+                Track Delivery - PO-{poNumber}
+              </h2>
+              <p className="text-gray-600 mt-1">Monitor your purchase order delivery status</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-8 max-h-[75vh] overflow-y-auto">
+          {/* Order Summary */}
+          <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Package size={20} className="text-blue-500" />
+              Order Summary
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Purchase Order</p>
+                <p className="text-gray-900 font-semibold">PO-{poNumber}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Vendor</p>
+                <p className="text-gray-900 font-semibold">{vendorName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Amount</p>
+                <p className="text-gray-900 font-semibold">MWK {po.totalAmount?.toFixed(0) || "N/A"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Current Status */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Activity size={20} className="text-green-500" />
+                Current Status
+              </h3>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(po.deliveryStatus)}`}>
+                {po.deliveryStatus || 'Processing'}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Delivery Progress</h4>
+                <DeliveryTimeline 
+                  currentStatus={po.deliveryStatus} 
+                  orderDate={po.createdAt}
+                  estimatedDelivery={po.estimatedDelivery}
+                  isConfirmed={po.receivedByCustomer || po.deliveryStatus === "confirmed"}
+                />
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 mb-2">Delivery Information</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Order Date:</span>
+                      <span className="font-medium">{formatDate(po.createdAt)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Estimated Delivery:</span>
+                      <span className="font-medium">
+                        {po.estimatedDelivery ? formatDate(po.estimatedDelivery) : "TBD"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Delivery Address:</span>
+                      <span className="font-medium">{po.deliveryAddress || "Default Address"}</span>
+                    </div>
+                    {po.trackingNumber && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Tracking Number:</span>
+                        <span className="font-medium font-mono text-blue-600">
+                          {po.trackingNumber}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Delivery Confirmation for Delivered Orders */}
+                {isDelivered && !po.receivedByCustomer && po.deliveryStatus !== "confirmed" && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <h4 className="font-medium text-green-900">Package Delivered!</h4>
+                    </div>
+                    <p className="text-sm text-green-700 mb-4">
+                      Your order has been delivered by the courier. Please confirm receipt of your goods.
+                    </p>
+                    <button
+                      onClick={() => onConfirmReceipt(po._id)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+                    >
+                      <ThumbsUp size={16} />
+                      Confirm Receipt of Goods
+                    </button>
+                  </div>
+                )}
+
+                {/* Already Confirmed */}
+                {(po.receivedByCustomer || po.deliveryStatus === "confirmed") && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Star className="w-5 h-5 text-blue-500" />
+                      <h4 className="font-medium text-blue-900">Order Completed!</h4>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                      You have confirmed receipt of this order. Thank you for your business!
+                    </p>
+                    {(po.receivedDate || po.proofOfDelivery?.confirmedAt) && (
+                      <p className="text-xs text-blue-600 mt-1">
+                        Confirmed on {formatDate(po.receivedDate || po.proofOfDelivery?.confirmedAt)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Order Items */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FileText size={20} className="text-purple-500" />
+              Order Items
+            </h3>
+            <div className="space-y-3">
+              {po.items?.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <h4 className="font-medium text-gray-900">{item.itemName || item.product}</h4>
+                    <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-gray-900">MWK {(item.price || 0).toFixed(0)}</p>
+                    <p className="text-sm text-gray-600">per unit</p>
+                  </div>
+                </div>
+              )) || (
+                <div className="text-center py-4 text-gray-500">
+                  No items found
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="px-8 py-4 border-t border-gray-200 bg-gray-50">
+          <div className="flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-6 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Receipt Confirmation Modal Component
+const ReceiptConfirmationModal = ({ po, isOpen, onClose, onConfirm, showNotification }) => {
+  const [rating, setRating] = useState(5);
+  const [feedback, setFeedback] = useState("");
+  const [hasIssues, setHasIssues] = useState(false);
+  const [issueDescription, setIssueDescription] = useState("");
+  const [receivedBy, setReceivedBy] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setRating(5);
+      setFeedback("");
+      setHasIssues(false);
+      setIssueDescription("");
+      setReceivedBy("");
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
+  if (!isOpen || !po) return null;
+
+  const handleConfirmReceipt = async () => {
+    if (!receivedBy.trim()) {
+      showNotification("Please enter who received the delivery", "error");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onConfirm({
+        poId: po._id,
+        rating,
+        feedback,
+        hasIssues,
+        issueDescription,
+        receivedBy: receivedBy.trim(),
+        receivedDate: new Date()
+      });
+      onClose();
+    } catch (error) {
+      console.error("Error confirming receipt:", error);
+      showNotification("Failed to confirm receipt. Please try again.", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const poNumber = po._id?.slice(-8) || "N/A";
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl flex flex-col">
+        <div className="px-8 py-6 border-b border-gray-200 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <CheckCircle size={24} className="text-green-500" />
+                Confirm Receipt - PO-{poNumber}
+              </h2>
+              <p className="text-gray-600 mt-1">Please confirm that you have received your order</p>
+            </div>
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="p-3 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-8 flex-1 overflow-y-auto">
+          {/* Completion Status Indicator */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900">Complete Your Order Confirmation</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  Please fill in the required information below and click "Confirm Receipt of Goods" to complete your order.
+                </p>
+              </div>
+            </div>
+          </div>
+          {/* Order Summary */}
+          <div className="bg-green-50 rounded-xl p-6 border border-green-200 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Package size={20} className="text-green-500" />
+              Order Details
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Purchase Order</p>
+                <p className="text-gray-900 font-semibold">PO-{poNumber}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Amount</p>
+                <p className="text-gray-900 font-semibold">MWK {po.totalAmount?.toFixed(0) || "N/A"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Rating */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Rate your experience (1-5 stars)
+            </label>
+            <div className="flex items-center gap-2">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  onClick={() => setRating(star)}
+                  className={`p-1 rounded ${star <= rating ? 'text-yellow-400' : 'text-gray-300'} hover:text-yellow-400 transition-colors`}
+                >
+                  <Star size={24} className={star <= rating ? 'fill-current' : ''} />
+                </button>
+              ))}
+              <span className="ml-2 text-sm text-gray-600">
+                {rating === 1 ? 'Poor' : rating === 2 ? 'Fair' : rating === 3 ? 'Good' : rating === 4 ? 'Very Good' : 'Excellent'}
+              </span>
+            </div>
+          </div>
+
+          {/* Received By */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="flex items-center gap-2">
+                Received By <span className="text-red-500">*</span>
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">Required</span>
+              </span>
+            </label>
+            <input
+              type="text"
+              value={receivedBy}
+              onChange={(e) => setReceivedBy(e.target.value)}
+              placeholder="Enter the name of the person who received the delivery"
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                !receivedBy.trim() ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
+              required
+            />
+            {!receivedBy.trim() && (
+              <p className="text-red-500 text-xs mt-1">This field is required to confirm receipt</p>
+            )}
+          </div>
+
+          {/* Feedback */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Additional Feedback (Optional)
+            </label>
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Share your experience with this order..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+              rows={3}
+            />
+          </div>
+
+          {/* Issues Section */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="checkbox"
+                id="hasIssues"
+                checked={hasIssues}
+                onChange={(e) => setHasIssues(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="hasIssues" className="text-sm font-medium text-gray-700">
+                Report any issues with this delivery
+              </label>
+            </div>
+            
+            {hasIssues && (
+              <div className="mt-3">
+                <textarea
+                  value={issueDescription}
+                  onChange={(e) => setIssueDescription(e.target.value)}
+                  placeholder="Please describe any issues you encountered..."
+                  className="w-full px-3 py-2 border border-red-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Confirmation Message */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+              <div>
+                <h4 className="font-medium text-blue-900 mb-1">Confirmation Notice</h4>
+                <p className="text-sm text-blue-700">
+                  By confirming receipt, you acknowledge that you have received the goods as ordered. 
+                  This action will mark the purchase order as completed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-8 py-6 border-t border-gray-200 bg-gray-50 flex-shrink-0">
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={onClose}
+              disabled={isSubmitting}
+              className="px-6 py-3 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmReceipt}
+              disabled={isSubmitting || !receivedBy.trim()}
+              className="px-8 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                  Confirming Receipt...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={18} />
+                  Confirm Receipt of Goods
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Purchase Order Card Component (styled like vendor cards)
 const PurchaseOrderCard = ({ po, onMenuClick, showMenuId, onApprove, onReject, actionLoading }) => {
   const getStatusColor = (status) => {
@@ -113,11 +662,13 @@ const PurchaseOrderCard = ({ po, onMenuClick, showMenuId, onApprove, onReject, a
 
   const getDeliveryStatusColor = (deliveryStatus) => {
     switch (deliveryStatus?.toLowerCase()) {
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
       case "delivered":
         return "bg-green-100 text-green-800";
       case "shipped":
         return "bg-blue-100 text-blue-800";
-      case "confirmed":
+      case "processing":
         return "bg-purple-100 text-purple-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -126,11 +677,13 @@ const PurchaseOrderCard = ({ po, onMenuClick, showMenuId, onApprove, onReject, a
 
   const getDeliveryStatusIcon = (deliveryStatus) => {
     switch (deliveryStatus?.toLowerCase()) {
+      case "confirmed":
+        return <CheckCircle size={14} />;
       case "delivered":
         return <Check size={14} />;
       case "shipped":
         return <Truck size={14} />;
-      case "confirmed":
+      case "processing":
         return <FileText size={14} />;
       default:
         return <Package size={14} />;
@@ -219,6 +772,16 @@ const PurchaseOrderCard = ({ po, onMenuClick, showMenuId, onApprove, onReject, a
         </span>
       </div>
 
+      {(po.receivedByCustomer || po.deliveryStatus === "confirmed") && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 mb-1">Customer Receipt</div>
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 flex items-center gap-1 w-fit">
+            <Star size={12} />
+            Confirmed
+          </span>
+        </div>
+      )}
+
       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
         <div className="flex items-center gap-1">
           <span className="text-xs text-gray-500">
@@ -238,6 +801,132 @@ const PurchaseOrderCard = ({ po, onMenuClick, showMenuId, onApprove, onReject, a
   );
 };
 
+// RFQ Card Component for Modal
+const RfqCard = ({ rfq, isSelected, onSelect }) => {
+  const getRfqStatusColor = (status) => {
+    switch(status?.toLowerCase()) {
+      case 'open': return 'bg-green-100 text-green-800';
+      case 'closed': return 'bg-gray-100 text-gray-800';
+      case 'awarded': return 'bg-blue-100 text-blue-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-green-100 text-green-800';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const rfqId = rfq._id;
+  const hasSelectedVendor = rfq.selectedVendor && rfq.quotes?.length > 0;
+  const quote = hasSelectedVendor ? rfq.quotes.find(q => q.vendor === rfq.selectedVendor) : null;
+  const rfqNumber = rfq._id?.slice(-8) || "N/A";
+
+  return (
+    <div 
+      onClick={() => hasSelectedVendor && onSelect(rfqId)}
+      className={`bg-white rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 ${
+        isSelected 
+          ? 'border-blue-500 bg-blue-50 shadow-md' 
+          : hasSelectedVendor 
+            ? 'border-gray-200 hover:border-blue-300 hover:shadow-md' 
+            : 'border-gray-200 opacity-50 cursor-not-allowed'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-100' : 'bg-gray-50'}`}>
+            <FileText className={`w-5 h-5 ${isSelected ? 'text-blue-600' : 'text-gray-600'}`} />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900 line-clamp-1">
+              {rfq.itemName || "Untitled RFQ"}
+            </h4>
+            <p className="text-sm text-gray-500">RFQ-{rfqNumber}</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getRfqStatusColor(rfq.status || 'open')}`}>
+            {rfq.status || 'Open'}
+          </span>
+          {isSelected && (
+            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+              <Check className="w-3 h-3 text-white" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900">
+            {rfq.quantity || 0}
+          </div>
+          <div className="text-xs text-gray-500">Quantity</div>
+        </div>
+        <div className="text-center p-2 bg-gray-50 rounded">
+          <div className="text-lg font-bold text-gray-900">
+            {rfq.quotes?.length || 0}
+          </div>
+          <div className="text-xs text-gray-500">Quotes</div>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Created</span>
+          <span className="text-xs font-medium">
+            {formatDate(rfq.createdAt)}
+          </span>
+        </div>
+        {rfq.deadline && (
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-600">Deadline</span>
+            <span className="text-xs font-medium">
+              {formatDate(rfq.deadline)}
+            </span>
+          </div>
+        )}
+        {hasSelectedVendor && quote && (
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-600">Best Quote</span>
+            <span className="text-xs font-medium text-green-600">
+              MWK {quote.price?.toFixed(0) || "N/A"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {rfq.description && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 mb-1">Description</div>
+          <p className="text-xs text-gray-800 line-clamp-2">{rfq.description}</p>
+        </div>
+      )}
+
+      {!hasSelectedVendor && (
+        <div className="text-center p-2 bg-yellow-50 rounded border border-yellow-200">
+          <p className="text-xs text-yellow-700 font-medium">No vendor selected</p>
+        </div>
+      )}
+
+      {hasSelectedVendor && quote && (
+        <div className="pt-2 border-t border-gray-100">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-gray-500">Selected Vendor</span>
+            <span className="text-xs font-medium">{rfq.selectedVendor}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function PurchaseOrdersPage() {
   const { token } = useAuth();
   const [purchaseOrders, setPurchaseOrders] = useState([]);
@@ -253,6 +942,19 @@ export default function PurchaseOrdersPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
+  
+  // Delivery tracking modal state
+  const [showDeliveryTrackingModal, setShowDeliveryTrackingModal] = useState(false);
+  const [selectedPOForTracking, setSelectedPOForTracking] = useState(null);
+  
+  // Receipt confirmation modal state
+  const [showReceiptConfirmationModal, setShowReceiptConfirmationModal] = useState(false);
+  const [selectedPOForReceipt, setSelectedPOForReceipt] = useState(null);
+  
+  // New state for RFQ modal
+  const [rfqSearchTerm, setRfqSearchTerm] = useState("");
+  const [rfqStatusFilter, setRfqStatusFilter] = useState("open");
+  
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
@@ -288,6 +990,30 @@ export default function PurchaseOrdersPage() {
     fetchData()
   }, [token, backendUrl])
 
+  // Filter RFQs for modal
+  const filteredRfqs = rfqs
+    .filter((rfq) => {
+      // Filter by status
+      if (rfqStatusFilter === "open") {
+        return rfq.status === "open" || !rfq.status; // Show open RFQs or those without status
+      }
+      if (rfqStatusFilter === "all") return true;
+      return rfq.status === rfqStatusFilter;
+    })
+    .filter((rfq) => {
+      // Filter by search term
+      return (
+        rfq.itemName?.toLowerCase().includes(rfqSearchTerm.toLowerCase()) ||
+        rfq.description?.toLowerCase().includes(rfqSearchTerm.toLowerCase()) ||
+        rfq._id?.toLowerCase().includes(rfqSearchTerm.toLowerCase()) ||
+        false
+      );
+    })
+    .filter((rfq) => {
+      // Only show RFQs with selected vendors for PO creation
+      return rfq.selectedVendor && rfq.quotes?.length > 0;
+    });
+
   // Filter purchase orders
   const filteredPurchaseOrders = purchaseOrders
     .filter((po) => {
@@ -310,12 +1036,19 @@ export default function PurchaseOrdersPage() {
 
   const openCreatePOModal = () => {
     setIsCreatePOModalOpen(true)
+    // Reset modal state
+    setSelectedRfqId("")
+    setSelectedQuote(null)
+    setRfqSearchTerm("")
+    setRfqStatusFilter("open")
   }
 
   const closeCreatePOModal = () => {
     setIsCreatePOModalOpen(false)
     setSelectedRfqId("")
     setSelectedQuote(null)
+    setRfqSearchTerm("")
+    setRfqStatusFilter("open")
   }
 
   const handleRfqSelection = (rfqId) => {
@@ -329,7 +1062,7 @@ export default function PurchaseOrdersPage() {
 
   const handleCreatePO = async () => {
     if (!selectedRfqId || !selectedQuote) {
-      showNotificationMessage("Please select an RFQ and ensure a quote is selected.", "error")
+      showNotificationMessage("Please select an RFQ with a selected vendor.", "error")
       return
     }
 
@@ -372,6 +1105,80 @@ export default function PurchaseOrdersPage() {
     } catch (error) {
       console.error("Error creating PO:", error)
       showNotificationMessage(error.message, "error")
+    }
+  }
+
+  const handleTrackDelivery = (po) => {
+    setSelectedPOForTracking(po);
+    setShowDeliveryTrackingModal(true);
+    setShowMenuId(null);
+  }
+
+  const handleConfirmReceipt = (poId) => {
+    const po = purchaseOrders.find(p => p._id === poId);
+    if (po) {
+      setSelectedPOForReceipt(po);
+      setShowReceiptConfirmationModal(true);
+      setShowDeliveryTrackingModal(false);
+    }
+  }
+
+  const handleReceiptConfirmation = async (receiptData) => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Prepare proof of delivery data
+      const proofOfDelivery = {
+        rating: receiptData.rating,
+        feedback: receiptData.feedback,
+        hasIssues: receiptData.hasIssues,
+        issueDescription: receiptData.issueDescription,
+        confirmedAt: receiptData.receivedDate
+      };
+
+      // Call the backend API
+      const response = await fetch(`${backendUrl}/api/purchase-orders/${receiptData.poId}/confirm`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          proofOfDelivery: JSON.stringify(proofOfDelivery),
+          receivedBy: receiptData.receivedBy,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to confirm receipt');
+      }
+
+      // Update local state with the returned PO data
+      setPurchaseOrders(prev => prev.map(po => 
+        po._id === receiptData.poId 
+          ? { 
+              ...po, 
+              deliveryStatus: "confirmed",
+              receivedByCustomer: true, 
+              receivedDate: receiptData.receivedDate,
+              customerRating: receiptData.rating,
+              customerFeedback: receiptData.feedback,
+              hasIssues: receiptData.hasIssues,
+              issueDescription: receiptData.issueDescription,
+              receivedBy: receiptData.receivedBy,
+              proofOfDelivery: proofOfDelivery
+            }
+          : po
+      ));
+
+      showNotificationMessage("Receipt confirmed successfully! Thank you for your feedback.", "success");
+      setShowReceiptConfirmationModal(false);
+      setSelectedPOForReceipt(null);
+    } catch (error) {
+      showNotificationMessage(error.message || "Failed to confirm receipt. Please try again.", "error");
+      console.error("Error confirming receipt:", error);
     }
   }
 
@@ -432,25 +1239,14 @@ export default function PurchaseOrdersPage() {
     window.location.reload();
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <DotLottieReact src="loading.lottie" loop autoplay />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Purchase Orders</h2>
-          <p className="text-gray-600">Please wait while we fetch purchase order data...</p>
-        </motion.div>
-      </div>
-    )
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* LoadingOverlay with Loader icon */}
+      <LoadingOverlay 
+        isVisible={isLoading} 
+        message="Loading Purchase Orders..." 
+      />
+
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -593,192 +1389,146 @@ export default function PurchaseOrdersPage() {
       </main>
 
       {/* Action Dropdown Menu */}
-      {showMenuId && (
-        <>
-          <div
-            className="fixed inset-0 z-[100] bg-transparent"
-            onClick={() => setShowMenuId(null)}
-          ></div>
-          
-          <div 
-            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
-            style={{
-              top: (() => {
-                const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuHeight = 500;
-                  const spaceBelow = window.innerHeight - rect.bottom;
-                  const spaceAbove = rect.top;
-                  
-                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-                    return `${rect.top - menuHeight + window.scrollY}px`;
-                  } else {
-                    return `${rect.bottom + 8 + window.scrollY}px`;
-                  }
-                }
-                return '50px';
-              })(),
-              left: (() => {
-                const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuWidth = 224;
-                  const spaceRight = window.innerWidth - rect.right;
-                  
-                  if (spaceRight < menuWidth) {
-                    return `${rect.left - menuWidth + 8}px`;
-                  } else {
-                    return `${rect.right - menuWidth}px`;
-                  }
-                }
-                return '50px';
-              })()
-            }}
-          >
-            <div className="py-2">
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Eye size={16} />
-                <span>View Details</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Edit size={16} />
-                <span>Edit PO</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Truck size={16} />
-                <span>Track Delivery</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Send size={16} />
-                <span>Send to Vendor</span>
-              </button>
-              
-              {(() => {
-                const po = purchaseOrders.find(po => po._id === showMenuId);
-                return po?.status === "pending" && (
-                  <>
-                    <button
-                      onClick={() => handleApprovePO(showMenuId)}
-                      disabled={actionLoading === showMenuId}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors text-left disabled:opacity-50"
-                    >
-                      <Check size={16} />
-                      <span>Approve PO</span>
-                      {actionLoading === showMenuId && (
-                        <div className="ml-auto">
-                          <div className="w-4 h-4 border-2 border-green-600 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                      )}
-                    </button>
-                    <button
-                      onClick={() => handleRejectPO(showMenuId)}
-                      disabled={actionLoading === showMenuId}
-                      className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left disabled:opacity-50"
-                    >
-                      <X size={16} />
-                      <span>Reject PO</span>
-                      {actionLoading === showMenuId && (
-                        <div className="ml-auto">
-                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                        </div>
-                      )}
-                    </button>
-                  </>
-                );
-              })()}
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Download size={16} />
-                <span>Download PDF</span>
-              </button>
-              
-              <button
-                onClick={() => copyToClipboard(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Copy size={16} />
-                <span>Copy PO Number</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <History size={16} />
-                <span>View History</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <MessageSquare size={16} />
-                <span>Message Vendor</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Settings size={16} />
-                <span>Manage Settings</span>
-              </button>
+     {showMenuId && (
+  <>
+    {/* Backdrop */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-[100] bg-transparent"
+      onClick={() => setShowMenuId(null)}
+    />
+    
+    {/* Menu positioned exactly at button edge */}
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed z-[101] w-56 bg-white rounded-lg shadow-xl border border-gray-200"
+      style={{
+        top: (() => {
+          const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
+          }
+          return '50px';
+        })(),
+        left: (() => {
+          const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            const menuWidth = 224; // 56rem = 224px
+            const rightEdge = rect.right + window.scrollX;
+            
+            // If menu would go offscreen right, align to viewport edge
+            if (rightEdge + menuWidth > window.innerWidth) {
+              return `${window.innerWidth - menuWidth - 8}px`; // 8px padding from edge
+            }
+            return `${rect.right - menuWidth + window.scrollX}px`; // Align to button right
+          }
+          return '50px';
+        })()
+      }}
+      transition={{
+        duration: 0.1,
+        ease: "easeOut"
+      }}
+    >
+      <div className="py-1">
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Eye size={16} className="text-gray-500" />
+          View Details
+        </button>
+        
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Edit size={16} className="text-gray-500" />
+          Edit PO
+        </button>
+        
+        <button
+          onClick={() => {
+            const po = purchaseOrders.find(p => p._id === showMenuId);
+            if (po) {
+              handleTrackDelivery(po);
+            }
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Truck size={16} className="text-gray-500" />
+          Track Delivery
+        </button>
+        
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Download size={16} className="text-gray-500" />
+          Download PDF
+        </button>
+        
+        <button
+          onClick={() => copyToClipboard(showMenuId)}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Copy size={16} className="text-gray-500" />
+          Copy PO Number
+        </button>
 
-              <div className="border-t border-gray-100 my-1"></div>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left"
-              >
-                <Ban size={16} />
-                <span>Cancel PO</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+        <div className="border-t border-gray-100 my-1"></div>
+        
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm"
+        >
+          <Ban size={16} />
+          Cancel PO
+        </button>
+      </div>
+    </motion.div>
+  </>
+)}
 
-      {/* Create PO Modal */}
+      {/* Delivery Tracking Modal */}
+      <DeliveryTrackingModal
+        po={selectedPOForTracking}
+        isOpen={showDeliveryTrackingModal}
+        onClose={() => {
+          setShowDeliveryTrackingModal(false);
+          setSelectedPOForTracking(null);
+        }}
+        onConfirmReceipt={handleConfirmReceipt}
+      />
+
+      {/* Receipt Confirmation Modal */}
+      <ReceiptConfirmationModal
+        po={selectedPOForReceipt}
+        isOpen={showReceiptConfirmationModal}
+        onClose={() => {
+          setShowReceiptConfirmationModal(false);
+          setSelectedPOForReceipt(null);
+        }}
+        onConfirm={handleReceiptConfirmation}
+        showNotification={showNotificationMessage}
+      />
+
+      {/* Updated Create PO Modal with Grid View */}
       {isCreatePOModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
             <div className="px-8 py-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -786,7 +1536,7 @@ export default function PurchaseOrdersPage() {
                     <Plus size={24} className="text-blue-500" />
                     Create New Purchase Order
                   </h2>
-                  <p className="text-gray-600 mt-1">Select an RFQ to create a purchase order</p>
+                  <p className="text-gray-600 mt-1">Select an RFQ with a selected vendor to create a purchase order</p>
                 </div>
                 <button
                   onClick={closeCreatePOModal}
@@ -797,67 +1547,139 @@ export default function PurchaseOrdersPage() {
               </div>
             </div>
 
-            <div className="p-8 max-h-[70vh] overflow-y-auto">
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Select RFQ *</label>
+            <div className="p-8 max-h-[75vh] overflow-y-auto">
+              {/* Search and Filter Controls */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search RFQs by item name, description, or ID..."
+                    value={rfqSearchTerm}
+                    onChange={(e) => setRfqSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-3 border border-gray-300 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-500" />
                   <select
-                    value={selectedRfqId}
-                    onChange={(e) => handleRfqSelection(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={rfqStatusFilter}
+                    onChange={(e) => setRfqStatusFilter(e.target.value)}
+                    className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
                   >
-                    <option value="">Choose an RFQ...</option>
-                    {rfqs.map((rfq) => (
-                      <option key={rfq._id} value={rfq._id}>
-                        {rfq.itemName} (Qty: {rfq.quantity})
-                      </option>
-                    ))}
+                    <option value="open">Open RFQs</option>
+                    <option value="all">All RFQs</option>
+                    <option value="closed">Closed</option>
+                    <option value="awarded">Awarded</option>
+                    <option value="cancelled">Cancelled</option>
                   </select>
                 </div>
+              </div>
 
-                {selectedQuote && (
-                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <FileText size={20} className="text-blue-500" />
-                      Selected Quote Details
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Vendor</p>
-                        <p className="text-gray-900 font-semibold">
-                          {rfqs.find((rfq) => rfq._id === selectedRfqId)?.selectedVendor || "N/A"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Price</p>
-                        <p className="text-gray-900 font-semibold">MWK {selectedQuote.price?.toFixed(2) || "N/A"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Delivery Time</p>
-                        <p className="text-gray-900 font-semibold">{selectedQuote.deliveryTime || "N/A"}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Notes</p>
-                        <p className="text-gray-900 font-semibold">{selectedQuote.notes || "None"}</p>
-                      </div>
+              {/* RFQ Selection Grid */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <FileText size={20} className="text-blue-500" />
+                    Available RFQs
+                  </h3>
+                  <div className="text-sm text-gray-500">
+                    {filteredRfqs.length} of {rfqs.length} RFQs ready for PO
+                  </div>
+                </div>
+
+                {filteredRfqs.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 rounded-xl">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText size={32} className="text-gray-400" />
                     </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      {rfqSearchTerm || rfqStatusFilter !== "open" 
+                        ? "No RFQs match your criteria" 
+                        : "No Open RFQs Available"}
+                    </h3>
+                    <p className="text-gray-500 mb-4">
+                      {rfqSearchTerm || rfqStatusFilter !== "open"
+                        ? "Try adjusting your search or filter criteria."
+                        : "RFQs need selected vendors before they can be converted to purchase orders."}
+                    </p>
+                    <div className="text-sm text-gray-400">
+                      Only RFQs with selected vendors are shown here
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto pr-2">
+                    {filteredRfqs.map((rfq) => (
+                      <RfqCard
+                        key={rfq._id}
+                        rfq={rfq}
+                        isSelected={selectedRfqId === rfq._id}
+                        onSelect={handleRfqSelection}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-6">
+              {/* Selected Quote Details */}
+              {selectedQuote && selectedRfqId && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <CheckCircle size={20} className="text-green-500" />
+                    Selected Quote Details
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="bg-white rounded-lg p-4">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Vendor</p>
+                      <p className="text-gray-900 font-semibold">
+                        {rfqs.find((rfq) => rfq._id === selectedRfqId)?.selectedVendor || "N/A"}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Total Price</p>
+                      <p className="text-gray-900 font-semibold text-lg">
+                        MWK {selectedQuote.price?.toFixed(0) || "N/A"}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Delivery Time</p>
+                      <p className="text-gray-900 font-semibold">
+                        {selectedQuote.deliveryTime || "N/A"}
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Quote Status</p>
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <Check size={12} className="mr-1" />
+                        Selected
+                      </span>
+                    </div>
+                  </div>
+                  {selectedQuote.notes && (
+                    <div className="mt-4 bg-white rounded-lg p-4">
+                      <p className="text-sm font-medium text-gray-600 mb-1">Vendor Notes</p>
+                      <p className="text-gray-900">{selectedQuote.notes}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
                 <button
                   onClick={closeCreatePOModal}
-                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
                 >
+                  <X size={20} />
                   Cancel
                 </button>
                 <button
                   onClick={handleCreatePO}
-                  className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2"
+                  disabled={!selectedRfqId || !selectedQuote}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save size={20} />
-                  Create PO
+                  Create Purchase Order
                 </button>
               </div>
             </div>

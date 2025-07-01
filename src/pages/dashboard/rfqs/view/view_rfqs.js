@@ -50,12 +50,28 @@ import {
   Lock,
   Edit,
   Trash2,
-  Activity
+  Activity,
+  DollarSign,
+  User,
+  Check,
+  Loader
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../../authcontext/authcontext";
 import CreateRFQForm from "../create/create";
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+
+// LoadingOverlay Component
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null;
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  );
+};
 
 // MetricCard Component (styled like vendors.js)
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
@@ -106,8 +122,342 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   );
 };
 
+// Vendor Quote Card Component for Selection Modal
+const VendorQuoteCard = ({ quote, rfq, isSelected, onSelect, vendorInfo }) => {
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Get vendor name from the populated vendors array or fallback
+  const getVendorName = () => {
+    if (vendorInfo) {
+      return vendorInfo.name || `${vendorInfo.firstName || ''} ${vendorInfo.lastName || ''}`.trim() || vendorInfo.email;
+    }
+    return `Vendor ${quote.vendor?.slice(-4) || 'Unknown'}`;
+  };
+
+  return (
+    <div 
+      onClick={() => onSelect(quote.vendor)}
+      className={`bg-white rounded-lg border-2 p-4 cursor-pointer transition-all duration-200 ${
+        isSelected 
+          ? 'border-blue-500 bg-blue-50 shadow-md' 
+          : 'border-gray-200 hover:border-blue-300 hover:shadow-md'
+      }`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${isSelected ? 'bg-blue-100' : 'bg-gray-50'}`}>
+            <User className={`w-5 h-5 ${isSelected ? 'text-blue-600' : 'text-gray-600'}`} />
+          </div>
+          <div>
+            <h4 className="font-semibold text-gray-900">
+              {getVendorName()}
+            </h4>
+            <p className="text-sm text-gray-500">
+              {vendorInfo?.email || "Quote Submitted"}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          {quote.isLowestPrice && (
+            <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+              Best Price
+            </span>
+          )}
+          {isSelected && (
+            <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+              <Check className="w-3 h-3 text-white" />
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center p-3 bg-gray-50 rounded-lg">
+          <div className="text-xl font-bold text-gray-900 flex items-center justify-center gap-1">
+            <DollarSign className="w-4 h-4 text-green-500" />
+            {quote.price ? Number(quote.price).toFixed(0) : "N/A"}
+          </div>
+          <div className="text-xs text-gray-500">Price (MWK)</div>
+        </div>
+        <div className="text-center p-3 bg-gray-50 rounded-lg">
+          <div className="text-xl font-bold text-gray-900 flex items-center justify-center gap-1">
+            <Clock className="w-4 h-4 text-blue-500" />
+            {quote.deliveryTime || "N/A"}
+          </div>
+          <div className="text-xs text-gray-500">Delivery</div>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Unit Price</span>
+          <span className="text-xs font-medium">
+            MWK {quote.price && rfq.quantity ? (Number(quote.price) / Number(rfq.quantity)).toFixed(2) : "N/A"}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Total Quantity</span>
+          <span className="text-xs font-medium">{rfq.quantity || "N/A"}</span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Submitted</span>
+          <span className="text-xs font-medium">
+            {formatDate(quote.createdAt || quote.submittedAt)}
+          </span>
+        </div>
+      </div>
+
+      {quote.notes && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 mb-1">Vendor Notes</div>
+          <p className="text-xs text-gray-800 bg-gray-50 p-2 rounded line-clamp-2">
+            {quote.notes}
+          </p>
+        </div>
+      )}
+
+      <div className="pt-2 border-t border-gray-100">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-500">
+            Vendor ID: {quote.vendor?.slice(-6) || "N/A"}
+          </span>
+          {vendorInfo?.phoneNumber && (
+            <span className="text-xs text-gray-500">
+              {vendorInfo.phoneNumber}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Vendor Selection Modal Component
+const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVendor }) => {
+  const [localSelectedVendor, setLocalSelectedVendor] = useState(selectedVendor || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setLocalSelectedVendor(selectedVendor || "");
+  }, [selectedVendor, isOpen]);
+
+  if (!isOpen || !rfq) return null;
+
+  const quotes = rfq.quotes || [];
+  
+  // Calculate which quote has the lowest price (handle string/number conversion)
+  const validPrices = quotes
+    .map(q => Number(q.price))
+    .filter(price => !isNaN(price) && price > 0);
+  
+  const lowestPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
+  
+  const quotesWithBestPrice = quotes.map(quote => ({
+    ...quote,
+    isLowestPrice: Number(quote.price) === lowestPrice && Number(quote.price) > 0
+  }));
+
+  const handleVendorSelect = (vendorId) => {
+    setLocalSelectedVendor(vendorId);
+  };
+
+  const handleConfirmSelection = async () => {
+    if (!localSelectedVendor) return;
+    
+    setIsSubmitting(true);
+    try {
+      await onVendorSelect(rfq._id || rfq.id, localSelectedVendor);
+      onClose();
+    } catch (error) {
+      console.error("Failed to select vendor:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const selectedQuote = quotes.find(q => q.vendor === localSelectedVendor);
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+        <div className="px-8 py-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                <Users size={24} className="text-blue-500" />
+                Select Vendor for RFQ
+              </h2>
+              <p className="text-gray-600 mt-1">
+                Choose the best vendor quote for "{rfq.itemName}" (Qty: {rfq.quantity})
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+        </div>
+
+        <div className="p-8 max-h-[75vh] overflow-y-auto">
+          {/* RFQ Summary */}
+          <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <FileText size={20} className="text-blue-500" />
+              RFQ Summary
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Item</p>
+                <p className="text-gray-900 font-semibold">{rfq.itemName}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Quantity</p>
+                <p className="text-gray-900 font-semibold">{rfq.quantity}</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-gray-600">Quotes Received</p>
+                <p className="text-gray-900 font-semibold">{quotes.length}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Vendor Quotes Grid */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <BarChart3 size={20} className="text-green-500" />
+                Vendor Quotes ({quotes.length})
+              </h3>
+              {quotes.length > 0 && (
+                <div className="text-sm text-gray-500">
+                  Select the best quote for your needs
+                </div>
+              )}
+            </div>
+
+            {quotes.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-xl">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare size={32} className="text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No Quotes Received</h3>
+                <p className="text-gray-500 mb-4">
+                  This RFQ hasn't received any vendor quotes yet.
+                </p>
+                <div className="text-sm text-gray-400 space-y-1">
+                  <p>Invited vendors: {rfq.vendors?.length || 0}</p>
+                  <p>Vendors need to submit quotes before you can select one.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {quotesWithBestPrice.map((quote, index) => {
+                  // Find vendor info from the populated vendors array
+                  const vendorInfo = rfq.vendors?.find(v => 
+                    (v._id || v.id || v) === quote.vendor || 
+                    (typeof v === 'object' && (v._id || v.id) === quote.vendor)
+                  );
+                  
+                  return (
+                    <VendorQuoteCard
+                      key={`${quote.vendor}-${index}`}
+                      quote={quote}
+                      rfq={rfq}
+                      isSelected={localSelectedVendor === quote.vendor}
+                      onSelect={handleVendorSelect}
+                      vendorInfo={vendorInfo}
+                    />
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Selected Quote Summary */}
+          {localSelectedVendor && selectedQuote && (
+            <div className="bg-green-50 rounded-xl p-6 border border-green-200 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <CheckCircle size={20} className="text-green-500" />
+                Selected Quote Summary
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Vendor</p>
+                  <p className="text-gray-900 font-semibold">
+                    {(() => {
+                      const vendorInfo = rfq.vendors?.find(v => 
+                        (v._id || v.id || v) === selectedQuote.vendor || 
+                        (typeof v === 'object' && (v._id || v.id) === selectedQuote.vendor)
+                      );
+                      if (vendorInfo) {
+                        return vendorInfo.name || `${vendorInfo.firstName || ''} ${vendorInfo.lastName || ''}`.trim() || vendorInfo.email;
+                      }
+                      return `Vendor ${selectedQuote.vendor?.slice(-4) || 'Unknown'}`;
+                    })()}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total Price</p>
+                  <p className="text-gray-900 font-semibold text-lg">MWK {Number(selectedQuote.price || 0).toFixed(0)}</p>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Unit Price</p>
+                  <p className="text-gray-900 font-semibold">
+                    MWK {selectedQuote.price && rfq.quantity ? (Number(selectedQuote.price) / Number(rfq.quantity)).toFixed(2) : "N/A"}
+                  </p>
+                </div>
+                <div className="bg-white rounded-lg p-4">
+                  <p className="text-sm font-medium text-gray-600 mb-1">Delivery Time</p>
+                  <p className="text-gray-900 font-semibold">{selectedQuote.deliveryTime || "N/A"}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <button
+              onClick={onClose}
+              className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
+            >
+              <X size={20} />
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirmSelection}
+              disabled={!localSelectedVendor || isSubmitting || quotes.length === 0}
+              className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                  Selecting...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={20} />
+                  Confirm Selection
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // RFQ Card Component (styled like vendor cards)
-const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId }) => {
+const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId, onSelectVendor }) => {
   const getStatusColor = (status) => {
     switch(status?.toLowerCase()) {
       case 'open': return 'bg-green-100 text-green-800';
@@ -217,6 +567,16 @@ const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId 
         </div>
       </div>
 
+      {rfq.selectedVendor && (
+        <div className="mb-3">
+          <div className="text-xs text-gray-600 mb-1">Selected Vendor</div>
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+            <CheckCircle size={12} />
+            {rfq.selectedVendor}
+          </span>
+        </div>
+      )}
+
       {rfq.description && (
         <div className="mb-3">
           <div className="text-xs text-gray-600 mb-1">Description</div>
@@ -262,6 +622,11 @@ export default function RFQsPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
+  
+  // Vendor selection modal state
+  const [showVendorSelectionModal, setShowVendorSelectionModal] = useState(false);
+  const [selectedRFQForVendor, setSelectedRFQForVendor] = useState(null);
+  
   const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   useEffect(() => {
@@ -339,6 +704,58 @@ export default function RFQsPage() {
     }
   };
 
+  const handleSelectVendor = (rfq) => {
+    setSelectedRFQForVendor(rfq);
+    setShowVendorSelectionModal(true);
+    setShowMenuId(null);
+  };
+
+  const handleVendorSelect = async (rfqId, vendorId) => {
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Make API call to select vendor using your existing backend endpoint
+      const response = await fetch(`${backendUrl}/api/rfqs/${rfqId}/select`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ vendorId: vendorId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to select vendor');
+      }
+      
+      // Update local state with the successful selection
+      setRfqs(prev => prev.map(rfq => 
+        (rfq._id || rfq.id) === rfqId 
+          ? { ...rfq, selectedVendor: vendorId, status: 'closed' }
+          : rfq
+      ));
+      
+      // Get vendor name for success message
+      const selectedRfq = rfqs.find(r => (r._id || r.id) === rfqId);
+      const vendorInfo = selectedRfq?.vendors?.find(v => 
+        (v._id || v.id || v) === vendorId || 
+        (typeof v === 'object' && (v._id || v.id) === vendorId)
+      );
+      const vendorName = vendorInfo ? 
+        (vendorInfo.name || `${vendorInfo.firstName || ''} ${vendorInfo.lastName || ''}`.trim() || vendorInfo.email) :
+        `Vendor ${vendorId?.slice(-4) || 'Unknown'}`;
+      
+      showNotificationMessage(`Vendor "${vendorName}" selected successfully!`, "success");
+      setShowVendorSelectionModal(false);
+      setSelectedRFQForVendor(null);
+    } catch (error) {
+      showNotificationMessage(error.message || "Failed to select vendor", "error");
+      console.error("Failed to select vendor:", error);
+    }
+  };
+
   const handleOpenModal = () => {
     setOpenModal(true);
   };
@@ -380,31 +797,14 @@ export default function RFQsPage() {
     window.location.reload();
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <DotLottieReact
-            src="loading.lottie"
-            loop
-            autoplay
-          />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading RFQs</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch the latest requests...
-          </p>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* LoadingOverlay with Loader icon */}
+      <LoadingOverlay 
+        isVisible={isLoading} 
+        message="Loading RFQs..." 
+      />
+
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -540,6 +940,7 @@ export default function RFQsPage() {
                     showMenuId={showMenuId}
                     onDelete={handleDeleteRFQ}
                     actionLoading={actionLoading}
+                    onSelectVendor={handleSelectVendor}
                   />
                 );
               })}
@@ -547,31 +948,28 @@ export default function RFQsPage() {
           )}
         </div>
       </main>
-
-      {/* Action Dropdown Menu */}
+{/* Action Dropdown Menu */}
       {showMenuId && (
         <>
-          <div
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="fixed inset-0 z-[100] bg-transparent"
             onClick={() => setShowMenuId(null)}
-          ></div>
+          />
           
-          <div 
-            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+          {/* Menu positioned exactly at button edge */}
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed z-[101] w-56 bg-white rounded-lg shadow-xl border border-gray-200"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-rfq-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuHeight = 450;
-                  const spaceBelow = window.innerHeight - rect.bottom;
-                  const spaceAbove = rect.top;
-                  
-                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-                    return `${rect.top - menuHeight + window.scrollY}px`;
-                  } else {
-                    return `${rect.bottom + 8 + window.scrollY}px`;
-                  }
+                  return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
                 }
                 return '50px';
               })(),
@@ -579,114 +977,82 @@ export default function RFQsPage() {
                 const button = document.querySelector(`[data-rfq-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuWidth = 224;
-                  const spaceRight = window.innerWidth - rect.right;
+                  const menuWidth = 224; // 56rem = 224px
+                  const rightEdge = rect.right + window.scrollX;
                   
-                  if (spaceRight < menuWidth) {
-                    return `${rect.left - menuWidth + 8}px`;
-                  } else {
-                    return `${rect.right - menuWidth}px`;
+                  // If menu would go offscreen right, align to viewport edge
+                  if (rightEdge + menuWidth > window.innerWidth) {
+                    return `${window.innerWidth - menuWidth - 8}px`; // 8px padding from edge
                   }
+                  return `${rect.right - menuWidth + window.scrollX}px`; // Align to button right
                 }
                 return '50px';
               })()
             }}
+            transition={{
+              duration: 0.1,
+              ease: "easeOut"
+            }}
           >
-            <div className="py-2">
+            <div className="py-1">
               <Link
                 to={`/dashboard/rfqs/${filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id}`}
                 onClick={() => setShowMenuId(null)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Eye size={16} />
-                <span>View Details</span>
-              </Link>
-              
-              <Link
-                to={`/dashboard/rfqs/${filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id}/quote`}
-                onClick={() => setShowMenuId(null)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <MessageSquare size={16} />
-                <span>Submit Quote</span>
+                <Eye size={16} className="text-gray-500" />
+                View Details
               </Link>
               
               <button
                 onClick={() => {
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Edit size={16} />
-                <span>Edit RFQ</span>
+                <Edit size={16} className="text-gray-500" />
+                Edit RFQ
               </button>
               
               <button
                 onClick={() => {
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <BarChart3 size={16} />
-                <span>View All Quotes</span>
+                <BarChart3 size={16} className="text-gray-500" />
+                View All Quotes
               </button>
               
               <button
                 onClick={() => {
-                  setShowMenuId(null);
+                  const rfq = filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId);
+                  if (rfq) {
+                    handleSelectVendor(rfq);
+                  }
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Users size={16} />
-                <span>Select Vendor</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Send size={16} />
-                <span>Send Reminder</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Download size={16} />
-                <span>Download Report</span>
+                <Users size={16} className="text-gray-500" />
+                Select Vendor
               </button>
               
               <button
                 onClick={() => copyToClipboard(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Copy size={16} />
-                <span>Copy RFQ ID</span>
+                <Copy size={16} className="text-gray-500" />
+                Copy RFQ ID
               </button>
               
               <button
                 onClick={() => {
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <ExternalLink size={16} />
-                <span>Share RFQ</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Settings size={16} />
-                <span>Manage Settings</span>
+                <ExternalLink size={16} className="text-gray-500" />
+                Share RFQ
               </button>
 
               <div className="border-t border-gray-100 my-1"></div>
@@ -699,10 +1065,10 @@ export default function RFQsPage() {
                   }
                 }}
                 disabled={actionLoading === (filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left disabled:opacity-50"
+                className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm"
               >
                 <Trash2 size={16} />
-                <span>Delete RFQ</span>
+                Delete RFQ
                 {actionLoading === (filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id) && (
                   <div className="ml-auto">
                     <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
@@ -710,9 +1076,20 @@ export default function RFQsPage() {
                 )}
               </button>
             </div>
-          </div>
+          </motion.div>
         </>
       )}
+      {/* Vendor Selection Modal */}
+      <VendorSelectionModal
+        rfq={selectedRFQForVendor}
+        isOpen={showVendorSelectionModal}
+        onClose={() => {
+          setShowVendorSelectionModal(false);
+          setSelectedRFQForVendor(null);
+        }}
+        onVendorSelect={handleVendorSelect}
+        selectedVendor={selectedRFQForVendor?.selectedVendor}
+      />
 
       {/* Create RFQ Modal */}
       {openModal && (

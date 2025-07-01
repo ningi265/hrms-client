@@ -63,6 +63,10 @@ import CompleteRegistration from './pages/dashboard/employee/complete-registrati
 import TripManagementDashboard from './pages/driver-dash/trip-management';
 import VehicleManagementDashboard from './pages/driver-dash/vehicle-management';
 import FinancialReconciliationDashboard from './pages/driver-dash/reconciliation';
+import BudgetOverviewDashboard from './pages/dashboard/finance/budget';
+import ApprovalWorkflow from './pages/dashboard/finance/budgeting';
+import BudgetAllocationPage from './pages/dashboard/finance/allocate';
+import InvoicePaymentPage from './pages/dashboard/finance/invoice';
 
 function App() {
   return (
@@ -102,6 +106,11 @@ function App() {
           <Route path="/requisitions/manage" element={<ManageRequisitionsPage/>} />
           <Route path="/vendors" element={<VendorsPage/>}/>
           <Route path="/food" element={<FoodBudgetPlanner/>}/>
+          <Route path="/budget" element={<BudgetOverviewDashboard/>}/>
+          <Route path="/budgeting" element={<ApprovalWorkflow/>}/>
+          <Route path="/budget-allocation" element={<BudgetAllocationPage/>}/>
+          <Route path="/invoice-payment" element={<InvoicePaymentPage/>}/>
+          
           
           {/* Employee Management Routes - Updated with proper parameter handling */}
           <Route path="/dashboard/employees" element={<EmployeesPage/>}/>
