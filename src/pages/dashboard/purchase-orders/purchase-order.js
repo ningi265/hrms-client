@@ -1389,118 +1389,118 @@ export default function PurchaseOrdersPage() {
       </main>
 
       {/* Action Dropdown Menu */}
-      {showMenuId && (
-        <>
-          <div
-            className="fixed inset-0 z-[100] bg-transparent"
-            onClick={() => setShowMenuId(null)}
-          ></div>
-          
-          <div 
-            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
-            style={{
-              top: (() => {
-                const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuHeight = 500;
-                  const spaceBelow = window.innerHeight - rect.bottom;
-                  const spaceAbove = rect.top;
-                  
-                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-                    return `${rect.top - menuHeight + window.scrollY}px`;
-                  } else {
-                    return `${rect.bottom + 8 + window.scrollY}px`;
-                  }
-                }
-                return '50px';
-              })(),
-              left: (() => {
-                const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuWidth = 224;
-                  const spaceRight = window.innerWidth - rect.right;
-                  
-                  if (spaceRight < menuWidth) {
-                    return `${rect.left - menuWidth + 8}px`;
-                  } else {
-                    return `${rect.right - menuWidth}px`;
-                  }
-                }
-                return '50px';
-              })()
-            }}
-          >
-            <div className="py-2">
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Eye size={16} />
-                <span>View Details</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Edit size={16} />
-                <span>Edit PO</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  const po = purchaseOrders.find(p => p._id === showMenuId);
-                  if (po) {
-                    handleTrackDelivery(po);
-                  }
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Truck size={16} />
-                <span>Track Delivery</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Download size={16} />
-                <span>Download PDF</span>
-              </button>
-              
-              <button
-                onClick={() => copyToClipboard(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-              >
-                <Copy size={16} />
-                <span>Copy PO Number</span>
-              </button>
-             
-              
-      
-  
-              <div className="border-t border-gray-100 my-1"></div>
-              
-              <button
-                onClick={() => {
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left"
-              >
-                <Ban size={16} />
-                <span>Cancel PO</span>
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+     {showMenuId && (
+  <>
+    {/* Backdrop */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-[100] bg-transparent"
+      onClick={() => setShowMenuId(null)}
+    />
+    
+    {/* Menu positioned exactly at button edge */}
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed z-[101] w-56 bg-white rounded-lg shadow-xl border border-gray-200"
+      style={{
+        top: (() => {
+          const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
+          }
+          return '50px';
+        })(),
+        left: (() => {
+          const button = document.querySelector(`[data-po-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            const menuWidth = 224; // 56rem = 224px
+            const rightEdge = rect.right + window.scrollX;
+            
+            // If menu would go offscreen right, align to viewport edge
+            if (rightEdge + menuWidth > window.innerWidth) {
+              return `${window.innerWidth - menuWidth - 8}px`; // 8px padding from edge
+            }
+            return `${rect.right - menuWidth + window.scrollX}px`; // Align to button right
+          }
+          return '50px';
+        })()
+      }}
+      transition={{
+        duration: 0.1,
+        ease: "easeOut"
+      }}
+    >
+      <div className="py-1">
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Eye size={16} className="text-gray-500" />
+          View Details
+        </button>
+        
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Edit size={16} className="text-gray-500" />
+          Edit PO
+        </button>
+        
+        <button
+          onClick={() => {
+            const po = purchaseOrders.find(p => p._id === showMenuId);
+            if (po) {
+              handleTrackDelivery(po);
+            }
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Truck size={16} className="text-gray-500" />
+          Track Delivery
+        </button>
+        
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Download size={16} className="text-gray-500" />
+          Download PDF
+        </button>
+        
+        <button
+          onClick={() => copyToClipboard(showMenuId)}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Copy size={16} className="text-gray-500" />
+          Copy PO Number
+        </button>
+
+        <div className="border-t border-gray-100 my-1"></div>
+        
+        <button
+          onClick={() => {
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm"
+        >
+          <Ban size={16} />
+          Cancel PO
+        </button>
+      </div>
+    </motion.div>
+  </>
+)}
 
       {/* Delivery Tracking Modal */}
       <DeliveryTrackingModal

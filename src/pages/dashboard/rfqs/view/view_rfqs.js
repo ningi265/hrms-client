@@ -948,31 +948,28 @@ export default function RFQsPage() {
           )}
         </div>
       </main>
-
-      {/* Action Dropdown Menu */}
+{/* Action Dropdown Menu */}
       {showMenuId && (
         <>
-          <div
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="fixed inset-0 z-[100] bg-transparent"
             onClick={() => setShowMenuId(null)}
-          ></div>
+          />
           
-          <div 
-            className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+          {/* Menu positioned exactly at button edge */}
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed z-[101] w-56 bg-white rounded-lg shadow-xl border border-gray-200"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-rfq-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuHeight = 450;
-                  const spaceBelow = window.innerHeight - rect.bottom;
-                  const spaceAbove = rect.top;
-                  
-                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-                    return `${rect.top - menuHeight + window.scrollY}px`;
-                  } else {
-                    return `${rect.bottom + 8 + window.scrollY}px`;
-                  }
+                  return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
                 }
                 return '50px';
               })(),
@@ -980,48 +977,51 @@ export default function RFQsPage() {
                 const button = document.querySelector(`[data-rfq-id="${showMenuId}"]`);
                 if (button) {
                   const rect = button.getBoundingClientRect();
-                  const menuWidth = 224;
-                  const spaceRight = window.innerWidth - rect.right;
+                  const menuWidth = 224; // 56rem = 224px
+                  const rightEdge = rect.right + window.scrollX;
                   
-                  if (spaceRight < menuWidth) {
-                    return `${rect.left - menuWidth + 8}px`;
-                  } else {
-                    return `${rect.right - menuWidth}px`;
+                  // If menu would go offscreen right, align to viewport edge
+                  if (rightEdge + menuWidth > window.innerWidth) {
+                    return `${window.innerWidth - menuWidth - 8}px`; // 8px padding from edge
                   }
+                  return `${rect.right - menuWidth + window.scrollX}px`; // Align to button right
                 }
                 return '50px';
               })()
             }}
+            transition={{
+              duration: 0.1,
+              ease: "easeOut"
+            }}
           >
-            <div className="py-2">
+            <div className="py-1">
               <Link
                 to={`/dashboard/rfqs/${filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id}`}
                 onClick={() => setShowMenuId(null)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Eye size={16} />
-                <span>View Details</span>
+                <Eye size={16} className="text-gray-500" />
+                View Details
               </Link>
-           
               
               <button
                 onClick={() => {
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Edit size={16} />
-                <span>Edit RFQ</span>
+                <Edit size={16} className="text-gray-500" />
+                Edit RFQ
               </button>
               
               <button
                 onClick={() => {
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <BarChart3 size={16} />
-                <span>View All Quotes</span>
+                <BarChart3 size={16} className="text-gray-500" />
+                View All Quotes
               </button>
               
               <button
@@ -1031,30 +1031,29 @@ export default function RFQsPage() {
                     handleSelectVendor(rfq);
                   }
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Users size={16} />
-                <span>Select Vendor</span>
+                <Users size={16} className="text-gray-500" />
+                Select Vendor
               </button>
               
               <button
                 onClick={() => copyToClipboard(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <Copy size={16} />
-                <span>Copy RFQ ID</span>
+                <Copy size={16} className="text-gray-500" />
+                Copy RFQ ID
               </button>
               
               <button
                 onClick={() => {
                   setShowMenuId(null);
                 }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
               >
-                <ExternalLink size={16} />
-                <span>Share RFQ</span>
+                <ExternalLink size={16} className="text-gray-500" />
+                Share RFQ
               </button>
-            
 
               <div className="border-t border-gray-100 my-1"></div>
               
@@ -1066,10 +1065,10 @@ export default function RFQsPage() {
                   }
                 }}
                 disabled={actionLoading === (filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left disabled:opacity-50"
+                className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm"
               >
                 <Trash2 size={16} />
-                <span>Delete RFQ</span>
+                Delete RFQ
                 {actionLoading === (filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?.id || filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId)?._id) && (
                   <div className="ml-auto">
                     <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
@@ -1077,10 +1076,9 @@ export default function RFQsPage() {
                 )}
               </button>
             </div>
-          </div>
+          </motion.div>
         </>
       )}
-
       {/* Vendor Selection Modal */}
       <VendorSelectionModal
         rfq={selectedRFQForVendor}

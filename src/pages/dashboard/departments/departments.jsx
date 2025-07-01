@@ -574,110 +574,94 @@ export default function DepartmentsPage() {
       </main>
 
       {/* Action Dropdown Menu */}
-      {showMenuId && (
-        <>
-          <div
-            className="fixed inset-0 z-[100] bg-transparent"
-            onClick={() => setShowMenuId(null)}
-          ></div>
-          
-          <div 
-            className="fixed z-[101] w-64 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
-            style={{
-              top: (() => {
-                const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuHeight = 400;
-                  const spaceBelow = window.innerHeight - rect.bottom;
-                  const spaceAbove = rect.top;
-                  
-                  if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-                    return `${rect.top - menuHeight + window.scrollY}px`;
-                  } else {
-                    return `${rect.bottom + 8 + window.scrollY}px`;
-                  }
-                }
-                return '50px';
-              })(),
-              left: (() => {
-                const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
-                if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuWidth = 256;
-                  const spaceRight = window.innerWidth - rect.right;
-                  
-                  if (spaceRight < menuWidth) {
-                    return `${rect.left - menuWidth + 8}px`;
-                  } else {
-                    return `${rect.right - menuWidth}px`;
-                  }
-                }
-                return '50px';
-              })()
-            }}
-          >
-            <div className="py-2">
-              <button
-                onClick={() => {
-                  navigate(`/dashboard/departments/${showMenuId}`);
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <Eye size={16} />
-                <span>View Details</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  navigate(`/dashboard/departments/${showMenuId}/edit`);
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <Edit size={16} />
-                <span>Edit Department</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  navigate(`/dashboard/departments/${showMenuId}/employees`);
-                  setShowMenuId(null);
-                }}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <Users size={16} />
-                <span>View Employees</span>
-              </button>
-              
-              <button
-                onClick={() => copyToClipboard(showMenuId)}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 text-left"
-              >
-                <Copy size={16} />
-                <span>Copy Department ID</span>
-              </button>
-              
-              <div className="border-t border-gray-100 my-1"></div>
-              
-              <button
-                onClick={() => handleDeleteDepartment(showMenuId)}
-                disabled={actionLoading === showMenuId}
-                className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200 text-left disabled:opacity-50"
-              >
-                <Trash2 size={16} />
-                <span>Delete Department</span>
-                {actionLoading === showMenuId && (
-                  <div className="ml-auto">
-                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                  </div>
-                )}
-              </button>
+     {showMenuId && (
+  <>
+    {/* Backdrop */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-[100] bg-transparent"
+      onClick={() => setShowMenuId(null)}
+    />
+    
+    {/* Menu positioned exactly at button edge */}
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed z-[101] w-56 bg-white rounded-lg shadow-xl border border-gray-200"
+      style={{
+        top: (() => {
+          const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
+          }
+          return '50px';
+        })(),
+        left: (() => {
+          const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            const menuWidth = 224; // 56rem = 224px
+            const rightEdge = rect.right + window.scrollX;
+            
+            // If menu would go offscreen right, align to viewport edge
+            if (rightEdge + menuWidth > window.innerWidth) {
+              return `${window.innerWidth - menuWidth - 8}px`; // 8px padding from edge
+            }
+            return `${rect.right - menuWidth + window.scrollX}px`; // Align to button right
+          }
+          return '50px';
+        })()
+      }}
+      transition={{
+        duration: 0.1,
+        ease: "easeOut"
+      }}
+    >
+      <div className="py-1">
+        <button
+          onClick={() => {
+            navigate(`/dashboard/departments/${showMenuId}`);
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Eye size={16} className="text-gray-500" />
+          View Details
+        </button>
+        
+        {/* Other menu items with same styling */}
+        <button
+          onClick={() => {
+            navigate(`/dashboard/departments/${showMenuId}/edit`);
+            setShowMenuId(null);
+          }}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Edit size={16} className="text-gray-500" />
+          Edit Department
+        </button>
+
+        <div className="border-t border-gray-100 my-1"></div>
+
+        <button
+          onClick={() => handleDeleteDepartment(showMenuId)}
+          disabled={actionLoading === showMenuId}
+          className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm"
+        >
+          <Trash2 size={16} />
+          Delete Department
+          {actionLoading === showMenuId && (
+            <div className="ml-auto">
+              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
-          </div>
-        </>
-      )}
+          )}
+        </button>
+      </div>
+    </motion.div>
+  </>
+)}
 
       {/* Add Department Modal */}
       {isAddDepartmentModalOpen && (

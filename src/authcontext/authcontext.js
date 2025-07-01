@@ -9,7 +9,9 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Check if token is expired
   const isTokenExpired = (token) => {
@@ -68,6 +70,8 @@ export const AuthProvider = ({ children }) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
+        mode:"cors",
         body: JSON.stringify({ email, password }),
       });
 
@@ -107,6 +111,8 @@ export const AuthProvider = ({ children }) => {
         headers: {
           "Content-Type": "application/json",
         },
+         credentials: "include",
+        mode:"cors",
         body: JSON.stringify({ 
           firstName, 
           lastName, 

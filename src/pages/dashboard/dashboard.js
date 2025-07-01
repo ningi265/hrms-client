@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate ,useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import {
   Error,
   Notifications,
@@ -97,7 +97,7 @@ import VendorPODetailsSection from '../../pages/vendor-dash/purchase-orders/acce
 import TrackDeliveriesSection from '../../pages/dashboard/purchase-orders/confirm/confirm';
 import InvoicesSection from '../../pages/dashboard/invoice/invoice';
 import InvoiceManagementSection from '../../pages/dashboard/invoice/manage/manage';
-import PaymentSection from '../../pages/dashboard/invoice/pay/pay';
+import PaymentPage from '../../pages/dashboard/invoice/pay/pay'; // Import the actual PaymentPage component
 import SupervisorApprovalSection from '../../pages/dashboard/requisitions/travel';
 import FinalApproverSection from '../../pages/dashboard/requisitions/final';
 import FinanceProcessingSection from '../../pages/dashboard/requisitions/manage/finance-travel';
@@ -116,7 +116,7 @@ import EditEmployeePage from "./employee/edit";
 import BudgetOverviewDashboard from "./finance/budget";
 import ApprovalWorkflow from "./finance/budgeting";
 import BudgetAllocationPage from "./finance/allocate";
-
+import InvoicePaymentPage from "./finance/invoice";
 
 // Sample data for RevenueChart
 const salesData = [
@@ -253,10 +253,9 @@ const ActivityCard = styled(Card)(({ theme }) => ({
 const backendUrl = process.env.REACT_APP_BACKEND_URL;
 console.log(backendUrl);
 
-
-
 export default function ProcurementDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const theme = useTheme();
   const [activeIndex, setActiveIndex] = useState(null);
   const [stats, setStats] = useState({
@@ -276,7 +275,9 @@ export default function ProcurementDashboard() {
     return searchParams.get('section') || 'dashboard';
   });
   
- 
+  // Get payment data from navigation state
+  const paymentData = location.state?.paymentData;
+  
   const { user: authUser, loading: authLoading } = useAuth();
    const user = authUser ? {
   ...authUser,
@@ -284,14 +285,15 @@ export default function ProcurementDashboard() {
   avatar: authUser.avatar || null,
   email: authUser.email || '',
   role: authUser.role || 'guest',
-  companyName: authUser.companyName || 'NexusMWI' // Add this line
+  companyName: authUser.companyName || 'NexusMWI'
 } : {
   name: 'Guest User',
   avatar: null,
   email: '',
   role: 'guest',
-  companyName: 'NexusMWI' // Add this line
+  companyName: 'NexusMWI'
 };
+
   const [recentReports, setRecentReports] = useState([
   {
     name: "Procurement Summary",
@@ -318,7 +320,6 @@ export default function ProcurementDashboard() {
     thumbnail: "users"
   }
 ]);
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
 
   const colors = {
     pending: '#FF9F1C',    // warm orange
@@ -329,7 +330,6 @@ export default function ProcurementDashboard() {
     paid: '#7209B7'        // vibrant purple
   };
 
-  
   const allData = [
     { name: 'Pending Requisitions', value: stats.requisitions.counts.pending, category: 'Requisitions', status: 'pending' },
     { name: 'Approved Requisitions', value: stats.requisitions.counts.approved, category: 'Requisitions', status: 'approved' },
@@ -377,6 +377,12 @@ export default function ProcurementDashboard() {
     setActiveSection(section);
     navigate(`?section=${section}`, { replace: true });
   };
+
+  // Handle back navigation from payment section
+  const handleBackFromPayment = () => {
+    handleSectionChange('invoice-payment');
+  };
+
   const [scrollPosition, setScrollPosition] = useState(0);
   
   // Handle scroll events
@@ -389,7 +395,7 @@ export default function ProcurementDashboard() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
   const rows = document.querySelectorAll('.report-row');
   rows.forEach((row, index) => {
     setTimeout(() => {
@@ -426,8 +432,6 @@ export default function ProcurementDashboard() {
 
   const SIDEBAR_WIDTH = 256;
   const COLLAPSED_SIDEBAR_WIDTH = 70;
-
-
 
   // Calculate opacity (0 when at top, 1 when scrolled down a bit)
   const opacity = Math.min(scrollPosition / 100, 1); 
@@ -606,9 +610,6 @@ export default function ProcurementDashboard() {
    position: 'relative',
      zIndex: 1,
       padding: '80px 1.5rem 1.5rem',
-
-  
-  
   }}>
   {activeSection === "dashboard" ? (
     <Box sx={{ maxWidth: '100%', margin: '0 auto' }}>
@@ -640,13 +641,11 @@ export default function ProcurementDashboard() {
   Welcome back {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)}, here's what's happening with your procurement activities.
 </Typography>
 
-
   </Box>
 </Box>
             {/* Stats Cards */}
             <StatsCardsGrid stats={stats} />
 
-              
             {/* Main Content Grid */}
             <Box sx={{ 
               display: "grid", 
@@ -676,73 +675,9 @@ export default function ProcurementDashboard() {
             </Box>
 
             <Box sx={{ mb: 4 }}>
-               
          <FinancialDashboard/>
     </Box>
 
-
-            {/* Recent Activity */}
-             {/*    <Card sx={{ 
-              mt: 3,
-              borderRadius: 3,
-              boxShadow: theme.shadows[1],
-            }}>
-              <CardHeader
-                title="Recent Activity"
-                subheader="Latest procurement activities"
-                titleTypographyProps={{ variant: 'h6', fontWeight: 600 }}
-                subheaderTypographyProps={{ variant: 'body2' }}
-                action={
-                  <Button 
-                    variant="outlined" 
-                    size="small"
-                    sx={{
-                      borderRadius: 20,
-                      textTransform: 'none',
-                      px: 2,
-                    }}
-                  >
-                    View All
-                  </Button>
-                }
-              />
-              <CardContent>
-                <Box sx={{ 
-                  display: "grid", 
-                  gap: 3, 
-                  gridTemplateColumns: { 
-                    xs: "1fr", 
-                    sm: "repeat(2, 1fr)", 
-                    lg: "repeat(3, 1fr)" 
-                  } 
-                }}>
-                  <ActivityCardComponent
-                    title="New Requisition Submitted"
-                    description="Office supplies requisition #REQ-2023-042 submitted by Sarah Johnson"
-                    time="2 hours ago"
-                    icon={<ShoppingCart />}
-                    color="primary"
-                  />
-
-                  <ActivityCardComponent
-                    title="Purchase Order Approved"
-                    description="IT Equipment PO #PO-2023-028 approved by Michael Chen"
-                    time="4 hours ago"
-                    icon={<Check />}
-                    color="success"
-                  />
-
-                  <ActivityCardComponent
-                    title="Invoice Paid"
-                    description="Marketing Services invoice #INV-2023-103 for $3,750.00 paid"
-                    time="Yesterday"
-                    icon={<CreditCard />}
-                    color="error"
-                  />
-                </Box>
-              </CardContent>
-            </Card>*/}
-         
              {/*Recent Reports */}
                <div className="recent-reports">
       <div className="section-header">
@@ -882,11 +817,9 @@ export default function ProcurementDashboard() {
       </div>
                </div>
              
-
                    <Box sx={{ mb: 4 }}>
       <ProductReviewsAnalysis />
     </Box>
-
 
           </Box>
     </Box>
@@ -910,7 +843,14 @@ export default function ProcurementDashboard() {
       {activeSection === "track-deliveries" && <TrackDeliveriesSection/>}
       {activeSection === "invoice" && <InvoicesSection/>}
       {activeSection === "invoice-manage" && <InvoiceManagementSection/>}
-      {activeSection === "payment" && <PaymentSection/>}
+      {/* Updated payment section with proper data handling */}
+      {activeSection === "payment" && (
+        <PaymentPage 
+          invoiceData={paymentData}
+          onBack={handleBackFromPayment}
+          authContext={{ user }}
+        />
+      )}
       {activeSection === "supervisor-approval" && <SupervisorApprovalSection/>}
       {activeSection === "final-approval" && <FinalApproverSection/>}
       {activeSection === "finance-processing" && <FinanceProcessingSection/>}
@@ -929,10 +869,7 @@ export default function ProcurementDashboard() {
          {activeSection === "budget" && <BudgetOverviewDashboard/>}
          {activeSection === "budgeting" && <ApprovalWorkflow/>}
           {activeSection === "budget-allocation" && <BudgetAllocationPage/>}
-         
- 
-      {/* other sections */}
-
+          {activeSection === "invoice-payment" && <InvoicePaymentPage/>}
     </Box>
   )}
 </Box>
@@ -942,6 +879,7 @@ export default function ProcurementDashboard() {
   );
 }
 
+// Rest of the component functions remain the same...
 function StatsCardComponent({ title, value, description, trend, trendDirection, icon, color }) {
   const theme = useTheme();
   

@@ -637,134 +637,158 @@ export default function InvoicesPage() {
 
       {/* Action Dropdown Menu */}
       <AnimatePresence>
-        {showMenuId && (
-          <>
-            <div
-              className="fixed inset-0 z-[100] bg-transparent"
-              onClick={() => setShowMenuId(null)}
-            ></div>
+       {showMenuId && (
+  <>
+    {/* Backdrop */}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 z-[100] bg-transparent"
+      onClick={() => setShowMenuId(null)}
+    />
+    
+    {/* Menu positioned exactly at button edge */}
+    <motion.div
+      initial={{ opacity: 0, y: -5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="fixed z-[101] w-56 bg-white rounded-lg shadow-xl border border-gray-200"
+      style={{
+        top: (() => {
+          const button = document.querySelector(`[data-invoice-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
+          }
+          return '50px';
+        })(),
+        left: (() => {
+          const button = document.querySelector(`[data-invoice-id="${showMenuId}"]`);
+          if (button) {
+            const rect = button.getBoundingClientRect();
+            const menuWidth = 224; // 56rem = 224px
+            const rightEdge = rect.right + window.scrollX;
             
-            <motion.div
-              ref={menuRef}
-              initial={{ opacity: 0, scale: 0.95, y: -10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className="fixed z-[101] w-56 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
-              style={{
-                top: menuPosition.top,
-                bottom: menuPosition.bottom,
-                right: menuPosition.right,
-                left: menuPosition.left
-              }}
-            >
-              <div className="py-2">
-                <button
-                  onClick={() => setShowMenuId(null)}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                >
-                  <Eye size={16} />
-                  <span>View Details</span>
-                </button>
-                
-                {(() => {
-                  const invoice = invoices.find(inv => inv._id === showMenuId);
-                  if (!invoice) return null;
+            // If menu would go offscreen right, align to viewport edge
+            if (rightEdge + menuWidth > window.innerWidth) {
+              return `${window.innerWidth - menuWidth - 8}px`; // 8px padding from edge
+            }
+            return `${rect.right - menuWidth + window.scrollX}px`; // Align to button right
+          }
+          return '50px';
+        })()
+      }}
+      transition={{
+        duration: 0.1,
+        ease: "easeOut"
+      }}
+    >
+      <div className="py-1">
+        <button
+          onClick={() => setShowMenuId(null)}
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+        >
+          <Eye size={16} className="text-gray-500" />
+          View Details
+        </button>
+        
+        {(() => {
+          const invoice = invoices.find(inv => inv._id === showMenuId);
+          if (!invoice) return null;
 
-                  return (
-                    <>
-                      {invoice.status === "pending" && (
-                        <>
-                          <button
-                            onClick={() => openDialog(invoice, "approve")}
-                            className="w-full flex items-center space-x-3 px-4 py-3 text-green-600 hover:bg-green-50 transition-colors text-left"
-                          >
-                            <Check size={16} />
-                            <span>Approve</span>
-                          </button>
-                          <button
-                            onClick={() => openDialog(invoice, "reject")}
-                            className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-left"
-                          >
-                            <X size={16} />
-                            <span>Reject</span>
-                          </button>
-                        </>
-                      )}
-                      
-                      {invoice.status === "approved" && (
-                        <>
-                          <button
-                            onClick={() => handlePayInvoice(invoice)}
-                            className="w-full flex items-center space-x-3 px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors text-left"
-                          >
-                            <CreditCard size={16} />
-                            <span>Pay Invoice</span>
-                          </button>
-                          <button
-                            onClick={() => openDialog(invoice, "mark-as-paid")}
-                            className="w-full flex items-center space-x-3 px-4 py-3 text-purple-600 hover:bg-purple-50 transition-colors text-left"
-                          >
-                            <Check size={16} />
-                            <span>Mark as Paid</span>
-                          </button>
-                        </>
-                      )}
-                      
-                      <button
-                        onClick={() => setShowMenuId(null)}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                      >
-                        <Download size={16} />
-                        <span>Download PDF</span>
-                      </button>
+          return (
+            <>
+              {invoice.status === "pending" && (
+                <>
+                  <button
+                    onClick={() => openDialog(invoice, "approve")}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-green-600 hover:bg-green-50 text-left text-sm"
+                  >
+                    <Check size={16} />
+                    Approve
+                  </button>
+                  <button
+                    onClick={() => openDialog(invoice, "reject")}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm"
+                  >
+                    <X size={16} />
+                    Reject
+                  </button>
+                </>
+              )}
+              
+              {invoice.status === "approved" && (
+                <>
+                  <button
+                    onClick={() => handlePayInvoice(invoice)}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-blue-600 hover:bg-blue-50 text-left text-sm"
+                  >
+                    <CreditCard size={16} />
+                    Pay Invoice
+                  </button>
+                  <button
+                    onClick={() => openDialog(invoice, "mark-as-paid")}
+                    className="w-full flex items-center gap-3 px-4 py-2 text-purple-600 hover:bg-purple-50 text-left text-sm"
+                  >
+                    <Check size={16} />
+                    Mark as Paid
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={() => setShowMenuId(null)}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+              >
+                <Download size={16} className="text-gray-500" />
+                Download PDF
+              </button>
 
-                      <button
-                        onClick={() => setShowMenuId(null)}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                      >
-                        <Edit size={16} />
-                        <span>Edit Invoice</span>
-                      </button>
+              <button
+                onClick={() => setShowMenuId(null)}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+              >
+                <Edit size={16} className="text-gray-500" />
+                Edit Invoice
+              </button>
 
-                      <button
-                        onClick={() => setShowMenuId(null)}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                      >
-                        <Send size={16} />
-                        <span>Send Reminder</span>
-                      </button>
+              <button
+                onClick={() => setShowMenuId(null)}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+              >
+                <Send size={16} className="text-gray-500" />
+                Send Reminder
+              </button>
 
-                      <button
-                        onClick={() => setShowMenuId(null)}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                      >
-                        <Copy size={16} />
-                        <span>Copy Details</span>
-                      </button>
+              <button
+                onClick={() => setShowMenuId(null)}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+              >
+                <Copy size={16} className="text-gray-500" />
+                Copy Details
+              </button>
 
-                      <button
-                        onClick={() => setShowMenuId(null)}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                      >
-                        <History size={16} />
-                        <span>View History</span>
-                      </button>
+              <button
+                onClick={() => setShowMenuId(null)}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+              >
+                <History size={16} className="text-gray-500" />
+                View History
+              </button>
 
-                      <button
-                        onClick={() => setShowMenuId(null)}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors text-left"
-                      >
-                        <MessageSquare size={16} />
-                        <span>Message Vendor</span>
-                      </button>
-                    </>
-                  );
-                })()}
-              </div>
-            </motion.div>
-          </>
-        )}
+              <button
+                onClick={() => setShowMenuId(null)}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+              >
+                <MessageSquare size={16} className="text-gray-500" />
+                Message Vendor
+              </button>
+            </>
+          );
+        })()}
+      </div>
+    </motion.div>
+  </>
+)}
       </AnimatePresence>
 
       {/* Confirmation Dialog */}
