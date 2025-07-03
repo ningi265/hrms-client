@@ -81,7 +81,9 @@ export default function ManageAccessPage() {
     ]
   });
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   useEffect(() => {
     const fetchEmployee = async () => {

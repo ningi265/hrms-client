@@ -626,8 +626,9 @@ export default function RFQsPage() {
   // Vendor selection modal state
   const [showVendorSelectionModal, setShowVendorSelectionModal] = useState(false);
   const [selectedRFQForVendor, setSelectedRFQForVendor] = useState(null);
-  
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   useEffect(() => {
     const fetchRFQs = async () => {

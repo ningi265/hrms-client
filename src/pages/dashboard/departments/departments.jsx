@@ -250,7 +250,9 @@ export default function DepartmentsPage() {
   const [notificationMessage, setNotificationMessage] = useState("")
   const [notificationType, setNotificationType] = useState("success")
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Fetch departments from backend
   useEffect(() => {

@@ -88,7 +88,9 @@ export default function FinanceReconciliationReview() {
   const [snackbarSeverity, setSnackbarSeverity] = useState("success")
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [travelRequests, setTravelRequests] = useState([])
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   const [reviewNotes, setReviewNotes] = useState({
     internalNotes: "",

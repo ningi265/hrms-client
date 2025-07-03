@@ -44,7 +44,9 @@ const CompleteRegistration = () => {
   const [tokenValid, setTokenValid] = useState(false);
 
   const navigate = useNavigate();
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   const token = searchParams.get('token');
   const email = searchParams.get('email');

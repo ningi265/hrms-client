@@ -340,8 +340,9 @@ export default function NewRequisition() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [budgetError, setBudgetError] = useState(null);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
-
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
   // Fetch departments and budget data
   const fetchBudgetData = async () => {
     try {

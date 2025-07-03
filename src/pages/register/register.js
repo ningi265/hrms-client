@@ -44,13 +44,19 @@ export default function RegisterPage() {
   const [signature, setSignature] = useState(null)
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false)
   const [onboardingStep, setOnboardingStep] = useState(0)
-  const { register: authRegister } = useAuth();
+  const { register: authRegister, backendUrl } = useAuth(); // Get backendUrl from context
 
   // NEW: Store user data and token from registration
   const [userData, setUserData] = useState(null)
   const [authToken, setAuthToken] = useState(null)
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL
+  // Check if backendUrl is available
+  useEffect(() => {
+    if (!backendUrl || backendUrl === 'undefined') {
+      console.error('Backend URL is not configured properly:', backendUrl);
+      setError('Configuration error: Unable to connect to server. Please refresh and try again.');
+    }
+  }, [backendUrl]);
 
   const steps = ["Email", "Personal", "Company", "Review"]
 
@@ -161,11 +167,17 @@ export default function RegisterPage() {
     setError("")
 
     try {
+      if (!backendUrl || backendUrl === 'undefined') {
+        throw new Error('Backend URL is not configured properly');
+      }
+
       const response = await fetch(`${backendUrl}/api/auth/resend`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+         credentials: "include",
+        mode:"cors",
         body: JSON.stringify({ phoneNumber }),
       })
 
@@ -204,6 +216,11 @@ export default function RegisterPage() {
       return
     }
 
+    if (!backendUrl || backendUrl === 'undefined') {
+      setError('Configuration error: Unable to connect to server. Please refresh and try again.');
+      return;
+    }
+
     setIsLoading(true)
     setError("")
 
@@ -225,20 +242,27 @@ export default function RegisterPage() {
       setAuthToken(registrationData.token)
 
       setIsSendingSMS(true)
+      console.log('Sending email verification to:', email);
+      console.log('Using backend URL:', backendUrl);
+      
       const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+         credentials: "include",
+        mode:"cors",
         body: JSON.stringify({ email }),
       })
 
       if (!smsResponse.ok) {
-        throw new Error("Failed to send verification code")
+        const errorData = await smsResponse.json();
+        throw new Error(errorData.message || "Failed to send verification code")
       }
 
       setShowVerification(true)
     } catch (err) {
+      console.error('Submit error:', err);
       setError(err.message)
     } finally {
       setIsLoading(false)
@@ -250,6 +274,11 @@ export default function RegisterPage() {
     if (!emailVerificationCode || emailVerificationCode.length !== 6) {
       setError("Please enter a valid 6-digit code")
       return
+    }
+
+    if (!backendUrl || backendUrl === 'undefined') {
+      setError('Configuration error: Unable to connect to server. Please refresh and try again.');
+      return;
     }
 
     setIsLoading(true)
@@ -341,6 +370,11 @@ export default function RegisterPage() {
   }
 
   const handleCompleteOnboarding = async () => {
+    if (!backendUrl || backendUrl === 'undefined') {
+      setError('Configuration error: Unable to connect to server. Please refresh and try again.');
+      return;
+    }
+
     setIsLoading(true)
     setError("")
 
@@ -408,6 +442,29 @@ export default function RegisterPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show error if backendUrl is not available
+  if (!backendUrl || backendUrl === 'undefined') {
+    return (
+      <div className="h-screen bg-white flex items-center justify-center p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
+          <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 bg-red-100 text-red-600 rounded-full">
+            <AlertCircle size={24} />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Configuration Error</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Unable to connect to server. Please check your internet connection and try again.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (showVerification) {

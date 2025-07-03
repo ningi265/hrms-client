@@ -271,7 +271,9 @@ export default function TravelExecutionReconciliation() {
   const [travelRequests, setTravelRequests] = useState([])
   const [alertMessage, setAlertMessage] = useState(null)
   const [showAlert, setShowAlert] = useState(false)
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   const [newExpense, setNewExpense] = useState({
     category: "",

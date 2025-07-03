@@ -1,7 +1,9 @@
 import { useAuth } from "../../../authcontext/authcontext";
 
 // api/userService.js - Frontend API service
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
+const API_BASE_URL =process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {

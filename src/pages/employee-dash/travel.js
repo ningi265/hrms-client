@@ -67,7 +67,9 @@ const TravelRequestForm = ({ onCancel, onSubmitSuccess }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [animate, setAnimate] = useState(false);
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+     const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
   const navigate = useNavigate();
   const { token } = useAuth();
 

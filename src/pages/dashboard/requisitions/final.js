@@ -221,8 +221,9 @@ const FinalApproverDashboard = () => {
   const [refreshing, setRefreshing] = useState(false)
   const [showMenuId, setShowMenuId] = useState(null)
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:4000"
-
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
   const fetchApprovedRequests = async () => {
     setRefreshing(true)
     try {

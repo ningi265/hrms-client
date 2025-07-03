@@ -263,7 +263,9 @@ export default function InvoicesPage() {
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0, bottom: 'auto' });
   const menuRef = useRef(null);
   const navigate = useNavigate();
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   useEffect(() => {
     const fetchInvoices = async () => {

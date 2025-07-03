@@ -389,7 +389,9 @@ function InvoicePaymentPage({ onNavigateToPayment = null }) {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState('success');
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   const handleSectionChange = (section) => {
     navigate(`?section=${section}`, { replace: true });

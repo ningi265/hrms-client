@@ -306,7 +306,9 @@ const SupervisorDashboard = () => {
   const [showMenuId, setShowMenuId] = useState(null)
 
   const navigate = useNavigate()
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || "http://localhost:3000"
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   useEffect(() => {
     const fetchPendingRequests = async () => {

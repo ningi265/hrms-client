@@ -51,7 +51,9 @@ export default function SelectVendorPage() {
   const [expandedRFQs, setExpandedRFQs] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Fetch all RFQs
   useEffect(() => {

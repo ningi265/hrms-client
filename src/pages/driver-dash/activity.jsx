@@ -37,8 +37,8 @@ import { useAuth } from '../../authcontext/authcontext';
 
 
 // API configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000/api';
-const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:4000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://nexusmwi.com/api';
+const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'https://nexusmwi.com';
 
 // Enhanced API service with live location features
 const fleetAPI = {

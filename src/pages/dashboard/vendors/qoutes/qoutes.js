@@ -47,7 +47,9 @@ export default function VendorRFQsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Log the token and user role when the component mounts
   useEffect(() => {

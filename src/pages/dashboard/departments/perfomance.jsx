@@ -31,7 +31,9 @@ export default function DepartmentPerformancePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTimeframe, setActiveTimeframe] = useState("monthly");
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   useEffect(() => {
     const fetchPerformanceData = async () => {

@@ -214,7 +214,9 @@ export default function ManageRequisitionsPage() {
   const [notificationType, setNotificationType] = useState("success");
   const [showMenuId, setShowMenuId] = useState(null);
   const navigate = useNavigate();
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Fetch pending requisitions
   useEffect(() => {

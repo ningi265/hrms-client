@@ -67,7 +67,9 @@ export default function CreateRFQPage({ onClose, onSuccess }) {
   const [activeStep, setActiveStep] = useState(0);
   const [validationErrors, setValidationErrors] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+ const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   const steps = [
     {

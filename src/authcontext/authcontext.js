@@ -1,4 +1,4 @@
-// AuthContext.js - Corrected register function
+// AuthContext.js - Fixed with better error handling
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
@@ -9,14 +9,37 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
-  const backendUrl = process.env.REACT_APP_ENV === 'production' 
-  ? process.env.REACT_APP_BACKEND_URL_PROD 
-=======
-  const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
->>>>>>> b0856003f9026227a45c4df33c5743079b1b93bd
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+
+  // Fix environment variable handling with fallback
+  const getBackendUrl = () => {
+    const env = process.env.REACT_APP_ENV || 'development';
+    const devUrl = process.env.REACT_APP_BACKEND_URL_DEV;
+    const prodUrl = process.env.REACT_APP_BACKEND_URL_PROD;
+    
+    console.log('Environment variables:', {
+      REACT_APP_ENV: env,
+      REACT_APP_BACKEND_URL_DEV: devUrl,
+      REACT_APP_BACKEND_URL_PROD: prodUrl
+    });
+    
+    let backendUrl;
+    if (env === 'production') {
+      backendUrl = prodUrl;
+    } else {
+      backendUrl = devUrl;
+    }
+    
+    // Fallback if environment variables are not set
+    if (!backendUrl) {
+      console.warn('Backend URL not found in environment variables, using fallback');
+      backendUrl = 'https://api.nexusmwi.com';
+    }
+    
+    console.log('Using backend URL:', backendUrl);
+    return backendUrl;
+  };
+
+  const backendUrl = getBackendUrl();
 
   // Check if token is expired
   const isTokenExpired = (token) => {
@@ -70,6 +93,10 @@ export const AuthProvider = ({ children }) => {
       console.log('Login attempt - URL:', `${backendUrl}/api/auth/login`);
       console.log('Login attempt - Email:', email);
       
+      if (!backendUrl || backendUrl === 'undefined') {
+        throw new Error('Backend URL is not configured properly');
+      }
+      
       const response = await fetch(`${backendUrl}/api/auth/login`, {
         method: "POST",
         headers: {
@@ -110,6 +137,10 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Register attempt - URL:', `${backendUrl}/api/auth/register`);
       console.log('Register attempt - Email:', email);
+      
+      if (!backendUrl || backendUrl === 'undefined') {
+        throw new Error('Backend URL is not configured properly');
+      }
       
       const response = await fetch(`${backendUrl}/api/auth/register`, {
         method: "POST",
@@ -173,6 +204,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     loading,
     isTokenExpired,
+    backendUrl, // Expose backendUrl for debugging
   };
 
   return (

@@ -40,7 +40,9 @@ export default function EmployeePerformancePage() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [timeRange, setTimeRange] = useState("6months");
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Mock performance data - in real app, this would come from API
   const [performanceData] = useState({

@@ -123,7 +123,9 @@ export default function EmployeeRequisitionManagement() {
     return searchParams.get('section') || 'requisition-dash';
   });
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+     const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Fetch requisition data from API
   useEffect(() => {

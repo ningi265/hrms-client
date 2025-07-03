@@ -55,7 +55,9 @@ export default function VendorManagementDashboard() {
   });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+    const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Helper function to transform API data to component format
   const transformApiData = (apiData) => {

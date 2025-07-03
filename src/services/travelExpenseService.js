@@ -1,6 +1,8 @@
 // services/travelExpenseService.js
 
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000/api';
+const API_BASE_URL = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 
 class TravelExpenseService {
     

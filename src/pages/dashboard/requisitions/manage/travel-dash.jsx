@@ -63,8 +63,9 @@ import LocalTravelForm from "../../../employee-dash/travel";
 import InternationalTravelForm from "../../requisitions/manage/international";
 
 // API configuration
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
-
+const API_BASE_URL =  process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
 export default function TravelDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showNewTravelMenu, setShowNewTravelMenu] = useState(false);
