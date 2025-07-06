@@ -117,6 +117,8 @@ import BudgetOverviewDashboard from "./finance/budget";
 import ApprovalWorkflow from "./finance/budgeting";
 import BudgetAllocationPage from "./finance/allocate";
 import InvoicePaymentPage from "./finance/invoice";
+import AnalyticsPage from "./analytics";
+import ReportsPage from "./reports"; 
 
 // Sample data for RevenueChart
 const salesData = [
@@ -872,6 +874,8 @@ useEffect(() => {
          {activeSection === "budgeting" && <ApprovalWorkflow/>}
           {activeSection === "budget-allocation" && <BudgetAllocationPage/>}
           {activeSection === "invoice-payment" && <InvoicePaymentPage/>}
+           {activeSection === "analytics" && <AnalyticsPage/>}
+            {activeSection === "reports" && <ReportsPage/>}
     </Box>
   )}
 </Box>
