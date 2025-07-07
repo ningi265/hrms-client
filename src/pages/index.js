@@ -425,7 +425,7 @@ export default function Home() {
                 scrolled ? "text-gray-600 hover:text-blue-600" : "text-gray-700 hover:text-blue-600"
               }`}>Testimonials</a>
               <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium transition-colors">Login</a>
-              <a href="/register" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+              <a href="/beta" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
                 Get Started
               </a>
             </nav>
@@ -456,7 +456,7 @@ export default function Home() {
                 </button>
                 <a href="#testimonials" className="text-gray-600 hover:text-blue-600 font-medium px-4 py-2">Testimonials</a>
                 <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium px-4 py-2">Login</a>
-                <a href="/register" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-center mx-4 transition-colors">
+                <a href="/beta" className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-center mx-4 transition-colors">
                   Get Started
                 </a>
               </div>
@@ -486,7 +486,7 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                <a href="/register" className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105">
+                <a href="/beta" className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105">
                   Get Started Free
                   <ArrowRight className="w-4 h-4" />
                 </a>
@@ -859,7 +859,7 @@ export default function Home() {
             
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
               <a 
-                href="/register"
+                href="/beta"
                 className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-4 px-8 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
               >
                 Start Free Trial

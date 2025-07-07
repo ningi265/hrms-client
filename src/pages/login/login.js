@@ -272,7 +272,7 @@ export default function LoginPage() {
           <div className="text-center space-y-4">
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
-              <a href="/register" className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+              <a href="/beta" className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
                 Register now
               </a>
             </p>

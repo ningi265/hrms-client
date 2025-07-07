@@ -69,6 +69,7 @@ import BudgetAllocationPage from './pages/dashboard/finance/allocate';
 import InvoicePaymentPage from './pages/dashboard/finance/invoice';
 import AnalyticsPage from './pages/dashboard/analytics';
 import ReportsPage from './pages/dashboard/reports';
+import BetaInvitationPage from './pages/waiting-list';
 
 function App() {
   return (
@@ -85,6 +86,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/beta" element={<BetaInvitationPage />} />
           
           
            {/*PO,Finance and Admin Routes */}
