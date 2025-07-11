@@ -949,7 +949,8 @@ export default function RFQsPage() {
           )}
         </div>
       </main>
-{/* Action Dropdown Menu */}
+
+      {/* Action Dropdown Menu */}
       {showMenuId && (
         <>
           {/* Backdrop */}
@@ -1080,6 +1081,7 @@ export default function RFQsPage() {
           </motion.div>
         </>
       )}
+
       {/* Vendor Selection Modal */}
       <VendorSelectionModal
         rfq={selectedRFQForVendor}
@@ -1092,10 +1094,16 @@ export default function RFQsPage() {
         selectedVendor={selectedRFQForVendor?.selectedVendor}
       />
 
-      {/* Create RFQ Modal */}
+      {/* Create RFQ Modal - Keep Original Functionality */}
       {openModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
+          >
             <div className="px-8 py-6 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
@@ -1114,10 +1122,10 @@ export default function RFQsPage() {
               </div>
             </div>
             
-            <div className="p-0 max-h-[70vh] overflow-y-auto">
+            <div className="max-h-[75vh] overflow-y-auto">
               <CreateRFQForm onClose={handleCloseModal} onSuccess={handleRFQSuccess} />
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
