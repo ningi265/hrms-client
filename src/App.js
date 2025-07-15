@@ -70,6 +70,7 @@ import InvoicePaymentPage from './pages/dashboard/finance/invoice';
 import AnalyticsPage from './pages/dashboard/analytics';
 import ReportsPage from './pages/dashboard/reports';
 import BetaInvitationPage from './pages/waiting-list';
+import DemoPage from './pages/demo'; 
 
 function App() {
   return (
@@ -87,6 +88,7 @@ function App() {
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/beta" element={<BetaInvitationPage />} />
+             <Route path="/demo" element={<DemoPage />} />
           
           
            {/*PO,Finance and Admin Routes */}

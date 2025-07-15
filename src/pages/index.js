@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from 'react-router-dom';
 import {
   ShoppingCart,
   CheckCircle,
@@ -490,10 +491,13 @@ export default function Home() {
                   Get Started Free
                   <ArrowRight className="w-4 h-4" />
                 </a>
-                <button className="flex items-center justify-center gap-2 border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-medium py-4 px-8 rounded-xl transition-all duration-300">
-                  <PlayCircle className="w-5 h-5" />
-                  Watch Demo
-                </button>
+               <Link 
+  to="/demo" 
+  className="flex items-center justify-center gap-2 border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-medium py-4 px-8 rounded-xl transition-all duration-300"
+>
+  <PlayCircle className="w-5 h-5" />
+  Watch Demo
+</Link>
               </div>
               
               <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500">
