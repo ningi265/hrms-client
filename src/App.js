@@ -67,6 +67,9 @@ import BudgetOverviewDashboard from './pages/dashboard/finance/budget';
 import ApprovalWorkflow from './pages/dashboard/finance/budgeting';
 import BudgetAllocationPage from './pages/dashboard/finance/allocate';
 import InvoicePaymentPage from './pages/dashboard/finance/invoice';
+import AnalyticsPage from './pages/dashboard/analytics';
+import ReportsPage from './pages/dashboard/reports';
+import BetaInvitationPage from './pages/waiting-list';
 
 function App() {
   return (
@@ -83,6 +86,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/beta" element={<BetaInvitationPage />} />
           
           
            {/*PO,Finance and Admin Routes */}
@@ -110,6 +114,8 @@ function App() {
           <Route path="/budgeting" element={<ApprovalWorkflow/>}/>
           <Route path="/budget-allocation" element={<BudgetAllocationPage/>}/>
           <Route path="/invoice-payment" element={<InvoicePaymentPage/>}/>
+          <Route path="/analytics" element={<AnalyticsPage/>}/>
+          <Route path="/reports" element={<ReportsPage/>}/>
           
           
           {/* Employee Management Routes - Updated with proper parameter handling */}
