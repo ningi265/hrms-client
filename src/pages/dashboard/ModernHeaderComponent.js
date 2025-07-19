@@ -1,6 +1,7 @@
 import React, { useState, useEffect, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate ,useSearchParams } from "react-router-dom";
+import { Box, Typography } from '@mui/material';
 import {
   Bell,
   Calendar,
@@ -179,7 +180,7 @@ const ModernHeaderComponent = ({
   };
 
   // Listen for window resize to recalculate header positioning
- useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       // Force re-render on resize to recalculate positioning
       setMobileMenuOpen(false);
@@ -232,8 +233,8 @@ const ModernHeaderComponent = ({
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </motion.button>
-
-               {/* Date & Calendar */}
+            
+              {/* Date & Calendar */}
               <div className="relative">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -383,8 +384,48 @@ const ModernHeaderComponent = ({
                   </motion.span>
                 )}
               </motion.button>
+            </div>
 
-             
+            {/* Center Section - Trial Badge */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              {user?.billing?.trialEndDate && new Date(user.billing.trialEndDate) > new Date() && (
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                  className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 group cursor-pointer"
+                  whileHover={{ 
+                    scale: 1.02,
+                    backgroundColor: "rgba(31, 41, 55, 0.95)"
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                   navigate("/billing");
+                  }}
+                >
+                  <motion.span 
+                    className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    Free plan
+                  </motion.span>
+                  <span className="text-gray-500 mx-1">•</span>
+                  <motion.span 
+                    className="text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-all duration-200"
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    Upgrade
+                  </motion.span>
+                  <motion.div
+                 
+                    whileHover={{ scale: 1.2 }}
+                  />
+                  
+                  <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {Math.ceil((new Date(user.billing.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24))} days left
+                  </div>
+                </motion.div>
+              )}
             </div>
 
             {/* Right Section */}
@@ -433,17 +474,15 @@ const ModernHeaderComponent = ({
                   }}
                   className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-lg transition-all duration-200"
                 >
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
-  {user?.firstName && user?.lastName
-    ? `${user.firstName.charAt(0).toUpperCase()}${user.lastName.charAt(0).toUpperCase()}`
-    : user?.firstName
-    ? user.firstName.charAt(0).toUpperCase()
-    : user?.lastName
-    ? user.lastName.charAt(0).toUpperCase()
-    : "G"}
-</div>
-
-
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
+                    {user?.firstName && user?.lastName
+                      ? `${user.firstName.charAt(0).toUpperCase()}${user.lastName.charAt(0).toUpperCase()}`
+                      : user?.firstName
+                      ? user.firstName.charAt(0).toUpperCase()
+                      : user?.lastName
+                      ? user.lastName.charAt(0).toUpperCase()
+                      : "G"}
+                  </div>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </motion.button>
 

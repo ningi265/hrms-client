@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
+import BillingPage from '../billing';
 import {
   Error,
   Notifications,
@@ -97,7 +98,7 @@ import VendorPODetailsSection from '../../pages/vendor-dash/purchase-orders/acce
 import TrackDeliveriesSection from '../../pages/dashboard/purchase-orders/confirm/confirm';
 import InvoicesSection from '../../pages/dashboard/invoice/invoice';
 import InvoiceManagementSection from '../../pages/dashboard/invoice/manage/manage';
-import PaymentPage from '../../pages/dashboard/invoice/pay/pay'; // Import the actual PaymentPage component
+import PaymentPage from '../../pages/dashboard/invoice/pay/pay'; 
 import SupervisorApprovalSection from '../../pages/dashboard/requisitions/travel';
 import FinalApproverSection from '../../pages/dashboard/requisitions/final';
 import FinanceProcessingSection from '../../pages/dashboard/requisitions/manage/finance-travel';
@@ -282,20 +283,38 @@ export default function ProcurementDashboard() {
   // Get payment data from navigation state
   const paymentData = location.state?.paymentData;
   
-  const { user: authUser, loading: authLoading } = useAuth();
-   const user = authUser ? {
+ const { user: authUser, loading: authLoading } = useAuth();
+const user = authUser ? {
   ...authUser,
+  firstName: authUser.firstName || '',
+  lastName: authUser.lastName || '',
   name: authUser.firstName ? `${authUser.firstName} ${authUser.lastName || ''}`.trim() : 'Guest User',
   avatar: authUser.avatar || null,
   email: authUser.email || '',
   role: authUser.role || 'guest',
-  companyName: authUser.companyName || 'NexusMWI'
+  companyName: authUser.companyName || 'NexusMWI',
+  billing: authUser.billing || {
+    trialStartDate: null,
+    trialEndDate: null,
+    subscription: {
+      plan: 'trial',
+      status: 'trialing'
+    }
+  }
 } : {
   name: 'Guest User',
   avatar: null,
   email: '',
   role: 'guest',
-  companyName: 'NexusMWI'
+  companyName: 'NexusMWI',
+  billing: {
+    trialStartDate: null,
+    trialEndDate: null,
+    subscription: {
+      plan: 'trial',
+      status: 'trialing'
+    }
+  }
 };
 
   const [recentReports, setRecentReports] = useState([
@@ -368,6 +387,62 @@ export default function ProcurementDashboard() {
     value,
     status
   }));
+
+   const handlePlanSelection = async (planName) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/billing/create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ planName }),
+      });
+      
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+
+    }
+  };
+
+
+// Get user subscription status
+const fetchSubscriptionStatus = async () => {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${backendUrl}/api/billing/subscription`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await response.json();
+};
+
+// Cancel subscription
+const cancelSubscription = async () => {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${backendUrl}/api/billing/cancel`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await response.json();
+};
+
+// Reactivate subscription
+const reactivateSubscription = async () => {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${backendUrl}/api/billing/reactivate`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await response.json();
+};
 
   const onPieEnter = (_, index) => {
     setActiveIndex(index);
@@ -446,23 +521,11 @@ useEffect(() => {
       setActiveSection(section);
     }
   }, [searchParams]);
-
-  const handleMenuClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
-
-  useEffect(() => {
+    useEffect(() => {
     const getStats = async () => {
       try {
         const token = localStorage.getItem("token"); // Retrieve the token from local storage or your auth context
+            console.log(`Attempting to fetch from: ${backendUrl}/api/requisitions/stats`);
 
         // Fetch requisitions stats
         const requisitionsResponse = await fetch(`${backendUrl}/api/requisitions/stats`, {
@@ -514,42 +577,53 @@ useEffect(() => {
 
     getStats();
   }, []);
- 
- if (isLoading) {
-     return (
-       <ThemeProvider theme={theme}>
-         <PageContainer>
-           <Box
-             display="flex"
-             justifyContent="center"
-             alignItems="center"
-             height="100%"
-           >
-             <motion.div
-               initial={{ scale: 0.8, opacity: 0 }}
-               animate={{ scale: 1, opacity: 1 }}
-               transition={{ duration: 0.5 }}
-             >
-               <Box textAlign="center" sx={{ color: "text.secondary" }}>
-                 <DotLottieReact
-      src="spinner.lottie"
-      loop
-      autoplay
-    />
-                 <Typography variant="h6" gutterBottom>
-                   Loading Dashboard...
-                 </Typography>
-                 <Typography variant="body2">
-                   Please wait while we fetch the latest data...
-                 </Typography>
-               </Box>
-             </motion.div>
-           </Box>
-         </PageContainer>
-       </ThemeProvider>
-     );
-   }
-  if (!stats) {
+
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
+
+
+  if (isLoading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <PageContainer>
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            height="100%"
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Box textAlign="center" sx={{ color: "text.secondary" }}>
+                <DotLottieReact src="spinner.lottie" loop autoplay />
+                <Typography variant="h6" gutterBottom>
+                  Loading Dashboard...
+                </Typography>
+                <Typography variant="body2">
+                  Please wait while we fetch the latest data...
+                </Typography>
+              </Box>
+            </motion.div>
+          </Box>
+        </PageContainer>
+      </ThemeProvider>
+    );
+  }
+
+  if (!stats || !user) {
+    console.log('No stats or user data, showing error state', { stats, user });
     return (
       <Box
         sx={{
@@ -575,23 +649,25 @@ useEffect(() => {
   }
 
   return (
-    <Box sx={{ 
-      display: "flex", 
-      height: "100vh", 
-      overflow: "hidden",
-      backgroundColor: theme.palette.background.default,
-    }}>
-      {/* Sidebar */}
-      <HRMSSidebar 
-        stats={stats} 
-        activeSection={activeSection} 
+  <Box
+      sx={{
+        display: "flex",
+        height: "100vh",
+        overflow: "hidden",
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
+      {/* Sidebar - always show */}
+      <HRMSSidebar
+        stats={stats}
+        activeSection={activeSection}
         handleSectionChange={handleSectionChange}
-         onSidebarToggle={setSidebarOpen}
-          user={user} 
+        onSidebarToggle={setSidebarOpen}
+        user={user}
       />
 
       {/* Main Content */}
-    <Box component="main" sx={{ 
+  <Box component="main" sx={{ 
         flexGrow: 1, 
         overflow: "auto",
         backgroundColor: theme.palette.background.default,
@@ -607,6 +683,7 @@ useEffect(() => {
           sidebarWidth={SIDEBAR_WIDTH}
           collapsedSidebarWidth={COLLAPSED_SIDEBAR_WIDTH}
         />
+        
         {/* Main Content Area */}
 <Box sx={{ 
   paddingTop: '80px', 
@@ -879,6 +956,7 @@ useEffect(() => {
     </Box>
   )}
 </Box>
+
       </Box>
         <AIChatButton user={user} />
     </Box>

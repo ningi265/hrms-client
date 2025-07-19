@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Link } from 'react-router-dom';
 import {
   ShoppingCart,
   CheckCircle,
@@ -666,8 +667,8 @@ export default function Home() {
                   Get Started Free
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </a>
-                <button className="flex items-center justify-center gap-2 border-2 border-gray-300 text-gray-700 hover:border-blue-300 hover:bg-blue-50 font-medium py-4 px-8 rounded-xl transition-all duration-300 group">
-                  <PlayCircle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <button className="flex items-center justify-center gap-2 border-2 border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50 font-medium py-4 px-8 rounded-xl transition-all duration-300">
+                  <PlayCircle className="w-5 h-5" />
                   Watch Demo
                 </button>
               </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ModernHeaderComponent, GlobalStyles } from "./ModernHeaderComponent";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+
 const DashboardHeader = ({ 
   user, 
   onMobileMenuToggle, 
@@ -173,8 +174,10 @@ const DashboardHeader = ({
         sidebarOpen={sidebarOpen}
         sidebarWidth={sidebarWidth}
         collapsedSidebarWidth={collapsedSidebarWidth}
+        
       />
     </>
+    
   );
 };
 

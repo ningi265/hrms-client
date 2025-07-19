@@ -78,6 +78,7 @@ export default function LoginPage() {
       "Management": "/dashboard",
       "Human Resources": "/dashboard",
       "Accounting/Finance": "/dashboard",
+      "Enterprise(CEO, CFO, etc.)": "/dashboard",
       
       // Special case roles
       "Vendor": "/vendor-dash",
