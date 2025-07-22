@@ -590,37 +590,81 @@ useEffect(() => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-
-  if (isLoading) {
-    return (
-      <ThemeProvider theme={theme}>
-        <PageContainer>
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height="100%"
+   if (isLoading) {
+  return (
+    <ThemeProvider theme={theme}>
+      <PageContainer>
+        <Box
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          height="100vh"
+          sx={{
+            background: "linear-gradient(145deg, #e3ecf6, #ffffff)",
+            px: 2,
+          }}
+        >
+          <motion.div
+            initial={{ y: 40, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.7, ease: [0.25, 0.8, 0.25, 1] }}
           >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.5 }}
+            <Box
+              sx={{
+                p: { xs: 4, sm: 6 },
+                borderRadius: 5,
+                background: "rgba(255, 255, 255, 0.65)",
+                backdropFilter: "blur(16px)",
+                boxShadow: "0 12px 32px rgba(0,0,0,0.1)",
+                textAlign: "center",
+                maxWidth: 460,
+                mx: "auto",
+              }}
             >
-              <Box textAlign="center" sx={{ color: "text.secondary" }}>
-                <DotLottieReact src="spinner.lottie" loop autoplay />
-                <Typography variant="h6" gutterBottom>
-                  Loading Dashboard...
-                </Typography>
-                <Typography variant="body2">
-                  Please wait while we fetch the latest data...
-                </Typography>
+              <Box sx={{ display: "flex", justifyContent: "center" }}>
+                <DotLottieReact
+                  src="spinner.lottie"
+                  loop
+                  autoplay
+                  style={{ width: 120, height: 120 }}
+                />
               </Box>
-            </motion.div>
-          </Box>
-        </PageContainer>
-      </ThemeProvider>
-    );
-  }
+
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: "1.5rem", sm: "1.75rem" },
+                  color: "text.primary",
+                  mt: 3,
+                  mb: 1,
+                }}
+              >
+                Preparing Your Dashboard
+              </Typography>
+
+              <Typography
+                variant="body1"
+                sx={{
+                  fontSize: "1rem",
+                  color: "text.secondary",
+                  lineHeight: 1.8,
+                  px: { xs: 1, sm: 2 },
+                }}
+              >
+                Sit back and relax. We're fetching the latest data and setting things up just for you.
+              </Typography>
+            </Box>
+          </motion.div>
+        </Box>
+      </PageContainer>
+    </ThemeProvider>
+  );
+}
+
+
+
 
   if (!stats || !user) {
     console.log('No stats or user data, showing error state', { stats, user });

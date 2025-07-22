@@ -79,6 +79,7 @@ import BillingPage from './pages/billing';
 import BillingManagement from './pages/billing-management';
 import SubscriptionRequired from './components/SubscriptionRequired';
 import TrialStatus from './components/TrialStatus';
+import UsageDashboard from './pages/usage';
 
 
 
@@ -101,6 +102,11 @@ function App() {
             <Route path="/demo" element={<DemoPage />} />
             <Route path="/billing" element={<BillingPage/>} />
             <Route path="/billing/manage" element={<BillingManagement/>} />
+             <Route path="/driver-dash" element={<DriverDashboard/>}/>
+             <Route path="/map" element={<FleetTrackingMap/>}/>
+              <Route path="/trip-management" element={<TripManagementDashboard/>}/>
+              <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
+              <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
           
      
               
@@ -108,10 +114,9 @@ function App() {
             {/* Protected Routes with Subscription Check */}
             <Route element={<SubscriptionRequired />}>
               <Route path="/dash/new" element={<ProcurementDashboardWithSidebar/>}/>
-                    <Route path="/dashboard" element={<DashboardPage/>} />
-                 
-              
-            
+              <Route path="/dashboard" element={<DashboardPage/>} />
+              <Route path="/usage" element={<UsageDashboard/>} />
+       
               <Route path="/purchase" element={<PurchaseOrdersPage/>} />
               <Route path="/rfqs/create" element={<CreateRFQPage/>}/>
               <Route path="/rfqs/view" element={<RFQDetailsPage/>}/>
@@ -181,11 +186,8 @@ function App() {
               <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>
 
               {/* Driver Routes */}
-              <Route path="/driver-dash" element={<DriverDashboard/>}/>
-              <Route path="/map" element={<FleetTrackingMap/>}/>
-              <Route path="/trip-management" element={<TripManagementDashboard/>}/>
-              <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
-              <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
+             
+              
   </Route>
           </Routes>
         </BrowserRouter>      

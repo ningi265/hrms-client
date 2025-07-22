@@ -268,15 +268,27 @@ export default function DepartmentsPage() {
         })
 
         if (response.ok) {
-          const data = await response.json()
-          console.log("Departments fetched successfully:", data)
-          setDepartments(data)
+          const result = await response.json()
+          console.log("Departments fetched successfully:", result)
+          
+          // Handle the structured response - departments are in result.data
+          if (result.success && Array.isArray(result.data)) {
+            setDepartments(result.data)
+          } else if (Array.isArray(result)) {
+            // Fallback for direct array response
+            setDepartments(result)
+          } else {
+            // If neither structure matches, set empty array
+            console.warn("Unexpected response structure:", result)
+            setDepartments([])
+          }
         } else {
           throw new Error("Failed to fetch departments")
         }
       } catch (error) {
         setError("Failed to fetch departments")
         console.error("Failed to fetch departments:", error)
+        setDepartments([]) // Ensure departments is always an array
       } finally {
         setIsLoading(false)
       }
@@ -285,10 +297,11 @@ export default function DepartmentsPage() {
     fetchDepartments()
   }, [backendUrl])
 
-  const filteredDepartments = departments.filter((department) => {
-    const nameMatch = department.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const headMatch = department.departmentHead.toLowerCase().includes(searchTerm.toLowerCase())
-    const locationMatch = department.location.toLowerCase().includes(searchTerm.toLowerCase())
+  // Ensure filteredDepartments always works with an array
+  const filteredDepartments = Array.isArray(departments) ? departments.filter((department) => {
+    const nameMatch = department.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false
+    const headMatch = department.departmentHead?.toLowerCase().includes(searchTerm.toLowerCase()) || false
+    const locationMatch = department.location?.toLowerCase().includes(searchTerm.toLowerCase()) || false
     const goalsMatch =
       department.goals && Array.isArray(department.goals)
         ? department.goals.some(
@@ -297,13 +310,13 @@ export default function DepartmentsPage() {
         : false
 
     return nameMatch || headMatch || locationMatch || goalsMatch
-  })
+  }) : []
 
-  // Calculate stats
-  const totalDepartments = departments?.length || 0
-  const activeDepartments = departments?.filter((dept) => dept.status === "active")?.length || 0
-  const totalEmployees = departments?.reduce((sum, dept) => sum + (dept.employeeCount || 0), 0) || 0
-  const totalBudget = departments?.reduce((sum, dept) => sum + (dept.budget || 0), 0) || 0
+  // Calculate stats with safety checks
+  const totalDepartments = Array.isArray(departments) ? departments.length : 0
+  const activeDepartments = Array.isArray(departments) ? departments.filter((dept) => dept.status === "active").length : 0
+  const totalEmployees = Array.isArray(departments) ? departments.reduce((sum, dept) => sum + (dept.employeeCount || 0), 0) : 0
+  const totalBudget = Array.isArray(departments) ? departments.reduce((sum, dept) => sum + (dept.budget || 0), 0) : 0
 
   const handleDeleteDepartment = async (departmentId) => {
     setActionLoading(departmentId);
@@ -317,7 +330,7 @@ export default function DepartmentsPage() {
       })
 
       if (response.ok) {
-        setDepartments((prev) => prev.filter((department) => department._id !== departmentId))
+        setDepartments((prev) => Array.isArray(prev) ? prev.filter((department) => department._id !== departmentId) : [])
         showNotificationMessage("Department deleted successfully!", "success")
       } else {
         const errorData = await response.json()
@@ -390,7 +403,9 @@ export default function DepartmentsPage() {
       const responseData = await response.json()
 
       if (response.ok) {
-        setDepartments((prev) => [...prev, responseData.department])
+        // Handle both response structures
+        const newDepartment = responseData.department || responseData.data || responseData
+        setDepartments((prev) => Array.isArray(prev) ? [...prev, newDepartment] : [newDepartment])
         showNotificationMessage("Department added successfully!", "success")
         closeAddDepartmentModal()
       } else {

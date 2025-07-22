@@ -28,7 +28,8 @@ import {
   Filter,
   MoreHorizontal,
   Zap,
-  Shield
+  Shield,
+  Crown
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays, isToday, isSameDay } from 'date-fns';
 
@@ -57,11 +58,87 @@ const ModernHeaderComponent = ({
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => {
     return searchParams.get('section') || 'dashboard';
   });
+    const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
+
+  // Fetch subscription data on component mount
+  useEffect(() => {
+    fetchSubscriptionData();
+  }, []);
+
+  const fetchSubscriptionData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSubscriptionLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${backendUrl}/api/billing/subscription`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
+  // Helper function to determine subscription status
+  const getSubscriptionStatus = () => {
+    if (!user || !subscriptionData) return null;
+
+    const subscription = subscriptionData.subscription;
+    const trial = subscriptionData.trial;
+
+    // Check if user has an active paid subscription
+    if (subscription && ['active', 'trialing'].includes(subscription.status) && subscription.plan !== 'trial') {
+      return {
+        type: 'paid',
+        plan: subscription.plan,
+        status: subscription.status
+      };
+    }
+
+    // Check if user is on trial
+    if (trial && trial.isActive && trial.remainingDays > 0) {
+      return {
+        type: 'trial',
+        remainingDays: trial.remainingDays,
+        endDate: trial.endDate
+      };
+    }
+
+    // Check if trial has expired
+    if (subscription && subscription.plan === 'trial' && (!trial || !trial.isActive)) {
+      return {
+        type: 'expired',
+        message: 'Trial expired'
+      };
+    }
+
+    return {
+      type: 'free',
+      message: 'Free plan'
+    };
+  };
+
+  const subscriptionStatus = getSubscriptionStatus();
 
   // Calculate header transparency based on scroll
   const headerOpacity = Math.min(scrollPosition / 100, 0.95);
@@ -203,6 +280,155 @@ const ModernHeaderComponent = ({
       window.removeEventListener('sidebarToggle', handleSidebarToggle);
     };
   }, [sidebarOpen]);
+
+  // Function to render the subscription badge
+  const renderSubscriptionBadge = () => {
+    if (subscriptionLoading) {
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg animate-pulse"
+        >
+          <div className="w-16 h-4 bg-gray-600 rounded"></div>
+        </motion.div>
+      );
+    }
+
+    if (!subscriptionStatus) return null;
+
+    switch (subscriptionStatus.type) {
+      case 'paid':
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 group cursor-pointer"
+            whileHover={{ 
+              scale: 1.02,
+              backgroundColor: "rgba(31, 41, 55, 0.95)"
+            }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/billing")}
+          >
+            <Crown size={14} className="text-yellow-400" />
+            <motion.span 
+              className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+              whileHover={{ scale: 1.02 }}
+            >
+              {subscriptionStatus.plan.charAt(0).toUpperCase() + subscriptionStatus.plan.slice(1)} plan
+            </motion.span>
+            <span className="text-gray-500 mx-1">•</span>
+            <motion.span 
+              className="text-sm font-semibold text-green-400 group-hover:text-green-300 transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+            >
+              Active
+            </motion.span>
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-1"></div>
+          </motion.div>
+        );
+
+      case 'trial':
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 group cursor-pointer relative"
+            whileHover={{ 
+              scale: 1.02,
+              backgroundColor: "rgba(31, 41, 55, 0.95)"
+            }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/billing")}
+          >
+            <motion.span 
+              className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+              whileHover={{ scale: 1.02 }}
+            >
+              Free trial
+            </motion.span>
+            <span className="text-gray-500 mx-1">•</span>
+            <motion.span 
+              className="text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+            >
+              Upgrade
+            </motion.span>
+            
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              {subscriptionStatus.remainingDays} days left
+            </div>
+          </motion.div>
+        );
+
+      case 'expired':
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-red-600/50 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transition-all duration-300 group cursor-pointer"
+            whileHover={{ 
+              scale: 1.02,
+              backgroundColor: "rgba(31, 41, 55, 0.95)"
+            }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/billing")}
+          >
+            <AlertTriangle size={14} className="text-red-400" />
+            <motion.span 
+              className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+              whileHover={{ scale: 1.02 }}
+            >
+              Trial expired
+            </motion.span>
+            <span className="text-gray-500 mx-1">•</span>
+            <motion.span 
+              className="text-sm font-semibold text-red-400 group-hover:text-red-300 transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+            >
+              Subscribe now
+            </motion.span>
+          </motion.div>
+        );
+
+      case 'free':
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 group cursor-pointer"
+            whileHover={{ 
+              scale: 1.02,
+              backgroundColor: "rgba(31, 41, 55, 0.95)"
+            }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => navigate("/billing")}
+          >
+            <motion.span 
+              className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+              whileHover={{ scale: 1.02 }}
+            >
+              Free plan
+            </motion.span>
+            <span className="text-gray-500 mx-1">•</span>
+            <motion.span 
+              className="text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-all duration-200"
+              whileHover={{ scale: 1.05 }}
+            >
+              Upgrade
+            </motion.span>
+          </motion.div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
@@ -386,46 +612,9 @@ const ModernHeaderComponent = ({
               </motion.button>
             </div>
 
-            {/* Center Section - Trial Badge */}
+            {/* Center Section - Subscription Badge */}
             <div className="absolute left-1/2 transform -translate-x-1/2">
-              {user?.billing?.trialEndDate && new Date(user.billing.trialEndDate) > new Date() && (
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 group cursor-pointer"
-                  whileHover={{ 
-                    scale: 1.02,
-                    backgroundColor: "rgba(31, 41, 55, 0.95)"
-                  }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                   navigate("/billing");
-                  }}
-                >
-                  <motion.span 
-                    className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
-                    whileHover={{ scale: 1.02 }}
-                  >
-                    Free plan
-                  </motion.span>
-                  <span className="text-gray-500 mx-1">•</span>
-                  <motion.span 
-                    className="text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-all duration-200"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    Upgrade
-                  </motion.span>
-                  <motion.div
-                 
-                    whileHover={{ scale: 1.2 }}
-                  />
-                  
-                  <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    {Math.ceil((new Date(user.billing.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24))} days left
-                  </div>
-                </motion.div>
-              )}
+              {renderSubscriptionBadge()}
             </div>
 
             {/* Right Section */}
