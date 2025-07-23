@@ -107,6 +107,7 @@ function App() {
               <Route path="/trip-management" element={<TripManagementDashboard/>}/>
               <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
               <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
+                    <Route path="/complete-registration" element={<CompleteRegistration />} />
           
      
               
@@ -174,7 +175,7 @@ function App() {
               <Route path="/travel/manage/recon" element={<TravelReconciliation/>}/>
               <Route path="/local-travel" element={<TravelRequestForm/>}/>
               <Route path="/requisition-management" element={<EmployeeRequisitionManagement/>}/>
-              <Route path="/complete-registration" element={<CompleteRegistration />} />
+        
               
               {/* Vendor Routes */}
               <Route path="/vendor-dash" element={<VendorDashboard/>}/>

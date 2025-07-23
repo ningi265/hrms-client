@@ -85,7 +85,33 @@ export default function LoginPage() {
       "Driver": "/driver-dash",
       
       // Default role
-      "Sales/Marketing": "/employee-dash"
+      "Sales/Marketing": "/employee-dash",
+      "Software Engineer":"/employee-dash",
+    "Senior Software Engineer": "/employee-dash", 
+    "Lead Engineer": "/employee-dash",
+    "Product Manager": "/employee-dash",
+    "Senior Product Manager": "/employee-dash",
+    "Data Scientist": "/employee-dash" ,
+    "Data Analyst": "/employee-dash",
+    "UI/UX Designer": "/employee-dash",
+    "Senior Designer": "/employee-dash",
+    "DevOps Engineer": "/employee-dash",
+    "Quality Assurance Engineer": "/employee-dash",
+    "Business Analyst": "/employee-dash",
+    "Project Manager": "/employee-dash",
+    "Scrum Master": "/employee-dash",
+    "Sales Representative": "/employee-dash",
+    "Sales Manager": "/employee-dash",
+    "Marketing Specialist": "/employee-dash",
+    "Marketing Manager": "/employee-dash",
+    "HR Specialist": "/employee-dash",
+    "HR Manager": "/employee-dash",
+    "Finance Analyst": "/employee-dash",
+    "Accountant": "/employee-dash",
+    "Administrative Assistant": "/employee-dash",
+    "Office Manager": "/employee-dash",
+    "Customer Support Representative": "/employee-dash",
+    "Customer Success Manager": "/employee-dash",
     };
 
     // Get the path based on role or use default

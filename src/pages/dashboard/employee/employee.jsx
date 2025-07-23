@@ -265,13 +265,27 @@ export default function EmployeesPage() {
             Authorization: `Bearer ${token}`,
           },
         });
-        const data = await response.json();
-        console.log("Fetched employees:", data);
-        console.log("First employee ID:", data[0]?._id);
-        setEmployees(data);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Employees fetched successfully:", result);
+          
+          // Handle both response structures
+          if (result.success && Array.isArray(result.data)) {
+            setEmployees(result.data);
+          } else if (Array.isArray(result)) {
+            setEmployees(result);
+          } else {
+            console.warn("Unexpected employees response structure:", result);
+            setEmployees([]);
+          }
+        } else {
+          throw new Error("Failed to fetch employees");
+        }
       } catch (error) {
         setError("Failed to fetch employees");
         console.error("Failed to fetch employees:", error);
+        setEmployees([]); // Ensure employees is always an array
       } finally {
         setIsLoading(false);
       }
@@ -289,20 +303,27 @@ export default function EmployeesPage() {
             Authorization: `Bearer ${token}`,
           },
         });
-        const data = await response.json();
-        setDepartments(data);
-        console.log("Fetched departments:", data);
-        console.log("Total departments count:", data.length);
-        console.log("Department employees mapping:", data.map(dept => ({
-          name: dept.name,
-          code: dept.departmentCode,
-          employeeIds: dept.employees
-        })));
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log("Departments fetched successfully:", result);
+          
+          // Handle the structured response - departments are in result.data
+          if (result.success && Array.isArray(result.data)) {
+            setDepartments(result.data);
+          } else if (Array.isArray(result)) {
+            // Fallback for direct array response
+            setDepartments(result);
+          } else {
+            console.warn("Unexpected departments response structure:", result);
+            setDepartments([]);
+          }
+        } else {
+          throw new Error("Failed to fetch departments");
+        }
       } catch (error) {
-        setError("Failed to fetch departments");
         console.error("Failed to fetch departments:", error);
-      } finally {
-        setIsLoading(false);
+        setDepartments([]); // Ensure departments is always an array
       }
     };
 
@@ -311,7 +332,7 @@ export default function EmployeesPage() {
 
   // Debug effect to show employee-department mapping after both are loaded
   useEffect(() => {
-    if (employees.length > 0 && departments.length > 0) {
+    if (Array.isArray(employees) && employees.length > 0 && Array.isArray(departments) && departments.length > 0) {
       console.log("Employee-Department Mapping:");
       employees.forEach(emp => {
         const employeeId = emp._id || emp.id || emp.employeeId;
@@ -323,16 +344,17 @@ export default function EmployeesPage() {
 
   // Function to find employee's department from departments array
   const findEmployeeDepartment = (employeeId) => {
-    if (!employeeId || !departments.length) return null;
+    if (!employeeId || !Array.isArray(departments) || departments.length === 0) return null;
     
     const department = departments.find(dept => 
-      dept.employees && dept.employees.includes(employeeId)
+      dept.employees && Array.isArray(dept.employees) && dept.employees.includes(employeeId)
     );
     
     return department || null;
   };
 
-  const filteredEmployees = employees.filter((employee) => {
+  // Ensure filteredEmployees always works with an array
+  const filteredEmployees = Array.isArray(employees) ? employees.filter((employee) => {
     const employeeId = employee._id || employee.id || employee.employeeId;
     const employeeDepartment = findEmployeeDepartment(employeeId);
     
@@ -341,8 +363,8 @@ export default function EmployeesPage() {
       .includes(searchTerm.toLowerCase());
     
     const departmentMatch = employeeDepartment 
-      ? employeeDepartment.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        employeeDepartment.departmentCode.toLowerCase().includes(searchTerm.toLowerCase())
+      ? employeeDepartment.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        employeeDepartment.departmentCode?.toLowerCase().includes(searchTerm.toLowerCase())
       : false;
     
     const positionMatch = employee.position 
@@ -356,13 +378,13 @@ export default function EmployeesPage() {
       : false;
     
     return nameMatch || departmentMatch || positionMatch || skillsMatch;
-  });
+  }) : [];
 
-  // Calculate stats
-  const totalEmployees = employees?.length || 0;
-  const activeEmployees = employees?.filter(employee => employee.status === "active")?.length || 0;
-  const totalDepartments = departments?.length || 0;
-  const avgTenure = employees?.length > 0 
+  // Calculate stats with safety checks
+  const totalEmployees = Array.isArray(employees) ? employees.length : 0;
+  const activeEmployees = Array.isArray(employees) ? employees.filter(employee => employee.status === "active").length : 0;
+  const totalDepartments = Array.isArray(departments) ? departments.length : 0;
+  const avgTenure = Array.isArray(employees) && employees.length > 0 
     ? (employees.reduce((sum, employee) => {
         const hireDate = new Date(employee.hireDate);
         const today = new Date();
@@ -390,10 +412,10 @@ export default function EmployeesPage() {
       });
 
       if (response.ok) {
-        setEmployees((prev) => prev.filter((employee) => {
+        setEmployees((prev) => Array.isArray(prev) ? prev.filter((employee) => {
           const empId = employee._id || employee.id || employee.employeeId;
           return empId !== employeeId;
-        }));
+        }) : []);
         showNotificationMessage("Employee deleted successfully!", "success");
       } else {
         throw new Error("Failed to delete employee");
@@ -429,6 +451,13 @@ export default function EmployeesPage() {
     });
   };
 
+  // Helper function to get department name by ID for display
+  const getDepartmentNameById = (departmentId) => {
+    if (!departmentId || !Array.isArray(departments)) return "";
+    const dept = departments.find(d => d._id === departmentId);
+    return dept ? dept.name : "";
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "skills") {
@@ -436,6 +465,13 @@ export default function EmployeesPage() {
       setFormData((prev) => ({
         ...prev,
         [name]: selectedOptions,
+      }));
+    } else if (name === "department") {
+      // Find the selected department to get its ID
+      const selectedDepartment = departments.find(dept => dept.name === value);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: selectedDepartment ? selectedDepartment._id : value, // Use ID instead of name
       }));
     } else {
       setFormData((prev) => ({
@@ -451,6 +487,13 @@ export default function EmployeesPage() {
     setError(null);
 
     try {
+
+      const selectedDept = departments.find(dept => dept._id === formData.department);
+    
+    const payload = {
+      ...formData,
+      departmentId: selectedDept?._id  // Send ID
+    };
       const token = localStorage.getItem("token");
       const response = await fetch(`${backendUrl}/api/auth/employees`, {
         method: "POST",
@@ -458,14 +501,16 @@ export default function EmployeesPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+           body: JSON.stringify(payload),
       });
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (response.ok) {
-        setEmployees((prev) => [...prev, data.employee]);
+        // Handle both response structures
+        const newEmployee = responseData.employee || responseData.data || responseData;
+        setEmployees((prev) => Array.isArray(prev) ? [...prev, newEmployee] : [newEmployee]);
         showNotificationMessage(
-          `Employee ${data.employee.firstName} ${data.employee.lastName} has been created successfully! A registration email has been sent to ${data.employee.email}.`, 
+          `Employee ${newEmployee.firstName} ${newEmployee.lastName} has been created successfully! A registration email has been sent to ${newEmployee.email}.`, 
           "success"
         );
         closeAddEmployeeModal();
@@ -482,14 +527,14 @@ export default function EmployeesPage() {
           hireDate: '',
           salary: '',
           status: 'active',
-          emergencyContact: {},
+          emergencyContact: '',
           skills: [],
           employmentType: 'full-time',
           workLocation: 'office',
           manager: null
         });
       } else {
-        throw new Error(data.message || "Failed to add employee");
+        throw new Error(responseData.message || "Failed to add employee");
       }
     } catch (err) {
       showNotificationMessage(err.message || "Failed to add employee", "error");
@@ -976,14 +1021,14 @@ export default function EmployeesPage() {
                     </label>
                     <select
                       name="department"
-                      value={formData.department}
+                      value={getDepartmentNameById(formData.department)}
                       onChange={handleInputChange}
                       required
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Department</option>
-                      {departments.map((dept) => (
-                        <option key={dept._id} value={dept.name} data-id={dept._id}>
+                      {Array.isArray(departments) && departments.map((dept) => (
+                        <option key={dept._id} value={dept.name}>
                           {dept.name} ({dept.departmentCode})
                         </option>
                       ))}
