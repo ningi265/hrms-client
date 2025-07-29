@@ -61,41 +61,42 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
 
   // Fetch data
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        
-        // Fetch requisitions and vendors in parallel
-        const [requisitionsRes, vendorsRes] = await Promise.all([
-          fetch(`${backendUrl}/api/requisitions`, {
-            headers: { Authorization: `Bearer ${token}` }
-          }),
-          fetch(`${backendUrl}/api/vendors`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
-        ]);
+const fetchData = async () => {
+  setIsLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    
+    // Fetch requisitions and vendors in parallel
+    const [requisitionsRes, vendorsRes] = await Promise.all([
+      fetch(`${backendUrl}/api/requisitions`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch(`${backendUrl}/api/vendors`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ]);
 
-        const [requisitionsData, vendorsData] = await Promise.all([
-          requisitionsRes.json(),
-          vendorsRes.json()
-        ]);
+    const [requisitionsData, vendorsResponse] = await Promise.all([
+      requisitionsRes.json(),
+      vendorsRes.json()
+    ]);
 
-        if (requisitionsRes.ok) {
-          const approvedRequisitions = requisitionsData.filter(req => req.status === "approved");
-          setRequisitions(approvedRequisitions);
-        }
+    if (requisitionsRes.ok) {
+      const approvedRequisitions = requisitionsData.filter(req => req.status === "approved");
+      setRequisitions(approvedRequisitions);
+    }
 
-        if (vendorsRes.ok) {
-          setVendors(vendorsData);
-        }
-      } catch (err) {
-        setError("Failed to load data. Please try again.");
-        console.error("Error fetching data:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (vendorsRes.ok) {
+      // Extract the data array from the vendors response
+      setVendors(vendorsResponse.data || []);
+    }
+  } catch (err) {
+    setError("Failed to load data. Please try again.");
+    console.error("Error fetching data:", err);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
     fetchData();
   }, [backendUrl]);
@@ -216,16 +217,19 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
   };
 
   // Filter functions
-  const filteredRequisitions = requisitions.filter(req =>
+  const filteredRequisitions = (requisitions || []).filter(req =>
     req.itemName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredVendors = vendors.filter(vendor =>
+ const filteredVendors = (vendors || []).filter(vendor => {
+  if (!vendor) return false;
+  return (
     vendor.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vendor.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vendor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vendor.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+});
 
   const canProceed = () => {
     switch (currentStep) {

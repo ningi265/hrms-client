@@ -681,253 +681,305 @@ export default function DepartmentsPage() {
 )}
 
       {/* Add Department Modal */}
-      {isAddDepartmentModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Plus size={24} className="text-blue-500" />
-                    Add New Department
-                  </h2>
-                  <p className="text-gray-600 mt-1">Create a new department for your organization</p>
-                </div>
-                <button
-                  onClick={closeAddDepartmentModal}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
-                >
-                  <X size={24} />
-                </button>
-              </div>
+    {isAddDepartmentModalOpen && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
+    <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-2xl">
+      {/* Compact Header */}
+      <div className="px-5 py-3 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <Plus size={18} className="text-blue-500" />
+            Add New Department
+          </h2>
+          <button
+            onClick={closeAddDepartmentModal}
+            className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      </div>
+      
+      {/* Compact Form Body */}
+      <div className="p-5 max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Department Name *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g., Engineering"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
-
-            <div className="p-8 max-h-[70vh] overflow-y-auto">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Department Name *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., Engineering"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="active">Active</option>
-                      <option value="restructuring">Restructuring</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="merging">Merging</option>
-                      <option value="dissolving">Dissolving</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    placeholder="Describe the department's purpose and responsibilities"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Department Head *</label>
-                    <input
-                      type="text"
-                      name="departmentHead"
-                      value={formData.departmentHead}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., John Smith"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Head Email *</label>
-                    <input
-                      type="email"
-                      name="headEmail"
-                      value={formData.headEmail}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="john.smith@company.com"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Head Phone Number *</label>
-                    <input
-                      type="tel"
-                      name="headPhone"
-                      value={formData.headPhone}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="+1 (555) 123-4567"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Established Date *</label>
-                    <input
-                      type="date"
-                      name="establishedDate"
-                      value={formData.establishedDate}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Budget *</label>
-                    <input
-                      type="number"
-                      name="budget"
-                      value={formData.budget}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., 500000"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., Building A, Floor 3"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Max Capacity</label>
-                    <input
-                      type="number"
-                      name="maxCapacity"
-                      value={formData.maxCapacity}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 50"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Building</label>
-                    <input
-                      type="text"
-                      name="building"
-                      value={formData.building}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Building A"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Floor</label>
-                    <input
-                      type="text"
-                      name="floor"
-                      value={formData.floor}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Floor 3"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Department Goals</label>
-                  <select
-                    name="goals"
-                    value={formData.goals}
-                    onChange={handleInputChange}
-                    multiple
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
-                  >
-                    <option value="Product Development">Product Development</option>
-                    <option value="Technical Innovation">Technical Innovation</option>
-                    <option value="System Optimization">System Optimization</option>
-                    <option value="Brand Growth">Brand Growth</option>
-                    <option value="Lead Generation">Lead Generation</option>
-                    <option value="Customer Engagement">Customer Engagement</option>
-                    <option value="Revenue Growth">Revenue Growth</option>
-                    <option value="Customer Retention">Customer Retention</option>
-                    <option value="Market Expansion">Market Expansion</option>
-                    <option value="Talent Acquisition">Talent Acquisition</option>
-                    <option value="Employee Development">Employee Development</option>
-                    <option value="Culture Building">Culture Building</option>
-                    <option value="Financial Planning">Financial Planning</option>
-                    <option value="Cost Optimization">Cost Optimization</option>
-                    <option value="Compliance">Compliance</option>
-                    <option value="Process Improvement">Process Improvement</option>
-                    <option value="Efficiency">Efficiency</option>
-                    <option value="Quality Control">Quality Control</option>
-                    <option value="Digital Transformation">Digital Transformation</option>
-                    <option value="Risk Management">Risk Management</option>
-                  </select>
-                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple goals</p>
-                </div>
-
-                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={closeAddDepartmentModal}
-                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors duration-200 font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isFormSubmitting}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-200 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isFormSubmitting ? (
-                      <>
-                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Save size={20} />
-                        Create Department
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Status *
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="active">Active</option>
+                <option value="restructuring">Restructuring</option>
+                <option value="inactive">Inactive</option>
+                <option value="merging">Merging</option>
+                <option value="dissolving">Dissolving</option>
+              </select>
             </div>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Description *
+            </label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              required
+              rows={3}
+              placeholder="Department's purpose and responsibilities"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Department Head *
+              </label>
+              <input
+                type="text"
+                name="departmentHead"
+                value={formData.departmentHead}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g., John Smith"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Head Email *
+              </label>
+              <input
+                type="email"
+                name="headEmail"
+                value={formData.headEmail}
+                onChange={handleInputChange}
+                required
+                placeholder="john.smith@company.com"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Head Phone *
+              </label>
+              <input
+                type="tel"
+                name="headPhone"
+                value={formData.headPhone}
+                onChange={handleInputChange}
+                required
+                placeholder="+1 (555) 123-4567"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Established Date *
+              </label>
+              <input
+                type="date"
+                name="establishedDate"
+                value={formData.establishedDate}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Budget *
+              </label>
+              <input
+                type="number"
+                name="budget"
+                value={formData.budget}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g., 500000"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Location *
+              </label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g., Building A, Floor 3"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Max Capacity
+              </label>
+              <input
+                type="number"
+                name="maxCapacity"
+                value={formData.maxCapacity}
+                onChange={handleInputChange}
+                placeholder="e.g., 50"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Building
+              </label>
+              <input
+                type="text"
+                name="building"
+                value={formData.building}
+                onChange={handleInputChange}
+                placeholder="e.g., Building A"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Floor
+              </label>
+              <input
+                type="text"
+                name="floor"
+                value={formData.floor}
+                onChange={handleInputChange}
+                placeholder="e.g., Floor 3"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Department Goals
+            </label>
+            <select
+              name="goals"
+              value={formData.goals}
+              onChange={handleInputChange}
+              multiple
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+            >
+              <option value="Product Development">Product Development</option>
+              <option value="Technical Innovation">Technical Innovation</option>
+              <option value="System Optimization">System Optimization</option>
+              <option value="Brand Growth">Brand Growth</option>
+              <option value="Lead Generation">Lead Generation</option>
+              <option value="Customer Engagement">Customer Engagement</option>
+              <option value="Revenue Growth">Revenue Growth</option>
+              <option value="Customer Retention">Customer Retention</option>
+              <option value="Market Expansion">Market Expansion</option>
+              <option value="Talent Acquisition">Talent Acquisition</option>
+              <option value="Employee Development">Employee Development</option>
+              <option value="Culture Building">Culture Building</option>
+              <option value="Financial Planning">Financial Planning</option>
+              <option value="Cost Optimization">Cost Optimization</option>
+              <option value="Compliance">Compliance</option>
+              <option value="Process Improvement">Process Improvement</option>
+              <option value="Efficiency">Efficiency</option>
+              <option value="Quality Control">Quality Control</option>
+              <option value="Digital Transformation">Digital Transformation</option>
+              <option value="Risk Management">Risk Management</option>
+            </select>
+            <div className="mt-1">
+              <div className="flex flex-wrap gap-1">
+                {formData.goals.map((goal, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    {goal}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          goals: formData.goals.filter((_, i) => i !== index)
+                        });
+                      }}
+                      className="ml-1.5 inline-flex text-blue-400 hover:text-blue-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Hold <kbd className="px-1 py-0.5 bg-gray-100 rounded">Ctrl</kbd> (Windows) or <kbd className="px-1 py-0.5 bg-gray-100 rounded">Cmd</kbd> (Mac) to select multiple
+              </p>
+            </div>
+          </div>
+
+          {/* Compact Footer */}
+          <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={closeAddDepartmentModal}
+              className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isFormSubmitting}
+              className="px-4 py-2 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isFormSubmitting ? (
+                <>
+                  <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Save size={14} />
+                  Create Department
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Notification */}
       {showNotification && (

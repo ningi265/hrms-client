@@ -166,7 +166,7 @@ const StatusItemComponent = ({ title, total, items, onAction, trend }) => {
 
 // Main dashboard component with QuickActions styling
 export default function TaskDashboard() {
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTab] = useState('charts');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
   const [animate, setAnimate] = useState(false);
@@ -350,6 +350,20 @@ export default function TaskDashboard() {
       
       {/* Content for Active Tab - matching QuickActions scrollable area */}
       <div className="max-h-96 overflow-y-auto custom-scrollbar">
+
+          {activeTab === 'charts' && (
+          <div className="p-4 space-y-4">
+            {filteredCharts.map((chart, index) => (
+              <BarChartComponent 
+                key={chart.id}
+                title={chart.title}
+                subtitle={chart.subtitle}
+                total={chart.total}
+                items={chart.items}
+              />
+            ))}
+          </div>
+        )}
         {activeTab === 'tasks' && (
           <div className="divide-y divide-gray-100">
             {filteredTasks.map((item) => (
@@ -365,19 +379,7 @@ export default function TaskDashboard() {
           </div>
         )}
         
-        {activeTab === 'charts' && (
-          <div className="p-4 space-y-4">
-            {filteredCharts.map((chart, index) => (
-              <BarChartComponent 
-                key={chart.id}
-                title={chart.title}
-                subtitle={chart.subtitle}
-                total={chart.total}
-                items={chart.items}
-              />
-            ))}
-          </div>
-        )}
+      
         
         {activeTab === 'favorites' && (
           <div className="divide-y divide-gray-100">

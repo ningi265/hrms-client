@@ -314,7 +314,7 @@ const StatsCardsGrid = ({ stats, testId }) => {
 
       <Box sx={{ width: '25%', minWidth: 130 }}>
         <PremiumStatCard
-          title="Send to supplier"
+          title="Reconciliation"
           value={stats.purchaseOrders.counts.total}
           icon={<Inventory />}
           color="secondary"

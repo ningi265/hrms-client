@@ -221,44 +221,58 @@ export default function ManageRequisitionsPage() {
   // Fetch pending requisitions
   useEffect(() => {
     const fetchPendingRequisitions = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const response = await fetch(`${backendUrl}/api/requisitions/pending`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const data = await response.json();
-        setRequisitions(data);
-      } catch (err) {
-        setError("Failed to fetch requisitions");
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  try {
+    setIsLoading(true);
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${backendUrl}/api/requisitions/pending`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch requisitions');
+    }
+    
+    const result = await response.json();
+    
+    // Check if the response has the expected structure
+    if (result.success && Array.isArray(result.data)) {
+      setRequisitions(result.data);
+    } else {
+      // Fallback to empty array if structure is unexpected
+      setRequisitions([]);
+    }
+    
+    setError(null);
+  } catch (err) {
+    setError(err.message);
+    console.error(err);
+    setRequisitions([]); // Ensure we have an array even on error
+  } finally {
+    setIsLoading(false);
+  }
+};
 
     fetchPendingRequisitions();
   }, [backendUrl]);
 
   // Filter requisitions based on search term and status
   const filteredRequisitions = requisitions.filter((requisition) => {
-    const matchesSearch = 
-      requisition.itemName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      requisition.employee?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      requisition.employee?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      false;
-    
-    const matchesStatus = statusFilter === "all" || requisition.urgency === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const matchesSearch = 
+    (requisition.itemName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (requisition.employee?.firstName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (requisition.employee?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+  
+  const matchesStatus = statusFilter === "all" || requisition.urgency === statusFilter;
+  return matchesSearch && matchesStatus;
+});
 
   // Calculate stats
-  const totalRequisitions = requisitions?.length || 0;
-  const highUrgency = requisitions?.filter(req => req.urgency === "high")?.length || 0;
-  const mediumUrgency = requisitions?.filter(req => req.urgency === "medium")?.length || 0;
-  const lowUrgency = requisitions?.filter(req => req.urgency === "low")?.length || 0;
-
+  const totalRequisitions = requisitions.length;
+const highUrgency = requisitions.filter(req => req.urgency === "high").length;
+const mediumUrgency = requisitions.filter(req => req.urgency === "medium").length;
+const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
   // Handle accept/reject action
   const handleAction = async (requisitionId, action) => {
     try {

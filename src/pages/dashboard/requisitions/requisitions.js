@@ -332,7 +332,7 @@ export default function NewRequisition() {
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItemDetails, setSelectedItemDetails] = useState(null);
   
-  // Dynamic budget data states
+  // Dynamic budget data states - Updated for new JSON structure
   const [budgetCodes, setBudgetCodes] = useState([]);
   const [departmentBudgets, setDepartmentBudgets] = useState([]);
   const [requisitionHistory, setRequisitionHistory] = useState([]);
@@ -340,10 +340,11 @@ export default function NewRequisition() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [budgetError, setBudgetError] = useState(null);
 
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
-  // Fetch departments and budget data
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
+
+  // Updated function to fetch departments and budget data with new JSON structure
   const fetchBudgetData = async () => {
     try {
       setIsLoadingBudgets(true);
@@ -354,7 +355,7 @@ export default function NewRequisition() {
         throw new Error('No authentication token found');
       }
 
-      // Fetch departments data
+      // Fetch departments data with new structure
       const deptResponse = await fetch(`${API_BASE_URL}/api/departments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -363,44 +364,64 @@ export default function NewRequisition() {
       });
 
       if (deptResponse.ok) {
-        const departments = await deptResponse.json();
+        const response = await deptResponse.json();
+        const departments = response.data || response; // Handle both array and object responses
+        
         setDepartmentBudgets(departments);
         
-        // Transform department data into budget codes format
-        const budgetCodesFromDepts = departments.map(dept => ({
-          code: dept.departmentCode || `${dept.name.replace(/\s+/g, '').toUpperCase()}-Q1-2024`,
-          department: dept.name,
-          remaining: `MWK ${((dept.budget || 0) - (dept.actualSpending || 0)).toLocaleString()}`,
-          total: `MWK ${(dept.budget || 0).toLocaleString()}`,
-          actualSpending: dept.actualSpending || 0,
-          budget: dept.budget || 0
-        }));
+        // Transform department data from new JSON structure
+        const budgetCodesFromDepts = departments.map(dept => {
+          const budgetInfo = dept.budgetInfo || {};
+          
+          return {
+            code: dept.departmentCode || budgetInfo.code || `${dept.name?.replace(/\s+/g, '').toUpperCase()}-Q1-2025`,
+            department: dept.name || 'Unknown Department',
+            remaining: `MWK ${(budgetInfo.remaining || (dept.budget || 0) - (dept.actualSpending || 0)).toLocaleString()}`,
+            total: `MWK ${(budgetInfo.total || dept.budget || 0).toLocaleString()}`,
+            actualSpending: dept.actualSpending || 0,
+            budget: dept.budget || budgetInfo.total || 0,
+            utilizationPercentage: budgetInfo.utilizationPercentage || 0,
+            status: budgetInfo.status || dept.status || 'active',
+            allocationStatus: budgetInfo.allocationStatus || 'allocated',
+            period: budgetInfo.period || `${dept.budgetYear || new Date().getFullYear()}`,
+            departmentId: dept._id,
+            departmentHead: dept.departmentHead,
+            headEmail: dept.headEmail,
+            headPhone: dept.headPhone,
+            location: dept.location,
+            floor: dept.floor,
+            building: dept.building,
+            employeeCount: dept.employeeCount || 0,
+            maxCapacity: dept.maxCapacity || 0,
+            establishedDate: dept.establishedDate
+          };
+        });
         
         setBudgetCodes(budgetCodesFromDepts);
       } else {
-        // Fallback to default budget codes if API fails
-        const defaultBudgetCodes = [
-          { code: "IT-Q1-2024", department: "Information Technology", remaining: "MWK 45,000", total: "MWK 100,000", budget: 100000, actualSpending: 55000 },
-          { code: "HR-Q1-2024", department: "Human Resources", remaining: "MWK 22,000", total: "MWK 50,000", budget: 50000, actualSpending: 28000 },
-          { code: "MKT-Q1-2024", department: "Marketing", remaining: "MWK 8,500", total: "MWK 75,000", budget: 75000, actualSpending: 66500 },
-          { code: "OPS-Q1-2024", department: "Operations", remaining: "MWK 35,000", total: "MWK 80,000", budget: 80000, actualSpending: 45000 },
-          { code: "FIN-Q1-2024", department: "Finance", remaining: "MWK 15,000", total: "MWK 30,000", budget: 30000, actualSpending: 15000 }
-        ];
-        setBudgetCodes(defaultBudgetCodes);
+        setBudgetError('Failed to fetch departments data');
+        console.error('Failed to fetch departments:', deptResponse.statusText);
       }
     } catch (error) {
       console.error('Error fetching budget data:', error);
       setBudgetError(error.message);
       
-      // Fallback to default budget codes
-      const defaultBudgetCodes = [
-        { code: "IT-Q1-2024", department: "Information Technology", remaining: "MWK 45,000", total: "MWK 100,000", budget: 100000, actualSpending: 55000 },
-        { code: "HR-Q1-2024", department: "Human Resources", remaining: "MWK 22,000", total: "MWK 50,000", budget: 50000, actualSpending: 28000 },
-        { code: "MKT-Q1-2024", department: "Marketing", remaining: "MWK 8,500", total: "MWK 75,000", budget: 75000, actualSpending: 66500 },
-        { code: "OPS-Q1-2024", department: "Operations", remaining: "MWK 35,000", total: "MWK 80,000", budget: 80000, actualSpending: 45000 },
-        { code: "FIN-Q1-2024", department: "Finance", remaining: "MWK 15,000", total: "MWK 30,000", budget: 30000, actualSpending: 15000 }
+      // Fallback data with new structure format
+      const fallbackBudgets = [
+        {
+          code: "MAT-827",
+          department: "Mathematics",
+          remaining: "MWK 60,000,000",
+          total: "MWK 60,000,000",
+          actualSpending: 0,
+          budget: 60000000,
+          utilizationPercentage: 0,
+          status: "active",
+          allocationStatus: "allocated",
+          period: "2025"
+        }
       ];
-      setBudgetCodes(defaultBudgetCodes);
+      setBudgetCodes(fallbackBudgets);
     } finally {
       setIsLoadingBudgets(false);
     }
@@ -426,7 +447,7 @@ export default function NewRequisition() {
       if (response.ok) {
         const data = await response.json();
         const formattedHistory = (data.data || []).map((req, index) => ({
-          id: req.requisitionNumber || `REQ-2024-${String(index + 1).padStart(3, '0')}`,
+          id: req.requisitionNumber || `REQ-2025-${String(index + 1).padStart(3, '0')}`,
           itemName: req.description || req.itemName || 'Unknown Item',
           quantity: req.quantity || 1,
           status: req.status || 'pending',
@@ -443,24 +464,7 @@ export default function NewRequisition() {
         
         setRequisitionHistory(formattedHistory);
       } else {
-        // Fallback to default history if API fails
-        const defaultHistory = [
-          { 
-            id: "REQ-2024-001", 
-            itemName: "MacBook Pro 16\" M3", 
-            quantity: 5, 
-            status: "approved", 
-            date: "2024-01-15",
-            budgetCode: "IT-Q1-2024",
-            amount: "MWK 14,995",
-            urgency: "Medium",
-            department: "Engineering",
-            approver: "Sarah Chen",
-            deliveryDate: "2024-01-20",
-            category: "Computing Hardware"
-          }
-        ];
-        setRequisitionHistory(defaultHistory);
+        console.error('Failed to fetch requisition history:', response.statusText);
       }
     } catch (error) {
       console.error('Error fetching requisition history:', error);
@@ -468,17 +472,17 @@ export default function NewRequisition() {
       // Fallback to default history
       const defaultHistory = [
         { 
-          id: "REQ-2024-001", 
+          id: "REQ-2025-001", 
           itemName: "MacBook Pro 16\" M3", 
           quantity: 5, 
           status: "approved", 
-          date: "2024-01-15",
-          budgetCode: "IT-Q1-2024",
+          date: "2025-01-15",
+          budgetCode: "MAT-827",
           amount: "MWK 14,995",
           urgency: "Medium",
-          department: "Engineering",
-          approver: "Sarah Chen",
-          deliveryDate: "2024-01-20",
+          department: "Mathematics",
+          approver: "Legend",
+          deliveryDate: "2025-01-20",
           category: "Computing Hardware"
         }
       ];
@@ -537,13 +541,27 @@ export default function NewRequisition() {
   const validateStep = (stepIndex) => {
     const errors = {};
     
-    if (stepIndex === 0) {
-      if (!useCustomItem && !formData.category) errors.category = "Category is required";
-      if (!useCustomItem && selectedItems.length === 0) errors.selectedItem = "At least one item must be selected";
-      if (useCustomItem && !formData.itemName) errors.itemName = "Item name is required";
-      if (!formData.quantity || formData.quantity <= 0) errors.quantity = "Valid quantity is required";
+   if (stepIndex === 0) {
+  if (!useCustomItem) {
+    if (!formData.category) {
+      errors.category = "Category is required";
     }
-    
+    if (selectedItems.length === 0) {
+      errors.selectedItem = "At least one item must be selected";
+    }
+  } else {
+    if (!formData.itemName) {
+      errors.itemName = "Item name is required";
+    }
+    if (!formData.quantity || formData.quantity <= 0) {
+      errors.quantity = "Valid quantity is required";
+    }
+  }
+}
+
+
+
+
     if (stepIndex === 1) {
       if (!formData.budgetCode) errors.budgetCode = "Budget code is required";
       if (!formData.reason) errors.reason = "Business justification is required";
@@ -720,16 +738,22 @@ export default function NewRequisition() {
   };
 
   const handleItemSelect = (item, category) => {
-    const newItem = {
-      ...item,
-      category: category.name,
-      categoryColor: category.color,
-      quantity: 1,
-      id: Date.now()
-    };
-    setSelectedItems(prev => [...prev, newItem]);
+  const newItem = {
+    ...item,
+    category: category.name,
+    categoryColor: category.color,
+    quantity: 1,
+    id: Date.now()
   };
-
+  
+  // Ensure category is set when adding an item
+  setFormData(prev => ({ 
+    ...prev, 
+    category: category.name 
+  }));
+  
+  setSelectedItems(prev => [...prev, newItem]);
+};
   const updateItemQuantity = (itemId, quantity) => {
     setSelectedItems(prev => 
       prev.map(item => 
@@ -760,8 +784,17 @@ export default function NewRequisition() {
     }
   };
 
+  // Updated function to get budget info with new JSON structure
   const getBudgetInfo = (code) => {
-    return budgetCodes.find(budget => budget.code === code);
+    const budget = budgetCodes.find(budget => budget.code === code);
+    if (!budget) return null;
+    
+    return {
+      ...budget,
+      remaining: budget.budget - budget.actualSpending,
+      utilizationPercentage: budget.budget > 0 ? ((budget.actualSpending / budget.budget) * 100) : 0,
+      isHealthy: budget.budget > 0 ? ((budget.budget - budget.actualSpending) / budget.budget) > 0.25 : false
+    };
   };
 
   const copyToClipboard = (text) => {
@@ -853,8 +886,7 @@ export default function NewRequisition() {
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           {/* Main Form - 3 columns */}
           <div className="xl:col-span-3">
-            {/* Progress Steps */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-4">
+            {/* Progress Steps -  <div className="bg-white rounded-lg border border-gray-200 p-6 mb-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-bold text-gray-900">Request Progress</h2>
@@ -902,7 +934,8 @@ export default function NewRequisition() {
                 <h3 className="font-bold text-gray-900">{steps[activeStep].title}</h3>
                 <p className="text-gray-600 text-sm mt-1">{steps[activeStep].description}</p>
               </div>
-            </div>
+            </div>*/}
+          
 
             {/* Form Card */}
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -1221,7 +1254,7 @@ export default function NewRequisition() {
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Left Column */}
                       <div className="space-y-4">
-                        {/* Budget Information */}
+                        {/* Budget Information - Updated for new JSON structure */}
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <label className="block text-sm font-medium text-gray-700">
@@ -1266,18 +1299,31 @@ export default function NewRequisition() {
                             </div>
                           )}
                           
-                          {/* Budget Info Display */}
+                          {/* Budget Info Display - Enhanced for new structure */}
                           {formData.budgetCode && getBudgetInfo(formData.budgetCode) && (
                             <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="text-sm font-medium text-emerald-900">Budget Status</span>
-                                <span className="text-xs text-emerald-700 bg-emerald-100 px-2 py-1 rounded">
-                                  Active
-                                </span>
+                                <div className="flex items-center space-x-2">
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    getBudgetInfo(formData.budgetCode).status === 'active' 
+                                      ? 'bg-emerald-100 text-emerald-800' 
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {getBudgetInfo(formData.budgetCode).status?.toUpperCase() || 'ACTIVE'}
+                                  </span>
+                                  <span className={`text-xs px-2 py-1 rounded ${
+                                    getBudgetInfo(formData.budgetCode).allocationStatus === 'allocated' 
+                                      ? 'bg-blue-100 text-blue-800' 
+                                      : 'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    {getBudgetInfo(formData.budgetCode).allocationStatus?.toUpperCase() || 'ALLOCATED'}
+                                  </span>
+                                </div>
                               </div>
                               {(() => {
                                 const budget = getBudgetInfo(formData.budgetCode);
-                                const remaining = budget.budget - budget.actualSpending;
+                                const remaining = budget.remaining;
                                 const total = budget.budget;
                                 const percentage = total > 0 ? (remaining / total) * 100 : 0;
                                 return (
@@ -1288,10 +1334,19 @@ export default function NewRequisition() {
                                     </div>
                                     <div className="mt-2 w-full bg-emerald-200 rounded-full h-2">
                                       <div 
-                                        className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                                        className={`h-2 rounded-full transition-all duration-300 ${
+                                          percentage > 50 ? 'bg-emerald-500' :
+                                          percentage > 25 ? 'bg-amber-500' :
+                                          'bg-red-500'
+                                        }`}
                                         style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
                                       ></div>
                                     </div>
+                                    {budget.period && (
+                                      <div className="mt-1 text-xs text-emerald-600">
+                                        Budget Period: {budget.period}
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })()}
@@ -1299,7 +1354,7 @@ export default function NewRequisition() {
                           )}
                         </div>
 
-                        {/* Department */}
+                        {/* Department - Updated for new JSON structure */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             Requesting Department
@@ -1320,13 +1375,6 @@ export default function NewRequisition() {
                                   {budget.department}
                                 </option>
                               ))}
-                              <option value="Information Technology">Information Technology</option>
-                              <option value="Human Resources">Human Resources</option>
-                              <option value="Finance & Accounting">Finance & Accounting</option>
-                              <option value="Operations">Operations</option>
-                              <option value="Marketing & Communications">Marketing & Communications</option>
-                              <option value="Research & Development">Research & Development</option>
-                              <option value="Customer Support">Customer Support</option>
                             </select>
                           </div>
                           {validationErrors.department && (
@@ -1681,7 +1729,7 @@ export default function NewRequisition() {
                         </div>
                       </div>
 
-                      {/* Right Column - Budget Info */}
+                      {/* Right Column - Budget Info - Enhanced for new structure */}
                       <div className="bg-white border border-gray-200 rounded-lg p-4">
                         <h5 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                           <CreditCard size={18} />
@@ -1691,7 +1739,7 @@ export default function NewRequisition() {
                           <div className="space-y-3">
                             {(() => {
                               const budget = getBudgetInfo(formData.budgetCode);
-                              const remaining = budget.budget - budget.actualSpending;
+                              const remaining = budget.remaining;
                               const total = budget.budget;
                               const afterPurchase = remaining - estimatedTotal;
                               const percentage = total > 0 ? (remaining / total) * 100 : 0;
@@ -1702,9 +1750,20 @@ export default function NewRequisition() {
                                   <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
                                     <div className="flex items-center justify-between mb-2">
                                       <span className="text-sm font-medium text-emerald-900">Current Budget Status</span>
-                                      <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
-                                        {percentage.toFixed(1)}% Available
-                                      </span>
+                                      <div className="flex items-center space-x-1">
+                                        <span className="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">
+                                          {percentage.toFixed(1)}% Available
+                                        </span>
+                                        {budget.status && (
+                                          <span className={`text-xs px-2 py-1 rounded ${
+                                            budget.status === 'active' 
+                                              ? 'bg-blue-100 text-blue-800' 
+                                              : 'bg-gray-100 text-gray-800'
+                                          }`}>
+                                            {budget.status.toUpperCase()}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                       <div>
@@ -1718,10 +1777,19 @@ export default function NewRequisition() {
                                     </div>
                                     <div className="mt-2 w-full bg-emerald-200 rounded-full h-2">
                                       <div 
-                                        className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                                        className={`h-2 rounded-full transition-all duration-300 ${
+                                          percentage > 50 ? 'bg-emerald-500' :
+                                          percentage > 25 ? 'bg-amber-500' :
+                                          'bg-red-500'
+                                        }`}
                                         style={{ width: `${Math.max(0, Math.min(100, percentage))}%` }}
                                       ></div>
                                     </div>
+                                    {budget.period && (
+                                      <div className="mt-1 text-xs text-emerald-600">
+                                        Budget Period: {budget.period}
+                                      </div>
+                                    )}
                                   </div>
                                   
                                   <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -1755,6 +1823,33 @@ export default function NewRequisition() {
                                       </div>
                                     )}
                                   </div>
+
+                                  {/* Additional Department Info */}
+                                  {(budget.departmentHead || budget.location) && (
+                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                      <h6 className="text-sm font-medium text-gray-900 mb-2">Department Details</h6>
+                                      <div className="space-y-1 text-xs text-gray-600">
+                                        {budget.departmentHead && (
+                                          <div className="flex items-center justify-between">
+                                            <span>Department Head:</span>
+                                            <span className="font-medium">{budget.departmentHead}</span>
+                                          </div>
+                                        )}
+                                        {budget.location && (
+                                          <div className="flex items-center justify-between">
+                                            <span>Location:</span>
+                                            <span className="font-medium">{budget.location}</span>
+                                          </div>
+                                        )}
+                                        {budget.employeeCount !== undefined && (
+                                          <div className="flex items-center justify-between">
+                                            <span>Employees:</span>
+                                            <span className="font-medium">{budget.employeeCount}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
                                 </>
                               );
                             })()}
@@ -1870,8 +1965,7 @@ export default function NewRequisition() {
 
           {/* Sidebar - 1 column */}
           <div className="space-y-4">
-            {/* Quick Stats */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            {/* Quick Stats -  <div className="bg-white rounded-lg border border-gray-200 p-4">
               <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Activity size={18} className="text-blue-500" />
                 Quick Stats
@@ -1902,10 +1996,10 @@ export default function NewRequisition() {
                   size="normal"
                 />
               </div>
-            </div>
+            </div>*/}
+          
 
-            {/* Quick Actions */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            {/* Quick Actions - <div className="bg-white rounded-lg border border-gray-200 p-4">
               <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Zap size={18} className="text-amber-500" />
                 Quick Actions
@@ -1945,10 +2039,10 @@ export default function NewRequisition() {
                   <ChevronRight size={14} className="text-amber-600" />
                 </button>
               </div>
-            </div>
+            </div> */}
+           
 
-            {/* Recent Activity */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            {/* Recent Activity <div className="bg-white rounded-lg border border-gray-200 p-4">
               <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Activity size={18} className="text-purple-500" />
                 Recent Activity
@@ -1986,9 +2080,10 @@ export default function NewRequisition() {
                 View All
                 <ChevronRight size={12} />
               </button>
-            </div>
+            </div> */}
+           
 
-            {/* Budget Insights */}
+            {/* Budget Insights - Enhanced for new structure */}
             {formData.budgetCode && getBudgetInfo(formData.budgetCode) && (
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
@@ -1998,7 +2093,7 @@ export default function NewRequisition() {
                 
                 {(() => {
                   const budget = getBudgetInfo(formData.budgetCode);
-                  const remaining = budget.budget - budget.actualSpending;
+                  const remaining = budget.remaining;
                   const total = budget.budget;
                   const percentage = total > 0 ? (remaining / total) * 100 : 0;
                   
@@ -2007,13 +2102,24 @@ export default function NewRequisition() {
                       <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-emerald-900">Budget Health</span>
-                          <span className={`text-xs px-2 py-1 rounded ${
-                            percentage > 50 ? 'bg-emerald-100 text-emerald-800' :
-                            percentage > 25 ? 'bg-amber-100 text-amber-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {percentage > 50 ? 'Healthy' : percentage > 25 ? 'Moderate' : 'Critical'}
-                          </span>
+                          <div className="flex items-center space-x-1">
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              percentage > 50 ? 'bg-emerald-100 text-emerald-800' :
+                              percentage > 25 ? 'bg-amber-100 text-amber-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {percentage > 50 ? 'Healthy' : percentage > 25 ? 'Moderate' : 'Critical'}
+                            </span>
+                            {budget.allocationStatus && (
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                budget.allocationStatus === 'allocated' 
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-amber-100 text-amber-800'
+                              }`}>
+                                {budget.allocationStatus.toUpperCase()}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="w-full bg-emerald-200 rounded-full h-2 mb-2">
                           <div 
@@ -2031,10 +2137,13 @@ export default function NewRequisition() {
                       </div>
                       
                       <div className="text-xs text-gray-500 space-y-1">
-                        <p>• Q1 spending is {percentage < 75 ? 'on track' : 'above average'}</p>
-                        <p>• {Math.floor(90 - (100 - percentage))} days remaining in quarter</p>
+                        <p>• Budget year: {budget.period || new Date().getFullYear()}</p>
+                        <p>• Utilization: {budget.utilizationPercentage?.toFixed(1) || '0.0'}%</p>
                         {estimatedTotal > 0 && (
                           <p>• This request uses {((estimatedTotal / total) * 100).toFixed(1)}% of total budget</p>
+                        )}
+                        {budget.departmentHead && (
+                          <p>• Approver: {budget.departmentHead}</p>
                         )}
                       </div>
                     </div>

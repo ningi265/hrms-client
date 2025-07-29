@@ -36,7 +36,8 @@ import {
   CheckCircle,
   DollarSign,
   Package,
-  Loader
+  Loader,
+  ChevronDown
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
@@ -103,18 +104,50 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   );
 };
 
-// Vendor Card Component (styled like vehicle cards)
+// Updated Vendor Card Component to handle both User and Vendor objects
 const VendorCard = ({ vendor, onMenuClick, showMenuId, onDelete, actionLoading, renderRating }) => {
   const getStatusColor = (status) => {
     switch(status) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'inactive': return 'bg-gray-100 text-gray-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'approved': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const vendorName = vendor.name || `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim();
+  // Handle both User objects (from addVendor) and Vendor objects (from existing data)
+  const getVendorData = (vendor) => {
+    // If it's a User object (newly created vendor)
+    if (vendor.firstName && vendor.lastName) {
+      return {
+        name: `${vendor.firstName} ${vendor.lastName}`.trim(),
+        email: vendor.email,
+        phone: vendor.phoneNumber || vendor.phone,
+        companyName: vendor.companyName,
+        industry: vendor.industry,
+        status: vendor.status || vendor.registrationStatus || 'pending',
+        rating: vendor.rating || 0,
+        categories: vendor.categories || [],
+        id: vendor._id
+      };
+    }
+    
+    // If it's a Vendor object (existing data)
+    return {
+      name: vendor.name || `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim(),
+      email: vendor.email,
+      phone: vendor.phoneNumber || vendor.phone,
+      companyName: vendor.businessName || vendor.companyName,
+      industry: vendor.industry || 'N/A',
+      status: vendor.registrationStatus || vendor.status || 'pending',
+      rating: vendor.rating || 0,
+      categories: vendor.categories || [],
+      id: vendor._id
+    };
+  };
+
+  const vendorData = getVendorData(vendor);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
@@ -125,18 +158,18 @@ const VendorCard = ({ vendor, onMenuClick, showMenuId, onDelete, actionLoading, 
           </div>
           <div>
             <h4 className="font-semibold text-gray-900">
-              {vendorName || "N/A"}
+              {vendorData.name || "N/A"}
             </h4>
-            <p className="text-sm text-gray-500">{vendor.companyName || "N/A"}</p>
+            <p className="text-sm text-gray-500">{vendorData.companyName || "N/A"}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(vendor.status)}`}>
-            {vendor.status}
+          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(vendorData.status)}`}>
+            {vendorData.status}
           </span>
           <button
-            data-vendor-id={vendor._id}
-            onClick={() => onMenuClick(vendor._id)}
+            data-vendor-id={vendorData.id}
+            onClick={() => onMenuClick(vendorData.id)}
             className="p-1 text-gray-400 hover:text-blue-600 rounded"
           >
             <MoreVertical size={16} />
@@ -148,13 +181,13 @@ const VendorCard = ({ vendor, onMenuClick, showMenuId, onDelete, actionLoading, 
         <div className="text-center p-2 bg-gray-50 rounded">
           <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
             <Star className="w-4 h-4 text-yellow-500" />
-            {vendor.rating ? vendor.rating.toFixed(1) : '0.0'}
+            {vendorData.rating ? vendorData.rating.toFixed(1) : '0.0'}
           </div>
           <div className="text-xs text-gray-500">Rating</div>
         </div>
         <div className="text-center p-2 bg-gray-50 rounded">
           <div className="text-lg font-bold text-gray-900">
-            {vendor.categories?.length || 0}
+            {vendorData.categories?.length || 0}
           </div>
           <div className="text-xs text-gray-500">Categories</div>
         </div>
@@ -163,23 +196,23 @@ const VendorCard = ({ vendor, onMenuClick, showMenuId, onDelete, actionLoading, 
       <div className="space-y-2 mb-3">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Email</span>
-          <span className="text-xs font-medium truncate">{vendor.email || "N/A"}</span>
+          <span className="text-xs font-medium truncate">{vendorData.email || "N/A"}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Phone</span>
-          <span className="text-xs font-medium">{vendor.phoneNumber || vendor.phone || "N/A"}</span>
+          <span className="text-xs font-medium">{vendorData.phone || "N/A"}</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Industry</span>
-          <span className="text-xs font-medium">{vendor.industry || "N/A"}</span>
+          <span className="text-xs font-medium">{vendorData.industry || "N/A"}</span>
         </div>
       </div>
 
-      {vendor.categories && vendor.categories.length > 0 && (
+      {vendorData.categories && vendorData.categories.length > 0 && (
         <div className="mb-3">
           <div className="text-xs text-gray-600 mb-1">Categories</div>
           <div className="flex flex-wrap gap-1">
-            {vendor.categories
+            {vendorData.categories
               .filter(category => category && typeof category === 'string')
               .slice(0, 2)
               .map((category, idx) => (
@@ -187,9 +220,9 @@ const VendorCard = ({ vendor, onMenuClick, showMenuId, onDelete, actionLoading, 
                   {category}
                 </span>
               ))}
-            {vendor.categories.length > 2 && (
+            {vendorData.categories.length > 2 && (
               <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-                +{vendor.categories.length - 2}
+                +{vendorData.categories.length - 2}
               </span>
             )}
           </div>
@@ -198,7 +231,7 @@ const VendorCard = ({ vendor, onMenuClick, showMenuId, onDelete, actionLoading, 
 
       <div className="flex justify-between items-center pt-2 border-t border-gray-100">
         <div className="flex items-center gap-1">
-          {renderRating(vendor.rating || 0)}
+          {renderRating(vendorData.rating || 0)}
         </div>
         <div className="flex gap-1">
           <button className="p-1 text-gray-400 hover:text-blue-600">
@@ -224,18 +257,6 @@ export default function VendorsPage() {
   const [isAddVendorModalOpen, setIsAddVendorModalOpen] = useState(false);
   const [showMenuId, setShowMenuId] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    companyName: "",
-    industry: "",
-    role: "Vendor",
-    email: "",
-    phoneNumber: "",
-    address: "",
-    password: "",
-    categories: [],
-  });
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -258,11 +279,24 @@ export default function VendorsPage() {
             Authorization: `Bearer ${token}`,
           },
         });
-        const data = await response.json();
-        setVendors(data);
+        const result = await response.json();
+        
+        // Handle different response structures
+        if (result.success && result.data) {
+          // New API response format with success wrapper
+          setVendors(Array.isArray(result.data) ? result.data : []);
+        } else if (Array.isArray(result)) {
+          // Direct array response (old format)
+          setVendors(result);
+        } else {
+          // Fallback - treat as empty array
+          console.warn("Unexpected API response format:", result);
+          setVendors([]);
+        }
       } catch (error) {
         setError("Failed to fetch vendors");
         console.error("Failed to fetch vendors:", error);
+        setVendors([]); // Set empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -271,24 +305,37 @@ export default function VendorsPage() {
     fetchVendors();
   }, [backendUrl]);
 
-  const filteredVendors = vendors.filter((vendor) => {
+  const filteredVendors = (vendors || []).filter((vendor) => {
+    // Handle both User and Vendor objects for search
     const vendorName = vendor.name || `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim();
-    const nameMatch = vendorName.toLowerCase().includes(searchTerm.toLowerCase());
+    const companyName = vendor.businessName || vendor.companyName || '';
+    const email = vendor.email || '';
+    
+    const searchLower = searchTerm.toLowerCase();
+    const nameMatch = vendorName.toLowerCase().includes(searchLower);
+    const companyMatch = companyName.toLowerCase().includes(searchLower);
+    const emailMatch = email.toLowerCase().includes(searchLower);
     
     const categoriesMatch = vendor.categories && Array.isArray(vendor.categories) 
       ? vendor.categories.some((cat) => 
-          cat && typeof cat === 'string' && cat.toLowerCase().includes(searchTerm.toLowerCase())
+          cat && typeof cat === 'string' && cat.toLowerCase().includes(searchLower)
         )
       : false;
     
-    return nameMatch || categoriesMatch;
+    return nameMatch || companyMatch || emailMatch || categoriesMatch;
   });
 
-  // Calculate stats
-  const totalVendors = vendors?.length || 0;
-  const activeVendors = vendors?.filter(vendor => vendor.status === "active")?.length || 0;
-  const totalCategories = [...new Set(vendors?.flatMap(vendor => vendor.categories || []))].length;
-  const avgRating = vendors?.length > 0 ? (vendors.reduce((sum, vendor) => sum + (vendor.rating || 0), 0) / vendors.length).toFixed(1) : 0;
+  // Calculate stats - handle both User and Vendor objects
+  const totalVendors = (vendors || []).length;
+  const activeVendors = (vendors || []).filter(vendor => 
+    vendor.status === "active" || 
+    vendor.registrationStatus === "approved" || 
+    vendor.registrationStatus === "active"
+  ).length;
+  
+  const allCategories = (vendors || []).flatMap(vendor => vendor.categories || []);
+  const totalCategories = [...new Set(allCategories)].length;
+  const avgRating = vendors && vendors.length > 0 ? (vendors.reduce((sum, vendor) => sum + (vendor.rating || 0), 0) / vendors.length).toFixed(1) : 0;
  
   const renderRating = (rating) => {
     const stars = [];
@@ -366,29 +413,38 @@ export default function VendorsPage() {
       lastName: "",
       companyName: "",
       industry: "",
-      role: "Vendor",
       email: "",
       phoneNumber: "",
       address: "",
-      password: "",
       categories: [],
     });
   };
 
+  // Updated form data structure to match backend expectations
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '', 
+    email: '',
+    phoneNumber: '',
+    address: '',
+    companyName: '', // This will be used for businessName
+    industry: '',
+    categories: [],
+    // Backend fields
+    taxpayerIdentificationNumber: '',
+    registrationNumber: '',
+    companyType: 'Private Limited Company',
+    formOfBusiness: 'Limited Liability Company',
+    ownershipType: 'Private Ownership',
+    countryOfRegistration: 'Malawi'
+  });
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "categories") {
-      const selectedOptions = Array.from(e.target.selectedOptions, option => option.value);
-      setFormData((prev) => ({
-        ...prev,
-        [name]: selectedOptions,
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -398,19 +454,59 @@ export default function VendorsPage() {
 
     try {
       const token = localStorage.getItem("token");
+      
+      // Prepare payload to match backend expectations
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        address: formData.address,
+        companyName: formData.companyName, // Frontend field
+        businessName: formData.companyName, // Backend expects this for Vendor model
+        industry: formData.industry,
+        categories: formData.categories.filter(cat => cat.trim() !== ''),
+        taxpayerIdentificationNumber: formData.taxpayerIdentificationNumber || `TIN-${Date.now()}`,
+        registrationNumber: formData.registrationNumber || `REG-${Date.now()}`,
+        companyType: formData.companyType,
+        formOfBusiness: formData.formOfBusiness,
+        ownershipType: formData.ownershipType,
+        countryOfRegistration: formData.countryOfRegistration,
+        role: "Vendor"
+      };
+
+      console.log("Sending payload:", payload); // Debug log
+
       const response = await fetch(`${backendUrl}/api/vendors`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
+
       const data = await response.json();
+      console.log("Response data:", data); // Debug log
 
       if (response.ok) {
-        setVendors((prev) => [...prev, data]);
-        showNotificationMessage("Vendor added successfully!", "success");
+        // Create a vendor object that matches our display expectations
+        const newVendorForDisplay = {
+          _id: data.vendor?.id || data.vendor?._id || Date.now().toString(),
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          companyName: formData.companyName,
+          industry: formData.industry,
+          categories: formData.categories,
+          status: data.vendor?.status || 'pending',
+          rating: 0,
+          registrationStatus: 'pending'
+        };
+
+        setVendors((prev) => [...prev, newVendorForDisplay]);
+        showNotificationMessage("Vendor added successfully! Registration email sent.", "success");
         closeAddVendorModal();
       } else {
         throw new Error(data.message || "Failed to add vendor");
@@ -599,127 +695,127 @@ export default function VendorsPage() {
 
       {/* Action Dropdown Menu */}
       {showMenuId && (
-  <>
-    {/* Subtle backdrop with fade animation */}
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-[100] bg-black/5"
-      onClick={() => setShowMenuId(null)}
-      transition={{ duration: 0.1 }}
-    />
-    
-    {/* Menu positioned exactly at button edge */}
-    <motion.div
-      initial={{ opacity: 0, y: -5 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="fixed z-[101] w-56 bg-white rounded-lg shadow-lg border border-gray-200"
-      style={{
-        top: (() => {
-          const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
-          if (button) {
-            const rect = button.getBoundingClientRect();
-            return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
-          }
-          return '50px';
-        })(),
-        left: (() => {
-          const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
-          if (button) {
-            const rect = button.getBoundingClientRect();
-            const menuWidth = 224;
-            const rightEdge = rect.right + window.scrollX;
-            
-            // Right edge protection with 8px buffer
-            if (rightEdge + menuWidth > window.innerWidth) {
-              return `${window.innerWidth - menuWidth - 8}px`;
-            }
-            return `${rect.right - menuWidth + window.scrollX}px`;
-          }
-          return '50px';
-        })()
-      }}
-      transition={{
-        duration: 0.1,
-        ease: "easeOut"
-      }}
-    >
-      <div className="py-1">
-        {[
-          { icon: Eye, label: "View Details", action: () => navigate(`/dashboard/vendors/${showMenuId}`) },
-          { icon: Edit, label: "Edit Vendor", action: () => navigate(`/dashboard/vendors/${showMenuId}/edit`) },
-          { icon: MessageSquare, label: "Send Message", action: () => {} },
-          { icon: TrendingUp, label: "View Performance", action: () => navigate(`/dashboard/vendors/${showMenuId}/performance`) },
-          { icon: Package, label: "Create Order", action: () => navigate(`/dashboard/orders/create?vendor=${showMenuId}`) },
-          { icon: Copy, label: "Copy Vendor ID", action: () => copyToClipboard(showMenuId) },
-          { icon: Shield, label: "Manage Access", action: () => navigate(`/dashboard/vendors/${showMenuId}/access`) },
-          { icon: FileText, label: "Generate Report", action: () => navigate(`/dashboard/reports/vendor/${showMenuId}`) },
-          { type: "divider" },
-          { 
-            icon: Trash2, 
-            label: "Delete Vendor", 
-            action: () => handleDeleteVendor(showMenuId),
-            destructive: true 
-          }
-        ].map((item, index) => (
-          item.type === "divider" ? (
-            <div key={`divider-${index}`} className="border-t border-gray-100 my-1" />
-          ) : (
-            <button
-              key={item.label}
-              onClick={() => {
-                item.action();
-                setShowMenuId(null);
-              }}
-              disabled={actionLoading === showMenuId && item.destructive}
-              className={`w-full flex items-center gap-3 px-4 py-2 text-left text-sm ${
-                item.destructive 
-                  ? 'text-red-600 hover:bg-red-50' 
-                  : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
-              }`}
-            >
-              <item.icon size={16} className="text-gray-500" />
-              <span>{item.label}</span>
-              {actionLoading === showMenuId && item.destructive && (
-                <div className="ml-auto">
-                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-            </button>
-          )
-        ))}
-      </div>
-    </motion.div>
-  </>
-)}
+        <>
+          {/* Subtle backdrop with fade animation */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/5"
+            onClick={() => setShowMenuId(null)}
+            transition={{ duration: 0.1 }}
+          />
+          
+          {/* Menu positioned exactly at button edge */}
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed z-[101] w-56 bg-white rounded-lg shadow-lg border border-gray-200"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  return `${rect.bottom + window.scrollY}px`; // Directly at button bottom edge
+                }
+                return '50px';
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-vendor-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 224;
+                  const rightEdge = rect.right + window.scrollX;
+                  
+                  // Right edge protection with 8px buffer
+                  if (rightEdge + menuWidth > window.innerWidth) {
+                    return `${window.innerWidth - menuWidth - 8}px`;
+                  }
+                  return `${rect.right - menuWidth + window.scrollX}px`;
+                }
+                return '50px';
+              })()
+            }}
+            transition={{
+              duration: 0.1,
+              ease: "easeOut"
+            }}
+          >
+            <div className="py-1">
+              {[
+                { icon: Eye, label: "View Details", action: () => navigate(`/dashboard/vendors/${showMenuId}`) },
+                { icon: Edit, label: "Edit Vendor", action: () => navigate(`/dashboard/vendors/${showMenuId}/edit`) },
+                { icon: MessageSquare, label: "Send Message", action: () => {} },
+                { icon: TrendingUp, label: "View Performance", action: () => navigate(`/dashboard/vendors/${showMenuId}/performance`) },
+                { icon: Package, label: "Create Order", action: () => navigate(`/dashboard/orders/create?vendor=${showMenuId}`) },
+                { icon: Copy, label: "Copy Vendor ID", action: () => copyToClipboard(showMenuId) },
+                { icon: Shield, label: "Manage Access", action: () => navigate(`/dashboard/vendors/${showMenuId}/access`) },
+                { icon: FileText, label: "Generate Report", action: () => navigate(`/dashboard/reports/vendor/${showMenuId}`) },
+                { type: "divider" },
+                { 
+                  icon: Trash2, 
+                  label: "Delete Vendor", 
+                  action: () => handleDeleteVendor(showMenuId),
+                  destructive: true 
+                }
+              ].map((item, index) => (
+                item.type === "divider" ? (
+                  <div key={`divider-${index}`} className="border-t border-gray-100 my-1" />
+                ) : (
+                  <button
+                    key={item.label}
+                    onClick={() => {
+                      item.action();
+                      setShowMenuId(null);
+                    }}
+                    disabled={actionLoading === showMenuId && item.destructive}
+                    className={`w-full flex items-center gap-3 px-4 py-2 text-left text-sm ${
+                      item.destructive 
+                        ? 'text-red-600 hover:bg-red-50' 
+                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                    }`}
+                  >
+                    <item.icon size={16} className="text-gray-500" />
+                    <span>{item.label}</span>
+                    {actionLoading === showMenuId && item.destructive && (
+                      <div className="ml-auto">
+                        <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </button>
+                )
+              ))}
+            </div>
+          </motion.div>
+        </>
+      )}
+
       {/* Add Vendor Modal */}
       {isAddVendorModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
+          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-2xl">
+            {/* Compact Header */}
+            <div className="px-5 py-3 border-b border-gray-200">
               <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Plus size={24} className="text-blue-500" />
-                    Add New Vendor
-                  </h2>
-                  <p className="text-gray-600 mt-1">Add a new vendor to your network</p>
-                </div>
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Plus size={18} className="text-blue-500" />
+                  Add New Vendor
+                </h2>
                 <button
                   onClick={closeAddVendorModal}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
+                  className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
                 >
-                  <X size={24} />
+                  <X size={18} />
                 </button>
               </div>
             </div>
             
-            <div className="p-8 max-h-[70vh] overflow-y-auto">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Compact Form Body */}
+            <div className="p-5 max-h-[75vh] overflow-y-auto">
+              <form onSubmit={handleSubmit} className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       First Name *
                     </label>
                     <input
@@ -728,11 +824,11 @@ export default function VendorsPage() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
                       Last Name *
                     </label>
                     <input
@@ -741,13 +837,13 @@ export default function VendorsPage() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Email *
                   </label>
                   <input
@@ -756,55 +852,43 @@ export default function VendorsPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password *
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Phone Number *
                   </label>
                   <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9+]/g, '');
+                      handleInputChange({ target: { name: 'phoneNumber', value } });
+                    }}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number *
-                    </label>
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Company Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="companyName"
-                      value={formData.companyName}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Company Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={formData.companyName}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Address *
                   </label>
                   <input
@@ -813,84 +897,145 @@ export default function VendorsPage() {
                     value={formData.address}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Industry *
-                    </label>
-                    <input
-                      type="text"
-                      name="industry"
-                      value={formData.industry}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Role *
-                    </label>
-                    <input
-                      type="text"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Industry *
+                  </label>
+                  <input
+                    type="text"
+                    name="industry"
+                    value={formData.industry}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="e.g., Technology, Manufacturing, Consulting"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
                     Categories *
                   </label>
-                  <select
-                    name="categories"
-                    value={formData.categories}
-                    onChange={handleInputChange}
-                    multiple
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-h-[120px]"
-                  >
-                    <option value="Office Supplies">Office Supplies</option>
-                    <option value="Furniture">Furniture</option>
-                    <option value="Electronics">Electronics</option>
-                    <option value="Stationery">Stationery</option>
-                    <option value="Catering">Catering</option>
-                    <option value="IT Services">IT Services</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Legal Services">Legal Services</option>
-                  </select>
-                  <p className="text-sm text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple categories</p>
+                  <div className="relative">
+                    <select
+                      name="categories"
+                      value={formData.categories}
+                      onChange={(e) => {
+                        const options = e.target.options;
+                        const selected = [];
+                        for (let i = 0; i < options.length; i++) {
+                          if (options[i].selected) {
+                            selected.push(options[i].value);
+                          }
+                        }
+                        setFormData({ ...formData, categories: selected });
+                      }}
+                      multiple
+                      required
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+                    >
+                      <option value="Office Supplies">Office Supplies</option>
+                      <option value="Furniture">Furniture</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Stationery">Stationery</option>
+                      <option value="IT Services">IT Services</option>
+                      <option value="Marketing">Marketing</option>
+                      <option value="Construction">Construction</option>
+                      <option value="Consulting">Consulting</option>
+                      <option value="Security">Security</option>
+                      <option value="Cleaning">Cleaning</option>
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <ChevronDown className="h-4 w-4 text-gray-400" />
+                    </div>
+                  </div>
+                  <div className="mt-1">
+                    <div className="flex flex-wrap gap-1">
+                      {formData.categories.map((category, index) => (
+                        <span
+                          key={index}
+                          className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                        >
+                          {category}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                categories: formData.categories.filter((_, i) => i !== index)
+                              });
+                            }}
+                            className="ml-1.5 inline-flex text-blue-400 hover:text-blue-600"
+                          >
+                            <X size={12} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Hold <kbd className="px-1 py-0.5 bg-gray-100 rounded">Ctrl</kbd> (Windows) or <kbd className="px-1 py-0.5 bg-gray-100 rounded">Cmd</kbd> (Mac) to select multiple
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                {/* Optional advanced fields - collapsed by default */}
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Tax ID (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        name="taxpayerIdentificationNumber"
+                        value={formData.taxpayerIdentificationNumber}
+                        onChange={handleInputChange}
+                        placeholder="Will be auto-generated if empty"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Registration Number (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        name="registrationNumber"
+                        value={formData.registrationNumber}
+                        onChange={handleInputChange}
+                        placeholder="Will be auto-generated if empty"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Compact Footer */}
+                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={closeAddVendorModal}
-                    className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                    className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isFormSubmitting}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isFormSubmitting ? (
                       <>
-                        <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                        <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
                         Adding...
                       </>
                     ) : (
                       <>
-                        <Save size={20} />
+                        <Save size={14} />
                         Add Vendor
                       </>
                     )}

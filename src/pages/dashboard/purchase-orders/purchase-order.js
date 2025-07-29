@@ -1527,165 +1527,162 @@ export default function PurchaseOrdersPage() {
 
       {/* Updated Create PO Modal with Grid View */}
       {isCreatePOModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Plus size={24} className="text-blue-500" />
-                    Create New Purchase Order
-                  </h2>
-                  <p className="text-gray-600 mt-1">Select an RFQ with a selected vendor to create a purchase order</p>
-                </div>
-                <button
-                  onClick={closeCreatePOModal}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-8 max-h-[75vh] overflow-y-auto">
-              {/* Search and Filter Controls */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search RFQs by item name, description, or ID..."
-                    value={rfqSearchTerm}
-                    onChange={(e) => setRfqSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-3 border border-gray-300 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-500" />
-                  <select
-                    value={rfqStatusFilter}
-                    onChange={(e) => setRfqStatusFilter(e.target.value)}
-                    className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[120px]"
-                  >
-                    <option value="open">Open RFQs</option>
-                    <option value="all">All RFQs</option>
-                    <option value="closed">Closed</option>
-                    <option value="awarded">Awarded</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* RFQ Selection Grid */}
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <FileText size={20} className="text-blue-500" />
-                    Available RFQs
-                  </h3>
-                  <div className="text-sm text-gray-500">
-                    {filteredRfqs.length} of {rfqs.length} RFQs ready for PO
-                  </div>
-                </div>
-
-                {filteredRfqs.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-50 rounded-xl">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FileText size={32} className="text-gray-400" />
-                    </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      {rfqSearchTerm || rfqStatusFilter !== "open" 
-                        ? "No RFQs match your criteria" 
-                        : "No Open RFQs Available"}
-                    </h3>
-                    <p className="text-gray-500 mb-4">
-                      {rfqSearchTerm || rfqStatusFilter !== "open"
-                        ? "Try adjusting your search or filter criteria."
-                        : "RFQs need selected vendors before they can be converted to purchase orders."}
-                    </p>
-                    <div className="text-sm text-gray-400">
-                      Only RFQs with selected vendors are shown here
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-80 overflow-y-auto pr-2">
-                    {filteredRfqs.map((rfq) => (
-                      <RfqCard
-                        key={rfq._id}
-                        rfq={rfq}
-                        isSelected={selectedRfqId === rfq._id}
-                        onSelect={handleRfqSelection}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Selected Quote Details */}
-              {selectedQuote && selectedRfqId && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <CheckCircle size={20} className="text-green-500" />
-                    Selected Quote Details
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="bg-white rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Vendor</p>
-                      <p className="text-gray-900 font-semibold">
-                        {rfqs.find((rfq) => rfq._id === selectedRfqId)?.selectedVendor || "N/A"}
-                      </p>
-                    </div>
-                    <div className="bg-white rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Total Price</p>
-                      <p className="text-gray-900 font-semibold text-lg">
-                        MWK {selectedQuote.price?.toFixed(0) || "N/A"}
-                      </p>
-                    </div>
-                    <div className="bg-white rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Delivery Time</p>
-                      <p className="text-gray-900 font-semibold">
-                        {selectedQuote.deliveryTime || "N/A"}
-                      </p>
-                    </div>
-                    <div className="bg-white rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Quote Status</p>
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <Check size={12} className="mr-1" />
-                        Selected
-                      </span>
-                    </div>
-                  </div>
-                  {selectedQuote.notes && (
-                    <div className="mt-4 bg-white rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-600 mb-1">Vendor Notes</p>
-                      <p className="text-gray-900">{selectedQuote.notes}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-                <button
-                  onClick={closeCreatePOModal}
-                  className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
-                >
-                  <X size={20} />
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreatePO}
-                  disabled={!selectedRfqId || !selectedQuote}
-                  className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Save size={20} />
-                  Create Purchase Order
-                </button>
-              </div>
-            </div>
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-end p-4 z-[1000]">
+    <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-hidden shadow-2xl mr-12 transform translate-x-[-20%]">
+      {/* Header with increased padding */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
+            <Plus size={20} className="text-blue-500" />
+            Create Purchase Order
+          </h2>
+          <button
+            onClick={closeCreatePOModal}
+            className="p-2 hover:bg-gray-100 rounded-md transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mt-2">
+          Select an RFQ with a selected vendor to create a purchase order
+        </p>
+      </div>
+      
+      {/* Form Body with increased padding */}
+      <div className="p-6 max-h-[75vh] overflow-y-auto">
+        {/* Search and Filter Controls */}
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search RFQs by item name, description, or ID..."
+              value={rfqSearchTerm}
+              onChange={(e) => setRfqSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-gray-500" />
+            <select
+              value={rfqStatusFilter}
+              onChange={(e) => setRfqStatusFilter(e.target.value)}
+              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm min-w-[140px]"
+            >
+              <option value="open">Open RFQs</option>
+              <option value="all">All RFQs</option>
+              <option value="closed">Closed</option>
+            </select>
           </div>
         </div>
-      )}
+
+        {/* RFQ Selection Grid */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <FileText size={16} className="text-blue-500" />
+              Available RFQs
+            </h3>
+            <div className="text-sm text-gray-500">
+              {filteredRfqs.length} of {rfqs.length} RFQs ready for PO
+            </div>
+          </div>
+
+          {filteredRfqs.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FileText size={28} className="text-gray-400" />
+              </div>
+              <h3 className="text-base font-medium text-gray-900 mb-2">
+                {rfqSearchTerm || rfqStatusFilter !== "open" 
+                  ? "No RFQs match your criteria" 
+                  : "No Open RFQs Available"}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {rfqSearchTerm || rfqStatusFilter !== "open"
+                  ? "Try adjusting your search or filter criteria."
+                  : "RFQs need selected vendors before they can be converted to purchase orders."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto pr-2">
+              {filteredRfqs.map((rfq) => (
+                <RfqCard
+                  key={rfq._id}
+                  rfq={rfq}
+                  isSelected={selectedRfqId === rfq._id}
+                  onSelect={handleRfqSelection}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Selected Quote Details */}
+        {selectedQuote && selectedRfqId && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200 mb-5">
+            <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <CheckCircle size={18} className="text-green-500" />
+              Selected Quote Details
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-white rounded-lg p-3">
+                <p className="text-sm font-medium text-gray-600 mb-1">Vendor</p>
+                <p className="text-base font-semibold truncate">
+                  {rfqs.find((rfq) => rfq._id === selectedRfqId)?.selectedVendor || "N/A"}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-3">
+                <p className="text-sm font-medium text-gray-600 mb-1">Total Price</p>
+                <p className="text-base font-semibold">
+                  MWK {selectedQuote.price?.toFixed(0) || "N/A"}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-3">
+                <p className="text-sm font-medium text-gray-600 mb-1">Delivery Time</p>
+                <p className="text-base font-semibold">
+                  {selectedQuote.deliveryTime || "N/A"}
+                </p>
+              </div>
+              <div className="bg-white rounded-lg p-3">
+                <p className="text-sm font-medium text-gray-600 mb-1">Quote Status</p>
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <Check size={12} className="mr-1" />
+                  Selected
+                </span>
+              </div>
+            </div>
+            {selectedQuote.notes && (
+              <div className="mt-3 bg-white rounded-lg p-3">
+                <p className="text-sm font-medium text-gray-600 mb-1">Vendor Notes</p>
+                <p className="text-sm text-gray-900">{selectedQuote.notes}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <button
+            onClick={closeCreatePOModal}
+            className="px-5 py-2.5 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
+          >
+            <X size={16} />
+            Cancel
+          </button>
+          <button
+            onClick={handleCreatePO}
+            disabled={!selectedRfqId || !selectedQuote}
+            className="px-5 py-2.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save size={16} />
+            Create Purchase Order
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Notification */}
       {showNotification && (

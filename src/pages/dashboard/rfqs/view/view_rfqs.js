@@ -631,33 +631,34 @@ export default function RFQsPage() {
   : process.env.REACT_APP_BACKEND_URL_DEV;
 
   useEffect(() => {
-    const fetchRFQs = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
+   const fetchRFQs = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error("No authentication token found");
+    }
 
-        const response = await fetch(`${backendUrl}/api/rfqs`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+    const response = await fetch(`${backendUrl}/api/rfqs`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-        const data = await response.json();
-        setRfqs(data);
-      } catch (error) {
-        console.error("Failed to fetch RFQs:", error);
-        setRfqs([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const responseData = await response.json();
+    // Extract the data array from the response
+    setRfqs(responseData.data || []);
+  } catch (error) {
+    console.error("Failed to fetch RFQs:", error);
+    setRfqs([]);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
     fetchRFQs();
   }, [backendUrl]);
@@ -765,38 +766,54 @@ export default function RFQsPage() {
     setOpenModal(false);
   };
 
-  const handleRFQSuccess = () => {
-    // Refresh RFQs list after successful creation
-    const fetchRFQs = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
+  const handleRFQSuccess = async () => {
+  setIsLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-        const response = await fetch(`${backendUrl}/api/rfqs`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+    const response = await fetch(`${backendUrl}/api/rfqs`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-        if (response.ok) {
-          const data = await response.json();
-          setRfqs(data);
-        }
-      } catch (error) {
-        console.error("Failed to refresh RFQs:", error);
-      }
-    };
-
-    fetchRFQs();
+    if (response.ok) {
+      const responseData = await response.json();
+      setRfqs(responseData.data || []);
+    }
+  } catch (error) {
+    console.error("Failed to refresh RFQs:", error);
+  } finally {
+    setIsLoading(false);
     handleCloseModal();
-  };
+  }
+};
 
-  const handleRefresh = () => {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000);
-    window.location.reload();
-  };
+ const handleRefresh = async () => {
+  setIsLoading(true);
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const response = await fetch(`${backendUrl}/api/rfqs`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (response.ok) {
+      const responseData = await response.json();
+      setRfqs(responseData.data || []);
+    }
+  } catch (error) {
+    console.error("Failed to refresh RFQs:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50">

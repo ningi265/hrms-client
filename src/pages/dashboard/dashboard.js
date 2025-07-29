@@ -521,62 +521,103 @@ useEffect(() => {
       setActiveSection(section);
     }
   }, [searchParams]);
-    useEffect(() => {
-    const getStats = async () => {
-      try {
-        const token = localStorage.getItem("token"); // Retrieve the token from local storage or your auth context
-            console.log(`Attempting to fetch from: ${backendUrl}/api/requisitions/stats`);
+   
 
-        // Fetch requisitions stats
-        const requisitionsResponse = await fetch(`${backendUrl}/api/requisitions/stats`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+  useEffect(() => {
+  const getStats = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      console.log(`Attempting to fetch from: ${backendUrl}/api/requisitions/stats`);
+
+      // Fetch all stats with Promise.all for better performance
+      const [requisitionsRes, rfqsRes, purchaseOrdersRes, invoicesRes] = await Promise.all([
+        fetch(`${backendUrl}/api/requisitions/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${backendUrl}/api/rfqs/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${backendUrl}/api/purchase-orders/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${backendUrl}/api/invoices/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      // Parse all responses
+      const [requisitionsData, rfqsData, purchaseOrdersData, invoicesData] = await Promise.all([
+        requisitionsRes.json(),
+        rfqsRes.json(),
+        purchaseOrdersRes.json(),
+        invoicesRes.json()
+      ]);
+
+      // Transform the data to match your frontend structure
+      const statsData = {
+        requisitions: {
+          counts: {
+            pending: requisitionsData.data?.counts?.pending || 0,
+            approved: requisitionsData.data?.counts?.approved || 0,
+            rejected: requisitionsData.data?.counts?.rejected || 0,
+            total: requisitionsData.data?.counts?.total || 0
           },
-        });
-        const requisitionsData = await requisitionsResponse.json();
-
-        // Fetch RFQs stats
-        const rfqsResponse = await fetch(`${backendUrl}/api/rfqs/stats`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+          pendingRequisitions: requisitionsData.data?.recentPending || [],
+          urgencyDistribution: requisitionsData.data?.urgencyDistribution || {
+            high: 0,
+            medium: 0,
+            low: 0
+          }
+        },
+        rfqs: {
+          counts: {
+            open: rfqsData.data?.counts?.open || 0,
+            closed: rfqsData.data?.counts?.closed || 0,
+            total: rfqsData.data?.counts?.total || 0
           },
-        });
-        const rfqsData = await rfqsResponse.json();
-
-        // Fetch purchase orders stats
-        const purchaseOrdersResponse = await fetch(`${backendUrl}/api/purchase-orders/stats`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+          openRFQs: rfqsData.data?.openRFQs || []
+        },
+        purchaseOrders: {
+          counts: {
+            pending: purchaseOrdersData.data?.counts?.pending || 0,
+            approved: purchaseOrdersData.data?.counts?.approved || 0,
+            rejected: purchaseOrdersData.data?.counts?.rejected || 0,
+            total: purchaseOrdersData.data?.counts?.total || 0
           },
-        });
-        const purchaseOrdersData = await purchaseOrdersResponse.json();
-
-        // Fetch invoices stats
-        const invoicesResponse = await fetch(`${backendUrl}/api/invoices/stats`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+          pendingPOs: purchaseOrdersData.data?.pendingPOs || []
+        },
+        invoices: {
+          counts: {
+            pending: invoicesData.data?.counts?.pending || 0,
+            approved: invoicesData.data?.counts?.approved || 0,
+            paid: invoicesData.data?.counts?.paid || 0,
+            total: invoicesData.data?.counts?.total || 0
           },
-        });
-        const invoicesData = await invoicesResponse.json();
+          pendingInvoices: invoicesData.data?.pendingInvoices || []
+        }
+      };
 
-        // Combine all stats into a single object
-        const statsData = {
-          requisitions: requisitionsData,
-          rfqs: rfqsData,
-          purchaseOrders: purchaseOrdersData,
-          invoices: invoicesData,
-        };
+      setStats(statsData);
+    } catch (error) {
+      console.error("Failed to fetch dashboard stats:", error);
+      // Set default values when error occurs
+      setStats({
+        requisitions: { 
+          counts: { pending: 0, approved: 0, rejected: 0, total: 0 },
+          pendingRequisitions: [],
+          urgencyDistribution: { high: 0, medium: 0, low: 0 }
+        },
+        rfqs: { counts: { open: 0, closed: 0, total: 0 }, openRFQs: [] },
+        purchaseOrders: { counts: { pending: 0, approved: 0, rejected: 0, total: 0 }, pendingPOs: [] },
+        invoices: { counts: { pending: 0, approved: 0, paid: 0, total: 0 }, pendingInvoices: [] }
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-        setStats(statsData);
-      } catch (error) {
-        console.error("Failed to fetch dashboard stats:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getStats();
-  }, []);
+  getStats();
+}, []);
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
