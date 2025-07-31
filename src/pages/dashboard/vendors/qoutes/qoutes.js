@@ -31,7 +31,7 @@ import {
 import { motion } from "framer-motion";
 import { useAuth } from "../../../../authcontext/authcontext";
 
-export default function VendorRFQsPage() {
+export default function  VendorRFQsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [rfqs, setRfqs] = useState([]);
