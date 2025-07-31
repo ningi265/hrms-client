@@ -48,28 +48,28 @@ import {
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 
-// LoadingOverlay Component
+// LoadingOverlay Component (compact like view_rfqs.js)
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-        <Loader className="animate-spin w-6 h-6 text-blue-500" />
-        <span className="font-medium">{message}</span>
+      <div className="bg-white rounded-2xl p-4 flex items-center gap-3">
+        <Loader className="animate-spin w-5 h-5 text-blue-500" />
+        <span className="font-medium text-sm">{message}</span>
       </div>
     </div>
   );
 };
 
-// MetricCard Component (styled like vendors.js)
+// MetricCard Component (compact and rounded like view_rfqs.js)
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
   const cardClass = size === "large" ? "col-span-2" : "";
-  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  const valueSize = size === "large" ? "text-2xl" : "text-lg";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+    <div className={`bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className={`p-1 rounded-lg ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -78,7 +78,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={14} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -89,11 +89,11 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           } />
         </div>
         {trend && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {trend > 0 ? (
-              <TrendingUp size={14} className="text-emerald-500" />
+              <TrendingUp size={10} className="text-emerald-500" />
             ) : (
-              <TrendingDown size={14} className="text-red-500" />
+              <TrendingDown size={10} className="text-red-500" />
             )}
             <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {trend > 0 ? '+' : ''}{trend}%
@@ -101,10 +101,10 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           </div>
         )}
       </div>
-      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+      <div className={`${valueSize} font-bold text-gray-900 mb-0.5`}>
         {prefix}{value}{suffix}
       </div>
-      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">{title}</div>
       {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
     </div>
   );
@@ -1250,19 +1250,7 @@ export default function PurchaseOrdersPage() {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Purchase Orders</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Order tracking</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Shield className="w-4 h-4 text-blue-500" />
-                <span>Approval rate: {totalPOs > 0 ? Math.round((approvedPOs / totalPOs) * 100) : 0}%</span>
-              </div>
-            </div>
-          </div>
+
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

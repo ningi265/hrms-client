@@ -255,13 +255,13 @@ const fetchData = async () => {
   return (
     <div className="h-full flex flex-col">
       {/* Progress Bar */}
-      <div className="px-8 py-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center justify-between mb-4">
+      <div className="px-6 py-3 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Step {currentStep + 1} of {steps.length}</h3>
-            <p className="text-sm text-gray-600">{steps[currentStep].description}</p>
+            <h3 className="text-base font-semibold text-gray-900">Step {currentStep + 1} of {steps.length}</h3>
+            <p className="text-xs text-gray-600">{steps[currentStep].description}</p>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-xs text-gray-500">
             {Math.round(((currentStep + 1) / steps.length) * 100)}% Complete
           </div>
         </div>

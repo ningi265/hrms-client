@@ -44,7 +44,7 @@ const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+      <div className="bg-white rounded-2xl p-6 flex items-center gap-3">
         <Loader className="animate-spin w-6 h-6 text-blue-500" />
         <span className="font-medium">{message}</span>
       </div>
@@ -58,9 +58,9 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   const valueSize = size === "large" ? "text-4xl" : "text-2xl";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+    <div className={`bg-white rounded-2xl border border-gray-200 p-1.5 hover:shadow-sm transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className={`p-1.5 rounded-xl ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -68,7 +68,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={16} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -80,9 +80,9 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
         {trend && (
           <div className="flex items-center gap-1">
             {trend > 0 ? (
-              <TrendingUp size={14} className="text-emerald-500" />
+            <TrendingUp size={12} className="text-emerald-500" />
             ) : (
-              <TrendingDown size={14} className="text-red-500" />
+            <TrendingDown size={12} className="text-red-500" />
             )}
             <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {trend > 0 ? '+' : ''}{trend}%
@@ -128,15 +128,15 @@ const DepartmentCard = ({ department, onMenuClick, showMenuId, onDelete, actionL
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Building2 className="w-5 h-5 text-blue-600" />
+    <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="p-1.5 bg-blue-50 rounded-xl">
+            <Building2 className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900">{department.name}</h4>
-            <p className="text-sm text-gray-500">{department.departmentHead}</p>
+            <h4 className="font-semibold text-sm text-gray-900">{department.name}</h4>
+            <p className="text-xs text-gray-500">{department.departmentHead}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -146,27 +146,27 @@ const DepartmentCard = ({ department, onMenuClick, showMenuId, onDelete, actionL
           <button
             data-department-id={department._id}
             onClick={() => onMenuClick(department._id)}
-            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+            className="p-1 text-gray-400 hover:text-blue-600 rounded-xl"
           >
             <MoreVertical size={16} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-gray-900">{department.employeeCount || 0}</div>
+      <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+        <div className="text-center p-1.5 bg-gray-50 rounded-xl">
+          <div className="text-base font-bold text-gray-900">{department.employeeCount || 0}</div>
           <div className="text-xs text-gray-500">Employees</div>
         </div>
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className={`text-lg font-bold ${getPerformanceColor(department.performance || 0)}`}>
+        <div className="text-center p-1.5 bg-gray-50 rounded-xl">
+          <div className={`text-base font-bold ${getPerformanceColor(department.performance || 0)}`}>
             {department.performance || 0}%
           </div>
           <div className="text-xs text-gray-500">Performance</div>
         </div>
       </div>
 
-      <div className="space-y-2 mb-3">
+      <div className="space-y-0.5 mb-1.5">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Budget</span>
           <span className="text-xs font-medium">{formatBudget(department.budget || 0)}</span>
@@ -184,7 +184,7 @@ const DepartmentCard = ({ department, onMenuClick, showMenuId, onDelete, actionL
       </div>
 
       {department.goals && department.goals.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="text-xs text-gray-600 mb-1">Goals</div>
           <div className="flex flex-wrap gap-1">
             {department.goals.slice(0, 2).map((goal, idx) => (
@@ -201,16 +201,16 @@ const DepartmentCard = ({ department, onMenuClick, showMenuId, onDelete, actionL
         </div>
       )}
 
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+      <div className="flex justify-between items-center pt-1.5 border-t border-gray-100">
         <div className="flex items-center gap-2 text-xs text-gray-500">
           <Mail size={12} />
           <span className="truncate">{department.headEmail}</span>
         </div>
         <div className="flex gap-1">
-          <button className="p-1 text-gray-400 hover:text-blue-600">
+          <button className="p-1 text-gray-400 hover:text-blue-600 rounded-xl">
             <Eye size={14} />
           </button>
-          <button className="p-1 text-gray-400 hover:text-blue-600">
+          <button className="p-1 text-gray-400 hover:text-blue-600 rounded-xl">
             <Edit size={14} />
           </button>
         </div>
@@ -450,7 +450,7 @@ export default function DepartmentsPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">{error}</div>
       </div>
     )
   }
@@ -463,19 +463,6 @@ export default function DepartmentsPage() {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Department Management</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Real-time monitoring</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Shield className="w-4 h-4 text-blue-500" />
-                <span>Active departments: {activeDepartments}</span>
-              </div>
-            </div>
-          </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -484,20 +471,20 @@ export default function DepartmentsPage() {
                 placeholder="Search departments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
               />
             </div>
             <button
               onClick={handleRefresh}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
             <button
               onClick={openAddDepartmentModal}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors"
             >
               <Plus size={16} />
               Add Department
@@ -541,7 +528,7 @@ export default function DepartmentsPage() {
         </div>
 
         {/* Department Cards */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Building2 className="w-5 h-5 text-gray-600" />
@@ -554,7 +541,7 @@ export default function DepartmentsPage() {
 
           {filteredDepartments.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Building2 size={32} className="text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -567,14 +554,14 @@ export default function DepartmentsPage() {
               </p>
               <button
                 onClick={openAddDepartmentModal}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 mx-auto"
               >
                 <Plus size={16} />
                 Add Department
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredDepartments.map((department) => (
                 <DepartmentCard
                   key={department._id}
@@ -605,7 +592,7 @@ export default function DepartmentsPage() {
     <motion.div
       initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed z-[101] w-56 bg-white rounded-lg shadow-xl border border-gray-200"
+      className="fixed z-[101] w-56 bg-white rounded-2xl shadow-xl border border-gray-200"
       style={{
         top: (() => {
           const button = document.querySelector(`[data-department-id="${showMenuId}"]`);
@@ -642,7 +629,7 @@ export default function DepartmentsPage() {
             navigate(`/dashboard/departments/${showMenuId}`);
             setShowMenuId(null);
           }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
         >
           <Eye size={16} className="text-gray-500" />
           View Details
@@ -654,7 +641,7 @@ export default function DepartmentsPage() {
             navigate(`/dashboard/departments/${showMenuId}/edit`);
             setShowMenuId(null);
           }}
-          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+          className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
         >
           <Edit size={16} className="text-gray-500" />
           Edit Department
@@ -665,7 +652,7 @@ export default function DepartmentsPage() {
         <button
           onClick={() => handleDeleteDepartment(showMenuId)}
           disabled={actionLoading === showMenuId}
-          className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm"
+          className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm rounded-xl"
         >
           <Trash2 size={16} />
           Delete Department
@@ -693,7 +680,7 @@ export default function DepartmentsPage() {
           </h2>
           <button
             onClick={closeAddDepartmentModal}
-            className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-2xl transition-colors"
           >
             <X size={18} />
           </button>
@@ -715,7 +702,7 @@ export default function DepartmentsPage() {
                 onChange={handleInputChange}
                 required
                 placeholder="e.g., Engineering"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -727,7 +714,7 @@ export default function DepartmentsPage() {
                 value={formData.status}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="active">Active</option>
                 <option value="restructuring">Restructuring</option>
@@ -749,7 +736,7 @@ export default function DepartmentsPage() {
               required
               rows={3}
               placeholder="Department's purpose and responsibilities"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
@@ -765,7 +752,7 @@ export default function DepartmentsPage() {
                 onChange={handleInputChange}
                 required
                 placeholder="e.g., John Smith"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -779,7 +766,7 @@ export default function DepartmentsPage() {
                 onChange={handleInputChange}
                 required
                 placeholder="john.smith@company.com"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -796,7 +783,7 @@ export default function DepartmentsPage() {
                 onChange={handleInputChange}
                 required
                 placeholder="+1 (555) 123-4567"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -826,7 +813,7 @@ export default function DepartmentsPage() {
                 onChange={handleInputChange}
                 required
                 placeholder="e.g., 500000"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -840,7 +827,7 @@ export default function DepartmentsPage() {
                 onChange={handleInputChange}
                 required
                 placeholder="e.g., Building A, Floor 3"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -869,7 +856,7 @@ export default function DepartmentsPage() {
                 value={formData.building}
                 onChange={handleInputChange}
                 placeholder="e.g., Building A"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             <div>
@@ -882,7 +869,7 @@ export default function DepartmentsPage() {
                 value={formData.floor}
                 onChange={handleInputChange}
                 placeholder="e.g., Floor 3"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
           </div>
@@ -896,7 +883,7 @@ export default function DepartmentsPage() {
               value={formData.goals}
               onChange={handleInputChange}
               multiple
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500 min-h-[100px]"
             >
               <option value="Product Development">Product Development</option>
               <option value="Technical Innovation">Technical Innovation</option>
@@ -924,7 +911,7 @@ export default function DepartmentsPage() {
                 {formData.goals.map((goal, index) => (
                   <span
                     key={index}
-                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                    className="inline-flex items-center px-2 py-0.5 rounded-2xl text-xs font-medium bg-blue-100 text-blue-800"
                   >
                     {goal}
                     <button
@@ -943,7 +930,7 @@ export default function DepartmentsPage() {
                 ))}
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                Hold <kbd className="px-1 py-0.5 bg-gray-100 rounded">Ctrl</kbd> (Windows) or <kbd className="px-1 py-0.5 bg-gray-100 rounded">Cmd</kbd> (Mac) to select multiple
+                Hold <kbd className="px-1 py-0.5 bg-gray-100 rounded-xl">Ctrl</kbd> (Windows) or <kbd className="px-1 py-0.5 bg-gray-100 rounded-xl">Cmd</kbd> (Mac) to select multiple
               </p>
             </div>
           </div>
@@ -953,14 +940,14 @@ export default function DepartmentsPage() {
             <button
               type="button"
               onClick={closeAddDepartmentModal}
-              className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-colors font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isFormSubmitting}
-              className="px-4 py-2 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-xs bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isFormSubmitting ? (
                 <>
@@ -990,7 +977,7 @@ export default function DepartmentsPage() {
           className="fixed bottom-4 right-4 z-50"
         >
           <div
-            className={`px-6 py-4 rounded-xl shadow-2xl border ${
+            className={`px-6 py-4 rounded-2xl shadow-2xl border ${
               notificationType === "success"
                 ? "bg-green-50 text-green-800 border-green-200"
                 : "bg-red-50 text-red-800 border-red-200"

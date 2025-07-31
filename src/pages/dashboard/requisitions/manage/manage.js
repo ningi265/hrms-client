@@ -37,7 +37,7 @@ const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+      <div className="bg-white rounded-2xl p-6 flex items-center gap-3">
         <Loader className="animate-spin w-6 h-6 text-blue-500" />
         <span className="font-medium">{message}</span>
       </div>
@@ -51,9 +51,9 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   const valueSize = size === "large" ? "text-4xl" : "text-2xl";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+    <div className={`bg-white rounded-2xl border border-gray-200 p-1.5 hover:shadow-sm transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className={`p-1.5 rounded-xl ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -62,7 +62,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={16} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -75,9 +75,9 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
         {trend && (
           <div className="flex items-center gap-1">
             {trend > 0 ? (
-              <TrendingUp size={14} className="text-emerald-500" />
+              <TrendingUp size={12} className="text-emerald-500" />
             ) : (
-              <TrendingDown size={14} className="text-red-500" />
+              <TrendingDown size={12} className="text-red-500" />
             )}
             <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {trend > 0 ? '+' : ''}{trend}%
@@ -97,17 +97,17 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
 // Requisition Card Component (styled like vehicle cards)
 const RequisitionCard = ({ requisition, onMenuClick, showMenuId, onAction, onView, onDownload, getUrgencyColor, getUrgencyIcon, formatDate }) => {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <Package className="w-5 h-5 text-blue-600" />
+    <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="p-1.5 bg-blue-50 rounded-xl">
+            <Package className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900">
+            <h4 className="font-semibold text-sm text-gray-900">
               {requisition.itemName || "N/A"}
             </h4>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs text-gray-500">
               {requisition.employee?.firstName || "Unknown Employee"}
             </p>
           </div>
@@ -120,22 +120,22 @@ const RequisitionCard = ({ requisition, onMenuClick, showMenuId, onAction, onVie
           <button
             data-requisition-id={requisition._id}
             onClick={() => onMenuClick(requisition._id)}
-            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+            className="p-1 text-gray-400 hover:text-blue-600 rounded-xl"
           >
             <MoreVertical size={16} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-gray-900">
+      <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+        <div className="text-center p-1.5 bg-gray-50 rounded-xl">
+          <div className="text-base font-bold text-gray-900">
             {requisition.quantity || 0}
           </div>
           <div className="text-xs text-gray-500">Quantity</div>
         </div>
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
+        <div className="text-center p-1.5 bg-gray-50 rounded-xl">
+          <div className="text-base font-bold text-gray-900 flex items-center justify-center gap-1">
             <DollarSign className="w-4 h-4 text-green-500" />
             {requisition.budgetCode?.slice(-4) || "N/A"}
           </div>
@@ -143,7 +143,7 @@ const RequisitionCard = ({ requisition, onMenuClick, showMenuId, onAction, onVie
         </div>
       </div>
 
-      <div className="space-y-2 mb-3">
+      <div className="space-y-0.5 mb-1.5">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Employee</span>
           <span className="text-xs font-medium truncate">{requisition.employee?.email || "N/A"}</span>
@@ -159,7 +159,7 @@ const RequisitionCard = ({ requisition, onMenuClick, showMenuId, onAction, onVie
       </div>
 
       {requisition.description && (
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="text-xs text-gray-600 mb-1">Description</div>
           <div className="text-xs text-gray-800 bg-gray-50 p-2 rounded line-clamp-2">
             {requisition.description}
@@ -167,7 +167,7 @@ const RequisitionCard = ({ requisition, onMenuClick, showMenuId, onAction, onVie
         </div>
       )}
 
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+      <div className="flex justify-between items-center pt-1.5 border-t border-gray-100">
         <div className="flex gap-2">
           <button
             onClick={() => onAction(requisition._id, "approve")}
@@ -187,13 +187,13 @@ const RequisitionCard = ({ requisition, onMenuClick, showMenuId, onAction, onVie
         <div className="flex gap-1">
           <button 
             onClick={() => onView(requisition._id)}
-            className="p-1 text-gray-400 hover:text-blue-600"
+            className="p-1 text-gray-400 hover:text-blue-600 rounded-xl"
           >
             <Eye size={14} />
           </button>
           <button 
             onClick={() => onDownload(requisition._id)}
-            className="p-1 text-gray-400 hover:text-blue-600"
+            className="p-1 text-gray-400 hover:text-blue-600 rounded-xl"
           >
             <Download size={14} />
           </button>
@@ -394,14 +394,14 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <AlertCircle size={32} className="text-red-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Something went wrong</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-4 py-2 bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors"
           >
             Try Again
           </button>
@@ -418,19 +418,7 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Requisition Management</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Processing queue</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Shield className="w-4 h-4 text-blue-500" />
-                <span>Approval workflow: Active</span>
-              </div>
-            </div>
-          </div>
+
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -439,13 +427,13 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
                 placeholder="Search requisitions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              className="px-3 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
             >
               <option value="all">All Urgency</option>
               <option value="high">High Urgency</option>
@@ -455,7 +443,7 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
             <button
               onClick={handleRefresh}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
               Refresh
@@ -498,7 +486,7 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
         </div>
 
         {/* Requisitions Cards */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-gray-600" />
@@ -511,7 +499,7 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
 
           {filteredRequisitions.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Package size={32} className="text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -524,14 +512,14 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
               </p>
               <button
                 onClick={handleRefresh}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 mx-auto"
               >
                 <RefreshCw size={16} />
                 Refresh
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredRequisitions.map((requisition) => (
                 <RequisitionCard
                   key={requisition._id}
@@ -560,7 +548,7 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
           ></div>
           
           <div 
-            className="fixed z-[101] w-64 bg-white rounded-xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
+            className="fixed z-[101] w-64 bg-white rounded-2xl shadow-2xl border border-gray-200/50 backdrop-blur-sm"
             style={{
               top: (() => {
                 const button = document.querySelector(`[data-requisition-id="${showMenuId}"]`);

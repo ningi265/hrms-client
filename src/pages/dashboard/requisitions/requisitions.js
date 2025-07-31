@@ -824,22 +824,6 @@ export default function NewRequisition() {
                 </div>
                 New Requisition Request
               </h1>
-              <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                <div className="flex items-center gap-1">
-                  <Activity className="w-4 h-4 text-emerald-500" />
-                  <span>Real-time processing</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Shield className="w-4 h-4 text-blue-500" />
-                  <span>Secure procurement</span>
-                </div>
-                {budgetError && (
-                  <div className="flex items-center gap-1">
-                    <AlertTriangle className="w-4 h-4 text-amber-500" />
-                    <span>Using cached budget data</span>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
           
