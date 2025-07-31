@@ -646,12 +646,7 @@ export default function Home() {
         
         <div className="container mx-auto px-4 md:px-6 relative z-10">
           <div className="flex flex-col lg:flex-row items-center gap-12">
-            <div className="lg:w-1/2">
-              <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6 hover:scale-105 transition-transform">
-                <Sparkles className="w-4 h-4" />
-                <span>Trusted by 500+ companies worldwide</span>
-              </div>
-              
+            <div className="lg:w-1/2"> 
               <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
                 Transform Your 
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 block">Procurement</span> 
