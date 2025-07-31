@@ -47,9 +47,9 @@ export default function VendorRFQsPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isSubmittingQuote, setIsSubmittingQuote] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Log the token and user role when the component mounts
   useEffect(() => {
@@ -74,9 +74,9 @@ export default function VendorRFQsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setRfqs(data);
+        setRfqs(data.data); // Access the data array from the response
         // Filter RFQs where the vendor's email matches
-        const vendorRFQs = data.filter((rfq) =>
+        const vendorRFQs = data.data.filter((rfq) =>
           rfq.vendors.some((vendor) => vendor.email === user?.email)
         );
         setFilteredRFQs(vendorRFQs);
@@ -266,6 +266,18 @@ export default function VendorRFQsPage() {
 
   const hasSubmittedQuote = (rfq) => {
     return rfq.quotes?.some(quote => quote.vendorEmail === user?.email);
+  };
+
+  // Helper function to get procurement officer name
+  const getOfficerName = (rfq) => {
+    if (rfq.procurementOfficer?.name) return rfq.procurementOfficer.name;
+    if (rfq.procurementOfficer?.email) return rfq.procurementOfficer.email;
+    return "N/A";
+  };
+
+  // Helper function to get company name
+  const getCompanyName = (rfq) => {
+    return rfq.company?.name || "N/A";
   };
 
   if (isLoading) {
@@ -509,6 +521,10 @@ export default function VendorRFQsPage() {
                   </div>
                   <div>Quantity</div>
                   <div className="flex items-center gap-2">
+                    <Building size={16} />
+                    Company
+                  </div>
+                  <div className="flex items-center gap-2">
                     <User size={16} />
                     Procurement Officer
                   </div>
@@ -555,12 +571,18 @@ export default function VendorRFQsPage() {
                     </div>
 
                     <div>
+                      <span className="text-gray-700">
+                        {getCompanyName(rfq)}
+                      </span>
+                    </div>
+
+                    <div>
                       <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                           <User size={14} className="text-white" />
                         </div>
                         <span className="text-gray-700 font-medium">
-                          {rfq.procurementOfficer?.name || "N/A"}
+                          {getOfficerName(rfq)}
                         </span>
                       </div>
                     </div>
@@ -671,8 +693,12 @@ export default function VendorRFQsPage() {
                       <p className="font-semibold text-gray-900">{selectedRFQ?.quantity}</p>
                     </div>
                     <div>
+                      <span className="text-gray-500">Company:</span>
+                      <p className="font-semibold text-gray-900">{getCompanyName(selectedRFQ)}</p>
+                    </div>
+                    <div>
                       <span className="text-gray-500">Procurement Officer:</span>
-                      <p className="font-semibold text-gray-900">{selectedRFQ?.procurementOfficer?.name}</p>
+                      <p className="font-semibold text-gray-900">{getOfficerName(selectedRFQ)}</p>
                     </div>
                     <div>
                       <span className="text-gray-500">Deadline:</span>
@@ -680,7 +706,45 @@ export default function VendorRFQsPage() {
                         {selectedRFQ?.deadline ? formatDate(selectedRFQ.deadline) : "No deadline"}
                       </p>
                     </div>
+                    <div>
+                      <span className="text-gray-500">Priority:</span>
+                      <p className="font-semibold text-gray-900 capitalize">
+                        {selectedRFQ?.priority || "N/A"}
+                      </p>
+                    </div>
+                    {selectedRFQ?.estimatedBudget && (
+                      <div>
+                        <span className="text-gray-500">Estimated Budget:</span>
+                        <p className="font-semibold text-gray-900">
+                          ${selectedRFQ.estimatedBudget.toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                    {selectedRFQ?.deliveryLocation && (
+                      <div>
+                        <span className="text-gray-500">Delivery Location:</span>
+                        <p className="font-semibold text-gray-900">
+                          {selectedRFQ.deliveryLocation}
+                        </p>
+                      </div>
+                    )}
                   </div>
+                  {selectedRFQ?.description && (
+                    <div className="mt-4">
+                      <span className="text-gray-500">Description:</span>
+                      <p className="font-medium text-gray-900 mt-1">
+                        {selectedRFQ.description}
+                      </p>
+                    </div>
+                  )}
+                  {selectedRFQ?.specifications && (
+                    <div className="mt-4">
+                      <span className="text-gray-500">Specifications:</span>
+                      <p className="font-medium text-gray-900 mt-1">
+                        {selectedRFQ.specifications}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Quote Form */}

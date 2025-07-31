@@ -39,14 +39,14 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 
-// LoadingOverlay Component
+// LoadingOverlay Component (compact like view_rfqs.js)
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-        <Loader className="animate-spin w-6 h-6 text-blue-500" />
-        <span className="font-medium">{message}</span>
+      <div className="bg-white rounded-2xl p-4 flex items-center gap-3">
+        <Loader className="animate-spin w-5 h-5 text-blue-500" />
+        <span className="font-medium text-sm">{message}</span>
       </div>
     </div>
   );

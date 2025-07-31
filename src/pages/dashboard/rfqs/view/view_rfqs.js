@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link,useSearchParams, useNavigate } from "react-router-dom";
 import {
   Package,
   Tag,
@@ -65,9 +65,9 @@ const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-        <Loader className="animate-spin w-6 h-6 text-blue-500" />
-        <span className="font-medium">{message}</span>
+      <div className="bg-white rounded-2xl p-4 flex items-center gap-3">
+        <Loader className="animate-spin w-5 h-5 text-blue-500" />
+        <span className="font-medium text-sm">{message}</span>
       </div>
     </div>
   );
@@ -76,12 +76,12 @@ const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
 // MetricCard Component (styled like vendors.js)
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
   const cardClass = size === "large" ? "col-span-2" : "";
-  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  const valueSize = size === "large" ? "text-2xl" : "text-lg";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+    <div className={`bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className={`p-1 rounded-lg ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -90,7 +90,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={14} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -101,11 +101,11 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           } />
         </div>
         {trend && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {trend > 0 ? (
-              <TrendingUp size={14} className="text-emerald-500" />
+              <TrendingUp size={10} className="text-emerald-500" />
             ) : (
-              <TrendingDown size={14} className="text-red-500" />
+              <TrendingDown size={10} className="text-red-500" />
             )}
             <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {trend > 0 ? '+' : ''}{trend}%
@@ -113,10 +113,10 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           </div>
         )}
       </div>
-      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+      <div className={`${valueSize} font-bold text-gray-900 mb-0.5`}>
         {prefix}{value}{suffix}
       </div>
-      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">{title}</div>
       {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
     </div>
   );
@@ -497,51 +497,51 @@ const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId,
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <FileText className="w-5 h-5 text-blue-600" />
+    <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="p-1 bg-blue-50 rounded-lg">
+            <FileText className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900">
+            <h4 className="font-semibold text-sm text-gray-900">
               {rfqId}
             </h4>
-            <p className="text-sm text-gray-500">{rfq.itemName || "N/A"}</p>
+            <p className="text-xs text-gray-500">{rfq.itemName || "N/A"}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${getStatusColor(rfq.status)}`}>
+        <div className="flex items-center gap-1">
+          <span className={`px-1.5 py-0.5 text-xs font-medium rounded-full flex items-center gap-1 ${getStatusColor(rfq.status)}`}>
             {getStatusIcon(rfq.status)}
             {rfq.status}
           </span>
           <button
             data-rfq-id={rfqId}
             onClick={() => onMenuClick(rfqId)}
-            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+            className="p-0.5 text-gray-400 hover:text-blue-600 rounded"
           >
-            <MoreVertical size={16} />
+            <MoreVertical size={14} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-gray-900">
+      <div className="grid grid-cols-2 gap-2 mb-2">
+        <div className="text-center p-1.5 bg-gray-50 rounded-lg">
+          <div className="text-base font-bold text-gray-900">
             {rfq.quantity || 0}
           </div>
           <div className="text-xs text-gray-500">Quantity</div>
         </div>
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-gray-900 flex items-center justify-center gap-1">
-            <MessageSquare className="w-4 h-4 text-blue-500" />
+        <div className="text-center p-1.5 bg-gray-50 rounded-lg">
+          <div className="text-base font-bold text-gray-900 flex items-center justify-center gap-1">
+            <MessageSquare className="w-3 h-3 text-blue-500" />
             {rfq.quotes?.length || 0}
           </div>
           <div className="text-xs text-gray-500">Quotes</div>
         </div>
       </div>
 
-      <div className="space-y-2 mb-3">
+      <div className="space-y-1 mb-2">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Created</span>
           <span className="text-xs font-medium">
@@ -568,25 +568,25 @@ const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId,
       </div>
 
       {rfq.selectedVendor && (
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="text-xs text-gray-600 mb-1">Selected Vendor</div>
-          <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 flex items-center gap-1 w-fit">
-            <CheckCircle size={12} />
+          <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+            <CheckCircle size={10} />
             {rfq.selectedVendor}
           </span>
         </div>
       )}
 
       {rfq.description && (
-        <div className="mb-3">
-          <div className="text-xs text-gray-600 mb-1">Description</div>
-          <div className="text-sm text-gray-800 line-clamp-2">
+        <div className="mb-2">
+          <div className="text-xs text-gray-600 mb-0.5">Description</div>
+          <div className="text-xs text-gray-800 line-clamp-2">
             {rfq.description}
           </div>
         </div>
       )}
 
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+      <div className="flex justify-between items-center pt-1.5 border-t border-gray-100">
         <div className="flex items-center gap-1">
           <span className="text-xs text-gray-500">
             Progress: {rfq.quotes?.length || 0}/{rfq.vendors?.length || 0}
@@ -595,12 +595,12 @@ const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId,
         <div className="flex gap-1">
           <Link
             to={`/dashboard/rfqs/${rfq.id || rfq._id}`}
-            className="p-1 text-gray-400 hover:text-blue-600"
+            className="p-0.5 text-gray-400 hover:text-blue-600 rounded"
           >
-            <Eye size={14} />
+            <Eye size={12} />
           </Link>
-          <button className="p-1 text-gray-400 hover:text-blue-600">
-            <Edit size={14} />
+          <button className="p-0.5 text-gray-400 hover:text-blue-600 rounded">
+            <Edit size={12} />
           </button>
         </div>
       </div>
@@ -610,6 +610,7 @@ const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId,
 
 export default function RFQsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [rfqs, setRfqs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -622,7 +623,10 @@ export default function RFQsPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
-  
+  const [searchParams] = useSearchParams();
+  const [activeSection, setActiveSection] = useState(() => {
+    return searchParams.get('section') || 'dashboard' ;
+  });
   // Vendor selection modal state
   const [showVendorSelectionModal, setShowVendorSelectionModal] = useState(false);
   const [selectedRFQForVendor, setSelectedRFQForVendor] = useState(null);
@@ -668,6 +672,14 @@ export default function RFQsPage() {
     const matchesStatus = statusFilter === "all" || rfq.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const handleSectionChange = (section) =>{
+    navigate(`?section=${section}`, { replace: true });
+  };
+
+  const handleCreateRFQ = () => {
+    handleSectionChange("create-rfq");
+  }
 
   // Calculate stats - handle undefined values safely
   const totalRFQs = rfqs?.length || 0;
@@ -826,19 +838,7 @@ export default function RFQsPage() {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Request for Quotations</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>RFQ monitoring</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Shield className="w-4 h-4 text-blue-500" />
-                <span>Response rate: {totalRFQs > 0 ? Math.round((totalQuotes / totalRFQs) * 100) : 0}%</span>
-              </div>
-            </div>
-          </div>
+         
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -869,7 +869,7 @@ export default function RFQsPage() {
               Refresh
             </button>
             <button
-              onClick={handleOpenModal}
+              onClick={handleCreateRFQ}
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
             >
               <Plus size={16} />
@@ -938,7 +938,7 @@ export default function RFQsPage() {
                   : "Start by creating your first RFQ to begin receiving quotes."}
               </p>
               <button
-                onClick={handleOpenModal}
+                onClick={handleCreateRFQ}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
               >
                 <Plus size={16} />
@@ -946,7 +946,7 @@ export default function RFQsPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredRFQs.map((rfq, index) => {
                 const rfqId = `rfq-${String(index + 1).padStart(3, '0')}`;
                 return (
@@ -1111,8 +1111,7 @@ export default function RFQsPage() {
         selectedVendor={selectedRFQForVendor?.selectedVendor}
       />
 
-      {/* Create RFQ Modal - Keep Original Functionality */}
-      {openModal && (
+      {/* Create RFQ Modal - Keep Original Functionality --  {openModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -1144,7 +1143,8 @@ export default function RFQsPage() {
             </div>
           </motion.div>
         </div>
-      )}
+      )} */}
+     
 
       {/* Notification */}
       {showNotification && (

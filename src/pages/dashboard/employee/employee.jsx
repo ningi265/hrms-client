@@ -46,7 +46,7 @@ const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+      <div className="bg-white rounded-2xl p-6 flex items-center gap-3">
         <Loader className="animate-spin w-6 h-6 text-blue-500" />
         <span className="font-medium">{message}</span>
       </div>
@@ -60,9 +60,9 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   const valueSize = size === "large" ? "text-4xl" : "text-2xl";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+    <div className={`bg-white rounded-2xl border border-gray-200 p-1.5 hover:shadow-sm transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className={`p-1.5 rounded-xl ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -70,7 +70,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={16} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -82,9 +82,9 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
         {trend && (
           <div className="flex items-center gap-1">
             {trend > 0 ? (
-              <TrendingUp size={14} className="text-emerald-500" />
+              <TrendingUp size={12} className="text-emerald-500" />
             ) : (
-              <TrendingDown size={14} className="text-red-500" />
+              <TrendingDown size={12} className="text-red-500" />
             )}
             <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {trend > 0 ? '+' : ''}{trend}%
@@ -116,17 +116,17 @@ const EmployeeCard = ({ employee, onMenuClick, showMenuId, onDelete, actionLoadi
   const employeeDepartment = findEmployeeDepartment(employeeId);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-50 rounded-lg">
-            <User className="w-5 h-5 text-blue-600" />
+    <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-1.5">
+          <div className="p-1.5 bg-blue-50 rounded-xl">
+            <User className="w-4 h-4 text-blue-600" />
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900">
+            <h4 className="font-semibold text-sm text-gray-900">
               {`${employee.firstName || ''} ${employee.lastName || ''}`.trim() || "N/A"}
             </h4>
-            <p className="text-sm text-gray-500">{employee.position || "N/A"}</p>
+            <p className="text-xs text-gray-500">{employee.position || "N/A"}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -136,22 +136,22 @@ const EmployeeCard = ({ employee, onMenuClick, showMenuId, onDelete, actionLoadi
           <button
             data-employee-id={employeeId}
             onClick={() => onMenuClick(employeeId)}
-            className="p-1 text-gray-400 hover:text-blue-600 rounded"
+            className="p-1 text-gray-400 hover:text-blue-600 rounded-xl"
           >
             <MoreVertical size={16} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-gray-900">
+      <div className="grid grid-cols-2 gap-1.5 mb-1.5">
+        <div className="text-center p-1.5 bg-gray-50 rounded-xl">
+          <div className="text-base font-bold text-gray-900">
             ${employee.salary ? employee.salary.toLocaleString() : 0}
           </div>
           <div className="text-xs text-gray-500">Salary</div>
         </div>
-        <div className="text-center p-2 bg-gray-50 rounded">
-          <div className="text-lg font-bold text-gray-900">
+        <div className="text-center p-1.5 bg-gray-50 rounded-xl">
+          <div className="text-base font-bold text-gray-900">
             {employee.hireDate 
               ? `${Math.floor((new Date() - new Date(employee.hireDate)) / (1000 * 60 * 60 * 24 * 365))}` 
               : 0}
@@ -160,7 +160,7 @@ const EmployeeCard = ({ employee, onMenuClick, showMenuId, onDelete, actionLoadi
         </div>
       </div>
 
-      <div className="space-y-2 mb-3">
+      <div className="space-y-0.5 mb-1.5">
         <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Email</span>
           <span className="text-xs font-medium truncate">{employee.email || "N/A"}</span>
@@ -178,7 +178,7 @@ const EmployeeCard = ({ employee, onMenuClick, showMenuId, onDelete, actionLoadi
       </div>
 
       {employee.skills && employee.skills.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="text-xs text-gray-600 mb-1">Skills</div>
           <div className="flex flex-wrap gap-1">
             {employee.skills.slice(0, 2).map((skill, idx) => (
@@ -195,15 +195,15 @@ const EmployeeCard = ({ employee, onMenuClick, showMenuId, onDelete, actionLoadi
         </div>
       )}
 
-      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+      <div className="flex justify-between items-center pt-1.5 border-t border-gray-100">
         <span className="text-xs text-gray-500">
           Hired: {employee.hireDate ? new Date(employee.hireDate).toLocaleDateString() : "N/A"}
         </span>
         <div className="flex gap-1">
-          <button className="p-1 text-gray-400 hover:text-blue-600">
+          <button className="p-1 text-gray-400 hover:text-blue-600 rounded-xl">
             <Eye size={14} />
           </button>
-          <button className="p-1 text-gray-400 hover:text-blue-600">
+          <button className="p-1 text-gray-400 hover:text-blue-600 rounded-xl">
             <Edit size={14} />
           </button>
         </div>
@@ -665,7 +665,7 @@ export default function EmployeesPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">
           {error}
         </div>
       </div>
@@ -680,19 +680,7 @@ export default function EmployeesPage() {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Employee Management</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Real-time monitoring</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Shield className="w-4 h-4 text-blue-500" />
-                <span>Team health: {Math.round((activeEmployees / totalEmployees) * 100) || 0}%</span>
-              </div>
-            </div>
-          </div>
+
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -701,20 +689,20 @@ export default function EmployeesPage() {
                 placeholder="Search employees..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
               />
             </div>
             <button
               onClick={handleRefresh}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
             <button
               onClick={openAddEmployeeModal}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors"
             >
               <Plus size={16} />
               Add Employee
@@ -758,7 +746,7 @@ export default function EmployeesPage() {
         </div>
 
         {/* Employee Cards */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-gray-600" />
@@ -771,7 +759,7 @@ export default function EmployeesPage() {
 
           {filteredEmployees.length === 0 ? (
             <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <User size={32} className="text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
@@ -784,14 +772,14 @@ export default function EmployeesPage() {
               </p>
               <button
                 onClick={openAddEmployeeModal}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 mx-auto"
               >
                 <Plus size={16} />
                 Add Employee
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredEmployees.map((employee) => (
                 <EmployeeCard
                   key={employee._id || employee.id || employee.employeeId}
@@ -825,7 +813,7 @@ export default function EmployeesPage() {
     <motion.div
       initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
-      className="fixed z-[101] w-56 bg-white rounded-lg shadow-lg border border-gray-200"
+      className="fixed z-[101] w-56 bg-white rounded-2xl shadow-xl border border-gray-200"
       style={{
         top: (() => {
           const button = document.querySelector(`[data-employee-id="${showMenuId}"]`);
@@ -883,7 +871,7 @@ export default function EmployeesPage() {
                 setShowMenuId(null);
               }}
               disabled={actionLoading === showMenuId && item.destructive}
-              className={`w-full flex items-center gap-3 px-4 py-2 text-left text-sm ${
+              className={`w-full flex items-center gap-3 px-4 py-2 text-left text-sm rounded-xl ${
                 item.destructive 
                   ? 'text-red-600 hover:bg-red-50' 
                   : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
@@ -918,7 +906,7 @@ export default function EmployeesPage() {
           </h2>
           <button
             onClick={closeAddEmployeeModal}
-            className="p-1.5 hover:bg-gray-100 rounded-md transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-2xl transition-colors"
           >
             <X size={18} />
           </button>
