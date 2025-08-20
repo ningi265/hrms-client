@@ -610,20 +610,11 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
                 textTransform: 'uppercase' // Added this line
               }}
             >
-              {user?.companyName?.toUpperCase() || 'NYASASC'} {/* Ensures uppercase */}
+              {user?.companyName?.toUpperCase() || 'NEXUSMWI'} {/* Ensures uppercase */}
             </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{
-                color: sidebarColors.textSecondary,
-                fontSize: '0.75rem'
-              }}
-            >
-              ORGANIZATION {/* Changed to uppercase */}
-            </Typography>
+
           </Box>
         </Box>
-        
         <ToggleButton 
           onClick={toggleDrawer}
           disabled={isAnimating}

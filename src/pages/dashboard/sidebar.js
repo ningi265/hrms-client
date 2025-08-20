@@ -540,21 +540,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
     },
   ];
 
-  // Bottom menu items
-  const bottomMenuItems = [
-    { 
-      id: 'settings', 
-      label: 'Settings', 
-      icon: <ModernIcons.Settings />,
-      onClick: () => navigate('/settings')
-    },
-    { 
-      id: 'logout', 
-      label: 'Logout', 
-      icon: <ModernIcons.Logout />,
-      onClick: () => console.log('Logout')
-    },
-  ];
 
   // Render menu item with or without tooltip based on drawer state
   const renderMenuItem = (item) => {
@@ -753,30 +738,44 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           />
         </ToggleButton>
       </>
-    ) : (
-      <Box 
-        onClick={toggleDrawer}
-        sx={{ 
-          width: 36,
-          height: 36,
-          borderRadius: '8px',
-          backgroundColor: 'rgba(85, 105, 255, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#ffffff',
-          fontWeight: 700,
-          fontSize: '1.2rem',
-          cursor: 'pointer',
-          textTransform: 'uppercase', // Added this line
-          '&:hover': {
-            transform: 'scale(1.05)',
-          }
-        }}
-      >
-        {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
-      </Box>
-    )}
+ ) : (
+  <ToggleButton
+    onClick={toggleDrawer}
+    disabled={isAnimating}
+    aria-label="open drawer"
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: 44,
+      borderRadius: '6px',
+      marginBottom: '4px',
+      padding: 0,
+      '& img': {
+        filter: 'brightness(0) invert(1)',
+        marginLeft: '-6px', 
+      },
+      '&:hover': {
+        backgroundColor: sidebarColors.itemHover,
+      },
+    }}
+  >
+    <img
+      src="/sidebar1.svg"
+      alt="Toggle sidebar"
+      style={{
+        width: '20px',
+        height: '20px',
+        objectFit: 'contain',
+        transform: 'rotate(0deg)',
+        transition: 'transform 0.3s ease',
+      }}
+    />
+  </ToggleButton>
+)}
+
+
   </LogoContainer>
 </DrawerHeader>
 
@@ -800,151 +799,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
         {/* Menu Sections */}
         {menuSections.map((section, index) => renderMenuSection(section, index))}
 
-        {/* Settings & Logout Section */}
-        <Box sx={{ 
-          mt: 'auto',
-          mb: 2,
-          px: 1
-        }}>
-          {open && (
-            <Divider sx={{ 
-              borderColor: sidebarColors.divider, 
-              margin: '12px 24px 16px', 
-              opacity: 0.4,
-            }} />
-          )}
-          <List disablePadding>
-            {bottomMenuItems.map((item) => {
-              const isHovered = hovered === item.id;
-              
-              const menuItem = (
-                <StyledListItemButton 
-                  key={item.id}
-                  onClick={item.onClick}
-                  onMouseEnter={() => setHovered(item.id)}
-                  onMouseLeave={() => setHovered('')}
-                  sx={{
-                    justifyContent: open ? 'initial' : 'center',
-                    px: 2,
-                    py: 1,
-                    minHeight: 44,
-                  }}
-                >
-                  <MenuItemIcon selected={false}>
-                    {React.cloneElement(item.icon, {
-                      style: { 
-                        transform: isHovered ? 'scale(1.1)' : 'scale(1)',
-                        transition: 'transform 0.2s ease'
-                      }
-                    })}
-                  </MenuItemIcon>
-                  
-                  {open && (
-                    <ListItemText 
-                      primary={item.label} 
-                      primaryTypographyProps={{ 
-                        sx: {
-                          fontSize: '0.875rem',
-                          color: 'inherit',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }
-                      }} 
-                      sx={{ 
-                        opacity: open ? 1 : 0,
-                        ml: 0.5
-                      }}
-                    />
-                  )}
-                </StyledListItemButton>
-              );
-
-              return !open ? (
-                <Tooltip 
-                  title={item.label} 
-                  placement="right" 
-                  key={item.id}
-                  arrow
-                  componentsProps={{
-                    tooltip: {
-                      sx: {
-                        backgroundColor: alpha(sidebarColors.background, 0.9),
-                        color: sidebarColors.text,
-                        backdropFilter: 'blur(8px)',
-                        fontSize: '0.75rem',
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        marginLeft: '8px',
-                        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
-                        border: `1px solid ${alpha(sidebarColors.divider, 0.5)}`,
-                      }
-                    },
-                    arrow: {
-                      sx: {
-                        color: alpha(sidebarColors.background, 0.9),
-                      }
-                    }
-                  }}
-                >
-                  {menuItem}
-                </Tooltip>
-              ) : menuItem;
-            })}
-          </List>
-          
-          {/* User profile mini badge - only visible when sidebar is open */}
-          {open && (
-            <Box sx={{ 
-              mt: 3, 
-              mx: 3,
-              p: 1.5,
-              borderRadius: '10px',
-              backgroundColor: alpha(sidebarColors.itemSelectedText, 0.08),
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-            }}>
-              <Avatar 
-                sx={{
-                  width: 32,
-                  height: 32,
-                  backgroundColor: alpha(sidebarColors.itemSelectedText, 0.2),
-                  color: sidebarColors.itemSelectedText,
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  boxShadow: `0 0 0 2px ${alpha(sidebarColors.itemSelectedText, 0.1)}`,
-                }}
-              >
-                A
-              </Avatar>
-              <Box>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: sidebarColors.text,
-                    fontWeight: 500,
-                    lineHeight: 1.3,
-                    fontSize: '0.8125rem',
-                  }}
-                >
-                  Admin User
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: sidebarColors.textSecondary,
-                    fontSize: '0.6875rem',
-                    display: 'block',
-                    mt: 0.2,
-                  }}
-                >
-                  System Administrator
-                </Typography>
-              </Box>
-            </Box>
-          )}
-        </Box>
       </Box>
     </>
   );

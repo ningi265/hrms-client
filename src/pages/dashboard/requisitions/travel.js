@@ -170,7 +170,7 @@ const TravelRequestCard = ({ request, onMenuClick, showMenuId, onAction }) => {
     return diffDays
   }
 
-  const employeeName = request.employee?.name || "N/A"
+  const employeeName = request.employee?.lastName || "N/A"
   const duration = calculateDuration(request.departureDate, request.returnDate)
 
   return (
@@ -460,14 +460,6 @@ const SupervisorDashboard = () => {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Plane className="w-6 h-6 text-blue-500" />
-              Travel Request Management
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">Review and approve employee travel requests</p>
-          </div>
-
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -525,8 +517,7 @@ const SupervisorDashboard = () => {
           </motion.div>
         )}
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Key Metrics Grid -   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             title="Total Requests"
             value={totalRequests}
@@ -551,7 +542,8 @@ const SupervisorDashboard = () => {
             trend={-3}
             subtitle="Road travel"
           />
-        </div>
+        </div>*/}
+      
 
         {/* Travel Request Cards */}
         <div className="bg-white rounded-2xl border border-gray-200 p-4">

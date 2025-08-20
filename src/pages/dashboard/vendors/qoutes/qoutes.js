@@ -464,14 +464,6 @@ export default function VendorRFQsPage() {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <MessageSquare className="w-6 h-6 text-blue-500" />
-              Available RFQs
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">Submit quotes for procurement requests - {user?.name}</p>
-          </div>
-
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

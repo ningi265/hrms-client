@@ -9,7 +9,6 @@ import {
   Check,
   Clock,
   FileText,
-  Filter,
   Globe,
   MoreHorizontal,
   Plane,
@@ -19,7 +18,6 @@ import {
   Users,
   Search,
   MapPin,
-  Plus,
   X,
   AlertCircle,
   CheckCircle,
@@ -28,247 +26,212 @@ import {
   Bell,
   RefreshCw,
   Activity,
-  Eye,
   Car,
   Phone,
-  Mail,
   Building,
-  Calendar,
-  Target,
   TrendingUp,
-  Package,
-  MessageSquare,
-  Loader
+  TrendingDown,
+  Loader,
 } from "lucide-react"
+import { motion } from "framer-motion"
 
-// Custom Components matching vehicle-management.jsx style
-const LoadingSpinner = ({ size = "md" }) => {
-  const sizeClasses = {
-    sm: "w-4 h-4",
-    md: "w-6 h-6",
-    lg: "w-8 h-8"
-  };
+// LoadingOverlay Component (matching vendors.js style)
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
+      </div>
+    </div>
+  )
+}
+
+// MetricCard Component (matching vendors.js style)
+const MetricCard = ({
+  title,
+  value,
+  icon: Icon,
+  color,
+  trend,
+  subtitle,
+  prefix = "",
+  suffix = "",
+  size = "normal",
+}) => {
+  const cardClass = size === "large" ? "col-span-2" : ""
+  const valueSize = size === "large" ? "text-4xl" : "text-2xl"
 
   return (
-    <div className={`${sizeClasses[size]} animate-spin rounded-full border-2 border-gray-300 border-t-blue-600`}></div>
-  );
-};
-
-const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "" }) => {
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
-          color === 'blue' ? 'bg-blue-50' :
-          color === 'green' ? 'bg-emerald-50' :
-          color === 'purple' ? 'bg-purple-50' :
-          color === 'orange' ? 'bg-orange-50' :
-          color === 'red' ? 'bg-red-50' :
-          'bg-gray-50'
-        }`}>
-          <Icon size={20} className={
-            color === 'blue' ? 'text-blue-600' :
-            color === 'green' ? 'text-emerald-600' :
-            color === 'purple' ? 'text-purple-600' :
-            color === 'orange' ? 'text-orange-600' :
-            color === 'red' ? 'text-red-600' :
-            'text-gray-600'
-          } />
+    <div className={`bg-white rounded-2xl border border-gray-200 p-1.5 hover:shadow-sm transition-shadow ${cardClass}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div
+          className={`p-1.5 rounded-xl ${
+            color === "blue"
+              ? "bg-blue-50"
+              : color === "green"
+                ? "bg-emerald-50"
+                : color === "purple"
+                  ? "bg-purple-50"
+                  : color === "orange"
+                    ? "bg-orange-50"
+                    : color === "amber"
+                      ? "bg-amber-50"
+                      : color === "red"
+                        ? "bg-red-50"
+                        : "bg-gray-50"
+          }`}
+        >
+          <Icon
+            size={16}
+            className={
+              color === "blue"
+                ? "text-blue-600"
+                : color === "green"
+                  ? "text-emerald-600"
+                  : color === "purple"
+                    ? "text-purple-600"
+                    : color === "orange"
+                      ? "text-orange-600"
+                      : color === "amber"
+                        ? "text-amber-600"
+                        : color === "red"
+                          ? "text-red-600"
+                          : "text-gray-600"
+            }
+          />
         </div>
         {trend && (
           <div className="flex items-center gap-1">
-            <TrendingUp size={14} className={trend > 0 ? 'text-emerald-500' : 'text-red-500'} />
-            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-              {trend > 0 ? '+' : ''}{trend}%
+            {trend > 0 ? (
+              <TrendingUp size={12} className="text-emerald-500" />
+            ) : (
+              <TrendingDown size={12} className="text-red-500" />
+            )}
+            <span className={`text-xs font-medium ${trend > 0 ? "text-emerald-500" : "text-red-500"}`}>
+              {trend > 0 ? "+" : ""}
+              {trend}%
             </span>
           </div>
         )}
       </div>
-      <div className="text-2xl font-bold text-gray-900 mb-1">
-        {prefix}{value}{suffix}
+      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+        {prefix}
+        {value}
+        {suffix}
       </div>
       <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
       {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
     </div>
-  );
-};
+  )
+}
 
+// StatusBadge Component (compact design)
 const StatusBadge = ({ status }) => {
   const getColors = (status) => {
     switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "in-progress": return "bg-blue-100 text-blue-800";
-      case "completed": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+      case "pending":
+        return "bg-yellow-50 text-yellow-700 border-yellow-200"
+      case "in-progress":
+        return "bg-blue-50 text-blue-700 border-blue-200"
+      case "completed":
+        return "bg-green-50 text-green-700 border-green-200"
+      default:
+        return "bg-gray-50 text-gray-700 border-gray-200"
     }
-  };
+  }
 
   const getIcon = (status) => {
     switch (status) {
-      case "pending": return Clock;
-      case "in-progress": return Activity;
-      case "completed": return CheckCircle;
-      default: return Clock;
+      case "pending":
+        return Clock
+      case "in-progress":
+        return Activity
+      case "completed":
+        return CheckCircle
+      default:
+        return Clock
     }
-  };
+  }
 
-  const Icon = getIcon(status);
+  const Icon = getIcon(status)
 
   return (
-    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getColors(status)}`}>
-      <Icon size={14} className="mr-1" />
-      {status.charAt(0).toUpperCase() + status.slice(1).replace('-', ' ')}
+    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getColors(status)}`}>
+      <Icon size={12} className="mr-1" />
+      {status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
     </span>
-  );
-};
+  )
+}
 
+// PriorityBadge Component (compact design)
 const PriorityBadge = ({ priority }) => {
   const colors = {
-    high: "bg-red-100 text-red-800",
-    medium: "bg-amber-100 text-amber-800",
-    low: "bg-green-100 text-green-800"
-  };
+    high: "bg-red-50 text-red-700 border-red-200",
+    medium: "bg-amber-50 text-amber-700 border-amber-200",
+    low: "bg-green-50 text-green-700 border-green-200",
+  }
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[priority] || 'bg-gray-100 text-gray-800'}`}>
+    <span
+      className={`px-2 py-1 rounded-full text-xs font-medium border ${colors[priority] || "bg-gray-50 text-gray-700 border-gray-200"}`}
+    >
       {priority}
     </span>
-  );
-};
+  )
+}
 
-const Alert = ({ type = "info", title, children, onClose }) => {
-  const typeClasses = {
-    info: "bg-blue-50 border-blue-200 text-blue-800",
-    success: "bg-green-50 border-green-200 text-green-800",
-    warning: "bg-yellow-50 border-yellow-200 text-yellow-800",
-    error: "bg-red-50 border-red-200 text-red-800"
-  };
-
-  const iconClasses = {
-    info: "text-blue-500",
-    success: "text-green-500",
-    warning: "text-yellow-500",
-    error: "text-red-500"
-  };
-
-  const icons = {
-    info: Info,
-    success: CheckCircle,
-    warning: AlertCircle,
-    error: AlertCircle
-  };
-
-  const Icon = icons[type];
-
-  return (
-    <div className={`p-4 rounded-lg border ${typeClasses[type]} mb-4`}>
-      <div className="flex items-start gap-3">
-        <Icon className={`w-5 h-5 mt-0.5 ${iconClasses[type]}`} />
-        <div className="flex-1">
-          {title && <h4 className="font-medium mb-1">{title}</h4>}
-          <div className="text-sm">{children}</div>
-        </div>
-        {onClose && (
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X size={16} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
-  if (!isOpen) return null;
-
-  const sizeClasses = {
-    sm: "max-w-md",
-    md: "max-w-2xl",
-    lg: "max-w-4xl",
-    xl: "max-w-6xl"
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className={`bg-white rounded-lg shadow-xl ${sizeClasses[size]} w-full max-h-[90vh] overflow-hidden`}>
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="overflow-y-auto max-h-[calc(90vh-4rem)]">
-          {children}
-        </div>
-      </div>
-    </div>
-  );
-};
-
+// RequestCard Component (compact design)
 const RequestCard = ({ request, isSelected, onClick }) => {
   return (
-    <div 
+    <div
       onClick={onClick}
-      className={`bg-white rounded-lg border p-4 cursor-pointer transition-all hover:shadow-md ${
-        isSelected ? 'border-blue-500 shadow-md' : 'border-gray-200'
+      className={`bg-white rounded-2xl border p-2 cursor-pointer transition-all hover:shadow-sm ${
+        isSelected ? "border-blue-500 shadow-sm" : "border-gray-200"
       }`}
     >
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-1.5">
         <div>
-          <h3 className="font-semibold text-gray-900">{request.employeeName}</h3>
-          <p className="text-sm text-gray-500">{request.id}</p>
+          <h3 className="font-semibold text-gray-900 text-sm">{request.employeeName}</h3>
+          <p className="text-xs text-gray-500">{request.employee.email}</p>
         </div>
         <PriorityBadge priority={request.priority} />
       </div>
-      
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center gap-2 text-gray-700">
-          <Globe size={16} className="text-gray-400" />
-          <span className="text-sm">{request.city}, {request.country}</span>
+
+      <div className="space-y-1 mb-1.5">
+        <div className="flex items-center gap-1.5 text-gray-700">
+          <Globe size={12} className="text-gray-400" />
+          <span className="text-xs">
+            {request.city}, {request.country}
+          </span>
         </div>
-        <div className="flex items-center gap-2 text-gray-700">
-          <CalendarDays size={16} className="text-gray-400" />
-          <span className="text-sm">
+        <div className="flex items-center gap-1.5 text-gray-700">
+          <CalendarDays size={12} className="text-gray-400" />
+          <span className="text-xs">
             {format(request.departureDate, "MMM d")} - {format(request.returnDate, "MMM d, yyyy")}
           </span>
         </div>
       </div>
 
       <div className="flex justify-between items-center">
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           {request.requiresDriver && (
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Truck size={16} className="text-blue-600" />
+            <div className="p-1 bg-blue-50 rounded-lg">
+              <Truck size={12} className="text-blue-600" />
             </div>
           )}
           {request.requiresFlight && (
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Plane size={16} className="text-purple-600" />
+            <div className="p-1 bg-purple-50 rounded-lg">
+              <Plane size={12} className="text-purple-600" />
             </div>
           )}
         </div>
-        <span className="text-xs text-gray-500">
-          {format(request.submittedAt, "MMM d, yyyy")}
-        </span>
+        <span className="text-xs text-gray-500">{format(request.submittedAt, "MMM d, yyyy")}</span>
       </div>
     </div>
-  ); 
-};
-
-const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
-  if (!isVisible) return null;
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-        <Loader className="animate-spin w-6 h-6 text-blue-500" />
-        <span className="font-medium">{message}</span>
-      </div>
-    </div>
-  );
-};
+  )
+}
 
 export default function FleetCoordinator() {
   const navigate = useNavigate()
@@ -304,9 +267,11 @@ export default function FleetCoordinator() {
     message: "",
     includeItinerary: true,
   })
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+
+  const backendUrl =
+    process.env.REACT_APP_ENV === "production"
+      ? process.env.REACT_APP_BACKEND_URL_PROD
+      : process.env.REACT_APP_BACKEND_URL_DEV
 
   const transformRequestData = (data) => {
     return data.map((request) => {
@@ -315,13 +280,13 @@ export default function FleetCoordinator() {
         const date = new Date(dateString)
         return isNaN(date.getTime()) ? new Date() : date
       }
-      
-      const employee = request.employee || { 
-        _id: "", 
-        firstName: "Unknown", 
-        lastName: "", 
+
+      const employee = request.employee || {
+        _id: "",
+        firstName: "Unknown",
+        lastName: "",
         email: "",
-        name: "Unknown Employee"
+        name: "Unknown Employee",
       }
 
       return {
@@ -371,11 +336,12 @@ export default function FleetCoordinator() {
 
   // Auto-generate notification messages based on recipient and travel context
   const generateNotificationContent = (recipientType) => {
-    if (!selectedRequest) return { subject: "", message: "" };
+    if (!selectedRequest) return { subject: "", message: "" }
 
-    const travelDuration = Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1;
-    const departureDate = format(selectedRequest.departureDate, "EEEE, MMMM d, yyyy");
-    const returnDate = format(selectedRequest.returnDate, "EEEE, MMMM d, yyyy");
+    const travelDuration =
+      Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1
+    const departureDate = format(selectedRequest.departureDate, "EEEE, MMMM d, yyyy")
+    const returnDate = format(selectedRequest.returnDate, "EEEE, MMMM d, yyyy")
 
     switch (recipientType) {
       case "employee":
@@ -394,7 +360,9 @@ Your travel arrangements for your trip to ${selectedRequest.city}, ${selectedReq
 • Location: ${selectedRequest.city}, ${selectedRequest.country}
 • Purpose: ${selectedRequest.purpose}
 
-${selectedRequest.requiresFlight && bookingDetails.airline ? `✈️ FLIGHT DETAILS:
+${
+  selectedRequest.requiresFlight && bookingDetails.airline
+    ? `✈️ FLIGHT DETAILS:
 • Airline: ${bookingDetails.airline}
 • Flight Number: ${bookingDetails.flightNumber}
 • Departure Time: ${bookingDetails.departureTime ? format(new Date(bookingDetails.departureTime), "MMM d, yyyy 'at' h:mm a") : "TBD"}
@@ -402,12 +370,18 @@ ${selectedRequest.requiresFlight && bookingDetails.airline ? `✈️ FLIGHT DETA
 • Class: ${bookingDetails.ticketClass.charAt(0).toUpperCase() + bookingDetails.ticketClass.slice(1)}
 ${bookingDetails.notes ? `• Special Notes: ${bookingDetails.notes}` : ""}
 
-` : ""}${selectedRequest.assignedDriver ? `🚗 GROUND TRANSPORTATION:
+`
+    : ""
+}${
+  selectedRequest.assignedDriver
+    ? `🚗 GROUND TRANSPORTATION:
 • Driver Assigned: ${selectedRequest.assignedDriver.firstName || selectedDriver?.firstName || selectedDriver?.name}
 • Contact: ${selectedRequest.assignedDriver.phone || selectedDriver?.phone || "Contact details will be provided"}
 • Your driver will coordinate pickup times and locations with you directly.
 
-` : ""}📄 IMPORTANT REMINDERS:
+`
+    : ""
+}📄 IMPORTANT REMINDERS:
 • Please carry all required travel documents
 • Confirm your accommodation arrangements
 • Review company travel policies
@@ -418,8 +392,8 @@ If you have any questions or need assistance, please contact the travel departme
 Safe travels!
 
 Best regards,
-HRMS Travel Department`
-        };
+HRMS Travel Department`,
+        }
 
       case "driver":
         return {
@@ -443,13 +417,17 @@ You have been assigned to provide transportation services for the following trav
 • Purpose: ${selectedRequest.purpose}
 • Type: ${selectedRequest.travelType === "international" ? "International Travel" : "Local Travel"}
 
-${selectedRequest.requiresFlight && bookingDetails.airline ? `✈️ FLIGHT COORDINATION:
+${
+  selectedRequest.requiresFlight && bookingDetails.airline
+    ? `✈️ FLIGHT COORDINATION:
 • Airline: ${bookingDetails.airline} ${bookingDetails.flightNumber}
 • Departure: ${bookingDetails.departureTime ? format(new Date(bookingDetails.departureTime), "MMM d, yyyy 'at' h:mm a") : "TBD"}
 • Return Flight: ${bookingDetails.arrivalTime ? format(new Date(bookingDetails.arrivalTime), "MMM d, yyyy 'at' h:mm a") : "TBD"}
 • Please coordinate airport transfers with the passenger
 
-` : ""}📋 NEXT STEPS:
+`
+    : ""
+}📋 NEXT STEPS:
 • Contact the passenger to arrange pickup details
 • Confirm vehicle readiness and fuel
 • Plan optimal routes to destinations
@@ -464,8 +442,8 @@ ${selectedRequest.requiresFlight && bookingDetails.airline ? `✈️ FLIGHT COOR
 Please confirm receipt of this assignment and contact the passenger within 24 hours to coordinate arrangements.
 
 Best regards,
-Fleet Management Team`
-        };
+Fleet Management Team`,
+        }
 
       case "manager":
         return {
@@ -493,13 +471,13 @@ ${bookingDetails.price ? `• Flight Cost: $${bookingDetails.price}` : ""}
 The employee has been notified of all arrangements and is ready for travel.
 
 Best regards,
-HRMS Travel Department`
-        };
+HRMS Travel Department`,
+        }
 
       default:
-        return { subject: "", message: "" };
+        return { subject: "", message: "" }
     }
-  };
+  }
 
   useEffect(() => {
     const fetchDrivers = async () => {
@@ -547,46 +525,48 @@ HRMS Travel Department`
 
   useEffect(() => {
     const fetchLatestRequest = async () => {
-      if (!showNotification || !selectedRequest?.id) return;
+      if (!showNotification || !selectedRequest?.id) return
 
       try {
-        const token = localStorage.getItem("token");
+        const token = localStorage.getItem("token")
         const response = await fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}`, {
           headers: { Authorization: `Bearer ${token}` },
-        });
+        })
 
-        if (!response.ok) throw new Error("Failed to fetch updated travel request");
+        if (!response.ok) throw new Error("Failed to fetch updated travel request")
 
-        const data = await response.json();
-        const updated = transformRequestData([data])[0];
-        setSelectedRequest(updated);
-
+        const data = await response.json()
+        const updated = transformRequestData([data])[0]
+        setSelectedRequest(updated)
       } catch (error) {
-        console.error("Error fetching latest request data:", error);
-        setSnackbarMessage("Failed to refresh request data");
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
+        console.error("Error fetching latest request data:", error)
+        setSnackbarMessage("Failed to refresh request data")
+        setSnackbarSeverity("error")
+        setSnackbarOpen(true)
       }
-    };
+    }
 
-    fetchLatestRequest();
-  }, [showNotification, selectedRequest?.id, backendUrl]);
+    fetchLatestRequest()
+  }, [showNotification, selectedRequest?.id, backendUrl])
 
   // Auto-populate notification details when modal opens or recipients change
   useEffect(() => {
     if (showNotification && selectedRequest) {
       // Generate content based on primary recipient (employee is default)
-      const primaryRecipient = notificationDetails.recipients.includes("employee") ? "employee" : 
-                             notificationDetails.recipients.includes("driver") ? "driver" : "manager";
-      
-      const content = generateNotificationContent(primaryRecipient);
-      setNotificationDetails(prev => ({
+      const primaryRecipient = notificationDetails.recipients.includes("employee")
+        ? "employee"
+        : notificationDetails.recipients.includes("driver")
+          ? "driver"
+          : "manager"
+
+      const content = generateNotificationContent(primaryRecipient)
+      setNotificationDetails((prev) => ({
         ...prev,
         subject: content.subject,
-        message: content.message
-      }));
+        message: content.message,
+      }))
     }
-  }, [showNotification, selectedRequest, notificationDetails.recipients]);
+  }, [showNotification, selectedRequest, notificationDetails.recipients])
 
   const filteredRequests = travelRequests.filter((request) => {
     const employeeName = request.employeeName || ""
@@ -632,7 +612,7 @@ HRMS Travel Department`
       doc.text(
         `Duration: ${Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1} days`,
         20,
-        140
+        140,
       )
       if (selectedRequest.fleetNotification) {
         doc.setFontSize(14)
@@ -692,7 +672,7 @@ HRMS Travel Department`
       const updatedRequest = transformRequestData([data.travelRequest])[0]
       setSelectedRequest(updatedRequest)
       setTravelRequests((prevRequests) =>
-        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
+        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req)),
       )
       setShowDrivers(false)
       setShowNotification(true)
@@ -725,7 +705,7 @@ HRMS Travel Department`
       const updatedRequest = { ...selectedRequest, status: "in-progress" }
       setSelectedRequest(updatedRequest)
       setTravelRequests((prevRequests) =>
-        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
+        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req)),
       )
       if (updatedRequest.requiresFlight) {
         setShowTicketBooking(true)
@@ -780,25 +760,25 @@ HRMS Travel Department`
 
   const handleSendNotifications = async () => {
     try {
-      setIsSendingNotification(true);
-      const token = localStorage.getItem("token");
+      setIsSendingNotification(true)
+      const token = localStorage.getItem("token")
 
       // Send individual notifications with personalized messages
       const notificationPromises = notificationDetails.recipients.map(async (recipientType) => {
-        let recipientId;
-        
+        let recipientId
+
         if (recipientType === "employee") {
-          recipientId = selectedRequest.employee._id;
+          recipientId = selectedRequest.employee._id
         } else if (recipientType === "driver" && selectedRequest.assignedDriver) {
-          recipientId = selectedRequest.assignedDriver._id;
+          recipientId = selectedRequest.assignedDriver._id
         } else if (recipientType === "manager") {
-          recipientId = selectedRequest.supervisor;
+          recipientId = selectedRequest.supervisor
         }
 
-        if (!recipientId) return null;
+        if (!recipientId) return null
 
-        const content = generateNotificationContent(recipientType);
-        
+        const content = generateNotificationContent(recipientType)
+
         return fetch(`${backendUrl}/api/travel-requests/${selectedRequest.id}/send-notifications`, {
           method: "POST",
           headers: {
@@ -810,20 +790,20 @@ HRMS Travel Department`
             message: content.message,
             includeItinerary: notificationDetails.includeItinerary,
             recipients: [recipientId],
-            recipientType: recipientType
+            recipientType: recipientType,
           }),
-        });
-      });
+        })
+      })
 
-      const responses = await Promise.all(notificationPromises.filter(Boolean));
-      
+      const responses = await Promise.all(notificationPromises.filter(Boolean))
+
       // Check if all requests were successful
-      const failedResponses = responses.filter(response => !response.ok);
-      
+      const failedResponses = responses.filter((response) => !response.ok)
+
       if (failedResponses.length > 0) {
-        throw new Error(`Failed to send ${failedResponses.length} notification(s)`);
+        throw new Error(`Failed to send ${failedResponses.length} notification(s)`)
       }
-      
+
       const updatedRequest = {
         ...selectedRequest,
         status: "completed",
@@ -836,103 +816,48 @@ HRMS Travel Department`
           includeItinerary: notificationDetails.includeItinerary,
           sentBy: "currentUserId",
         },
-      };
-      
-      setSelectedRequest(updatedRequest);
+      }
+
+      setSelectedRequest(updatedRequest)
       setTravelRequests((prevRequests) =>
-        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req))
-      );
-      
-      setShowNotification(false);
-      setSnackbarMessage(`Personalized notifications sent successfully to ${notificationDetails.recipients.length} recipient(s)`);
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
+        prevRequests.map((req) => (req.id === selectedRequest.id ? updatedRequest : req)),
+      )
+
+      setShowNotification(false)
+      setSnackbarMessage(
+        `Personalized notifications sent successfully to ${notificationDetails.recipients.length} recipient(s)`,
+      )
+      setSnackbarSeverity("success")
+      setSnackbarOpen(true)
     } catch (error) {
-      console.error("Error sending notifications:", error);
-      setSnackbarMessage(error.message || "Failed to send notifications");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
+      console.error("Error sending notifications:", error)
+      setSnackbarMessage(error.message || "Failed to send notifications")
+      setSnackbarSeverity("error")
+      setSnackbarOpen(true)
     } finally {
-      setIsSendingNotification(false);
+      setIsSendingNotification(false)
     }
-  };
+  }
 
   const getTotalRequests = () => filteredRequests.length
-  const getPendingRequests = () => filteredRequests.filter(req => (!req.fleetNotification || !req.fleetNotification.sent) && req.requiresDriver).length
-  const getCompletedRequests = () => filteredRequests.filter(req => req.fleetNotification && req.fleetNotification.sent).length
+  const getPendingRequests = () =>
+    filteredRequests.filter((req) => (!req.fleetNotification || !req.fleetNotification.sent) && req.requiresDriver)
+      .length
+  const getCompletedRequests = () =>
+    filteredRequests.filter((req) => req.fleetNotification && req.fleetNotification.sent).length
   const getActiveDrivers = () => drivers.length
 
   return (
     <div className="min-h-screen bg-gray-50">
-       <LoadingOverlay 
-      isVisible={isLoading} 
-      message="Loading Fleet Management Data..." 
-    />
+      {/* Loading Overlay */}
+      <LoadingOverlay isVisible={isLoading} message="Loading fleet management data..." />
+
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Truck className="w-6 h-6 text-blue-600" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900">Fleet Coordinator & Air Ticket Booking</h1>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Fleet management active</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <span>{getPendingRequests()} pending requests</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <button className="p-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-              <Bell size={20} />
-            </button>
-            <button className="p-3 bg-white text-gray-700 rounded-lg hover:bg-gray-50 transition-colors border border-gray-200">
-              <RefreshCw size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard 
-            title="Total Requests" 
-            value={getTotalRequests()}
-            icon={FileText} 
-            color="blue"
-          />
-          <MetricCard 
-            title="Pending Requests" 
-            value={getPendingRequests()}
-            icon={Clock} 
-            color="orange"
-          />
-          <MetricCard 
-            title="Completed" 
-            value={getCompletedRequests()}
-            icon={CheckCircle} 
-            color="green"
-          />
-          <MetricCard 
-            title="Active Drivers" 
-            value={getActiveDrivers()}
-            icon={Car} 
-            color="purple"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {/* Left Column - Travel Requests */}
           <div className="space-y-4">
             {/* Search and Filter */}
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
+            <div className="bg-white rounded-2xl border border-gray-200 p-4">
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
@@ -940,28 +865,24 @@ HRMS Travel Department`
                   placeholder="Search requests..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
                 />
               </div>
-              
+
               {/* Tabs */}
               <div className="flex space-x-2">
                 <button
                   onClick={() => setActiveTab("pending")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === "pending"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  className={`px-3 py-1.5 rounded-xl font-medium transition-colors text-sm ${
+                    activeTab === "pending" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   Pending
                 </button>
                 <button
                   onClick={() => setActiveTab("completed")}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === "completed"
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  className={`px-3 py-1.5 rounded-xl font-medium transition-colors text-sm ${
+                    activeTab === "completed" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   Completed
@@ -970,13 +891,14 @@ HRMS Travel Department`
             </div>
 
             {/* Requests List */}
-            <div className="space-y-3 max-h-[calc(100vh-400px)] overflow-y-auto">
+            <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
               {activeTab === "pending" && (
                 <>
                   {filteredRequests.filter(
-                    (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
+                    (request) =>
+                      (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver,
                   ).length === 0 ? (
-                    <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                    <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
                       <FileText size={32} className="mx-auto text-gray-400 mb-4" />
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending requests found</h3>
                       <p className="text-gray-600">All travel requests have been processed</p>
@@ -984,7 +906,8 @@ HRMS Travel Department`
                   ) : (
                     filteredRequests
                       .filter(
-                        (request) => (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver
+                        (request) =>
+                          (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver,
                       )
                       .map((request) => (
                         <RequestCard
@@ -1000,8 +923,9 @@ HRMS Travel Department`
 
               {activeTab === "completed" && (
                 <>
-                  {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent).length === 0 ? (
-                    <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                  {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent)
+                    .length === 0 ? (
+                    <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
                       <CheckCircle size={32} className="mx-auto text-gray-400 mb-4" />
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">No completed requests found</h3>
                       <p className="text-gray-600">Completed requests will appear here</p>
@@ -1026,91 +950,114 @@ HRMS Travel Department`
           {/* Right Column - Request Details and Actions */}
           <div className="space-y-4">
             {selectedRequest ? (
-              <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 {/* Header */}
-                <div className="bg-gray-50 border-b border-gray-100 p-6">
+                <div className="bg-gray-50 border-b border-gray-100 p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-blue-100 rounded-lg">
-                        <FileText className="w-6 h-6 text-blue-600" />
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-50 rounded-xl">
+                        <FileText className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <div className="flex items-center gap-3">
-                          <h2 className="text-xl font-bold text-gray-900">{selectedRequest.employeeName}</h2>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-lg font-bold text-gray-900">{selectedRequest.employeeName}</h2>
                           <StatusBadge status={selectedRequest.status} />
                         </div>
-                        <p className="text-gray-600 mt-1">{selectedRequest.id} • {selectedRequest.department}</p>
+                        <p className="text-gray-600 text-sm">
+                          {selectedRequest.employee.email} • {selectedRequest.department}
+                        </p>
                       </div>
                     </div>
-                    <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                      <MoreHorizontal size={20} />
+                    <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl">
+                      <MoreHorizontal size={18} />
                     </button>
                   </div>
                 </div>
 
                 {/* Content */}
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="space-y-4">
+                <div className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm text-gray-500 font-medium mb-2">Purpose of Travel</p>
-                        <p className="text-gray-900">{selectedRequest.purpose || "N/A"}</p>
+                        <p className="text-xs text-gray-500 font-medium mb-1">Purpose of Travel</p>
+                        <p className="text-gray-900 text-sm">{selectedRequest.purpose || "N/A"}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 font-medium mb-2">Destination</p>
+                        <p className="text-xs text-gray-500 font-medium mb-1">Destination</p>
                         <div className="flex items-center gap-2">
-                          <MapPin className="text-blue-500" size={18} />
-                          <span className="text-gray-900">{selectedRequest.city}, {selectedRequest.country}</span>
+                          <MapPin className="text-blue-500" size={16} />
+                          <span className="text-gray-900 text-sm">
+                            {selectedRequest.city}, {selectedRequest.country}
+                          </span>
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 font-medium mb-2">Travel Period</p>
+                        <p className="text-xs text-gray-500 font-medium mb-1">Travel Period</p>
                         <div className="flex items-center gap-2">
-                          <CalendarDays className="text-blue-500" size={18} />
-                          <span className="text-gray-900">
-                            {format(selectedRequest.departureDate, "MMM d, yyyy")} - {format(selectedRequest.returnDate, "MMM d, yyyy")}
+                          <CalendarDays className="text-blue-500" size={16} />
+                          <span className="text-gray-900 text-sm">
+                            {format(selectedRequest.departureDate, "MMM d, yyyy")} -{" "}
+                            {format(selectedRequest.returnDate, "MMM d, yyyy")}
                           </span>
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium ml-2">
-                            {Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1} days
+                          <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-medium ml-2">
+                            {Math.ceil(
+                              (selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24),
+                            ) + 1}{" "}
+                            days
                           </span>
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="space-y-4">
+
+                    <div className="space-y-3">
                       <div>
-                        <p className="text-sm text-gray-500 font-medium mb-3">Requirements</p>
-                        <div className="space-y-2">
-                          <label className="flex items-center gap-3">
-                            <input type="checkbox" checked={selectedRequest.requiresDriver} disabled className="rounded border-gray-300" />
-                            <span className="text-sm text-gray-700">Driver Required</span>
+                        <p className="text-xs text-gray-500 font-medium mb-2">Requirements</p>
+                        <div className="space-y-1.5">
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedRequest.requiresDriver}
+                              disabled
+                              className="rounded border-gray-300 text-blue-600"
+                            />
+                            <span className="text-xs text-gray-700">Driver Required</span>
                           </label>
-                          <label className="flex items-center gap-3">
-                            <input type="checkbox" checked={selectedRequest.requiresFlight} disabled className="rounded border-gray-300" />
-                            <span className="text-sm text-gray-700">Flight Booking Required</span>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={selectedRequest.requiresFlight}
+                              disabled
+                              className="rounded border-gray-300 text-blue-600"
+                            />
+                            <span className="text-xs text-gray-700">Flight Booking Required</span>
                           </label>
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 font-medium mb-2">Documents</p>
-                        <div className="flex flex-wrap gap-2">
+                        <p className="text-xs text-gray-500 font-medium mb-1">Documents</p>
+                        <div className="flex flex-wrap gap-1">
                           {selectedRequest.documents.length > 0 ? (
                             selectedRequest.documents.map((doc, index) => (
-                              <span key={index} className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs">
-                                <FileText size={12} />
+                              <span
+                                key={index}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-gray-50 text-gray-700 rounded text-xs"
+                              >
+                                <FileText size={10} />
                                 {doc}
                               </span>
                             ))
                           ) : (
-                            <span className="text-sm text-gray-500">No documents</span>
+                            <span className="text-xs text-gray-500">No documents</span>
                           )}
                         </div>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-500 font-medium mb-2">Submitted</p>
+                        <p className="text-xs text-gray-500 font-medium mb-1">Submitted</p>
                         <div className="flex items-center gap-2">
-                          <Clock className="text-blue-500" size={18} />
-                          <span className="text-gray-900">{format(selectedRequest.submittedAt, "MMM d, yyyy")}</span>
+                          <Clock className="text-blue-500" size={16} />
+                          <span className="text-gray-900 text-sm">
+                            {format(selectedRequest.submittedAt, "MMM d, yyyy")}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1118,57 +1065,83 @@ HRMS Travel Department`
 
                   {/* Status Alerts */}
                   {selectedRequest.status === "pending" && (
-                    <Alert type="warning" title="Action Required">
-                      This request requires your attention. Please assign a driver (if needed) and initiate the flight booking process.
-                    </Alert>
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-amber-800 text-sm">Action Required</h4>
+                          <p className="text-amber-700 text-xs">
+                            This request requires your attention. Please assign a driver (if needed) and initiate the
+                            flight booking process.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
 
                   {selectedRequest.status === "in-progress" && (
-                    <Alert type="info" title="In Progress">
-                      This request is being processed. Complete the remaining steps to finalize the travel arrangements.
-                    </Alert>
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-blue-800 text-sm">In Progress</h4>
+                          <p className="text-blue-700 text-xs">
+                            This request is being processed. Complete the remaining steps to finalize the travel
+                            arrangements.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
 
                   {selectedRequest.status === "completed" && (
-                    <Alert type="success" title="Completed">
-                      All travel arrangements have been completed for this request.
-                    </Alert>
+                    <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-600 mt-0.5" />
+                        <div>
+                          <h4 className="font-medium text-green-800 text-sm">Completed</h4>
+                          <p className="text-green-700 text-xs">
+                            All travel arrangements have been completed for this request.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
 
                 {/* Action Footer */}
-                <div className="bg-gray-50 border-t border-gray-100 p-6 flex justify-between items-center">
+                <div className="bg-gray-50 border-t border-gray-100 p-4 flex justify-between items-center">
                   {selectedRequest.status === "pending" && (
                     <>
                       <button
                         onClick={() => navigate("/travel-dashboard")}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="px-3 py-1.5 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm"
                       >
                         Back to Dashboard
                       </button>
-                      <div className="flex gap-3">
+                      <div className="flex gap-2">
                         {selectedRequest.requiresDriver && (
                           <button
                             onClick={() => setShowDrivers(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-200"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl hover:bg-blue-100 text-sm"
                           >
-                            <Users size={16} />
+                            <Users size={14} />
                             Assign Driver
                           </button>
                         )}
                         <button
                           onClick={handleProcessRequest}
                           disabled={isProcessing}
-                          className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 text-sm"
                         >
                           {isProcessing ? (
                             <>
-                              <LoadingSpinner size="sm" />
+                              <Loader className="animate-spin w-4 h-4" />
                               Processing...
                             </>
                           ) : (
                             <>
-                              <Check size={16} />
+                              <Check size={14} />
                               Process Request
                             </>
                           )}
@@ -1181,26 +1154,26 @@ HRMS Travel Department`
                     <>
                       <button
                         onClick={() => navigate("/travel-dashboard")}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="px-3 py-1.5 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm"
                       >
                         Back to Dashboard
                       </button>
-                      <div className="flex gap-3">
+                      <div className="flex gap-2">
                         {selectedRequest.requiresFlight && !showTicketBooking && !showNotification && (
                           <button
                             onClick={() => setShowTicketBooking(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-200"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-100 text-sm"
                           >
-                            <Plane size={16} />
+                            <Plane size={14} />
                             Book Flight
                           </button>
                         )}
                         {!showTicketBooking && !showNotification && (
                           <button
                             onClick={() => setShowNotification(true)}
-                            className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-green-500 text-white rounded-xl hover:bg-green-600 text-sm"
                           >
-                            <Send size={16} />
+                            <Send size={14} />
                             Send Notifications
                           </button>
                         )}
@@ -1212,15 +1185,15 @@ HRMS Travel Department`
                     <>
                       <button
                         onClick={() => navigate("/travel-dashboard")}
-                        className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                        className="px-3 py-1.5 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm"
                       >
                         Back to Dashboard
                       </button>
                       <button
                         onClick={generateAndDownloadItinerary}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 border border-green-200 rounded-lg hover:bg-green-200"
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-xl hover:bg-green-100 text-sm"
                       >
-                        <Download size={16} />
+                        <Download size={14} />
                         Download Itinerary
                       </button>
                     </>
@@ -1228,7 +1201,7 @@ HRMS Travel Department`
                 </div>
               </div>
             ) : (
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
                 <FileText size={40} className="mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No Request Selected</h3>
                 <p className="text-gray-600 max-w-md mx-auto">
@@ -1241,520 +1214,571 @@ HRMS Travel Department`
       </main>
 
       {/* Driver Assignment Modal */}
-      <Modal
-        isOpen={showDrivers}
-        onClose={() => setShowDrivers(false)}
-        title="Assign Driver"
-        size="lg"
-      >
-        <div className="p-6">
-          <p className="text-gray-600 mb-4">
-            Select a driver for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
-          </p>
-          
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-4 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search drivers by name, location, or language..."
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-
-          <div className="max-h-96 overflow-y-auto space-y-3">
-            {drivers.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500">No drivers available</p>
+      {showDrivers && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="px-5 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Assign Driver</h2>
+                <button onClick={() => setShowDrivers(false)} className="p-1.5 hover:bg-gray-100 rounded-2xl">
+                  <X size={18} />
+                </button>
               </div>
-            ) : (
-              drivers.map((driver) => (
-                <div
-                  key={driver._id}
-                  onClick={() => handleSelectDriver(driver)}
-                  className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                    selectedDriver?._id === driver._id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-semibold">
-                        {driver.firstName?.charAt(0) || 'D'}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">{driver.firstName}</h3>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin size={14} />
-                        <span>{driver.location?.coordinates?.city || "Location not specified"}</span>
-                        </div>
-                        {driver.phone && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Phone size={14} />
-                            <span>{driver.phone}</span>
+            </div>
+
+            <div className="p-5">
+              <p className="text-gray-600 mb-4 text-sm">
+                Select a driver for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}
+              </p>
+
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search drivers by name, location, or language..."
+                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-2xl text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-96 overflow-y-auto space-y-2">
+                {drivers.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No drivers available</p>
+                  </div>
+                ) : (
+                  drivers.map((driver) => (
+                    <div
+                      key={driver._id}
+                      onClick={() => handleSelectDriver(driver)}
+                      className={`p-3 border rounded-2xl cursor-pointer transition-colors ${
+                        selectedDriver?._id === driver._id
+                          ? "border-blue-500 bg-blue-50"
+                          : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-semibold text-sm">
+                            {driver.firstName?.charAt(0) || "D"}
                           </div>
-                        )}
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-sm">{driver.firstName}</h3>
+                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                              <MapPin size={12} />
+                              <span>{driver.location?.coordinates?.city || "Location not specified"}</span>
+                            </div>
+                            {driver.phone && (
+                              <div className="flex items-center gap-2 text-xs text-gray-600">
+                                <Phone size={12} />
+                                <span>{driver.phone}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {driver.rating && (
+                            <div className="flex items-center gap-1 mb-1">
+                              <Star size={14} className="text-yellow-500 fill-current" />
+                              <span className="font-semibold text-sm">{driver.rating}</span>
+                            </div>
+                          )}
+                          {driver.experience && <p className="text-xs text-gray-600">{driver.experience}</p>}
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      {driver.rating && (
-                        <div className="flex items-center gap-1 mb-1">
-                          <Star size={16} className="text-yellow-500 fill-current" />
-                          <span className="font-semibold">{driver.rating}</span>
-                        </div>
-                      )}
-                      {driver.experience && (
-                        <p className="text-sm text-gray-600">{driver.experience}</p>
-                      )}
+                  ))
+                )}
+              </div>
+
+              <div className="flex justify-between mt-4 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => setShowDrivers(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAssignDriver}
+                  disabled={!selectedDriver || isProcessing}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 disabled:opacity-50 text-sm"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader className="animate-spin w-4 h-4" />
+                      Assigning...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Confirm Driver
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Flight Booking Modal */}
+      {showTicketBooking && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="px-5 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Air Ticket Booking</h2>
+                <button onClick={() => setShowTicketBooking(false)} className="p-1.5 hover:bg-gray-100 rounded-2xl">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5">
+              <p className="text-gray-600 mb-4 text-sm">
+                Book flight for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city},{" "}
+                {selectedRequest?.country}
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Airline</label>
+                    <select
+                      value={bookingDetails.airline}
+                      onChange={(e) => setBookingDetails({ ...bookingDetails, airline: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-2xl text-sm"
+                    >
+                      <option value="" disabled>
+                        Select Airline
+                      </option>
+                      <option value="japan-airlines">Japan Airlines</option>
+                      <option value="ana">All Nippon Airways</option>
+                      <option value="delta">Delta Airlines</option>
+                      <option value="united">United Airlines</option>
+                      <option value="emirates">Emirates</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Flight Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g., JL123"
+                      value={bookingDetails.flightNumber}
+                      onChange={(e) => setBookingDetails({ ...bookingDetails, flightNumber: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-2xl text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">Ticket Class</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {["economy", "business", "first"].map((classType) => (
+                        <label
+                          key={classType}
+                          className={`relative flex items-center justify-center p-2 border rounded-xl cursor-pointer transition-colors ${
+                            bookingDetails.ticketClass === classType
+                              ? "border-purple-500 bg-purple-50"
+                              : "border-gray-300 hover:border-purple-300"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="ticketClass"
+                            value={classType}
+                            checked={bookingDetails.ticketClass === classType}
+                            onChange={(e) => setBookingDetails({ ...bookingDetails, ticketClass: e.target.value })}
+                            className="sr-only"
+                          />
+                          <span className="font-medium capitalize text-xs">{classType}</span>
+                        </label>
+                      ))}
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
 
-          <div className="flex justify-between mt-6 pt-4 border-t border-gray-100">
-            <button
-              onClick={() => setShowDrivers(false)}
-              className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleAssignDriver}
-              disabled={!selectedDriver || isProcessing}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isProcessing ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  Assigning...
-                </>
-              ) : (
-                <>
-                  <Check size={16} />
-                  Confirm Driver
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Modal>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Departure Time</label>
+                    <input
+                      type="datetime-local"
+                      value={bookingDetails.departureTime}
+                      onChange={(e) => setBookingDetails({ ...bookingDetails, departureTime: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-2xl text-sm"
+                    />
+                  </div>
 
-      {/* Flight Booking Modal */}
-      <Modal
-        isOpen={showTicketBooking}
-        onClose={() => setShowTicketBooking(false)}
-        title="Air Ticket Booking"
-        size="lg"
-      >
-        <div className="p-6">
-          <p className="text-gray-600 mb-6">
-            Book flight for {selectedRequest?.employeeName}'s trip to {selectedRequest?.city}, {selectedRequest?.country}
-          </p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Airline</label>
-                <select
-                  value={bookingDetails.airline}
-                  onChange={(e) => setBookingDetails({ ...bookingDetails, airline: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                >
-                  <option value="" disabled>Select Airline</option>
-                  <option value="japan-airlines">Japan Airlines</option>
-                  <option value="ana">All Nippon Airways</option>
-                  <option value="delta">Delta Airlines</option>
-                  <option value="united">United Airlines</option>
-                  <option value="emirates">Emirates</option>
-                </select>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Arrival Time</label>
+                    <input
+                      type="datetime-local"
+                      value={bookingDetails.arrivalTime}
+                      onChange={(e) => setBookingDetails({ ...bookingDetails, arrivalTime: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-2xl text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Ticket Price</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                        $
+                      </span>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={bookingDetails.price}
+                        onChange={(e) => setBookingDetails({ ...bookingDetails, price: e.target.value })}
+                        className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-2xl text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Flight Number</label>
-                <input
-                  type="text"
-                  placeholder="e.g., JL123"
-                  value={bookingDetails.flightNumber}
-                  onChange={(e) => setBookingDetails({ ...bookingDetails, flightNumber: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+
+              <div className="mt-4">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Additional Notes</label>
+                <textarea
+                  placeholder="Any special requirements or notes for the booking"
+                  rows={3}
+                  value={bookingDetails.notes}
+                  onChange={(e) => setBookingDetails({ ...bookingDetails, notes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-2xl text-sm resize-none"
                 />
               </div>
 
+              <div className="flex justify-between mt-4 pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => setShowTicketBooking(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBookTicket}
+                  disabled={
+                    isBookingTicket ||
+                    !bookingDetails.airline ||
+                    !bookingDetails.flightNumber ||
+                    !bookingDetails.departureTime
+                  }
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 disabled:opacity-50 text-sm"
+                >
+                  {isBookingTicket ? (
+                    <>
+                      <Loader className="animate-spin w-4 h-4" />
+                      Booking Ticket...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Confirm Booking
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {showNotification && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="px-5 py-3 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">Send Travel Notifications</h2>
+                <button onClick={() => setShowNotification(false)} className="p-1.5 hover:bg-gray-100 rounded-2xl">
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <div className="flex items-start gap-2">
+                  <Info className="w-4 h-4 text-blue-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-blue-900 text-sm">Automated Notifications</h4>
+                    <p className="text-blue-700 text-xs">
+                      Personalized messages will be automatically generated for each recipient based on their role and
+                      the travel details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">Ticket Class</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {["economy", "business", "first"].map((classType) => (
+                <label className="block text-xs font-medium text-gray-700 mb-2">Select Recipients</label>
+                <div className="space-y-2">
+                  <label
+                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
+                      notificationDetails.recipients.includes("employee")
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-300 hover:border-green-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={notificationDetails.recipients.includes("employee")}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNotificationDetails({
+                            ...notificationDetails,
+                            recipients: [...notificationDetails.recipients, "employee"],
+                          })
+                        } else {
+                          setNotificationDetails({
+                            ...notificationDetails,
+                            recipients: notificationDetails.recipients.filter((r) => r !== "employee"),
+                          })
+                        }
+                      }}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-gray-600" />
+                        <span className="font-medium text-gray-900 text-sm">Employee</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {selectedRequest?.employeeName} ({selectedRequest?.employee.email})
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Will receive: Travel itinerary, flight details, driver contact, and travel reminders
+                      </p>
+                    </div>
+                  </label>
+
+                  {selectedRequest?.assignedDriver && (
                     <label
-                      key={classType}
-                      className={`relative flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-colors ${
-                        bookingDetails.ticketClass === classType
-                          ? "border-purple-500 bg-purple-50"
-                          : "border-gray-300 hover:border-purple-300"
+                      className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
+                        notificationDetails.recipients.includes("driver")
+                          ? "border-green-500 bg-green-50"
+                          : "border-gray-300 hover:border-green-300"
                       }`}
                     >
                       <input
-                        type="radio"
-                        name="ticketClass"
-                        value={classType}
-                        checked={bookingDetails.ticketClass === classType}
-                        onChange={(e) => setBookingDetails({ ...bookingDetails, ticketClass: e.target.value })}
-                        className="sr-only"
+                        type="checkbox"
+                        checked={notificationDetails.recipients.includes("driver")}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setNotificationDetails({
+                              ...notificationDetails,
+                              recipients: [...notificationDetails.recipients, "driver"],
+                            })
+                          } else {
+                            setNotificationDetails({
+                              ...notificationDetails,
+                              recipients: notificationDetails.recipients.filter((r) => r !== "driver"),
+                            })
+                          }
+                        }}
+                        className="rounded border-gray-300 text-green-600 focus:ring-green-500"
                       />
-                      <span className="font-medium capitalize">{classType}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Departure Time</label>
-                <input
-                  type="datetime-local"
-                  value={bookingDetails.departureTime}
-                  onChange={(e) => setBookingDetails({ ...bookingDetails, departureTime: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Arrival Time</label>
-                <input
-                  type="datetime-local"
-                  value={bookingDetails.arrivalTime}
-                  onChange={(e) => setBookingDetails({ ...bookingDetails, arrivalTime: e.target.value })}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ticket Price</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    value={bookingDetails.price}
-                    onChange={(e) => setBookingDetails({ ...bookingDetails, price: e.target.value })}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
-            <textarea
-              placeholder="Any special requirements or notes for the booking"
-              rows={4}
-              value={bookingDetails.notes}
-              onChange={(e) => setBookingDetails({ ...bookingDetails, notes: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-
-          <div className="flex justify-between mt-6 pt-4 border-t border-gray-100">
-            <button
-              onClick={() => setShowTicketBooking(false)}
-              className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleBookTicket}
-              disabled={
-                isBookingTicket ||
-                !bookingDetails.airline ||
-                !bookingDetails.flightNumber ||
-                !bookingDetails.departureTime
-              }
-              className="flex items-center gap-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
-            >
-              {isBookingTicket ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  Booking Ticket...
-                </>
-              ) : (
-                <>
-                  <Check size={16} />
-                  Confirm Booking
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Notification Modal */}
-      <Modal
-        isOpen={showNotification}
-        onClose={() => setShowNotification(false)}
-        title="Send Travel Notifications"
-        size="xl"
-      >
-        <div className="p-6 space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <Info className="w-5 h-5 text-blue-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-blue-900 mb-1">Automated Notifications</h4>
-                <p className="text-blue-700 text-sm">
-                  Personalized messages will be automatically generated for each recipient based on their role and the travel details.
-                </p>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Select Recipients</label>
-            <div className="space-y-3">
-              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                notificationDetails.recipients.includes("employee") 
-                  ? "border-green-500 bg-green-50" 
-                  : "border-gray-300 hover:border-green-300"
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={notificationDetails.recipients.includes("employee")}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setNotificationDetails({
-                        ...notificationDetails,
-                        recipients: [...notificationDetails.recipients, "employee"],
-                      })
-                    } else {
-                      setNotificationDetails({
-                        ...notificationDetails,
-                        recipients: notificationDetails.recipients.filter((r) => r !== "employee"),
-                      })
-                    }
-                  }}
-                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium text-gray-900">Employee</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {selectedRequest?.employeeName} ({selectedRequest?.employee.email})
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Will receive: Travel itinerary, flight details, driver contact, and travel reminders
-                  </p>
-                </div>
-              </label>
-              
-              {selectedRequest?.assignedDriver && (
-                <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                  notificationDetails.recipients.includes("driver") 
-                    ? "border-green-500 bg-green-50" 
-                    : "border-gray-300 hover:border-green-300"
-                }`}>
-                  <input
-                    type="checkbox"
-                    checked={notificationDetails.recipients.includes("driver")}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setNotificationDetails({
-                          ...notificationDetails,
-                          recipients: [...notificationDetails.recipients, "driver"],
-                        })
-                      } else {
-                        setNotificationDetails({
-                          ...notificationDetails,
-                          recipients: notificationDetails.recipients.filter((r) => r !== "driver"),
-                        })
-                      }
-                    }}
-                    className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                  />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-gray-600" />
-                      <span className="font-medium text-gray-900">Assigned Driver</span>
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {selectedRequest.assignedDriver.firstName || selectedDriver?.firstName || selectedDriver?.name} 
-                      ({selectedRequest.assignedDriver.email || selectedDriver?.email || "Email TBD"})
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Will receive: Passenger details, pickup schedule, flight coordination, and service requirements
-                    </p>
-                  </div>
-                </label>
-              )}
-              
-              <label className={`flex items-center gap-3 p-4 border rounded-lg cursor-pointer transition-colors ${
-                notificationDetails.recipients.includes("manager") 
-                  ? "border-green-500 bg-green-50" 
-                  : "border-gray-300 hover:border-green-300"
-              }`}>
-                <input
-                  type="checkbox"
-                  checked={notificationDetails.recipients.includes("manager")}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setNotificationDetails({
-                        ...notificationDetails,
-                        recipients: [...notificationDetails.recipients, "manager"],
-                      })
-                    } else {
-                      setNotificationDetails({
-                        ...notificationDetails,
-                        recipients: notificationDetails.recipients.filter((r) => r !== "manager"),
-                      })
-                    }
-                  }}
-                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-                />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <Building className="w-4 h-4 text-gray-600" />
-                    <span className="font-medium text-gray-900">Department Manager</span>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {selectedRequest?.department} Department Head
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Will receive: Travel summary, arrangements overview, and budget information
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Message Preview */}
-          {notificationDetails.recipients.length > 0 && (
-            <div className="space-y-4">
-              <h4 className="font-medium text-gray-900">Message Preview</h4>
-              
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {notificationDetails.recipients.map((recipient) => {
-                  const content = generateNotificationContent(recipient);
-                  return (
-                    <div key={recipient} className="border border-gray-200 rounded-lg overflow-hidden">
-                      <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                      <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          {recipient === "employee" && <Users className="w-4 h-4 text-blue-600" />}
-                          {recipient === "driver" && <Car className="w-4 h-4 text-purple-600" />}
-                          {recipient === "manager" && <Building className="w-4 h-4 text-orange-600" />}
-                          <span className="font-medium text-gray-900 capitalize">{recipient} Notification</span>
+                          <Car className="w-4 h-4 text-gray-600" />
+                          <span className="font-medium text-gray-900 text-sm">Assigned Driver</span>
                         </div>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {selectedRequest.assignedDriver.firstName ||
+                            selectedDriver?.firstName ||
+                            selectedDriver?.name}{" "}
+                          ({selectedRequest.assignedDriver.email || selectedDriver?.email || "Email TBD"})
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Will receive: Passenger details, pickup schedule, flight coordination, and service
+                          requirements
+                        </p>
                       </div>
-                      <div className="p-4">
-                        <div className="mb-3">
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
-                          <p className="text-sm font-medium text-gray-900 bg-gray-50 p-2 rounded border">
-                            {content.subject}
-                          </p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-500 mb-1">Message</label>
-                          <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-48 overflow-y-auto whitespace-pre-line">
-                            {content.message}
+                    </label>
+                  )}
+
+                  <label
+                    className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-colors ${
+                      notificationDetails.recipients.includes("manager")
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-300 hover:border-green-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={notificationDetails.recipients.includes("manager")}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setNotificationDetails({
+                            ...notificationDetails,
+                            recipients: [...notificationDetails.recipients, "manager"],
+                          })
+                        } else {
+                          setNotificationDetails({
+                            ...notificationDetails,
+                            recipients: notificationDetails.recipients.filter((r) => r !== "manager"),
+                          })
+                        }
+                      }}
+                      className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <Building className="w-4 h-4 text-gray-600" />
+                        <span className="font-medium text-gray-900 text-sm">Department Manager</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">{selectedRequest?.department} Department Head</p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Will receive: Travel summary, arrangements overview, and budget information
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Message Preview */}
+              {notificationDetails.recipients.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900 text-sm">Message Preview</h4>
+
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {notificationDetails.recipients.map((recipient) => {
+                      const content = generateNotificationContent(recipient)
+                      return (
+                        <div key={recipient} className="border border-gray-200 rounded-xl overflow-hidden">
+                          <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                            <div className="flex items-center gap-2">
+                              {recipient === "employee" && <Users className="w-4 h-4 text-blue-600" />}
+                              {recipient === "driver" && <Car className="w-4 h-4 text-purple-600" />}
+                              {recipient === "manager" && <Building className="w-4 h-4 text-orange-600" />}
+                              <span className="font-medium text-gray-900 capitalize text-sm">
+                                {recipient} Notification
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-3">
+                            <div className="mb-2">
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Subject</label>
+                              <p className="text-xs font-medium text-gray-900 bg-gray-50 p-2 rounded border">
+                                {content.subject}
+                              </p>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">Message</label>
+                              <div className="text-xs text-gray-700 bg-gray-50 p-2 rounded border max-h-48 overflow-y-auto whitespace-pre-line">
+                                {content.message}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5" />
-              <div>
-                <h4 className="font-medium text-yellow-900 mb-1">Before Sending</h4>
-                <ul className="text-yellow-700 text-sm space-y-1">
-                  <li>• Verify all travel details are accurate</li>
-                  <li>• Ensure flight bookings are confirmed (if applicable)</li>
-                  <li>• Confirm driver assignment details</li>
-                  <li>• Check recipient email addresses</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <label className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={notificationDetails.includeItinerary}
-              onChange={(e) =>
-                setNotificationDetails({
-                  ...notificationDetails,
-                  includeItinerary: e.target.checked,
-                })
-              }
-              className="rounded border-gray-300 text-green-600 focus:ring-green-500"
-            />
-            <span className="text-gray-700">Include downloadable travel itinerary (PDF attachment)</span>
-          </label>
-
-          <div className="flex justify-between pt-4 border-t border-gray-100">
-            <button
-              onClick={() => setShowNotification(false)}
-              className="px-6 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSendNotifications}
-              disabled={
-                isSendingNotification ||
-                notificationDetails.recipients.length === 0
-              }
-              className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-            >
-              {isSendingNotification ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  Sending Notifications...
-                </>
-              ) : (
-                <>
-                  <Send size={16} />
-                  Send to {notificationDetails.recipients.length} Recipient{notificationDetails.recipients.length !== 1 ? 's' : ''}
-                </>
+                      )
+                    })}
+                  </div>
+                </div>
               )}
-            </button>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-yellow-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-yellow-900 text-sm">Before Sending</h4>
+                    <ul className="text-yellow-700 text-xs space-y-1 mt-1">
+                      <li>• Verify all travel details are accurate</li>
+                      <li>• Ensure flight bookings are confirmed (if applicable)</li>
+                      <li>• Confirm driver assignment details</li>
+                      <li>• Check recipient email addresses</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={notificationDetails.includeItinerary}
+                  onChange={(e) =>
+                    setNotificationDetails({
+                      ...notificationDetails,
+                      includeItinerary: e.target.checked,
+                    })
+                  }
+                  className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                />
+                <span className="text-gray-700 text-sm">Include downloadable travel itinerary (PDF attachment)</span>
+              </label>
+
+              <div className="flex justify-between pt-4 border-t border-gray-100">
+                <button
+                  onClick={() => setShowNotification(false)}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendNotifications}
+                  disabled={isSendingNotification || notificationDetails.recipients.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 text-sm"
+                >
+                  {isSendingNotification ? (
+                    <>
+                      <Loader className="animate-spin w-4 h-4" />
+                      Sending Notifications...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      Send to {notificationDetails.recipients.length} Recipient
+                      {notificationDetails.recipients.length !== 1 ? "s" : ""}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </Modal>
+      )}
 
       {/* Snackbar Notification */}
       {snackbarOpen && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <div className={`px-6 py-4 rounded-lg shadow-lg border max-w-md ${
-            snackbarSeverity === "success"
-              ? "bg-green-50 border-green-200 text-green-800"
-              : snackbarSeverity === "error"
-              ? "bg-red-50 border-red-200 text-red-800"
-              : "bg-blue-50 border-blue-200 text-blue-800"
-          }`}>
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.3 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.5 }}
+          className="fixed bottom-4 right-4 z-50"
+        >
+          <div
+            className={`px-6 py-4 rounded-xl shadow-2xl border ${
+              snackbarSeverity === "success"
+                ? "bg-green-50 text-green-800 border-green-200"
+                : snackbarSeverity === "error"
+                  ? "bg-red-50 text-red-800 border-red-200"
+                  : "bg-blue-50 text-blue-800 border-blue-200"
+            }`}
+          >
             <div className="flex items-center gap-3">
-              {snackbarSeverity === "success" && <CheckCircle size={20} className="text-green-600" />}
-              {snackbarSeverity === "error" && <AlertCircle size={20} className="text-red-600" />}
-              {snackbarSeverity === "info" && <Info size={20} className="text-blue-600" />}
+              {snackbarSeverity === "success" && (
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <CheckCircle size={16} className="text-white" />
+                </div>
+              )}
+              {snackbarSeverity === "error" && (
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <AlertCircle size={16} className="text-white" />
+                </div>
+              )}
+              {snackbarSeverity === "info" && (
+                <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Info size={16} className="text-white" />
+                </div>
+              )}
               <span className="font-medium">{snackbarMessage}</span>
-              <button
-                onClick={() => setSnackbarOpen(false)}
-                className="ml-2 text-gray-400 hover:text-gray-600"
-              >
-                <X size={16} />
+              <button onClick={() => setSnackbarOpen(false)} className="ml-4 text-gray-400 hover:text-gray-600">
+                <X size={18} />
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   )

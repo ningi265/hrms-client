@@ -1,46 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import {
-  Package,
-  FileText,
-  Calendar,
-  Clock,
-  CheckCircle,
-  X,
-  Eye,
-  Info,
-  Download,
-  Edit,
-  RefreshCw,
-  Star,
-  TrendingUp,
-  TrendingDown,
-  Award,
-  Activity,
-  Bell,
-  Settings,
-  UserCheck,
-  XCircle,
-  AlertTriangle,
-  Loader,
-  Users,
-  Plus,
-  AlertCircle,
-  DollarSign,
-  Building,
-  Truck,
-  Search,
-  Filter,
-  MoreVertical,
-  Copy,
-  ExternalLink,
-  MessageSquare,
-  Phone,
-  Mail,
-  CreditCard,
-  Zap,
-  Shield
-} from "lucide-react";
+import { Package, FileText, Calendar, Clock, CheckCircle, X, Eye, Info, Download, Edit, RefreshCw, Star, TrendingUp, TrendingDown, Award, Activity, Bell, Settings, UserCheck, XCircle, AlertTriangle, Loader, Users, Plus, AlertCircle, DollarSign, Building, Truck, Search, Filter, MoreVertical, Copy, ExternalLink, MessageSquare, Phone, Mail, CreditCard, Zap, Shield } from 'lucide-react';
 import { motion } from "framer-motion";
 
 // LoadingOverlay Component
@@ -48,23 +8,23 @@ const LoadingOverlay = ({ isVisible, message = "Loading Requisitions..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-        <Loader className="animate-spin w-6 h-6 text-blue-500" />
-        <span className="font-medium">{message}</span>
+      <div className="bg-white rounded-2xl p-4 flex items-center gap-2">
+        <Loader className="animate-spin w-5 h-5 text-blue-500" />
+        <span className="font-medium text-sm">{message}</span>
       </div>
     </div>
   );
 };
 
-// MetricCard Component (styled like reconciliation.jsx)
+// MetricCard Component (compact version)
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal" }) => {
   const cardClass = size === "large" ? "col-span-2" : "";
-  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  const valueSize = size === "large" ? "text-3xl" : "text-xl";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass}`}>
+    <div className={`bg-white rounded-2xl border border-gray-200 p-3 hover:shadow-md transition-shadow ${cardClass}`}>
       <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+        <div className={`p-2 rounded-xl ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -73,7 +33,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={16} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -86,9 +46,9 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
         {trend && (
           <div className="flex items-center gap-1">
             {trend > 0 ? (
-              <TrendingUp size={14} className="text-emerald-500" />
+              <TrendingUp size={12} className="text-emerald-500" />
             ) : (
-              <TrendingDown size={14} className="text-red-500" />
+              <TrendingDown size={12} className="text-red-500" />
             )}
             <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {trend > 0 ? '+' : ''}{trend}%
@@ -292,14 +252,14 @@ export default function EmployeeRequisitionManagement() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'pending': return <Clock size={20} />;
-      case 'approved': return <CheckCircle size={20} />;
-      case 'rejected': return <XCircle size={20} />;
-      case 'under_review': return <Loader size={20} className="animate-spin" />;
-      case 'procurement': return <Package size={20} />;
-      case 'shipped': return <Truck size={20} />;
-      case 'delivered': return <CheckCircle size={20} />;
-      default: return <AlertCircle size={20} />;
+      case 'pending': return <Clock size={16} />;
+      case 'approved': return <CheckCircle size={16} />;
+      case 'rejected': return <XCircle size={16} />;
+      case 'under_review': return <Loader size={16} className="animate-spin" />;
+      case 'procurement': return <Package size={16} />;
+      case 'shipped': return <Truck size={16} />;
+      case 'delivered': return <CheckCircle size={16} />;
+      default: return <AlertCircle size={16} />;
     }
   };
 
@@ -394,14 +354,14 @@ export default function EmployeeRequisitionManagement() {
           transition={{ duration: 0.5 }}
           className="text-center"
         >
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <AlertCircle size={32} className="text-red-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Requisitions</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Error Loading Requisitions</h2>
+          <p className="text-gray-600 mb-6 text-sm">{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium text-sm"
           >
             Try Again
           </button>
@@ -412,37 +372,27 @@ export default function EmployeeRequisitionManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+      <main className="p-3 space-y-3 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">My Requisitions</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Real-time tracking</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4 text-blue-500" />
-                <span>Procurement requests</span>
-              </div>
-            </div>
+            <h1 className="text-xl font-bold text-gray-900">My Requisitions</h1>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search requisitions..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm bg-white"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm bg-white"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -453,23 +403,23 @@ export default function EmployeeRequisitionManagement() {
             <button
               onClick={handleRefresh}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
             >
-              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
             <button
               onClick={handleCreateNewRequisition}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors text-sm"
             >
-              <Plus size={16} />
+              <Plus size={14} />
               New Request
             </button>
           </div>
         </div>
 
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard 
             title="Total Requests" 
             value={metrics.total}
@@ -504,134 +454,139 @@ export default function EmployeeRequisitionManagement() {
         </div>
 
         {/* Requisitions List */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-white rounded-2xl border border-gray-200 p-3">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Requisition Requests</h3>
+              <Package className="w-4 h-4 text-gray-600" />
+              <h3 className="font-semibold text-gray-900 text-sm">Requisition Requests</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500">
               <span>{filteredRequisitions.length} of {metrics.total} requests</span>
             </div>
           </div>
 
           {filteredRequisitions.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Package size={32} className="text-gray-400" />
+            <div className="text-center py-8">
+              <div className="w-12 h-12 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <Package size={24} className="text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">
                 {searchQuery || statusFilter !== 'all' ? "No requisitions match your filters" : "No Requisitions Found"}
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-gray-500 mb-3 text-xs">
                 {searchQuery || statusFilter !== 'all' 
                   ? "Try adjusting your search criteria or filters."
                   : "You haven't created any requisitions yet. Start by creating your first request."}
               </p>
               <button
                 onClick={handleCreateNewRequisition}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
+                className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 mx-auto text-sm"
               >
-                <Plus size={16} />
+                <Plus size={14} />
                 Create New Request
               </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {filteredRequisitions.map((requisition) => (
                 <div
                   key={requisition.id}
-                  className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                  className="bg-white rounded-2xl border border-gray-200 p-3 hover:shadow-md transition-shadow"
                 >
-                  <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">{requisition.itemName}</h3>
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(requisition.status)}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <h3 className="text-lg font-bold text-gray-900">{requisition.itemName}</h3>
+                        <div className="flex items-center gap-1 ml-auto">
+                          <button
+                            onClick={() => handleViewRequisition(requisition)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleCopyTrackingId(requisition.trackingId)}
+                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                          >
+                            <Copy size={14} />
+                          </button>
+                          <button className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-colors">
+                            <MoreVertical size={14} />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium border ${getStatusColor(requisition.status)}`}>
                           {getStatusIcon(requisition.status)}
-                          <span className="ml-2">{getStatusText(requisition.status)}</span>
+                          <span className="ml-1">{getStatusText(requisition.status)}</span>
                         </span>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(requisition.urgency)}`}>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium ${getUrgencyColor(requisition.urgency)}`}>
                           {requisition.urgency.toUpperCase()}
                         </span>
                       </div>
                       
-                      <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                      <div className="flex items-center gap-4 text-xs text-gray-600 mb-3">
                         <span className="flex items-center gap-1">
-                          <FileText size={14} />
+                          <FileText size={12} />
                           {requisition.trackingId}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Calendar size={14} />
-                          Submitted: {requisition.submissionDate}
+                          <Calendar size={12} />
+                          {requisition.submissionDate}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Clock size={14} />
-                          {requisition.daysInProcess} days in process
+                          <Clock size={12} />
+                          {requisition.daysInProcess}d
                         </span>
                       </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div className="bg-blue-50 rounded-lg p-3">
-                          <span className="text-blue-600 font-medium text-sm">Quantity</span>
-                          <p className="font-bold text-blue-900">{requisition.quantity}</p>
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="bg-blue-50 rounded-xl p-2">
+                          <span className="text-blue-600 font-medium text-xs">Quantity</span>
+                          <p className="font-bold text-blue-900 text-sm">{requisition.quantity}</p>
                         </div>
-                        <div className="bg-green-50 rounded-lg p-3">
-                          <span className="text-green-600 font-medium text-sm">Est. Cost</span>
-                          <p className="font-bold text-green-900">${requisition.estimatedCost.toLocaleString()}</p>
-                        </div>
-                        <div className="bg-purple-50 rounded-lg p-3">
-                          <span className="text-purple-600 font-medium text-sm">Department</span>
-                          <p className="font-bold text-purple-900 text-sm">{requisition.department}</p>
-                        </div>
-                        <div className="bg-amber-50 rounded-lg p-3">
-                          <span className="text-amber-600 font-medium text-sm">Budget Code</span>
-                          <p className="font-bold text-amber-900 text-sm">{requisition.budgetCode}</p>
+                        <div className="bg-green-50 rounded-xl p-2">
+                          <span className="text-green-600 font-medium text-xs">Est. Cost</span>
+                          <p className="font-bold text-green-900 text-sm">${requisition.estimatedCost.toLocaleString()}</p>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() => handleViewRequisition(requisition)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleCopyTrackingId(requisition.trackingId)}
-                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      >
-                        <Copy size={18} />
-                      </button>
-                      <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
-                        <MoreVertical size={18} />
-                      </button>
+                      
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="bg-purple-50 rounded-xl p-2">
+                          <span className="text-purple-600 font-medium text-xs">Department</span>
+                          <p className="font-bold text-purple-900 text-xs">{requisition.department}</p>
+                        </div>
+                        <div className="bg-amber-50 rounded-xl p-2">
+                          <span className="text-amber-600 font-medium text-xs">Budget Code</span>
+                          <p className="font-bold text-amber-900 text-xs">{requisition.budgetCode}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
                   {/* Progress Timeline */}
-                  <div className="border-t border-gray-200 pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-gray-900">Progress Timeline</h4>
-                      <span className="text-sm text-gray-500">
-                        {requisition.timeline.filter(step => step.completed).length} of {requisition.timeline.length} steps completed
+                  <div className="border-t border-gray-200 pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900 text-sm">Progress Timeline</h4>
+                      <span className="text-xs text-gray-500">
+                        {requisition.timeline.filter(step => step.completed).length} of {requisition.timeline.length} steps
                       </span>
                     </div>
                     
                     <div className="relative">
-                      <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                      <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                       <div 
-                        className="absolute left-3 top-0 w-0.5 bg-blue-500 transition-all duration-500"
+                        className="absolute left-2 top-0 w-0.5 bg-blue-500 transition-all duration-500"
                         style={{ 
                           height: `${(requisition.timeline.filter(step => step.completed).length / requisition.timeline.length) * 100}%` 
                         }}
                       ></div>
                       
-                      <div className="space-y-3">
-                        {requisition.timeline.map((step, stepIndex) => (
-                          <div key={stepIndex} className="relative flex items-center gap-4">
-                            <div className={`relative z-10 w-2 h-2 rounded-full ${
+                      <div className="space-y-2">
+                        {requisition.timeline.slice(0, 3).map((step, stepIndex) => (
+                          <div key={stepIndex} className="relative flex items-center gap-3">
+                            <div className={`relative z-10 w-1.5 h-1.5 rounded-full ${
                               step.completed 
                                 ? 'bg-green-500' 
                                 : step.current 
@@ -641,18 +596,23 @@ export default function EmployeeRequisitionManagement() {
                             
                             <div className="flex-1 flex items-center justify-between">
                               <div>
-                                <p className={`text-sm font-medium ${
+                                <p className={`text-xs font-medium ${
                                   step.current ? 'text-blue-600' : 'text-gray-900'
                                 }`}>
                                   {step.description}
                                 </p>
                               </div>
                               <div className="text-xs text-gray-500">
-                                {step.date} {step.time && `• ${step.time}`}
+                                {step.date}
                               </div>
                             </div>
                           </div>
                         ))}
+                        {requisition.timeline.length > 3 && (
+                          <div className="text-xs text-gray-400 text-center">
+                            +{requisition.timeline.length - 3} more steps
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -663,51 +623,51 @@ export default function EmployeeRequisitionManagement() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Plus className="w-5 h-5 text-blue-600" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="bg-white rounded-2xl border border-gray-200 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-blue-50 rounded-xl">
+                <Plus className="w-4 h-4 text-blue-600" />
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">New Requisition</h4>
-                <p className="text-sm text-gray-500">Submit a new procurement request</p>
+                <h4 className="font-semibold text-gray-900 text-sm">New Requisition</h4>
+                <p className="text-xs text-gray-500">Submit a new procurement request</p>
               </div>
             </div>
             <button 
               onClick={handleCreateNewRequisition}
-              className="w-full py-2 px-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              className="w-full py-2 px-3 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors text-sm"
             >
               Create Request
             </button>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <Download className="w-5 h-5 text-green-600" />
+          <div className="bg-white rounded-2xl border border-gray-200 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-green-50 rounded-xl">
+                <Download className="w-4 h-4 text-green-600" />
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Export Report</h4>
-                <p className="text-sm text-gray-500">Download requisition summary</p>
+                <h4 className="font-semibold text-gray-900 text-sm">Export Report</h4>
+                <p className="text-xs text-gray-500">Download requisition summary</p>
               </div>
             </div>
-            <button className="w-full py-2 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
+            <button className="w-full py-2 px-3 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors text-sm">
               Download Report
             </button>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Activity className="w-5 h-5 text-purple-600" />
+          <div className="bg-white rounded-2xl border border-gray-200 p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-purple-50 rounded-xl">
+                <Activity className="w-4 h-4 text-purple-600" />
               </div>
               <div>
-                <h4 className="font-semibold text-gray-900">Track Status</h4>
-                <p className="text-sm text-gray-500">Monitor all active requests</p>
+                <h4 className="font-semibold text-gray-900 text-sm">Track Status</h4>
+                <p className="text-xs text-gray-500">Monitor all active requests</p>
               </div>
             </div>
-            <button className="w-full py-2 px-4 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors">
+            <button className="w-full py-2 px-3 bg-purple-500 text-white rounded-xl font-medium hover:bg-purple-600 transition-colors text-sm">
               View All
             </button>
           </div>
@@ -718,85 +678,85 @@ export default function EmployeeRequisitionManagement() {
       {selectedRequisition && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="px-8 py-6 border-b border-gray-200">
+            <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Package size={24} className="text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <Package size={20} className="text-blue-600" />
                     Requisition Details
                   </h2>
-                  <p className="text-gray-600 mt-1">Track the progress of your request</p>
+                  <p className="text-gray-600 mt-1 text-sm">Track the progress of your request</p>
                 </div>
                 <button
                   onClick={() => setSelectedRequisition(null)}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors duration-200"
+                  className="p-2 hover:bg-gray-100 rounded-xl transition-colors duration-200"
                 >
-                  <X size={24} />
+                  <X size={20} />
                 </button>
               </div>
             </div>
             
-            <div className="p-8 max-h-[70vh] overflow-y-auto">
-              <div className="space-y-8">
+            <div className="p-6 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-6">
                 {/* Header Info */}
-                <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xl font-bold text-gray-900">{selectedRequisition.itemName}</h3>
-                    <div className="flex items-center gap-3">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(selectedRequisition.status)}`}>
+                <div className="bg-blue-50 rounded-2xl p-4 border border-blue-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-bold text-gray-900">{selectedRequisition.itemName}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium border ${getStatusColor(selectedRequisition.status)}`}>
                         {getStatusIcon(selectedRequisition.status)}
-                        <span className="ml-2">{getStatusText(selectedRequisition.status)}</span>
+                        <span className="ml-1">{getStatusText(selectedRequisition.status)}</span>
                       </span>
                       <button
                         onClick={() => handleCopyTrackingId(selectedRequisition.trackingId)}
-                        className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+                        className="px-2 py-1 bg-blue-600 text-white text-xs rounded-xl hover:bg-blue-700 transition-colors flex items-center gap-1"
                       >
-                        <Copy size={12} />
+                        <Copy size={10} />
                         {selectedRequisition.trackingId}
                       </button>
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
-                      <span className="text-sm text-blue-600 font-medium">Submitted</span>
-                      <p className="font-bold text-blue-900">{selectedRequisition.submissionDate}</p>
+                      <span className="text-xs text-blue-600 font-medium">Submitted</span>
+                      <p className="font-bold text-blue-900 text-sm">{selectedRequisition.submissionDate}</p>
                     </div>
                     <div>
-                      <span className="text-sm text-blue-600 font-medium">Quantity</span>
-                      <p className="font-bold text-blue-900">{selectedRequisition.quantity}</p>
+                      <span className="text-xs text-blue-600 font-medium">Quantity</span>
+                      <p className="font-bold text-blue-900 text-sm">{selectedRequisition.quantity}</p>
                     </div>
                     <div>
-                      <span className="text-sm text-blue-600 font-medium">Est. Cost</span>
-                      <p className="font-bold text-blue-900">${selectedRequisition.estimatedCost.toLocaleString()}</p>
+                      <span className="text-xs text-blue-600 font-medium">Est. Cost</span>
+                      <p className="font-bold text-blue-900 text-sm">${selectedRequisition.estimatedCost.toLocaleString()}</p>
                     </div>
                     <div>
-                      <span className="text-sm text-blue-600 font-medium">Days in Process</span>
-                      <p className="font-bold text-blue-900">{selectedRequisition.daysInProcess}</p>
+                      <span className="text-xs text-blue-600 font-medium">Days in Process</span>
+                      <p className="font-bold text-blue-900 text-sm">{selectedRequisition.daysInProcess}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Detailed Timeline */}
                 <div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                    <Activity size={20} />
+                  <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity size={16} />
                     Detailed Progress Timeline
                   </h4>
                   
                   <div className="relative">
-                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                    <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
                     <div 
-                      className="absolute left-6 top-0 w-0.5 bg-blue-500 transition-all duration-1000"
+                      className="absolute left-4 top-0 w-0.5 bg-blue-500 transition-all duration-1000"
                       style={{ 
                         height: `${(selectedRequisition.timeline.filter(step => step.completed).length / selectedRequisition.timeline.length) * 100}%` 
                       }}
                     ></div>
                     
-                    <div className="space-y-6">
+                    <div className="space-y-4">
                       {selectedRequisition.timeline.map((step, index) => (
-                        <div key={index} className={`relative flex items-start gap-6 ${step.current ? 'bg-blue-50 border border-blue-200 rounded-xl p-4 -ml-4' : ''}`}>
-                          <div className={`relative z-10 w-4 h-4 rounded-full border-2 ${
+                        <div key={index} className={`relative flex items-start gap-4 ${step.current ? 'bg-blue-50 border border-blue-200 rounded-2xl p-3 -ml-3' : ''}`}>
+                          <div className={`relative z-10 w-3 h-3 rounded-full border-2 ${
                             step.completed 
                               ? 'bg-green-500 border-green-500' 
                               : step.current 
@@ -804,23 +764,23 @@ export default function EmployeeRequisitionManagement() {
                                 : 'bg-white border-gray-300'
                           }`}>
                             {step.completed && (
-                              <CheckCircle size={12} className="text-green-500 absolute -top-1 -left-1" />
+                              <CheckCircle size={10} className="text-green-500 absolute -top-0.5 -left-0.5" />
                             )}
                           </div>
                           
                           <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                              <h5 className={`font-semibold ${step.current ? 'text-blue-900' : 'text-gray-900'}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <h5 className={`font-semibold text-sm ${step.current ? 'text-blue-900' : 'text-gray-900'}`}>
                                 {step.description}
                               </h5>
-                              <span className={`text-sm ${step.current ? 'text-blue-600' : 'text-gray-500'}`}>
+                              <span className={`text-xs ${step.current ? 'text-blue-600' : 'text-gray-500'}`}>
                                 {step.date} {step.time && `• ${step.time}`}
                               </span>
                             </div>
                             
                             {step.current && (
-                              <div className="flex items-center gap-2 text-blue-600 text-sm">
-                                <Loader size={14} className="animate-spin" />
+                              <div className="flex items-center gap-1 text-blue-600 text-xs">
+                                <Loader size={12} className="animate-spin" />
                                 <span>Currently in progress...</span>
                               </div>
                             )}
@@ -832,56 +792,56 @@ export default function EmployeeRequisitionManagement() {
                 </div>
 
                 {/* Request Details */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-4">Request Information</h4>
-                    <div className="space-y-4">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Department</label>
-                        <p className="text-gray-900 font-medium">{selectedRequisition.department}</p>
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">Request Information</h4>
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Department</label>
+                        <p className="text-gray-900 font-medium text-sm">{selectedRequisition.department}</p>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Budget Code</label>
-                        <p className="text-gray-900 font-medium">{selectedRequisition.budgetCode}</p>
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Budget Code</label>
+                        <p className="text-gray-900 font-medium text-sm">{selectedRequisition.budgetCode}</p>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <label className="block text-sm font-medium text-gray-600 mb-1">Priority Level</label>
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getUrgencyColor(selectedRequisition.urgency)}`}>
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Priority Level</label>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-xl text-xs font-medium ${getUrgencyColor(selectedRequisition.urgency)}`}>
                           {selectedRequisition.urgency.toUpperCase()}
                         </span>
                       </div>
                       {selectedRequisition.deliveryDate && (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <label className="block text-sm font-medium text-gray-600 mb-1">Required Delivery Date</label>
-                          <p className="text-gray-900 font-medium">{selectedRequisition.deliveryDate}</p>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Required Delivery Date</label>
+                          <p className="text-gray-900 font-medium text-sm">{selectedRequisition.deliveryDate}</p>
                         </div>
                       )}
                       {selectedRequisition.preferredSupplier && (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <label className="block text-sm font-medium text-gray-600 mb-1">Preferred Supplier</label>
-                          <p className="text-gray-900 font-medium">{selectedRequisition.preferredSupplier}</p>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Preferred Supplier</label>
+                          <p className="text-gray-900 font-medium text-sm">{selectedRequisition.preferredSupplier}</p>
                         </div>
                       )}
                     </div>
                   </div>
                   
                   <div>
-                    <h4 className="text-lg font-bold text-gray-900 mb-4">Additional Details</h4>
-                    <div className="space-y-4">
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <label className="block text-sm font-medium text-gray-600 mb-2">Business Justification</label>
-                        <p className="text-gray-900 text-sm leading-relaxed">{selectedRequisition.reason}</p>
+                    <h4 className="text-sm font-bold text-gray-900 mb-3">Additional Details</h4>
+                    <div className="space-y-3">
+                      <div className="bg-gray-50 rounded-xl p-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-2">Business Justification</label>
+                        <p className="text-gray-900 text-xs leading-relaxed">{selectedRequisition.reason}</p>
                       </div>
                       {selectedRequisition.environmentalImpact && (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <label className="block text-sm font-medium text-gray-600 mb-1">Environmental Considerations</label>
-                          <p className="text-gray-900 font-medium">{selectedRequisition.environmentalImpact}</p>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Environmental Considerations</label>
+                          <p className="text-gray-900 font-medium text-sm">{selectedRequisition.environmentalImpact}</p>
                         </div>
                       )}
                       {selectedRequisition.category && (
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <label className="block text-sm font-medium text-gray-600 mb-1">Category</label>
-                          <p className="text-gray-900 font-medium">{selectedRequisition.category}</p>
+                        <div className="bg-gray-50 rounded-xl p-3">
+                          <label className="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                          <p className="text-gray-900 font-medium text-sm">{selectedRequisition.category}</p>
                         </div>
                       )}
                     </div>
@@ -889,28 +849,28 @@ export default function EmployeeRequisitionManagement() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center justify-between pt-6 border-t border-gray-200">
-                  <div className="flex items-center gap-4">
-                    <button className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center gap-2">
-                      <Download size={16} />
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <button className="px-3 py-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors flex items-center gap-1 text-sm">
+                      <Download size={14} />
                       Export PDF
                     </button>
-                    <button className="px-4 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors flex items-center gap-2">
-                      <Mail size={16} />
+                    <button className="px-3 py-2 bg-gray-50 text-gray-600 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-1 text-sm">
+                      <Mail size={14} />
                       Email Updates
                     </button>
                   </div>
                   
                   <div className="flex items-center gap-2">
                     {selectedRequisition.status === 'rejected' && (
-                      <button className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2">
-                        <Edit size={16} />
+                      <button className="px-3 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-colors flex items-center gap-1 text-sm">
+                        <Edit size={14} />
                         Resubmit
                       </button>
                     )}
                     <button
                       onClick={() => setSelectedRequisition(null)}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors text-sm"
                     >
                       Close
                     </button>
@@ -930,31 +890,31 @@ export default function EmployeeRequisitionManagement() {
           exit={{ opacity: 0, y: 20, scale: 0.5 }}
           className="fixed bottom-4 right-4 z-50"
         >
-          <div className={`px-6 py-4 rounded-xl shadow-2xl border ${
+          <div className={`px-4 py-3 rounded-2xl shadow-2xl border ${
             notificationType === 'success' 
               ? 'bg-green-50 text-green-800 border-green-200' 
               : notificationType === 'error'
                 ? 'bg-red-50 text-red-800 border-red-200'
                 : 'bg-blue-50 text-blue-800 border-blue-200'
           }`}>
-            <div className="flex items-center gap-3">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+            <div className="flex items-center gap-2">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center ${
                 notificationType === 'success' 
                   ? 'bg-green-500' 
                   : notificationType === 'error'
                     ? 'bg-red-500'
                     : 'bg-blue-500'
               }`}>
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <span className="font-medium">{notificationMessage}</span>
+              <span className="font-medium text-sm">{notificationMessage}</span>
               <button
                 onClick={() => setShowNotification(false)}
-                className="ml-4 text-gray-400 hover:text-gray-600"
+                className="ml-3 text-gray-400 hover:text-gray-600"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
           </div>

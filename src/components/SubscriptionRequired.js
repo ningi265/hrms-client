@@ -46,11 +46,91 @@ const SubscriptionRequired = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isChecking, setIsChecking] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
+
+  // Fetch subscription data on component mount
+  useEffect(() => {
+    if (!user) return;
+    fetchSubscriptionData();
+  }, [user]);
+
+  const fetchSubscriptionData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSubscriptionLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${backendUrl}/api/billing/subscription`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
+  // Helper function to determine subscription status
+  const getSubscriptionStatus = () => {
+    if (!user || !subscriptionData) return null;
+
+    const subscription = subscriptionData.subscription;
+    const trial = subscriptionData.trial;
+
+    // Check if user has an active paid subscription
+    if (subscription && ['active', 'trialing'].includes(subscription.status) && subscription.plan !== 'trial') {
+      return {
+        type: 'paid',
+        hasAccess: true
+      };
+    }
+
+    // Check if user is on trial
+    if (trial && trial.isActive && trial.remainingDays > 0) {
+      return {
+        type: 'trial',
+        hasAccess: true,
+        remainingDays: trial.remainingDays
+      };
+    }
+
+    // Check if trial has expired
+    if (subscription && subscription.plan === 'trial' && (!trial || !trial.isActive)) {
+      return {
+        type: 'expired',
+        hasAccess: false
+      };
+    }
+
+    return {
+      type: 'free',
+      hasAccess: false
+    };
+  };
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || subscriptionLoading) return;
 
     if (!user) {
+      navigate('/login', {
+        replace: true,
+        state: { from: location.pathname }
+      });
       setIsChecking(false);
       return;
     }
@@ -103,49 +183,35 @@ const SubscriptionRequired = ({ children }) => {
 
     const hasRoleBasedAccess = checkRoleAndRedirect();
     if (hasRoleBasedAccess) {
+      setHasAccess(true);
       setIsChecking(false);
       return;
     }
 
     // For users without specific roles, check subscription status
-    const checkSubscriptionAccess = () => {
-      if (!user.billing) {
-        return false;
+    const subscriptionStatus = getSubscriptionStatus();
+    const hasSubscriptionAccess = subscriptionStatus?.hasAccess || false;
+
+    setHasAccess(hasSubscriptionAccess);
+
+    if (!hasSubscriptionAccess) {
+      if (!location.pathname.startsWith('/billing')) {
+        navigate('/billing', { 
+          replace: true,
+          state: { 
+            from: location.pathname,
+            subscriptionExpired: true 
+          }
+        });
       }
-
-      const { subscription, trialEndDate } = user.billing;
-      const now = new Date();
-      const trialEnd = trialEndDate ? new Date(trialEndDate) : null;
-
-      if (subscription?.status === 'active' && subscription?.plan !== 'trial') {
-        return true;
-      }
-
-      if (subscription?.plan === 'trial') {
-        if (!trialEnd || isNaN(trialEnd.getTime())) {
-          return false;
-        }
-        return trialEnd > now;
-      }
-
-      return false;
-    };
-
-    const hasSubscriptionAccess = checkSubscriptionAccess();
-
-    if (!hasSubscriptionAccess && !location.pathname.startsWith('/billing')) {
-      navigate('/billing', { 
-        replace: true,
-        state: { from: location.pathname }
-      });
     } else if (hasSubscriptionAccess && location.pathname.startsWith('/billing')) {
       navigate('/dashboard', { replace: true });
     }
 
     setIsChecking(false);
-  }, [user, authLoading, navigate, location]);
+  }, [user, authLoading, subscriptionLoading, navigate, location]);
 
-  if (authLoading || isChecking) {
+  if (authLoading || isChecking || subscriptionLoading) {
     return (
       <Box sx={{
         display: 'flex',
@@ -153,12 +219,13 @@ const SubscriptionRequired = ({ children }) => {
         alignItems: 'center',
         height: '100vh'
       }}>
-        <CircularProgress size={60} />
+     
       </Box>
     );
   }
 
-  return <Outlet />;
+  // Only render children if user has access
+  return hasAccess ? <Outlet /> : null;
 };
 
 export default SubscriptionRequired;

@@ -109,12 +109,12 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
 
   const quickStats = generateQuickStats();
 
-  // Custom Tooltip Component (matching reconciliation style)
+  // Custom Tooltip Component
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-md">
+        <div className="bg-white p-3 border border-gray-200 rounded-xl shadow-md">
           <p className="font-medium text-gray-900">{data.name}</p>
           <p className="text-sm text-gray-600">
             Count: <span className="font-medium">{data.value}</span>
@@ -128,13 +128,13 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
     return null;
   };
 
-  // Metric Card Component (matching reconciliation style)
+  // Enhanced Metric Card Component
   const MetricCard = ({ title, value, icon: Icon, color, trend, size = "normal" }) => {
     const cardClass = size === "large" ? "col-span-2" : "";
     const valueSize = size === "large" ? "text-4xl" : "text-2xl";
     
     return (
-      <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass} min-w-0`}>
+      <div className={`bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all ${cardClass} min-w-0`}>
         <div className="flex items-center justify-between mb-2">
           <div className={`p-2 rounded-lg ${
             color === 'blue' ? 'bg-blue-50' :
@@ -174,65 +174,45 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
 
   return (
     <div className="h-full flex flex-col space-y-4 w-full max-w-full overflow-hidden">
-      {/* Header - RESPONSIVE */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">Procurement Status</h1>
-          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 overflow-hidden">
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Activity className="w-4 h-4 text-green-500" />
-              <span className="hidden sm:inline">Real-time tracking</span>
-              <span className="sm:hidden">Live</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Calendar className="w-4 h-4 text-blue-500" />
-              <span className="truncate">{activeCategory}</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm">
-            <Filter size={16} />
-            <span className="hidden sm:inline">Filter Data</span>
-            <span className="sm:hidden">Filter</span>
-          </button>
         </div>
       </div>
 
-      {/* Chart Card - MAIN CONTENT AREA - RESPONSIVE */}
-      <div className="bg-white rounded-lg border border-gray-200 p-3 lg:p-4 flex-1 flex flex-col min-h-0">
+      {/* Chart Card */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 flex-1 flex flex-col min-h-0 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
           <h3 className="font-semibold text-gray-900 text-lg">Status Overview</h3>
-          <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg self-start sm:self-auto">
-            
-             <button 
+          <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl self-start sm:self-auto">
+            <button 
               onClick={() => setChartType('pie')} 
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2 rounded-lg transition-all ${
                 chartType === 'pie' 
-                  ? 'bg-blue-500 text-white' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
                   : 'bg-transparent text-gray-600 hover:bg-gray-100'
               }`}
             >
               <PieChartIcon size={16} />
             </button>
              
-             <button 
+            <button 
               onClick={() => setChartType('line')} 
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2 rounded-lg transition-all ${
                 chartType === 'line' 
-                  ? 'bg-blue-500 text-white' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
                   : 'bg-transparent text-gray-600 hover:bg-gray-100'
               }`}
             >
               <LineChartIcon size={16} />
             </button>
             
-           
             <button 
               onClick={() => setChartType('bar')} 
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2 rounded-lg transition-all ${
                 chartType === 'bar' 
-                  ? 'bg-blue-500 text-white' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
                   : 'bg-transparent text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -241,7 +221,7 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
           </div>
         </div>
 
-        {/* Category Navigation - RESPONSIVE */}
+        {/* Category Navigation */}
         <div className="flex items-center justify-between mb-4">
           <button 
             onClick={() => {
@@ -249,7 +229,7 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
               const prevIndex = (currentIndex - 1 + categories.length) % categories.length;
               setActiveCategory(categories[prevIndex]);
             }}
-            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="p-2 rounded-xl bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0 shadow-sm"
           >
             <ChevronLeft size={16} />
           </button>
@@ -275,13 +255,13 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
               const nextIndex = (currentIndex + 1) % categories.length;
               setActiveCategory(categories[nextIndex]);
             }}
-            className="p-2 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0"
+            className="p-2 rounded-xl bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors flex-shrink-0 shadow-sm"
           >
             <ChevronRight size={16} />
           </button>
         </div>
         
-        {/* Chart Section - RESPONSIVE */}
+        {/* Chart Section */}
         <div className="flex-1 mb-4 min-h-0">
           <ResponsiveContainer width="100%" height={300}>
             {chartType === 'pie' && (
@@ -335,7 +315,7 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
             )}
           </ResponsiveContainer>
 
-          {/* Chart Legend for Pie Chart - RESPONSIVE */}
+          {/* Chart Legend for Pie Chart */}
           {chartType === 'pie' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-4">
               {chartData.map((item, index) => (
@@ -354,7 +334,7 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
         </div>
       </div>
 
-      {/* Quick Stats Grid - RESPONSIVE */}
+      {/* Quick Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {quickStats.map((stat, index) => {
           const getIcon = (title) => {
@@ -385,10 +365,10 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
         })}
       </div>
 
-      {/* Action Cards - RESPONSIVE */}
+      {/* Action Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mt-auto">
-        <div className="bg-white rounded-lg border border-gray-200 p-3 lg:p-4">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
               <Filter className="w-5 h-5 text-blue-600" />
             </div>
@@ -397,13 +377,13 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
               <p className="text-sm text-gray-500 truncate">Customize your procurement view</p>
             </div>
           </div>
-          <button className="w-full py-2 px-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm">
+          <button className="w-full py-2.5 px-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm shadow-sm hover:shadow-md">
             Apply Filters
           </button>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-3 lg:p-4">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
               <ArrowRight className="w-5 h-5 text-green-600" />
             </div>
@@ -412,7 +392,7 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
               <p className="text-sm text-gray-500 truncate">Access complete procurement dashboard</p>
             </div>
           </div>
-          <button className="w-full py-2 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors text-sm">
+          <button className="w-full py-2.5 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors text-sm shadow-sm hover:shadow-md">
             View All Procurement
           </button>
         </div>

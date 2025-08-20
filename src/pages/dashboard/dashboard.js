@@ -68,7 +68,6 @@ import {
   Tabs,
   Tab,
   ThemeProvider,
-  CircularProgress
 } from "@mui/material";
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import './dashboard.css';
@@ -631,7 +630,34 @@ useEffect(() => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-   if (isLoading) {
+
+   if (!stats || !user) {
+  console.log('No stats or user data, showing error state', { stats, user });
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        height: "100vh",
+        width: "100%",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 2,
+      }}
+    >
+      <Error sx={{ fontSize: 48, color: "error.main" }} />
+      <Typography variant="h6">Failed to load dashboard data</Typography>
+      <Typography variant="body2" color="text.secondary">
+        Please try refreshing the page
+      </Typography>
+      <Button variant="contained" onClick={() => window.location.reload()}>
+        Refresh
+      </Button>
+    </Box>
+  );
+}
+
+if (isLoading) {
   return (
     <ThemeProvider theme={theme}>
       <PageContainer>
@@ -707,31 +733,7 @@ useEffect(() => {
 
 
 
-  if (!stats || !user) {
-    console.log('No stats or user data, showing error state', { stats, user });
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          height: "100vh",
-          width: "100%",
-          alignItems: "center",
-          justifyContent: "center",
-          flexDirection: "column",
-          gap: 2,
-        }}
-      >
-        <Error sx={{ fontSize: 48, color: "error.main" }} />
-        <Typography variant="h6">Failed to load dashboard data</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Please try refreshing the page
-        </Typography>
-        <Button variant="contained" onClick={() => window.location.reload()}>
-          Refresh
-        </Button>
-      </Box>
-    );
-  }
+
 
   return (
   <Box
@@ -798,7 +800,7 @@ useEffect(() => {
       gutterBottom 
       sx={{ fontWeight: 700, color: 'black' }}
     >
-      Dashboard Overview
+      Dashboard
     </Typography>
      <Typography 
   variant="body1" 

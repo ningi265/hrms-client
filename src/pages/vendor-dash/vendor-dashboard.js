@@ -967,35 +967,10 @@ export default function VendorDashboard() {
                   <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
                     Vendor Dashboard
                   </h1>
-                  <div className="flex items-center gap-5 text-xs">
-                    <div className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full font-medium border border-emerald-200">
-                      <Activity className="w-3 h-3" />
-                      <span>Live analytics</span>
-                    </div>
-                    <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full font-medium border border-blue-200">
-                      <Award className="w-3 h-3" />
-                      <span>Performance tracking</span>
-                    </div>
-                  </div>
                   <p className="text-gray-600 text-sm max-w-xl">
                     Welcome back, <span className="font-semibold text-gray-900">{user?.firstName ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1) : 'Vendor'}</span>. 
                     Monitor your business performance with comprehensive analytics.
                   </p>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <button className="flex items-center gap-1 px-3 py-2 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm">
-                    <Filter size={14} />
-                    Filter
-                  </button>
-                  <button
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                    className="flex items-center gap-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg shadow-blue-500/25 disabled:opacity-50"
-                  >
-                    <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-                    Refresh
-                  </button>
                 </div>
               </div>
 

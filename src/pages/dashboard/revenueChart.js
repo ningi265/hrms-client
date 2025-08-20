@@ -17,7 +17,6 @@ import {
   Target,
   Calendar
 } from 'lucide-react';
-// FIX: Correct import path
 import TravelExpenseService from '../../services/travelExpenseService';
 
 const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
@@ -93,30 +92,30 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
 
   // Fetch data from API
   const fetchData = async (period = 'monthly') => {
-  try {
-    setIsLoading(true);
-    setError(null);
-    
-    const periodMap = {
-      'Monthly': 'monthly',
-      'Quarterly': 'quarterly', 
-      'Yearly': 'yearly'
-    };
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const periodMap = {
+        'Monthly': 'monthly',
+        'Quarterly': 'quarterly', 
+        'Yearly': 'yearly'
+      };
 
-    const response = await TravelExpenseService.getTravelExpenseAnalytics({
-      period: periodMap[period] || 'monthly',
-      startDate: '2024-01-01',
-      endDate: '2024-12-31'
-    });
+      const response = await TravelExpenseService.getTravelExpenseAnalytics({
+        period: periodMap[period] || 'monthly',
+        startDate: '2024-01-01',
+        endDate: '2024-12-31'
+      });
 
-    setApiData(response);
-  } catch (error) {
-    console.error('Error fetching travel expense data:', error);
-    setError(error.message || 'Failed to load analytics data');
-  } finally {
-    setIsLoading(false);
-  }
-};
+      setApiData(response);
+    } catch (error) {
+      console.error('Error fetching travel expense data:', error);
+      setError(error.message || 'Failed to load analytics data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchData(activeCategory);
@@ -145,7 +144,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
         <p className="text-sm text-gray-600">{error}</p>
         <button 
           onClick={() => fetchData(activeCategory)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
         >
           Retry
         </button>
@@ -192,13 +191,13 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
     return null;
   };
 
-  // Metric Card Component
+  // Enhanced Metric Card Component
   const MetricCard = ({ title, value, icon: Icon, color, trend, prefix = "MWK ", size = "normal" }) => {
     const cardClass = size === "large" ? "col-span-2" : "";
     const valueSize = size === "large" ? "text-4xl" : "text-2xl";
     
     return (
-      <div className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow ${cardClass} min-w-0`}>
+      <div className={`bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all ${cardClass} min-w-0`}>
         <div className="flex items-center justify-between mb-2">
           <div className={`p-2 rounded-lg ${
             color === 'blue' ? 'bg-blue-50' :
@@ -239,12 +238,12 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
   // Loading skeleton component
   const LoadingSkeleton = () => (
     <div className="animate-pulse space-y-4">
-      <div className="h-6 bg-gray-200 rounded w-1/4"></div>
-      <div className="h-4 bg-gray-200 rounded w-1/6"></div>
-      <div className="h-64 bg-gray-200 rounded"></div>
+      <div className="h-6 bg-gray-200 rounded-lg w-1/4"></div>
+      <div className="h-4 bg-gray-200 rounded-lg w-1/6"></div>
+      <div className="h-64 bg-gray-200 rounded-lg"></div>
       <div className="grid grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-20 bg-gray-200 rounded"></div>
+          <div key={i} className="h-20 bg-gray-200 rounded-lg"></div>
         ))}
       </div>
     </div>
@@ -261,11 +260,11 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
       <div className="h-full flex flex-col space-y-4 w-full max-w-full overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <div className="h-8 bg-gray-200 rounded w-64 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-32 mt-2 animate-pulse"></div>
+            <div className="h-8 bg-gray-200 rounded-lg w-64 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded-lg w-32 mt-2 animate-pulse"></div>
           </div>
         </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4 flex-1">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 flex-1">
           <LoadingSkeleton />
         </div>
       </div>
@@ -278,65 +277,19 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h1 className="text-xl lg:text-2xl font-bold text-gray-900 truncate">Travel Request Expenses</h1>
-          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 overflow-hidden">
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Activity className="w-4 h-4 text-green-500" />
-              <span className="hidden sm:inline">Real-time tracking</span>
-              <span className="sm:hidden">Live</span>
-            </div>
-            <div className="flex items-center gap-1 flex-shrink-0">
-              <Calendar className="w-4 h-4 text-blue-500" />
-              <span className="truncate">{activeCategory}</span>
-            </div>
-            {metadata?.last_updated && (
-              <div className="flex items-center gap-1 flex-shrink-0 text-xs">
-                <span>Updated: {new Date(metadata.last_updated).toLocaleTimeString()}</span>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <button 
-            onClick={async () => {
-              try {
-                const blob = await TravelExpenseService.exportTravelExpenseData({
-                  startDate: '2024-01-01',
-                  endDate: '2024-12-31',
-                  format: 'csv'
-                });
-                
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'travel-expenses.csv';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-              } catch (error) {
-                console.error('Export failed:', error);
-              }
-            }}
-            className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm"
-          >
-            <Download size={16} />
-            <span className="hidden sm:inline">Export Report</span>
-            <span className="sm:hidden">Export</span>
-          </button>
         </div>
       </div>
 
       {/* Chart Card */}
-      <div className="bg-white rounded-lg border border-gray-200 p-3 lg:p-4 flex-1 flex flex-col min-h-0">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 flex-1 flex flex-col min-h-0 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
           <h3 className="font-semibold text-gray-900 text-lg">Revenue Analysis</h3>
-          <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-lg self-start sm:self-auto">
-            
-              <button 
+          <div className="flex items-center gap-1 bg-gray-50 p-1 rounded-xl self-start sm:self-auto">
+            <button 
               onClick={() => handleChartTypeChange('bar')} 
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2 rounded-lg transition-all ${
                 chartType === 'bar' 
-                  ? 'bg-blue-500 text-white' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
                   : 'bg-transparent text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -344,9 +297,9 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
             </button>
             <button 
               onClick={() => handleChartTypeChange('line')} 
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2 rounded-lg transition-all ${
                 chartType === 'line' 
-                  ? 'bg-blue-500 text-white' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
                   : 'bg-transparent text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -354,9 +307,9 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
             </button>         
             <button 
               onClick={() => handleChartTypeChange('pie')} 
-              className={`p-2 rounded-md transition-colors ${
+              className={`p-2 rounded-lg transition-all ${
                 chartType === 'pie' 
-                  ? 'bg-blue-500 text-white' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
                   : 'bg-transparent text-gray-600 hover:bg-gray-100'
               }`}
             >
@@ -466,9 +419,11 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
           />
         ))}
       </div>
+
+      {/* Action Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mt-auto">
-        <div className="bg-white rounded-lg border border-gray-200 p-3 lg:p-4">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
               <Download className="w-5 h-5 text-blue-600" />
             </div>
@@ -477,13 +432,13 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
               <p className="text-sm text-gray-500 truncate">Download detailed revenue reports</p>
             </div>
           </div>
-          <button className="w-full py-2 px-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm">
+          <button className="w-full py-2.5 px-4 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors text-sm shadow-sm hover:shadow-md">
             Download Report
           </button>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-3 lg:p-4">
-          <div className="flex items-center gap-3 mb-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
               <ArrowRight className="w-5 h-5 text-green-600" />
             </div>
@@ -492,7 +447,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
               <p className="text-sm text-gray-500 truncate">Access comprehensive analytics</p>
             </div>
           </div>
-          <button className="w-full py-2 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors text-sm">
+          <button className="w-full py-2.5 px-4 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors text-sm shadow-sm hover:shadow-md">
             View Analytics
           </button>
         </div>
