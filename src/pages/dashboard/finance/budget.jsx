@@ -17,52 +17,25 @@ import {
   Tooltip,
   Legend
 } from 'recharts';
-import {
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Users,
-  CheckCircle,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  Filter,
-  Download,
-  ChevronRight,
-  Building2,
-  Target,
-  CreditCard,
-  FileText,
-  Award,
-  BarChart3,
-  Activity,
-  Settings,
-  Plus,
-  Wallet,
-  Eye,
-  Edit,
-  X,
-  Loader
-} from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Calendar, Users, CheckCircle, Clock, AlertTriangle, RefreshCw, Filter, Download, ChevronRight, Building2, Target, CreditCard, FileText, Award, BarChart3, Activity, Settings, Plus, Wallet, Eye, Edit, X, Loader } from 'lucide-react';
 
 // API configuration
 const API_BASE_URL = process.env.REACT_APP_ENV === 'production'
   ? process.env.REACT_APP_BACKEND_URL_PROD
   : process.env.REACT_APP_BACKEND_URL_DEV;
 
-// Metric Card Component
+// Compact Metric Card Component
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal", onClick }) => {
   const cardClass = size === "large" ? "col-span-2" : "";
-  const valueSize = size === "large" ? "text-4xl" : "text-2xl";
+  const valueSize = size === "large" ? "text-2xl" : "text-base";
   
   return (
     <div 
-      className={`bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer ${cardClass}`}
+      className={`bg-white rounded-2xl border border-gray-200 p-1.5 hover:shadow-sm transition-shadow cursor-pointer ${cardClass}`}
       onClick={onClick}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+      <div className="flex items-center justify-between mb-1">
+        <div className={`p-1.5 rounded-xl ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -70,7 +43,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={16} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -81,7 +54,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
         </div>
         {trend && (
           <div className="flex items-center gap-1">
-            {trend > 0 ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />}
+            {trend > 0 ? <TrendingUp size={12} className="text-emerald-500" /> : <TrendingDown size={12} className="text-red-500" />}
             <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
               {trend > 0 ? '+' : ''}{trend}%
             </span>
@@ -97,16 +70,16 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   );
 };
 
-// Chart Card Component
+// Compact Chart Card Component
 const ChartCard = ({ title, children, action, size = "normal" }) => {
   const cardClass = size === "large" ? "col-span-2" : size === "full" ? "col-span-full" : "";
   
   return (
-    <div className={`bg-white rounded-lg border border-gray-200 p-4 ${cardClass}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
+    <div className={`bg-white rounded-2xl border border-gray-200 p-3 ${cardClass}`}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-gray-900 text-sm">{title}</h3>
         {action && (
-          <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+          <button className="text-blue-600 hover:text-blue-700 text-xs font-medium">
             {action}
           </button>
         )}
@@ -120,10 +93,10 @@ const ChartCard = ({ title, children, action, size = "normal" }) => {
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-md">
-        <p className="font-medium text-gray-900">{label}</p>
+      <div className="bg-white p-2 border border-gray-200 rounded-xl shadow-md">
+        <p className="font-medium text-gray-900 text-xs">{label}</p>
         {payload.map((entry, index) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
+          <p key={index} className="text-xs" style={{ color: entry.color }}>
             {entry.name}: MWK {entry.value?.toLocaleString()}
           </p>
         ))}
@@ -139,47 +112,47 @@ const BudgetAllocationModal = ({ isOpen, onClose, onNavigate }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">Budget Allocation</h3>
+      <div className="bg-white rounded-2xl max-w-md w-full p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-bold text-gray-900">Budget Allocation</h3>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+            className="p-1.5 text-gray-400 hover:text-gray-600 rounded-xl"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
         
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-            <Wallet className="w-8 h-8 text-blue-600" />
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-xl">
+            <Wallet className="w-6 h-6 text-blue-600" />
             <div>
-              <h4 className="font-semibold text-gray-900">Allocate Department Budgets</h4>
-              <p className="text-sm text-gray-600">Distribute budget across departments for the current period</p>
+              <h4 className="font-semibold text-gray-900 text-sm">Allocate Department Budgets</h4>
+              <p className="text-xs text-gray-600">Distribute budget across departments for the current period</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-            <BarChart3 className="w-8 h-8 text-green-600" />
+          <div className="flex items-center gap-2 p-3 bg-green-50 rounded-xl">
+            <BarChart3 className="w-6 h-6 text-green-600" />
             <div>
-              <h4 className="font-semibold text-gray-900">Auto-Distribution Available</h4>
-              <p className="text-sm text-gray-600">Use smart algorithms to distribute budget automatically</p>
+              <h4 className="font-semibold text-gray-900 text-sm">Auto-Distribution Available</h4>
+              <p className="text-xs text-gray-600">Use smart algorithms to distribute budget automatically</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-lg">
-            <CheckCircle className="w-8 h-8 text-purple-600" />
+          <div className="flex items-center gap-2 p-3 bg-purple-50 rounded-xl">
+            <CheckCircle className="w-6 h-6 text-purple-600" />
             <div>
-              <h4 className="font-semibold text-gray-900">Approval Workflow</h4>
-              <p className="text-sm text-gray-600">Submit allocations for management approval</p>
+              <h4 className="font-semibold text-gray-900 text-sm">Approval Workflow</h4>
+              <p className="text-xs text-gray-600">Submit allocations for management approval</p>
             </div>
           </div>
         </div>
         
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-2 mt-4">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors text-sm font-medium"
           >
             Cancel
           </button>
@@ -188,7 +161,7 @@ const BudgetAllocationModal = ({ isOpen, onClose, onNavigate }) => {
               onNavigate();
               onClose();
             }}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="flex-1 px-3 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors text-sm font-medium"
           >
             Start Allocation
           </button>
@@ -202,9 +175,9 @@ const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-        <Loader className="animate-spin w-6 h-6 text-blue-500" />
-        <span className="font-medium">{message}</span>
+      <div className="bg-white rounded-xl p-4 flex items-center gap-2">
+        <Loader className="animate-spin w-5 h-5 text-blue-500" />
+        <span className="font-medium text-sm">{message}</span>
       </div>
     </div>
   );
@@ -364,38 +337,25 @@ const BudgetOverviewDashboard = () => {
       message="Loading Budget Data..." 
     />
     
-      <main className="p-4 space-y-4 max-w-7xl mx-auto">
+      <main className="p-3 space-y-3 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Budget Overview</h1>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Real-time tracking</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="w-4 h-4 text-blue-500" />
-                <span>{defaultBudgetData.currentPeriod}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Target className="w-4 h-4 text-purple-500" />
-                <span>Status: {defaultBudgetData.status}</span>
-              </div>
-            </div>
+            <h1 className="text-xl font-bold text-gray-900">Budget Overview</h1>
+            <p className="text-sm text-gray-600">Manage and track your budget allocations</p>
           </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => setShowAllocationModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              className="flex items-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 transition-colors text-sm"
             >
-              <Wallet size={16} />
+              <Wallet size={14} />
               Allocate Budget
             </button>
             <select 
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white"
+              className="px-3 py-2 border border-gray-200 rounded-xl text-sm font-medium text-gray-700 bg-white"
             >
               <option value="month">This Month</option>
               <option value="quarter">This Quarter</option>
@@ -404,16 +364,16 @@ const BudgetOverviewDashboard = () => {
             <button
               onClick={handleRefresh}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 text-sm"
             >
-              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
           </div>
         </div>
 
         {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard 
             title="Total Budget" 
             value={defaultBudgetData.totalBudget}
@@ -451,7 +411,7 @@ const BudgetOverviewDashboard = () => {
         </div>
 
         {/* Secondary Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <MetricCard 
             title="Active Departments" 
             value={departmentBudgets.length}
@@ -486,7 +446,7 @@ const BudgetOverviewDashboard = () => {
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Budget Utilization by Category */}
           <ChartCard title="Budget Utilization by Category">
             <ResponsiveContainer width="100%" height={200}>
@@ -547,13 +507,13 @@ const BudgetOverviewDashboard = () => {
           </ChartCard>
 
           {/* Approval Workflow Status */}
-          <div className="space-y-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center gap-2 mb-3">
+          <div className="space-y-3">
+            <div className="bg-white rounded-2xl border border-gray-200 p-3">
+              <div className="flex items-center gap-2 mb-2">
                 <Settings className="w-5 h-5 text-gray-600" />
-                <h3 className="font-semibold text-gray-900">Approval Pipeline</h3>
+                <h3 className="font-semibold text-gray-900 text-sm">Approval Pipeline</h3>
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {approvalWorkflowData.map((stage, index) => (
                   <div key={index} className="flex justify-between items-center">
                     <div>
@@ -573,9 +533,9 @@ const BudgetOverviewDashboard = () => {
 
         {/* Department Budget Overview */}
         <ChartCard title="Department Budget Overview" size="full" action="Manage Budgets">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
             {departmentBudgets.map((dept, index) => (
-              <div key={index} className="bg-gray-50 rounded-lg p-4">
+              <div key={index} className="bg-gray-50 rounded-2xl p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-blue-500"></div>
@@ -583,7 +543,7 @@ const BudgetOverviewDashboard = () => {
                   </div>
                   <span className="text-xs text-gray-500">{dept.departmentCode}</span>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Budget</span>
                     <span className="font-medium">MWK {(dept.budget || 0).toLocaleString()}</span>
@@ -614,64 +574,6 @@ const BudgetOverviewDashboard = () => {
             ))}
           </div>
         </ChartCard>
-
-        {/* Recent Requisitions Table */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <div className="flex items-center gap-3">
-              <FileText className="w-5 h-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Recent Requisitions</h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button>
-              <ChevronRight size={16} className="text-gray-400" />
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Requisition ID</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {recentRequisitions.length > 0 ? (
-                  recentRequisitions.map((req, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 text-sm font-medium text-blue-600">{req.requisitionNumber || `REQ-${index + 1}`}</td>
-                      <td className="py-3 px-4 text-sm text-gray-900">{req.description || req.itemName}</td>
-                      <td className="py-3 px-4 text-sm text-gray-600">{req.department}</td>
-                      <td className="py-3 px-4 text-sm font-medium text-gray-900">MWK {(req.estimatedCost || req.totalCost || 0).toLocaleString()}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          req.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          req.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {req.status}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
-                        {req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A'}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-500">
-                      No recent requisitions found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </main>
 
       {/* Budget Allocation Modal */}

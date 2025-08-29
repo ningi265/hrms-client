@@ -564,16 +564,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
                 textTransform: 'uppercase' // Added this line
               }}
             >
-              {user?.companyName?.toUpperCase() || 'NYASASC'} {/* Ensures uppercase */}
-            </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{
-                color: sidebarColors.textSecondary,
-                fontSize: '0.75rem'
-              }}
-            >
-              ORGANIZATION {/* Changed to uppercase */}
+              {user?.companyName?.toUpperCase() || 'NEXUSMWI'} {/* Ensures uppercase */}
             </Typography>
           </Box>
         </Box>
@@ -589,7 +580,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           }}
         >
           <img 
-            src="/sidebar1.png" 
+            src="/sidebar1.svg" 
             alt="Toggle sidebar" 
             style={{ 
               width: '20px', 

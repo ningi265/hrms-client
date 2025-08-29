@@ -610,20 +610,11 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
                 textTransform: 'uppercase' // Added this line
               }}
             >
-              {user?.companyName?.toUpperCase() || 'NYASASC'} {/* Ensures uppercase */}
+              {user?.companyName?.toUpperCase() || 'NEXUSMWI'} {/* Ensures uppercase */}
             </Typography>
-            <Typography 
-              variant="caption" 
-              sx={{
-                color: sidebarColors.textSecondary,
-                fontSize: '0.75rem'
-              }}
-            >
-              ORGANIZATION {/* Changed to uppercase */}
-            </Typography>
+
           </Box>
         </Box>
-        
         <ToggleButton 
           onClick={toggleDrawer}
           disabled={isAnimating}
@@ -635,7 +626,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           }}
         >
           <img 
-            src="/sidebar1.png" 
+            src="/sidebar1.svg" 
             alt="Toggle sidebar" 
             style={{ 
               width: '20px', 
@@ -648,29 +639,41 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
         </ToggleButton>
       </>
     ) : (
-      <Box 
-        onClick={toggleDrawer}
-        sx={{ 
-          width: 36,
-          height: 36,
-          borderRadius: '8px',
-          backgroundColor: 'rgba(85, 105, 255, 0.8)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#ffffff',
-          fontWeight: 700,
-          fontSize: '1.2rem',
-          cursor: 'pointer',
-          textTransform: 'uppercase', // Added this line
-          '&:hover': {
-            transform: 'scale(1.05)',
-          }
-        }}
-      >
-        {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
-      </Box>
-    )}
+  <ToggleButton
+    onClick={toggleDrawer}
+    disabled={isAnimating}
+    aria-label="open drawer"
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: '100%',
+      height: 44,
+      borderRadius: '6px',
+      marginBottom: '4px',
+      padding: 0,
+      '& img': {
+        filter: 'brightness(0) invert(1)',
+        marginLeft: '-6px', 
+      },
+      '&:hover': {
+        backgroundColor: sidebarColors.itemHover,
+      },
+    }}
+  >
+    <img
+      src="/sidebar1.svg"
+      alt="Toggle sidebar"
+      style={{
+        width: '20px',
+        height: '20px',
+        objectFit: 'contain',
+        transform: 'rotate(0deg)',
+        transition: 'transform 0.3s ease',
+      }}
+    />
+  </ToggleButton>
+)}
   </LogoContainer>
 </DrawerHeader>
 

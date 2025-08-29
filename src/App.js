@@ -107,7 +107,7 @@ function App() {
               <Route path="/trip-management" element={<TripManagementDashboard/>}/>
               <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
               <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
-                    <Route path="/complete-registration" element={<CompleteRegistration />} />
+              <Route path="/complete-registration" element={<CompleteRegistration />} />
           
      
               

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate ,useSearchParams } from "react-router-dom";
+import { Box, Typography } from '@mui/material';
 import {
   Bell,
   Calendar,
@@ -27,39 +28,14 @@ import {
   Filter,
   MoreHorizontal,
   Zap,
-  Shield
+  Shield,
+  Crown
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays, isToday, isSameDay } from 'date-fns';
-
-// Helper function to get user initials from profile data
-const getUserInitials = (user, userProfile) => {
-  // Try to get data from userProfile first (API response), then fallback to auth user
-  const profileUser = userProfile?.user || userProfile;
-  const authUser = user;
-  
-  const firstName = profileUser?.firstName || authUser?.firstName;
-  const lastName = profileUser?.lastName || authUser?.lastName;
-  
-  if (firstName && lastName) {
-    return `${firstName.charAt(0).toUpperCase()}${lastName.charAt(0).toUpperCase()}`;
-  } else if (firstName) {
-    return firstName.charAt(0).toUpperCase();
-  } else if (lastName) {
-    return lastName.charAt(0).toUpperCase();
-  } else {
-    // Fallback to email initial if available
-    const email = profileUser?.email || authUser?.email;
-    if (email) {
-      return email.charAt(0).toUpperCase();
-    }
-    return "U"; // Ultimate fallback for "User"
-  }
-};
 
 // Modern Header Component - Fixed positioning and responsive layout
 const ModernHeaderComponent = ({ 
   user, 
-  userProfile, // Add userProfile prop
   notificationCount = 3,
   onNotificationClick,
   onHelpClick,
@@ -82,11 +58,108 @@ const ModernHeaderComponent = ({
   const [eventDetailsOpen, setEventDetailsOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [subscriptionData, setSubscriptionData] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [activeSection, setActiveSection] = useState(() => {
     return searchParams.get('section') || 'dashboard';
   });
+    const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
+
+
+
+  // Fetch subscription data on component mount
+  useEffect(() => {
+    fetchSubscriptionData();
+  }, []);
+
+ 
+
+  const fetchSubscriptionData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setSubscriptionLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${backendUrl}/api/billing/subscription`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setSubscriptionData(data);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+    } finally {
+      setSubscriptionLoading(false);
+    }
+  };
+
+  // Helper function to determine subscription status
+  const getSubscriptionStatus = () => {
+    if (!user || !subscriptionData) return null;
+
+    const subscription = subscriptionData.subscription;
+    const trial = subscriptionData.trial;
+
+    // Check if user has an active paid subscription
+    if (subscription && ['active', 'trialing'].includes(subscription.status) && subscription.plan !== 'trial') {
+      return {
+        type: 'paid',
+        plan: subscription.plan,
+        status: subscription.status
+      };
+    }
+
+    // Check if user is on trial
+    if (trial && trial.isActive && trial.remainingDays > 0) {
+      return {
+        type: 'trial',
+        remainingDays: trial.remainingDays,
+        endDate: trial.endDate
+      };
+    }
+
+    // Check if trial has expired
+    if (subscription && subscription.plan === 'trial' && (!trial || !trial.isActive)) {
+      return {
+        type: 'expired',
+        message: 'Trial expired'
+      };
+    }
+
+    return {
+      type: 'free',
+      message: 'Free plan'
+    };
+  };
+
+  const subscriptionStatus = getSubscriptionStatus();
+
+  
+    useEffect(() => {
+  if (!subscriptionLoading && subscriptionStatus?.type === 'expired') {
+    // Check if we're not already on the billing page to avoid infinite redirects
+    if (!window.location.pathname.startsWith('/billing')) {
+      navigate('/billing', { 
+        state: { 
+          subscriptionExpired: true,
+          from: window.location.pathname 
+        } 
+      });
+    }
+  }
+}, [subscriptionStatus, subscriptionLoading, navigate]);
+
+ 
 
   // Calculate header transparency based on scroll
   const headerOpacity = Math.min(scrollPosition / 100, 0.95);
@@ -205,7 +278,7 @@ const ModernHeaderComponent = ({
   };
 
   // Listen for window resize to recalculate header positioning
- useEffect(() => {
+  useEffect(() => {
     const handleResize = () => {
       // Force re-render on resize to recalculate positioning
       setMobileMenuOpen(false);
@@ -228,6 +301,154 @@ const ModernHeaderComponent = ({
       window.removeEventListener('sidebarToggle', handleSidebarToggle);
     };
   }, [sidebarOpen]);
+
+const renderSubscriptionBadge = () => {
+  if (subscriptionLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg animate-pulse"
+      >
+        <div className="w-16 h-4 bg-gray-600 rounded"></div>
+      </motion.div>
+    );
+  }
+
+  if (!subscriptionStatus) return null;
+
+  switch (subscriptionStatus.type) {
+    case 'paid':
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 group cursor-pointer"
+          whileHover={{ 
+            scale: 1.02,
+            backgroundColor: "rgba(31, 41, 55, 0.95)"
+          }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/billing")}
+        >
+          <Crown size={14} className="text-yellow-400" />
+          <motion.span 
+            className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            {subscriptionStatus.plan.charAt(0).toUpperCase() + subscriptionStatus.plan.slice(1)} plan
+          </motion.span>
+          <span className="text-gray-500 mx-1">•</span>
+          <motion.span 
+            className="text-sm font-semibold text-green-400 group-hover:text-green-300 transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+          >
+            Active
+          </motion.span>
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-1"></div>
+        </motion.div>
+      );
+
+    case 'trial':
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 group cursor-pointer relative"
+          whileHover={{ 
+            scale: 1.02,
+            backgroundColor: "rgba(31, 41, 55, 0.95)"
+          }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/billing")}
+        >
+          <motion.span 
+            className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            Free trial
+          </motion.span>
+          <span className="text-gray-500 mx-1">•</span>
+          <motion.span 
+            className="text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+          >
+            Upgrade
+          </motion.span>
+          
+          <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full font-medium">
+            {subscriptionStatus.remainingDays} days left
+          </div>
+        </motion.div>
+      );
+
+    case 'expired':
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-red-600/90 backdrop-blur-sm rounded-lg border border-red-700 shadow-lg hover:shadow-xl hover:shadow-red-500/20 transition-all duration-300 group cursor-pointer"
+          whileHover={{ 
+            scale: 1.02,
+            backgroundColor: "rgba(220, 38, 38, 0.95)"
+          }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/billing")}
+        >
+          <AlertTriangle size={14} className="text-white" />
+          <motion.span 
+            className="text-sm font-medium text-white group-hover:text-white transition-colors duration-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            Trial expired
+          </motion.span>
+          <span className="text-white/50 mx-1">•</span>
+          <motion.span 
+            className="text-sm font-semibold text-white group-hover:text-white transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+          >
+            Renew now
+          </motion.span>
+        </motion.div>
+      );
+
+    case 'free':
+      return (
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="free-plan-badge flex items-center gap-1 px-3 py-1.5 bg-gray-800/90 backdrop-blur-sm rounded-lg border border-gray-600/50 shadow-lg hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 group cursor-pointer"
+          whileHover={{ 
+            scale: 1.02,
+            backgroundColor: "rgba(31, 41, 55, 0.95)"
+          }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => navigate("/billing")}
+        >
+          <motion.span 
+            className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors duration-200"
+            whileHover={{ scale: 1.02 }}
+          >
+            Free plan
+          </motion.span>
+          <span className="text-gray-500 mx-1">•</span>
+          <motion.span 
+            className="text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+          >
+            Upgrade
+          </motion.span>
+        </motion.div>
+      );
+
+    default:
+      return null;
+  }
+};
 
   return (
     <>
@@ -258,8 +479,8 @@ const ModernHeaderComponent = ({
               >
                 {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </motion.button>
-
-               {/* Date & Calendar */}
+            
+              {/* Date & Calendar */}
               <div className="relative">
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -409,8 +630,11 @@ const ModernHeaderComponent = ({
                   </motion.span>
                 )}
               </motion.button>
+            </div>
 
-             
+            {/* Center Section - Subscription Badge */}
+            <div className="absolute left-1/2 transform -translate-x-1/2">
+              {renderSubscriptionBadge()}
             </div>
 
             {/* Right Section */}
@@ -460,7 +684,13 @@ const ModernHeaderComponent = ({
                   className="flex items-center gap-2 p-1 hover:bg-gray-100 rounded-lg transition-all duration-200"
                 >
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center font-medium text-sm">
-                    {getUserInitials(user, userProfile)}
+                    {user?.firstName && user?.lastName
+                      ? `${user.firstName.charAt(0).toUpperCase()}${user.lastName.charAt(0).toUpperCase()}`
+                      : user?.firstName
+                      ? user.firstName.charAt(0).toUpperCase()
+                      : user?.lastName
+                      ? user.lastName.charAt(0).toUpperCase()
+                      : "G"}
                   </div>
                   <ChevronDown size={14} className={`transition-transform duration-200 ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </motion.button>

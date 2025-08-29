@@ -27,19 +27,22 @@ import {
   ChevronUp,
   Loader2
 } from 'lucide-react';
+import { useAuth } from '../authcontext/authcontext';
 
-const BillingPage = ({ user, onUpgrade }) => {
+const BillingPage = ({ onUpgrade }) => {
+  const { user } = useAuth();
   const [isAnnual, setIsAnnual] = useState(true);
   const [openFaq, setOpenFaq] = useState(null);
   const [hoveredPlan, setHoveredPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [userSubscription, setUserSubscription] = useState(null);
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
-
+  const [error, setError] = useState(null);
   
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
+
   // Fetch user subscription info on component mount
   useEffect(() => {
     fetchUserSubscription();
@@ -47,34 +50,42 @@ const BillingPage = ({ user, onUpgrade }) => {
 
   const fetchUserSubscription = async () => {
     try {
+      setError(null);
       const response = await fetch(`${backendUrl}/api/billing/subscription`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setUserSubscription(data);
+      if (!response.ok) {
+        throw new Error('Failed to fetch subscription data');
       }
+      
+      const data = await response.json();
+      setUserSubscription(data);
     } catch (error) {
       console.error('Error fetching subscription:', error);
+      setError(error.message);
     }
   };
 
-  // Map plans to Stripe price IDs (you'll need to replace these with your actual Stripe price IDs)
+  const hasUsedTrial = () => {
+    return userSubscription?.trial && !userSubscription.trial.isActive;
+  };
+
+  // Map plans to Stripe price IDs
   const stripePriceIds = {
     starter: {
-      monthly: 'price_1RmlIeP4bSIJGI9K6tRIpKf6', // Replace with actual Stripe price ID
-      annual: 'price_1RmlJZP4bSIJGI9K7RGjuHhX'    // Replace with actual Stripe price ID
+      monthly: 'price_1RmlIeP4bSIJGI9K6tRIpKf6',
+      annual: 'price_1RmlJZP4bSIJGI9K7RGjuHhX'
     },
     professional: {
-      monthly: 'price_1RmlKLP4bSIJGI9KmMX31rJ0', // Replace with actual Stripe price ID
-      annual: 'price_1RmlL2P4bSIJGI9Kqehrb2ws'    // Replace with actual Stripe price ID
+      monthly: 'price_1RmlKLP4bSIJGI9KmMX31rJ0',
+      annual: 'price_1RmlL2P4bSIJGI9Kqehrb2ws'
     },
     enterprise: {
-      monthly: 'price_enterprise_monthly', // Replace with actual Stripe price ID
-      annual: 'price_enterprise_annual'    // Replace with actual Stripe price ID
+      monthly: 'price_enterprise_monthly',
+      annual: 'price_enterprise_annual'
     }
   };
 
@@ -97,11 +108,12 @@ const BillingPage = ({ user, onUpgrade }) => {
       ],
       limits: "Up to 5 users",
       recommended: false,
-      buttonText: "Start Free Trial",
+      buttonText: hasUsedTrial() ? "Subscribe Now" : "Start Free Trial",
       color: "gray",
       popular: false,
       savings: isAnnual ? "20%" : null,
-      stripePriceId: stripePriceIds.starter[isAnnual ? 'annual' : 'monthly']
+      stripePriceId: stripePriceIds.starter[isAnnual ? 'annual' : 'monthly'],
+      allowTrial: !hasUsedTrial()
     },
     {
       id: 'professional',
@@ -122,11 +134,12 @@ const BillingPage = ({ user, onUpgrade }) => {
       ],
       limits: "Up to 25 users",
       recommended: true,
-      buttonText: "Start Free Trial",
+      buttonText: hasUsedTrial() ? "Subscribe Now" : "Start Free Trial",
       color: "blue",
       popular: true,
       savings: isAnnual ? "20%" : null,
-      stripePriceId: stripePriceIds.professional[isAnnual ? 'annual' : 'monthly']
+      stripePriceId: stripePriceIds.professional[isAnnual ? 'annual' : 'monthly'],
+      allowTrial: !hasUsedTrial()
     },
     {
       id: 'enterprise',
@@ -149,7 +162,7 @@ const BillingPage = ({ user, onUpgrade }) => {
       buttonText: "Contact Sales",
       color: "purple",
       popular: false,
-      stripePriceId: null // Enterprise requires custom pricing
+      stripePriceId: null
     }
   ];
 
@@ -208,73 +221,108 @@ const BillingPage = ({ user, onUpgrade }) => {
     setOpenFaq(openFaq === index ? null : index);
   };
 
-  // Handle plan selection and Stripe checkout
-  const handlePlanSelect = async (plan) => {
-    if (plan.name === 'Enterprise') {
-      // Handle enterprise contact
-      window.location.href = 'mailto:sales@nexusmwi.com?subject=Enterprise Plan Inquiry';
-      return;
+ const handlePlanSelect = async (plan) => {
+  if (plan.name === 'Enterprise') {
+    window.location.href = 'mailto:sales@nexusmwi.com?subject=Enterprise Plan Inquiry';
+    return;
+  }
+
+  if (!plan.allowTrial && plan.buttonText.includes("Trial")) {
+    alert("You have already used your free trial. Please choose a paid subscription.");
+    return;
+  }
+
+  setLoading(true);
+  setSelectedPlan(plan.id);
+  setError(null);
+
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('No authentication token found');
     }
 
-    setLoading(true);
-    setSelectedPlan(plan.id);
+    // Safely check for company account status
+    const isCompanyAccount = Boolean(
+      user?.isEnterpriseAdmin || 
+      user?.company || 
+      user?.role?.includes('Enterprise')
+    );
 
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      // Create Stripe checkout session
-      const response = await fetch(`${backendUrl}/api/billing/create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          planName: plan.name.toLowerCase(),
-          priceId: plan.stripePriceId,
-          isAnnual: isAnnual
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create checkout session');
-      }
-
-      const { url } = await response.json();
-      
-      // Redirect to Stripe checkout
-      window.location.href = url;
-
-    } catch (error) {
-      console.error('Error creating checkout session:', error);
-      alert(`Error: ${error.message}`);
-    } finally {
-      setLoading(false);
-      setSelectedPlan(null);
-    }
+    const requestBody = {
+    planName: plan.name.toLowerCase(),
+    priceId: plan.stripePriceId,
+    isAnnual: isAnnual,
+    isTrial: plan.allowTrial && plan.buttonText.includes("Trial"),
+    isCompany: Boolean(
+      user?.isEnterpriseAdmin || 
+      user?.company || 
+      user?.role?.includes('Enterprise')
+    )
   };
 
-  // Check if user is currently on a plan
+    // Log for debugging
+    console.log('Checkout request body:', {
+      ...requestBody,
+      userRoles: user?.role,
+      isEnterpriseAdmin: user?.isEnterpriseAdmin,
+      hasCompany: !!user?.company
+    });
+
+    const response = await fetch(`${backendUrl}/api/billing/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to create checkout session');
+    }
+
+    const { url } = await response.json();
+    window.location.href = url;
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+    setError(error.message);
+  } finally {
+    setLoading(false);
+    setSelectedPlan(null);
+  }
+};
   const isCurrentPlan = (planName) => {
     return userSubscription?.subscription?.plan === planName.toLowerCase();
   };
 
-  // Check if user is on trial
   const isOnTrial = () => {
-    return userSubscription?.trial?.isActive;
+    return userSubscription?.trial?.isActive || false;
   };
 
-  // Get trial remaining days
   const getTrialDaysRemaining = () => {
     return userSubscription?.trial?.remainingDays || 0;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50">
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <X className="h-5 w-5 text-red-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                <strong>Error:</strong> {error}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Trial Banner */}
       {isOnTrial() && (
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3">
@@ -291,7 +339,21 @@ const BillingPage = ({ user, onUpgrade }) => {
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-blue-600/10"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          {/* Badge */}
+          {hasUsedTrial() && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <X className="h-5 w-5 text-red-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">
+                    <strong>Your trial has ended.</strong> To continue using our services, please upgrade to a paid plan.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-center mb-8">
             <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
               <Sparkles className="w-4 h-4" />
@@ -299,7 +361,6 @@ const BillingPage = ({ user, onUpgrade }) => {
             </div>
           </div>
 
-          {/* Main Heading */}
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Streamline Your
@@ -310,7 +371,6 @@ const BillingPage = ({ user, onUpgrade }) => {
               Transform your procurement operations with our comprehensive cloud-based solution for requisitions, vendor management, purchase orders, and invoice processing.
             </p>
             
-            {/* Savings Badge */}
             <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium mb-8">
               <Check className="w-4 h-4" />
               <span>Save 20% with annual billing</span>
@@ -364,7 +424,6 @@ const BillingPage = ({ user, onUpgrade }) => {
               onMouseEnter={() => setHoveredPlan(index)}
               onMouseLeave={() => setHoveredPlan(null)}
             >
-              {/* Current Plan Badge */}
               {isCurrentPlan(plan.name) && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
@@ -373,7 +432,6 @@ const BillingPage = ({ user, onUpgrade }) => {
                 </div>
               )}
 
-              {/* Popular Badge */}
               {plan.popular && !isCurrentPlan(plan.name) && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg">
@@ -383,7 +441,6 @@ const BillingPage = ({ user, onUpgrade }) => {
                 </div>
               )}
 
-              {/* Savings Badge */}
               {plan.savings && (
                 <div className="absolute -top-2 -right-2 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
                   Save {plan.savings}
@@ -391,12 +448,10 @@ const BillingPage = ({ user, onUpgrade }) => {
               )}
 
               <div className="p-8">
-                {/* Header */}
                 <div className="text-center mb-8">
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{plan.name}</h3>
                   <p className="text-gray-600 mb-6">{plan.description}</p>
                   
-                  {/* Price */}
                   <div className="mb-4">
                     {typeof plan.price === 'number' ? (
                       <div>
@@ -422,7 +477,6 @@ const BillingPage = ({ user, onUpgrade }) => {
                   </div>
                 </div>
 
-                {/* Features */}
                 <div className="mb-8">
                   <ul className="space-y-4">
                     {plan.features.map((feature, featureIndex) => (
@@ -434,10 +488,13 @@ const BillingPage = ({ user, onUpgrade }) => {
                   </ul>
                 </div>
 
-                {/* CTA Button */}
                 <button
                   onClick={() => handlePlanSelect(plan)}
-                  disabled={loading && selectedPlan === plan.id || isCurrentPlan(plan.name)}
+                  disabled={
+                    (loading && selectedPlan === plan.id) || 
+                    isCurrentPlan(plan.name) ||
+                    (!plan.allowTrial && plan.buttonText.includes("Trial"))
+                  }
                   className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-300 group disabled:opacity-50 disabled:cursor-not-allowed ${
                     isCurrentPlan(plan.name)
                       ? 'bg-green-100 text-green-800 border border-green-300'
@@ -559,23 +616,23 @@ const BillingPage = ({ user, onUpgrade }) => {
             Start your 14-day free trial today and experience the power of automated purchase orders and invoice processing.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => handlePlanSelect(pricingPlans[1])} // Professional plan
-              disabled={loading}
-              className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl group disabled:opacity-50"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Processing...</span>
-                </div>
-              ) : (
-                <>
-                  Get Started Free
-                  <ArrowRight className="w-5 h-5 inline ml-2 group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </button>
+            {hasUsedTrial() ? (
+              <button
+                onClick={() => handlePlanSelect(pricingPlans[1])}
+                className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl"
+              >
+                Upgrade Now
+                <ArrowRight className="w-5 h-5 inline ml-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+            ) : (
+              <button
+                onClick={() => handlePlanSelect(pricingPlans[1])}
+                className="flex items-center justify-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold text-lg hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl"
+              >
+                Start Free Trial
+                <ArrowRight className="w-5 h-5 inline ml-2 group-hover:translate-x-1 transition-transform" />
+              </button>
+            )}
             <button className="border-2 border-white text-white px-8 py-4 rounded-xl font-semibold text-lg hover:bg-white hover:text-blue-600 transition-colors">
               Schedule Demo
             </button>

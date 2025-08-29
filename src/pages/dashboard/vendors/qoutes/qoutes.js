@@ -288,8 +288,9 @@ export default function VendorRFQsPage() {
   const totalRFQs = filteredRFQs?.length || 0
   const openRFQs = filteredRFQs?.filter((rfq) => rfq.status === "open")?.length || 0
   const closedRFQs = filteredRFQs?.filter((rfq) => rfq.status === "closed")?.length || 0
-  const submittedQuotes =
-    filteredRFQs?.filter((rfq) => rfq.quotes?.some((quote) => quote.vendorEmail === user?.email))?.length || 0
+ const submittedQuotes = filteredRFQs.reduce((total, rfq) => {
+  return total + (rfq.quoteCount ?? rfq.quotes?.length ?? 0)
+}, 0)
 
   const handleSelectRFQ = (rfq) => {
     setSelectedRFQ(rfq)
@@ -464,8 +465,6 @@ export default function VendorRFQsPage() {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-         
-
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />

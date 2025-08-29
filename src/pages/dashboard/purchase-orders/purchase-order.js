@@ -928,7 +928,6 @@ const RfqCard = ({ rfq, isSelected, onSelect }) => {
 };
 
 export default function PurchaseOrdersPage() {
-  const { token } = useAuth();
   const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -953,53 +952,72 @@ export default function PurchaseOrdersPage() {
   
   // New state for RFQ modal
   const [rfqSearchTerm, setRfqSearchTerm] = useState("");
-  const [rfqStatusFilter, setRfqStatusFilter] = useState("open");
-  
-  const backendUrl = process.env.REACT_APP_BACKEND_URL;
+  const [rfqStatusFilter, setRfqStatusFilter] = useState("all");
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+  ? process.env.REACT_APP_BACKEND_URL_PROD
+  : process.env.REACT_APP_BACKEND_URL_DEV;
+
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const token = localStorage.getItem("token")
-        const poResponse = await fetch(`${backendUrl}/api/purchase-orders`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        if (!poResponse.ok) throw new Error("Failed to fetch purchase orders")
-        const poData = await poResponse.json()
-        setPurchaseOrders(poData)
+   
 
-        const rfqResponse = await fetch(`${backendUrl}/api/rfqs`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-        if (!rfqResponse.ok) throw new Error("Failed to fetch RFQs")
-        const rfqData = await rfqResponse.json()
-        setRfqs(rfqData)
-      } catch (error) {
-        console.error("Failed to fetch data:", error)
-      } finally {
-        setIsLoading(false)
-      }
+    const fetchData = async () => {
+  try {
+
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("No authentication token found");
+    console.log("Fetching from:", `${backendUrl}/api/purchase-orders`);
+    
+    const poResponse = await fetch(`${backendUrl}/api/purchase-orders`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log("PO Response status:", poResponse.status);
+    
+    if (!poResponse.ok) {
+      const errorData = await poResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${poResponse.status}`);
     }
 
+    const poData = await poResponse.json();
+    console.log("Fetched POs:", poData);
+    setPurchaseOrders(Array.isArray(poData.data) ? poData.data : []);
+
+    // Repeat similar pattern for RFQs fetch
+    const rfqResponse = await fetch(`${backendUrl}/api/rfqs`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!rfqResponse.ok) {
+      const errorData = await rfqResponse.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${rfqResponse.status}`);
+    }
+
+    const rfqData = await rfqResponse.json();
+    setRfqs(Array.isArray(rfqData.data) ? rfqData.data : []);
+
+  } catch (error) {
+    console.error("Failed to fetch data:", error);
+    showNotificationMessage(error.message || "Failed to fetch data", "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
     fetchData()
-  }, [token, backendUrl])
+  }, [backendUrl])
 
   // Filter RFQs for modal
   const filteredRfqs = rfqs
-    .filter((rfq) => {
-      // Filter by status
-      if (rfqStatusFilter === "open") {
-        return rfq.status === "open" || !rfq.status; // Show open RFQs or those without status
-      }
-      if (rfqStatusFilter === "all") return true;
-      return rfq.status === rfqStatusFilter;
-    })
+     .filter(() => true)
     .filter((rfq) => {
       // Filter by search term
       return (
@@ -1011,7 +1029,7 @@ export default function PurchaseOrdersPage() {
     })
     .filter((rfq) => {
       // Only show RFQs with selected vendors for PO creation
-      return rfq.selectedVendor && rfq.quotes?.length > 0;
+      return !!rfq.selectedVendor;
     });
 
   // Filter purchase orders
@@ -1061,52 +1079,65 @@ export default function PurchaseOrdersPage() {
   }
 
   const handleCreatePO = async () => {
-    if (!selectedRfqId || !selectedQuote) {
-      showNotificationMessage("Please select an RFQ with a selected vendor.", "error")
-      return
-    }
-
-    const rfq = rfqs.find((rfq) => rfq._id === selectedRfqId)
-    if (!rfq) {
-      showNotificationMessage("RFQ not found.", "error")
-      return
-    }
-
-    const items = [
-      {
-        itemName: rfq.itemName,
-        product: rfq.itemName,
-        quantity: rfq.quantity,
-        price: selectedQuote.price,
-      },
-    ]
-
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${backendUrl}/api/purchase-orders`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          rfqId: selectedRfqId,
-          items,
-        }),
-      })
-      const data = await response.json()
-      if (response.ok) {
-        showNotificationMessage("Purchase Order created successfully!", "success")
-        setPurchaseOrders([...purchaseOrders, data.po])
-        closeCreatePOModal()
-      } else {
-        throw new Error(data.message || "Failed to create PO")
-      }
-    } catch (error) {
-      console.error("Error creating PO:", error)
-      showNotificationMessage(error.message, "error")
-    }
+  if (!selectedRfqId) {
+    showNotificationMessage("Please select an RFQ with a selected vendor.", "error");
+    return;
   }
+
+  const rfq = rfqs.find((rfq) => rfq._id === selectedRfqId);
+  if (!rfq) {
+    showNotificationMessage("RFQ not found.", "error");
+    return;
+  }
+
+  if (!rfq.selectedVendor) {
+    showNotificationMessage("This RFQ does not have a selected vendor.", "error");
+    return;
+  }
+
+  // If you want to auto-pick the quote from the selectedVendor:
+  const vendorQuote = rfq.quotes?.find(
+    (q) => q.vendor === rfq.selectedVendor._id && q.isValid
+  );
+
+  const items = [
+    {
+      itemName: rfq.itemName,
+      product: rfq.itemName,
+      quantity: rfq.quantity,
+      price: vendorQuote ? vendorQuote.price : 0, // fallback if no quote
+    },
+  ];
+
+  try {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${backendUrl}/api/purchase-orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        rfqId: rfq._id,
+        vendorId: rfq.selectedVendor._id, // include vendorId
+        items,
+      }),
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      showNotificationMessage("Purchase Order created successfully!", "success");
+      setPurchaseOrders([...purchaseOrders, data.po]);
+      closeCreatePOModal();
+    } else {
+      throw new Error(data.message || "Failed to create PO");
+    }
+  } catch (error) {
+    console.error("Error creating PO:", error);
+    showNotificationMessage(error.message, "error");
+  }
+};
+
 
   const handleTrackDelivery = (po) => {
     setSelectedPOForTracking(po);
@@ -1521,7 +1552,6 @@ export default function PurchaseOrdersPage() {
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-            <Plus size={20} className="text-blue-500" />
             Create Purchase Order
           </h2>
           <button
@@ -1550,18 +1580,6 @@ export default function PurchaseOrdersPage() {
               className="pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
             />
           </div>
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-gray-500" />
-            <select
-              value={rfqStatusFilter}
-              onChange={(e) => setRfqStatusFilter(e.target.value)}
-              className="px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm min-w-[140px]"
-            >
-              <option value="open">Open RFQs</option>
-              <option value="all">All RFQs</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
         </div>
 
         {/* RFQ Selection Grid */}
@@ -1571,9 +1589,10 @@ export default function PurchaseOrdersPage() {
               <FileText size={16} className="text-blue-500" />
               Available RFQs
             </h3>
-            <div className="text-sm text-gray-500">
-              {filteredRfqs.length} of {rfqs.length} RFQs ready for PO
-            </div>
+           <div className="text-sm text-gray-500">
+  {filteredRfqs.length} of {rfqs.filter(rfq => rfq.selectedVendor).length} RFQs ready for PO
+</div>
+
           </div>
 
           {filteredRfqs.length === 0 ? (
@@ -1581,16 +1600,16 @@ export default function PurchaseOrdersPage() {
               <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FileText size={28} className="text-gray-400" />
               </div>
-              <h3 className="text-base font-medium text-gray-900 mb-2">
-                {rfqSearchTerm || rfqStatusFilter !== "open" 
-                  ? "No RFQs match your criteria" 
-                  : "No Open RFQs Available"}
-              </h3>
+            <h3 className="text-base font-medium text-gray-900 mb-2">
+  {rfqSearchTerm 
+    ? "No RFQs match your criteria" 
+    : "No RFQs with selected vendors"}
+</h3>
               <p className="text-sm text-gray-500">
-                {rfqSearchTerm || rfqStatusFilter !== "open"
-                  ? "Try adjusting your search or filter criteria."
-                  : "RFQs need selected vendors before they can be converted to purchase orders."}
-              </p>
+  {rfqSearchTerm
+    ? "Try adjusting your search or filter criteria."
+    : "RFQs need a selected vendor before they can be converted to purchase orders."}
+</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-3 max-h-64 overflow-y-auto pr-2">
@@ -1658,14 +1677,15 @@ export default function PurchaseOrdersPage() {
             <X size={16} />
             Cancel
           </button>
-          <button
-            onClick={handleCreatePO}
-            disabled={!selectedRfqId || !selectedQuote}
-            className="px-5 py-2.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save size={16} />
-            Create Purchase Order
-          </button>
+         <button
+  onClick={handleCreatePO}
+  disabled={!selectedRfqId}
+  className="px-5 py-2.5 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+>
+  <Save size={16} />
+  Create Purchase Order
+</button>
+
         </div>
       </div>
     </div>

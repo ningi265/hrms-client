@@ -1,24 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Plus,
-  Trash2,
-  Paperclip,
-  CheckCircle,
-  Receipt,
-  Calendar,
-  MapPin,
-  DollarSign,
-  User,
-  FileText,
-  Upload,
-  AlertCircle,
-  Info,
-  Clock,
-  TrendingUp,
-  Activity,
-  Plane,
-  CreditCard
-} from 'lucide-react';
+import { Plus, Trash2, Paperclip, CheckCircle, Receipt, Calendar, MapPin, DollarSign, User, FileText, Upload, AlertCircle, Info, Clock, TrendingUp, Activity, Plane, CreditCard } from 'lucide-react';
 import { useAuth } from '../../../authcontext/authcontext';
 
 // Custom Components
@@ -59,12 +40,12 @@ const Alert = ({ type = "info", title, children, onClose }) => {
   const Icon = icons[type];
 
   return (
-    <div className={`p-4 rounded-lg border ${typeClasses[type]} mb-4`}>
-      <div className="flex items-start gap-3">
-        <Icon className={`w-5 h-5 mt-0.5 ${iconClasses[type]}`} />
+    <div className={`p-3 rounded-2xl border ${typeClasses[type]} mb-3`}>
+      <div className="flex items-start gap-2">
+        <Icon className={`w-4 h-4 mt-0.5 ${iconClasses[type]}`} />
         <div className="flex-1">
-          {title && <h4 className="font-medium mb-1">{title}</h4>}
-          <div className="text-sm">{children}</div>
+          {title && <h4 className="font-medium mb-1 text-sm">{title}</h4>}
+          <div className="text-xs">{children}</div>
         </div>
       </div>
     </div>
@@ -83,7 +64,7 @@ const StatusBadge = ({ status, type = "default" }) => {
   };
 
   return (
-    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getColors(status)}`}>
+    <span className={`px-2 py-0.5 text-xs font-medium rounded-2xl ${getColors(status)}`}>
       {status.replace('_', ' ')}
     </span>
   );
@@ -91,9 +72,9 @@ const StatusBadge = ({ status, type = "default" }) => {
 
 const MetricCard = ({ title, value, icon: Icon, color, subtitle, prefix = "", suffix = "" }) => {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl border border-gray-200 p-3 hover:shadow-md transition-shadow">
       <div className="flex items-center justify-between mb-2">
-        <div className={`p-2 rounded-lg ${
+        <div className={`p-1.5 rounded-xl ${
           color === 'blue' ? 'bg-blue-50' :
           color === 'green' ? 'bg-emerald-50' :
           color === 'purple' ? 'bg-purple-50' :
@@ -101,7 +82,7 @@ const MetricCard = ({ title, value, icon: Icon, color, subtitle, prefix = "", su
           color === 'red' ? 'bg-red-50' :
           'bg-gray-50'
         }`}>
-          <Icon size={20} className={
+          <Icon size={16} className={
             color === 'blue' ? 'text-blue-600' :
             color === 'green' ? 'text-emerald-600' :
             color === 'purple' ? 'text-purple-600' :
@@ -111,7 +92,7 @@ const MetricCard = ({ title, value, icon: Icon, color, subtitle, prefix = "", su
           } />
         </div>
       </div>
-      <div className="text-2xl font-bold text-gray-900 mb-1">
+      <div className="text-lg font-bold text-gray-900 mb-1">
         {prefix}{value}{suffix}
       </div>
       <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
@@ -335,7 +316,7 @@ export default function EmployeeReconciliationPage() {
         <div className="flex justify-center items-center min-h-96">
           <div className="text-center">
             <LoadingSpinner size="lg" />
-            <p className="mt-4 text-gray-600">Loading travel requests...</p>
+            <p className="mt-4 text-gray-600 text-sm">Loading travel requests...</p>
           </div>
         </div>
       </div>
@@ -344,59 +325,49 @@ export default function EmployeeReconciliationPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="p-4 space-y-6 max-w-7xl mx-auto">
+      <main className="p-3 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Receipt className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-blue-50 rounded-xl">
+                <Receipt className="w-5 h-5 text-blue-600" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Travel Expense Reconciliation</h1>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <Activity className="w-4 h-4 text-green-500" />
-                <span>Active reconciliation</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4 text-blue-500" />
-                <span>{travelRequests.length} pending reconciliation{travelRequests.length !== 1 ? 's' : ''}</span>
-              </div>
+              <h1 className="text-xl font-bold text-gray-900">Travel Expense Reconciliation</h1>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-white rounded-2xl border border-gray-200">
           <div className="border-b border-gray-100">
             <nav className="flex">
               <button
                 onClick={() => handleTabChange(0)}
-                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 ${
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 ${
                   tabValue === 0
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <Receipt size={16} />
+                <Receipt size={14} />
                 New Reconciliation
               </button>
               <button
                 onClick={() => handleTabChange(1)}
-                className={`flex items-center gap-2 px-6 py-4 text-sm font-medium border-b-2 ${
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 ${
                   tabValue === 1
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <CheckCircle size={16} />
+                <CheckCircle size={14} />
                 Reconciliation History
               </button>
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-4">
             {tabValue === 0 ? (
               <>
                 {error && (
@@ -416,12 +387,12 @@ export default function EmployeeReconciliationPage() {
                     No travel requests requiring reconciliation found. All your trips are up to date!
                   </Alert>
                 ) : (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Travel Request Selection */}
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Travel Request</h3>
+                    <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">Select Travel Request</h3>
                       
-                      <div className="mb-4">
+                      <div className="mb-3">
                         <label className="block text-sm font-medium text-gray-700 mb-2">Travel Request</label>
                         <select
                           value={selectedRequest?._id || ''}
@@ -429,7 +400,7 @@ export default function EmployeeReconciliationPage() {
                             const selected = travelRequests.find(req => req._id === e.target.value);
                             setSelectedRequest(selected);
                           }}
-                          className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <option value="">Select a travel request...</option>
                           {travelRequests.map(request => (
@@ -442,8 +413,8 @@ export default function EmployeeReconciliationPage() {
                       </div>
 
                       {selectedRequest && (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                             <MetricCard
                               title="Trip Purpose"
                               value={selectedRequest.purpose}
@@ -470,41 +441,41 @@ export default function EmployeeReconciliationPage() {
                             />
                           </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            <div className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                            <div className="space-y-3">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Departure Date</label>
-                                <div className="p-3 bg-gray-50 rounded-lg">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Departure Date</label>
+                                <div className="p-2 bg-gray-50 rounded-xl">
                                   <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-gray-500" />
-                                    <span className="text-gray-900">{new Date(selectedRequest.departureDate).toLocaleDateString()}</span>
+                                    <Calendar className="w-3 h-3 text-gray-500" />
+                                    <span className="text-gray-900 text-sm">{new Date(selectedRequest.departureDate).toLocaleDateString()}</span>
                                   </div>
                                 </div>
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                                <div className="p-3 bg-gray-50 rounded-lg">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Payment Method</label>
+                                <div className="p-2 bg-gray-50 rounded-xl">
                                   <div className="flex items-center gap-2">
-                                    <CreditCard className="w-4 h-4 text-gray-500" />
-                                    <span className="text-gray-900">{selectedRequest.paymentMethod || 'None specified'}</span>
+                                    <CreditCard className="w-3 h-3 text-gray-500" />
+                                    <span className="text-gray-900 text-sm">{selectedRequest.paymentMethod || 'None specified'}</span>
                                   </div>
                                 </div>
                               </div>
                             </div>
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Return Date</label>
-                                <div className="p-3 bg-gray-50 rounded-lg">
+                                <label className="block text-xs font-medium text-gray-700 mb-1">Return Date</label>
+                                <div className="p-2 bg-gray-50 rounded-xl">
                                   <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4 text-gray-500" />
-                                    <span className="text-gray-900">{new Date(selectedRequest.returnDate).toLocaleDateString()}</span>
+                                    <Calendar className="w-3 h-3 text-gray-500" />
+                                    <span className="text-gray-900 text-sm">{new Date(selectedRequest.returnDate).toLocaleDateString()}</span>
                                   </div>
                                 </div>
                               </div>
                               {selectedRequest.reconciliation?.status === 'changes_requested' && (
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                                  <div className="p-3 bg-yellow-50 rounded-lg">
+                                  <label className="block text-xs font-medium text-gray-700 mb-1">Status</label>
+                                  <div className="p-2 bg-yellow-50 rounded-xl">
                                     <StatusBadge status="changes_requested" />
                                   </div>
                                 </div>
@@ -516,36 +487,36 @@ export default function EmployeeReconciliationPage() {
                     </div>
 
                     {selectedRequest && (
-                      <form onSubmit={handleSubmit} className="space-y-6">
+                      <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Trip Report */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                          <div className="flex items-center gap-2 mb-4">
-                            <FileText className="w-5 h-5 text-blue-600" />
+                        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                          <div className="flex items-center gap-2 mb-3">
+                            <FileText className="w-4 h-4 text-blue-600" />
                             <h3 className="text-lg font-semibold text-gray-900">Trip Report</h3>
                           </div>
                           <textarea
                             placeholder="Provide a detailed summary of your trip, including meetings attended, objectives achieved, and any follow-up actions required..."
-                            rows={6}
+                            rows={4}
                             value={tripReport}
                             onChange={(e) => setTripReport(e.target.value)}
                             required
-                            className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                         </div>
 
                         {/* Expenses */}
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                          <div className="flex items-center justify-between mb-4">
+                        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                          <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
-                              <Receipt className="w-5 h-5 text-blue-600" />
+                              <Receipt className="w-4 h-4 text-blue-600" />
                               <h3 className="text-lg font-semibold text-gray-900">Expenses</h3>
                             </div>
                             <button
                               type="button"
                               onClick={handleAddExpense}
-                              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                              className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-2xl text-sm font-medium hover:bg-blue-700 transition-colors"
                             >
-                              <Plus size={16} />
+                              <Plus size={14} />
                               Add Expense
                             </button>
                           </div>
@@ -554,22 +525,22 @@ export default function EmployeeReconciliationPage() {
                             <table className="w-full">
                               <thead className="bg-gray-50">
                                 <tr>
-                                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
-                                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount ($)</th>
-                                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
-                                  <th className="text-left py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                  <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                  <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                                  <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Amount ($)</th>
+                                  <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Receipt</th>
+                                  <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100">
                                 {expenses.map((expense) => (
                                   <tr key={expense.id} className="hover:bg-gray-50">
-                                    <td className="py-3 px-4">
+                                    <td className="py-2 px-3">
                                       <select
                                         value={expense.category}
                                         onChange={(e) => handleExpenseChange(expense.id, 'category', e.target.value)}
                                         required
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                       >
                                         <option value="">Select category...</option>
                                         {expenseCategories.map((category) => (
@@ -579,17 +550,17 @@ export default function EmployeeReconciliationPage() {
                                         ))}
                                       </select>
                                     </td>
-                                    <td className="py-3 px-4">
+                                    <td className="py-2 px-3">
                                       <input
                                         type="text"
                                         placeholder="Expense description"
                                         value={expense.description}
                                         onChange={(e) => handleExpenseChange(expense.id, 'description', e.target.value)}
                                         required
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                       />
                                     </td>
-                                    <td className="py-3 px-4">
+                                    <td className="py-2 px-3">
                                       <input
                                         type="number"
                                         placeholder="0.00"
@@ -598,10 +569,10 @@ export default function EmployeeReconciliationPage() {
                                         value={expense.amount}
                                         onChange={(e) => handleExpenseChange(expense.id, 'amount', e.target.value)}
                                         required
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="w-full px-2 py-1.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                       />
                                     </td>
-                                    <td className="py-3 px-4">
+                                    <td className="py-2 px-3">
                                       <div className="space-y-1">
                                         <input
                                           accept="image/*,.pdf"
@@ -614,11 +585,11 @@ export default function EmployeeReconciliationPage() {
                                         <label htmlFor={`receipt-upload-${expense.id}`}>
                                           <button
                                             type="button"
-                                            className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors w-full"
+                                            className="flex items-center gap-2 px-2 py-1.5 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors w-full"
                                             onClick={() => document.getElementById(`receipt-upload-${expense.id}`).click()}
                                           >
-                                            <Upload size={14} />
-                                            <span className="text-sm">
+                                            <Upload size={12} />
+                                            <span className="text-xs">
                                               {expense.receipt ? expense.receipt.name : 'Upload Receipt'}
                                             </span>
                                           </button>
@@ -630,18 +601,18 @@ export default function EmployeeReconciliationPage() {
                                         )}
                                       </div>
                                     </td>
-                                    <td className="py-3 px-4">
+                                    <td className="py-2 px-3">
                                       <button
                                         type="button"
                                         onClick={() => handleRemoveExpense(expense.id)}
                                         disabled={expenses.length <= 1}
-                                        className={`p-2 rounded-lg transition-colors ${
+                                        className={`p-1.5 rounded-xl transition-colors ${
                                           expenses.length <= 1
                                             ? 'text-gray-400 cursor-not-allowed'
                                             : 'text-red-600 hover:bg-red-50'
                                         }`}
                                       >
-                                        <Trash2 size={16} />
+                                        <Trash2 size={14} />
                                       </button>
                                     </td>
                                   </tr>
@@ -650,10 +621,10 @@ export default function EmployeeReconciliationPage() {
                             </table>
                           </div>
 
-                          <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
+                          <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
                             <div className="text-right">
-                              <p className="text-sm text-gray-500">Total Expenses</p>
-                              <p className="text-xl font-bold text-gray-900">{formatCurrency(calculateTotal())}</p>
+                              <p className="text-xs text-gray-500">Total Expenses</p>
+                              <p className="text-lg font-bold text-gray-900">{formatCurrency(calculateTotal())}</p>
                             </div>
                           </div>
                         </div>
@@ -663,7 +634,7 @@ export default function EmployeeReconciliationPage() {
                           <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-2xl text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             {isSubmitting ? (
                               <>
@@ -672,7 +643,7 @@ export default function EmployeeReconciliationPage() {
                               </>
                             ) : (
                               <>
-                                <CheckCircle size={16} />
+                                <CheckCircle size={14} />
                                 Submit Reconciliation
                               </>
                             )}
@@ -684,14 +655,14 @@ export default function EmployeeReconciliationPage() {
                 )}
               </>
             ) : (
-              <div className="text-center py-12">
-                <div className="mx-auto w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-                  <CheckCircle className="w-6 h-6 text-gray-400" />
+              <div className="text-center py-8">
+                <div className="mx-auto w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center mb-3">
+                  <CheckCircle className="w-5 h-5 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Reconciliation History</h3>
-                <p className="text-gray-500 mb-4">View your past reconciliation submissions here</p>
-                <div className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-600 rounded-lg">
-                  <Clock size={16} className="mr-2" />
+                <p className="text-gray-500 mb-3 text-sm">View your past reconciliation submissions here</p>
+                <div className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 rounded-2xl text-sm">
+                  <Clock size={14} className="mr-2" />
                   Coming Soon
                 </div>
               </div>

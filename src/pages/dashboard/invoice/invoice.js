@@ -525,10 +525,6 @@ export default function InvoicesPage() {
               <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
-              <Plus size={16} />
-              New Invoice
-            </button>
           </div>
         </div>
 

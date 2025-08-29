@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 
 // API configuration
-const API_BASE_URL  = process.env.REACT_APP_ENV === 'production'
+const API_BASE_URL = process.env.REACT_APP_ENV === 'production'
   ? process.env.REACT_APP_BACKEND_URL_PROD
   : process.env.REACT_APP_BACKEND_URL_DEV;
 
@@ -65,7 +65,53 @@ const distributionMethods = [
   { value: 'priority', label: 'Priority-Based', description: 'Distribute based on department priorities' }
 ];
 
-// Notification Component
+// Compact Metric Card Component (added to match budget.jsx)
+const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal", onClick }) => {
+  const cardClass = size === "large" ? "col-span-2" : "";
+  const valueSize = size === "large" ? "text-2xl" : "text-base";
+  
+  return (
+    <div 
+      className={`bg-white rounded-2xl border border-gray-200 p-1.5 hover:shadow-sm transition-shadow cursor-pointer ${cardClass}`}
+      onClick={onClick}
+    >
+      <div className="flex items-center justify-between mb-1">
+        <div className={`p-1.5 rounded-xl ${
+          color === 'blue' ? 'bg-blue-50' :
+          color === 'green' ? 'bg-emerald-50' :
+          color === 'purple' ? 'bg-purple-50' :
+          color === 'orange' ? 'bg-orange-50' :
+          color === 'red' ? 'bg-red-50' :
+          'bg-gray-50'
+        }`}>
+          <Icon size={16} className={
+            color === 'blue' ? 'text-blue-600' :
+            color === 'green' ? 'text-emerald-600' :
+            color === 'purple' ? 'text-purple-600' :
+            color === 'orange' ? 'text-orange-600' :
+            color === 'red' ? 'text-red-600' :
+            'text-gray-600'
+          } />
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1">
+            {trend > 0 ? <TrendingUp size={12} className="text-emerald-500" /> : <TrendingDown size={12} className="text-red-500" />}
+            <span className={`text-xs font-medium ${trend > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+              {trend > 0 ? '+' : ''}{trend}%
+            </span>
+          </div>
+        )}
+      </div>
+      <div className={`${valueSize} font-bold text-gray-900 mb-1`}>
+        {prefix}{typeof value === 'number' ? value.toLocaleString() : value}{suffix}
+      </div>
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">{title}</div>
+      {subtitle && <div className="text-xs text-gray-400">{subtitle}</div>}
+    </div>
+  );
+};
+
+// Notification Component (updated to match compact style)
 const Notification = ({ notification, onClose }) => {
   useEffect(() => {
     if (notification) {
@@ -77,41 +123,41 @@ const Notification = ({ notification, onClose }) => {
   if (!notification) return null;
 
   return (
-    <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg max-w-md z-50 ${
-      notification.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
-      notification.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
-      notification.type === 'warning' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-      'bg-blue-100 text-blue-800 border border-blue-200'
+    <div className={`fixed bottom-4 right-4 p-3 rounded-2xl shadow-sm max-w-md z-50 ${
+      notification.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
+      notification.type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
+      notification.type === 'warning' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' :
+      'bg-blue-50 text-blue-800 border border-blue-200'
     }`}>
       <div className="flex items-center gap-2">
-        {notification.type === 'success' && <CheckCircle size={20} />}
-        {notification.type === 'error' && <AlertTriangle size={20} />}
-        {notification.type === 'warning' && <AlertTriangle size={20} />}
-        {notification.type === 'info' && <Bell size={20} />}
-        <span className="font-medium">{notification.message}</span>
-        <button onClick={onClose} className="ml-auto">
-          <X size={16} />
+        {notification.type === 'success' && <CheckCircle size={16} className="text-green-600" />}
+        {notification.type === 'error' && <AlertTriangle size={16} className="text-red-600" />}
+        {notification.type === 'warning' && <AlertTriangle size={16} className="text-yellow-600" />}
+        {notification.type === 'info' && <Bell size={16} className="text-blue-600" />}
+        <span className="text-sm font-medium">{notification.message}</span>
+        <button onClick={onClose} className="ml-auto p-1 rounded-full hover:bg-white/20">
+          <X size={14} />
         </button>
       </div>
     </div>
   );
 };
 
-// Loading Overlay Component
+// Loading Overlay Component (updated to match compact style)
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 flex items-center gap-3">
-        <Loader className="animate-spin w-6 h-6 text-blue-500" />
-        <span className="font-medium">{message}</span>
+      <div className="bg-white rounded-2xl p-4 flex items-center gap-2">
+        <Loader className="animate-spin w-5 h-5 text-blue-500" />
+        <span className="font-medium text-sm">{message}</span>
       </div>
     </div>
   );
 };
 
-// Auto Distribution Modal
+// Auto Distribution Modal (updated styling)
 const AutoDistributionModal = ({ isOpen, onClose, onDistribute, totalBudget, departmentCount }) => {
   const [selectedMethod, setSelectedMethod] = useState('equal');
   const [isLoading, setIsLoading] = useState(false);
@@ -132,57 +178,57 @@ const AutoDistributionModal = ({ isOpen, onClose, onDistribute, totalBudget, dep
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-gray-900">Auto-Distribute Budget</h3>
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-gray-600 rounded-lg">
-              <X size={20} />
+            <h3 className="text-lg font-bold text-gray-900">Auto-Distribute Budget</h3>
+            <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-gray-600 rounded-xl">
+              <X size={18} />
             </button>
           </div>
         </div>
 
-        <div className="p-6 space-y-4">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h4 className="font-semibold text-blue-900 mb-2">Distribution Preview</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="p-4 space-y-4">
+          <div className="bg-blue-50 p-3 rounded-xl">
+            <h4 className="font-semibold text-blue-900 text-sm mb-1">Distribution Preview</h4>
+            <div className="grid grid-cols-2 gap-3 text-xs">
               <div>Total Budget: <span className="font-medium">MWK {totalBudget.toLocaleString()}</span></div>
               <div>Departments: <span className="font-medium">{departmentCount}</span></div>
             </div>
           </div>
 
-          <div className="space-y-3">
-            <h4 className="font-semibold text-gray-900">Choose Distribution Method</h4>
+          <div className="space-y-2">
+            <h4 className="font-semibold text-gray-900 text-sm">Choose Distribution Method</h4>
             {distributionMethods.map(method => (
-              <label key={method.value} className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+              <label key={method.value} className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-gray-50">
                 <input
                   type="radio"
                   name="distributionMethod"
                   value={method.value}
                   checked={selectedMethod === method.value}
                   onChange={(e) => setSelectedMethod(e.target.value)}
-                  className="mt-1"
+                  className="mt-0.5"
                 />
-                <div>
+                <div className="text-sm">
                   <div className="font-medium text-gray-900">{method.label}</div>
-                  <div className="text-sm text-gray-500">{method.description}</div>
+                  <div className="text-xs text-gray-500">{method.description}</div>
                 </div>
               </label>
             ))}
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 flex gap-3">
+        <div className="px-4 py-3 border-t border-gray-200 flex gap-2">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex-1 px-3 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors text-sm font-medium"
           >
             Cancel
           </button>
           <button
             onClick={handleDistribute}
             disabled={isLoading}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 px-3 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 text-sm font-medium"
           >
             {isLoading ? (
               <>
@@ -191,7 +237,7 @@ const AutoDistributionModal = ({ isOpen, onClose, onDistribute, totalBudget, dep
               </>
             ) : (
               <>
-                <Calculator size={16} />
+                <Calculator size={14} />
                 Distribute Budget
               </>
             )}
@@ -205,9 +251,9 @@ const AutoDistributionModal = ({ isOpen, onClose, onDistribute, totalBudget, dep
 const BudgetAllocationPage = () => {
   const [departments, setDepartments] = useState([]);
   const [allocations, setAllocations] = useState({});
-  const [totalBudget, setTotalBudget] = useState(500000);
-  const [budgetPeriod, setBudgetPeriod] = useState('2024-Q2');
-  const [budgetYear, setBudgetYear] = useState(2024);
+  const [totalBudget, setTotalBudget] = useState(0);
+  const [budgetPeriod, setBudgetPeriod] = useState('2025-Q2');
+  const [budgetYear, setBudgetYear] = useState(2025);
   const [quarter, setQuarter] = useState('Q2');
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -239,29 +285,39 @@ const BudgetAllocationPage = () => {
 
   // Fetch departments from API
   const fetchDepartments = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem('token');
-      
-      const response = await fetch(`${API_BASE_URL}/api/departments`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setDepartments(data.filter(dept => dept.status === 'active'));
-      } else {
-        throw new Error('Failed to fetch departments');
+  try {
+    setIsLoading(true);
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`${API_BASE_URL}/api/departments`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
       }
-    } catch (error) {
-      showNotification('Failed to fetch departments', 'error');
-      console.error('Error fetching departments:', error);
-    } finally {
-      setIsLoading(false);
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Transform the API data to match expected structure
+      const transformedDepartments = data.data.map(dept => ({
+        _id: dept._id,
+        name: dept.name,
+        departmentCode: dept.departmentCode,
+        departmentHead: dept.departmentHead,
+        budget: dept.budget,
+        budgetUtilization: dept.budgetInfo ? dept.budgetInfo.utilizationPercentage : 0,
+        status: dept.status
+      }));
+      setDepartments(transformedDepartments);
+    } else {
+      throw new Error('Failed to fetch departments');
     }
-  };
+  } catch (error) {
+    showNotification('Failed to fetch departments', 'error');
+    console.error('Error fetching departments:', error);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Fetch current allocation if exists
   const fetchCurrentAllocation = async () => {
@@ -567,23 +623,17 @@ const BudgetAllocationPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="max-w-7xl mx-auto p-3">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={() => window.history.back()}
-                className="p-2 text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100"
-              >
-                <ArrowLeft size={20} />
-              </button>
+            <div className="flex items-center gap-3">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Budget Allocation</h1>
-                <p className="text-gray-600 mt-1">Allocate budget to departments for {budgetPeriod}</p>
+                <h1 className="text-xl font-bold text-gray-900">Budget Allocation</h1>
+                <p className="text-xs text-gray-600 mt-0.5">Allocate budget to departments for {budgetPeriod}</p>
                 {currentAllocation && (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
                       currentAllocation.status === 'draft' ? 'bg-gray-100 text-gray-800' :
                       currentAllocation.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-800' :
                       currentAllocation.status === 'approved' ? 'bg-green-100 text-green-800' :
@@ -591,14 +641,14 @@ const BudgetAllocationPage = () => {
                     }`}>
                       {currentAllocation.status.replace('_', ' ').toUpperCase()}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-xs text-gray-500">
                       Last updated: {new Date(currentAllocation.updatedAt).toLocaleDateString()}
                     </span>
                   </div>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <select
                 value={budgetPeriod}
                 onChange={(e) => {
@@ -607,7 +657,7 @@ const BudgetAllocationPage = () => {
                   setBudgetYear(parseInt(year));
                   setQuarter(q);
                 }}
-                className="px-4 py-2 border border-gray-200 rounded-lg bg-white"
+                className="px-3 py-1.5 border border-gray-200 rounded-xl bg-white text-sm"
                 disabled={currentAllocation && currentAllocation.status !== 'draft'}
               >
                 <option value="2024-Q1">Q1 2024</option>
@@ -618,16 +668,16 @@ const BudgetAllocationPage = () => {
               </select>
               <button
                 onClick={() => setShowAllocationSummary(!showAllocationSummary)}
-                className="px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 flex items-center gap-2"
+                className="px-3 py-1.5 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 flex items-center gap-1.5 text-sm"
               >
-                <BarChart3 size={16} />
+                <BarChart3 size={14} />
                 Summary
               </button>
               <button
                 onClick={handleExport}
-                className="px-4 py-2 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 flex items-center gap-2"
+                className="px-3 py-1.5 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 flex items-center gap-1.5 text-sm"
               >
-                <Download size={16} />
+                <Download size={14} />
                 Export
               </button>
             </div>
@@ -635,90 +685,61 @@ const BudgetAllocationPage = () => {
         </div>
 
         {/* Budget Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <Target size={20} className="text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Total Budget</span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900">
-              MWK {totalBudget.toLocaleString()}
-            </div>
-            <input
-              type="number"
-              value={totalBudget}
-              onChange={(e) => setTotalBudget(parseFloat(e.target.value) || 0)}
-              className="mt-2 w-full px-3 py-1 text-sm border border-gray-200 rounded"
-              disabled={currentAllocation && currentAllocation.status !== 'draft'}
-            />
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <DollarSign size={20} className="text-green-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Allocated</span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900">
-              MWK {totalAllocated.toLocaleString()}
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              {allocationPercentage.toFixed(1)}% of total
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className={`p-2 rounded-lg ${remainingBudget >= 0 ? 'bg-purple-50' : 'bg-red-50'}`}>
-                <Calculator size={20} className={remainingBudget >= 0 ? 'text-purple-600' : 'text-red-600'} />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Remaining</span>
-            </div>
-            <div className={`text-2xl font-bold ${remainingBudget >= 0 ? 'text-gray-900' : 'text-red-600'}`}>
-              MWK {remainingBudget.toLocaleString()}
-            </div>
-            {remainingBudget < 0 && (
-              <div className="text-sm text-red-500 mt-1">Over budget!</div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <Building2 size={20} className="text-orange-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-500">Departments</span>
-            </div>
-            <div className="text-2xl font-bold text-gray-900">
-              {departments.length}
-            </div>
-            <div className="text-sm text-gray-500 mt-1">
-              {departments.filter(d => d.status === 'active').length} active
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <MetricCard 
+            title="Total Budget" 
+            value={totalBudget}
+            prefix="MWK "
+            icon={Target}
+            color="blue"
+            subtitle={budgetPeriod}
+          />
+          
+          <MetricCard 
+            title="Allocated" 
+            value={totalAllocated}
+            prefix="MWK "
+            icon={DollarSign}
+            color="green"
+            subtitle={`${allocationPercentage.toFixed(1)}% of total`}
+          />
+          
+          <MetricCard 
+            title="Remaining" 
+            value={remainingBudget}
+            prefix="MWK "
+            icon={Calculator}
+            color={remainingBudget >= 0 ? "purple" : "red"}
+            subtitle={remainingBudget < 0 ? "Over budget!" : "Available"}
+          />
+          
+          <MetricCard 
+            title="Departments" 
+            value={departments.length}
+            icon={Building2}
+            color="orange"
+            subtitle={`${departments.filter(d => d.status === 'active').length} active`}
+          />
         </div>
 
         {/* Validation Results */}
         {validationResult && (
-          <div className="mb-6">
-            <div className={`border rounded-lg p-4 ${
+          <div className="mb-4">
+            <div className={`border rounded-xl p-3 ${
               validationResult.overallValid ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
             }`}>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 {validationResult.overallValid ? 
-                  <CheckCircle size={20} className="text-green-600" /> :
-                  <AlertTriangle size={20} className="text-red-600" />
+                  <CheckCircle size={16} className="text-green-600" /> :
+                  <AlertTriangle size={16} className="text-red-600" />
                 }
-                <span className="font-medium">
+                <span className="font-medium text-sm">
                   {validationResult.overallValid ? 'Allocation Valid' : 'Validation Issues Found'}
                 </span>
               </div>
               
               {validationResult.allocationValidation.errors.length > 0 && (
-                <div className="text-sm text-red-600 mb-2">
+                <div className="text-xs text-red-600 mb-1">
                   <strong>Errors:</strong>
                   <ul className="list-disc list-inside">
                     {validationResult.allocationValidation.errors.map((error, index) => (
@@ -729,7 +750,7 @@ const BudgetAllocationPage = () => {
               )}
               
               {validationResult.allocationValidation.warnings.length > 0 && (
-                <div className="text-sm text-yellow-600">
+                <div className="text-xs text-yellow-600">
                   <strong>Warnings:</strong>
                   <ul className="list-disc list-inside">
                     {validationResult.allocationValidation.warnings.map((warning, index) => (
@@ -739,7 +760,7 @@ const BudgetAllocationPage = () => {
                 </div>
               )}
               
-              <div className="text-sm text-gray-600 mt-2">
+              <div className="text-xs text-gray-600 mt-1">
                 Efficiency: {validationResult.allocationValidation.efficiency.toFixed(1)}%
               </div>
             </div>
@@ -747,66 +768,66 @@ const BudgetAllocationPage = () => {
         )}
 
         {/* Action Buttons */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-3 mb-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search departments..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-64"
+                  className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-xl w-56 text-sm"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setShowAutoDistribution(true)}
                 disabled={isLoading || (currentAllocation && currentAllocation.status !== 'draft')}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 text-sm"
               >
-                <Calculator size={16} />
+                <Calculator size={14} />
                 Auto Distribute
               </button>
               <button
                 onClick={() => handleSaveAllocations(false)}
                 disabled={isLoading || remainingBudget < 0 || (currentAllocation && currentAllocation.status !== 'draft')}
-                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 text-sm"
               >
-                <Save size={16} />
+                <Save size={14} />
                 Save Draft
               </button>
               <button
                 onClick={() => handleSaveAllocations(true)}
                 disabled={isLoading || remainingBudget < 0 || !validationResult?.overallValid || (currentAllocation && currentAllocation.status !== 'draft')}
-                className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="px-3 py-1.5 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 text-sm"
               >
-                <Send size={16} />
-                Submit for Approval
+                <Send size={14} />
+                Submit
               </button>
             </div>
           </div>
         </div>
 
         {/* Department Allocation Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Department Allocations</h3>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900">Department Allocations</h3>
           </div>
           
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Department</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Current Budget</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">New Allocation</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Category</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Priority</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Notes</th>
-                  <th className="text-left py-3 px-6 text-xs font-medium text-gray-500 uppercase">Change</th>
+                  <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 uppercase">Department</th>
+                  <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 uppercase">Current Budget</th>
+                  <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 uppercase">New Allocation</th>
+                  <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 uppercase">Category</th>
+                  <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 uppercase">Priority</th>
+                  <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 uppercase">Notes</th>
+                  <th className="text-left py-2 px-4 text-xs font-medium text-gray-500 uppercase">Change</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -817,45 +838,45 @@ const BudgetAllocationPage = () => {
                   
                   return (
                     <tr key={dept._id} className="hover:bg-gray-50">
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-50 rounded-lg">
-                            <Building2 size={16} className="text-blue-600" />
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 bg-blue-50 rounded-lg">
+                            <Building2 size={14} className="text-blue-600" />
                           </div>
                           <div>
                             <div className="font-medium text-gray-900">{dept.name}</div>
-                            <div className="text-sm text-gray-500">{dept.departmentCode} • {dept.departmentHead}</div>
+                            <div className="text-xs text-gray-500">{dept.departmentCode} • {dept.departmentHead}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
-                        <div className="font-medium text-gray-900">
-                          MWK {(dept.budget || 0).toLocaleString()}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          {dept.budgetUtilization || 0}% utilized
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
+                     <td className="py-3 px-4">
+  <div className="font-medium text-gray-900">
+    MWK {(dept.budget || 0).toLocaleString()}
+  </div>
+  <div className="text-xs text-gray-500">
+    {(dept.budgetUtilization || 0)}% utilized
+  </div>
+</td>
+                      <td className="py-3 px-4">
                         <input
                           type="number"
                           value={allocation.amount}
                           onChange={(e) => handleAllocationChange(dept._id, 'amount', e.target.value)}
-                          className={`w-32 px-3 py-2 border rounded-lg ${
+                          className={`w-28 px-2 py-1.5 border rounded-xl text-sm ${
                             errors[dept._id] ? 'border-red-300 bg-red-50' : 'border-gray-200'
                           }`}
                           min="0"
                           disabled={currentAllocation && currentAllocation.status !== 'draft'}
                         />
                         {errors[dept._id] && (
-                          <div className="text-xs text-red-500 mt-1">{errors[dept._id]}</div>
+                          <div className="text-xs text-red-500 mt-0.5">{errors[dept._id]}</div>
                         )}
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 px-4">
                         <select
                           value={allocation.category}
                           onChange={(e) => handleAllocationChange(dept._id, 'category', e.target.value)}
-                          className="w-36 px-3 py-2 border border-gray-200 rounded-lg"
+                          className="w-32 px-2 py-1.5 border border-gray-200 rounded-xl text-sm"
                           disabled={currentAllocation && currentAllocation.status !== 'draft'}
                         >
                           <option value="">Select Category</option>
@@ -864,11 +885,11 @@ const BudgetAllocationPage = () => {
                           ))}
                         </select>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 px-4">
                         <select
                           value={allocation.priority}
                           onChange={(e) => handleAllocationChange(dept._id, 'priority', e.target.value)}
-                          className="w-24 px-3 py-2 border border-gray-200 rounded-lg"
+                          className="w-24 px-2 py-1.5 border border-gray-200 rounded-xl text-sm"
                           disabled={currentAllocation && currentAllocation.status !== 'draft'}
                         >
                           <option value="low">Low</option>
@@ -877,21 +898,21 @@ const BudgetAllocationPage = () => {
                           <option value="critical">Critical</option>
                         </select>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 px-4">
                         <input
                           type="text"
                           value={allocation.notes}
                           onChange={(e) => handleAllocationChange(dept._id, 'notes', e.target.value)}
                           placeholder="Optional notes..."
-                          className="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                          className="w-28 px-2 py-1.5 border border-gray-200 rounded-xl text-sm"
                           disabled={currentAllocation && currentAllocation.status !== 'draft'}
                         />
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 px-4">
                         <div className={`flex items-center gap-1 ${
                           change > 0 ? 'text-green-600' : change < 0 ? 'text-red-600' : 'text-gray-500'
                         }`}>
-                          {change > 0 ? <TrendingUp size={16} /> : change < 0 ? <TrendingDown size={16} /> : null}
+                          {change > 0 ? <TrendingUp size={14} /> : change < 0 ? <TrendingDown size={14} /> : null}
                           <span className="font-medium">
                             {change > 0 ? '+' : ''}{change.toLocaleString()}
                           </span>
@@ -913,34 +934,34 @@ const BudgetAllocationPage = () => {
         {/* Allocation Summary Modal */}
         {showAllocationSummary && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-xl font-semibold text-gray-900">Budget Allocation Summary</h3>
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">Budget Allocation Summary</h3>
                 <button
                   onClick={() => setShowAllocationSummary(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-xl"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
-              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
                 {/* Summary Statistics */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <div className="text-sm font-medium text-blue-700">Total Allocated</div>
-                    <div className="text-2xl font-bold text-blue-900">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="bg-blue-50 rounded-xl p-3">
+                    <div className="text-xs font-medium text-blue-700">Total Allocated</div>
+                    <div className="text-lg font-bold text-blue-900">
                       MWK {totalAllocated.toLocaleString()}
                     </div>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <div className="text-sm font-medium text-green-700">Remaining Budget</div>
-                    <div className="text-2xl font-bold text-green-900">
+                  <div className="bg-green-50 rounded-xl p-3">
+                    <div className="text-xs font-medium text-green-700">Remaining Budget</div>
+                    <div className="text-lg font-bold text-green-900">
                       MWK {remainingBudget.toLocaleString()}
                     </div>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-4">
-                    <div className="text-sm font-medium text-purple-700">Allocation Rate</div>
-                    <div className="text-2xl font-bold text-purple-900">
+                  <div className="bg-purple-50 rounded-xl p-3">
+                    <div className="text-xs font-medium text-purple-700">Allocation Rate</div>
+                    <div className="text-lg font-bold text-purple-900">
                       {allocationPercentage.toFixed(1)}%
                     </div>
                   </div>
@@ -948,21 +969,21 @@ const BudgetAllocationPage = () => {
 
                 {/* Department Breakdown */}
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Department Breakdown</h4>
-                  <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Department Breakdown</h4>
+                  <div className="space-y-2">
                     {departments.map(dept => {
                       const allocation = allocations[dept._id] || { amount: 0 };
                       const percentage = totalAllocated > 0 ? (allocation.amount / totalAllocated) * 100 : 0;
                       
                       return (
-                        <div key={dept._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span className="font-medium">{dept.name}</span>
+                        <div key={dept._id} className="flex items-center justify-between p-2 bg-gray-50 rounded-xl">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 bg-blue-500 rounded-full"></div>
+                            <span className="font-medium text-sm">{dept.name}</span>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold">MWK {allocation.amount.toLocaleString()}</div>
-                            <div className="text-sm text-gray-500">{percentage.toFixed(1)}%</div>
+                            <div className="font-semibold text-sm">MWK {allocation.amount.toLocaleString()}</div>
+                            <div className="text-xs text-gray-500">{percentage.toFixed(1)}%</div>
                           </div>
                         </div>
                       );

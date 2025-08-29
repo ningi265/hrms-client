@@ -31,8 +31,6 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 
 
-
-
 // Custom Components matching vehicle-management.jsx style
 const LoadingSpinner = ({ size = "md" }) => {
   const sizeClasses = {
@@ -248,197 +246,6 @@ export default function FinanceProcessing() {
 const [perDiemDetails, setPerDiemDetails] = useState(initialPerDiemState);
 const [transferDetails, setTransferDetails] = useState(initialTransferState);
 const [notificationDetails, setNotificationDetails] = useState(initialNotificationState);
-
-
-
-const handleGenerateTransactionPDF = () => {
-  console.log("PDF generation clicked");
-  
-  // Comprehensive null checking
-  if (!selectedRequest) {
-    console.error('Cannot generate PDF: No request selected');
-    setSnackbarMessage("Please select a travel request first");
-    setSnackbarSeverity("error");
-    setSnackbarOpen(true);
-    return;
-  }
-  
-  if (!selectedRequest.financeStatus) {
-    console.error('Cannot generate PDF: Missing finance status');
-    setSnackbarMessage("Selected request is missing financial information");
-    setSnackbarSeverity("error");
-    setSnackbarOpen(true);
-    return;
-  }
-
-  // Create new PDF document
-  const doc = new jsPDF();
-  
-  // Set styles
-  doc.setFont('helvetica');
-  
-  // Header
-  doc.setFontSize(20);
-  doc.setTextColor(40, 40, 40);
-  doc.text('TRANSACTION RECORD', 105, 20, { align: 'center' });
-  
-  // Company Info
-  doc.setFontSize(10);
-  doc.setTextColor(100, 100, 100);
-  doc.text('Company Name • Finance Department', 105, 30, { align: 'center' });
-  
-  // Divider line
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, 35, 190, 35);
-  
-  // Transaction Details Section
-  doc.setFontSize(14);
-  doc.setTextColor(40, 40, 40);
-  doc.text('Transaction Details', 20, 45);
-  
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  
-  let yPosition = 55;
-  
-  // Basic transaction info - with null checks
-  doc.text(`Transaction ID: ${selectedRequest.id || 'N/A'}`, 20, yPosition);
-  doc.text(`Date: ${format(new Date(), "MMMM d, yyyy")}`, 120, yPosition);
-  yPosition += 8;
-  
-  doc.text(`Employee: ${selectedRequest.employeeName || 'N/A'}`, 20, yPosition);
-  doc.text(`Department: ${selectedRequest.department || 'N/A'}`, 120, yPosition);
-  yPosition += 8;
-  
-  doc.text(`Destination: ${selectedRequest.city || 'N/A'}, ${selectedRequest.country || 'N/A'}`, 20, yPosition);
-  yPosition += 8;
-  
-  // Date formatting with null checks
-  const departureDate = selectedRequest.departureDate 
-    ? format(selectedRequest.departureDate, "MMM d, yyyy")
-    : 'N/A';
-  const returnDate = selectedRequest.returnDate 
-    ? format(selectedRequest.returnDate, "MMM d, yyyy")
-    : 'N/A';
-  
-  doc.text(`Travel Period: ${departureDate} - ${returnDate}`, 20, yPosition);
-  
-  const duration = selectedRequest.departureDate && selectedRequest.returnDate 
-    ? Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1 
-    : 'N/A';
-  doc.text(`Duration: ${duration} days`, 120, yPosition);
-  yPosition += 8;
-  
-  doc.text(`Purpose: ${selectedRequest.purpose || 'N/A'}`, 20, yPosition);
-  yPosition += 15;
-  
-  // Payment Details Section
-  doc.setFontSize(14);
-  doc.setTextColor(40, 40, 40);
-  doc.text('Payment Details', 20, yPosition);
-  yPosition += 10;
-  
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  
-  // Safe access to cardDetails
-  const cardType = selectedRequest.cardDetails?.type || 'N/A';
-  const lastFour = selectedRequest.cardDetails?.lastFour || 'N/A';
-  const cardHolder = selectedRequest.cardDetails?.holder || 'N/A';
-  
-  doc.text(`Payment Method: ${cardType} Card **** ${lastFour}`, 20, yPosition);
-  yPosition += 8;
-  
-  doc.text(`Card Holder: ${cardHolder}`, 20, yPosition);
-  yPosition += 8;
-  
-  doc.text(`Currency: ${selectedRequest.currency || 'N/A'}`, 20, yPosition);
-  
-  const exchangeRate = selectedRequest.currency && exchangeRates[selectedRequest.currency] 
-    ? `1 USD = ${exchangeRates[selectedRequest.currency]} ${selectedRequest.currency}`
-    : 'N/A';
-  doc.text(`Exchange Rate: ${exchangeRate}`, 120, yPosition);
-  yPosition += 15;
-  
-  // Financial Breakdown Section
-  doc.setFontSize(14);
-  doc.setTextColor(40, 40, 40);
-  doc.text('Financial Breakdown', 20, yPosition);
-  yPosition += 10;
-  
-  doc.setFontSize(10);
-  
-  if (selectedRequest.perDiemAmount) {
-    // Per Diem Amount
-    doc.text('Per Diem Amount:', 20, yPosition);
-    doc.text(formatCurrency(selectedRequest.perDiemAmount, selectedRequest.currency || 'USD'), 120, yPosition, { align: 'right' });
-    yPosition += 8;
-    
-    // Processing Fee
-    const processingFee = selectedRequest.perDiemAmount * 0.005;
-    doc.text('Processing Fee (0.5%):', 20, yPosition);
-    doc.text(formatCurrency(processingFee, selectedRequest.currency || 'USD'), 120, yPosition, { align: 'right' });
-    yPosition += 8;
-    
-    // Total Amount
-    const totalAmount = selectedRequest.perDiemAmount + processingFee;
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text('Total Amount:', 20, yPosition);
-    doc.text(formatCurrency(totalAmount, selectedRequest.currency || 'USD'), 120, yPosition, { align: 'right' });
-    doc.setFont(undefined, 'normal');
-    yPosition += 12;
-    
-    // USD Equivalent
-    if (selectedRequest.currency && exchangeRates[selectedRequest.currency]) {
-      doc.setFontSize(9);
-      doc.setTextColor(100, 100, 100);
-      doc.text(`USD Equivalent: ${formatCurrency(totalAmount / exchangeRates[selectedRequest.currency], "USD")}`, 20, yPosition);
-      yPosition += 15;
-    }
-  }
-  
-  // Approval Section
-  doc.setFontSize(14);
-  doc.setTextColor(40, 40, 40);
-  doc.text('Approval Information', 20, yPosition);
-  yPosition += 10;
-  
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  
-  doc.text(`Approved By: ${selectedRequest.approvedBy || 'N/A'}`, 20, yPosition);
-  
-  const approvalDate = selectedRequest.approvedAt 
-    ? format(selectedRequest.approvedAt, "MMMM d, yyyy")
-    : 'N/A';
-  doc.text(`Approval Date: ${approvalDate}`, 120, yPosition);
-  yPosition += 8;
-  
-  // Financial status
-  doc.text(`Status: ${selectedRequest.financeStatus.toUpperCase()}`, 20, yPosition);
-  
-  if (selectedRequest.paymentDate) {
-    const paymentDate = format(selectedRequest.paymentDate, "MMMM d, yyyy");
-    doc.text(`Payment Date: ${paymentDate}`, 120, yPosition);
-  }
-  yPosition += 15;
-  
-  // Footer
-  doc.setFontSize(8);
-  doc.setTextColor(150, 150, 150);
-  doc.text('This is an automatically generated transaction record. For any discrepancies, please contact the Finance Department.', 105, 280, { align: 'center' });
-  doc.text(`Generated on: ${format(new Date(), "yyyy-MM-dd HH:mm:ss")}`, 105, 285, { align: 'center' });
-  
-  // Save the PDF
-  const fileName = `${selectedRequest.id || 'transaction'}-record.pdf`;
-  doc.save(fileName);
-  
-  // Show success message
-  setSnackbarMessage(`PDF generated successfully: ${fileName}`);
-  setSnackbarSeverity("success");
-  setSnackbarOpen(true);
-};
 
 
   // Sample exchange rates data
@@ -666,6 +473,161 @@ const handleGenerateTransactionPDF = () => {
   }
 };
 
+const handleGenerateTransactionPDF = () => {
+  // Add comprehensive null checking
+  if (!selectedRequest || !selectedRequest.financialStatus) {
+    console.error('Cannot generate PDF: No request selected or missing financial status');
+    return;
+  }
+  
+  // Create new PDF document
+  const doc = new jsPDF();
+  
+  // Set styles
+  doc.setFont('helvetica');
+  
+  // Header
+  doc.setFontSize(20);
+  doc.setTextColor(40, 40, 40);
+  doc.text('TRANSACTION RECORD', 105, 20, { align: 'center' });
+  
+  // Company Info
+  doc.setFontSize(10);
+  doc.setTextColor(100, 100, 100);
+  doc.text('Company Name • Finance Department', 105, 30, { align: 'center' });
+  
+  // Divider line
+  doc.setDrawColor(200, 200, 200);
+  doc.line(20, 35, 190, 35);
+  
+  // Transaction Details Section
+  doc.setFontSize(14);
+  doc.setTextColor(40, 40, 40);
+  doc.text('Transaction Details', 20, 45);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  
+  let yPosition = 55;
+  
+  // Basic transaction info - with null checks
+  doc.text(`Transaction ID: ${selectedRequest.id || 'N/A'}`, 20, yPosition);
+  doc.text(`Date: ${format(new Date(), "MMMM d, yyyy")}`, 120, yPosition);
+  yPosition += 8;
+  
+  doc.text(`Employee: ${selectedRequest.employeeName || 'N/A'}`, 20, yPosition);
+  doc.text(`Department: ${selectedRequest.department || 'N/A'}`, 120, yPosition);
+  yPosition += 8;
+  
+  doc.text(`Destination: ${selectedRequest.city || 'N/A'}, ${selectedRequest.country || 'N/A'}`, 20, yPosition);
+  yPosition += 8;
+  
+  doc.text(`Travel Period: ${selectedRequest.departureDate ? format(selectedRequest.departureDate, "MMM d, yyyy") : 'N/A'} - ${selectedRequest.returnDate ? format(selectedRequest.returnDate, "MMM d, yyyy") : 'N/A'}`, 20, yPosition);
+  
+  const duration = selectedRequest.departureDate && selectedRequest.returnDate 
+    ? Math.ceil((selectedRequest.returnDate - selectedRequest.departureDate) / (1000 * 60 * 60 * 24)) + 1 
+    : 'N/A';
+  doc.text(`Duration: ${duration} days`, 120, yPosition);
+  yPosition += 8;
+  
+  doc.text(`Purpose: ${selectedRequest.purpose || 'N/A'}`, 20, yPosition);
+  yPosition += 15;
+  
+  // Payment Details Section
+  doc.setFontSize(14);
+  doc.setTextColor(40, 40, 40);
+  doc.text('Payment Details', 20, yPosition);
+  yPosition += 10;
+  
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  
+  doc.text(`Payment Method: ${selectedRequest.cardDetails?.type || 'N/A'} Card **** ${selectedRequest.cardDetails?.lastFour || 'N/A'}`, 20, yPosition);
+  yPosition += 8;
+  
+  doc.text(`Card Holder: ${selectedRequest.cardDetails?.holder || 'N/A'}`, 20, yPosition);
+  yPosition += 8;
+  
+  doc.text(`Currency: ${selectedRequest.currency || 'N/A'}`, 20, yPosition);
+  
+  const exchangeRate = selectedRequest.currency && exchangeRates[selectedRequest.currency] 
+    ? `1 USD = ${exchangeRates[selectedRequest.currency]} ${selectedRequest.currency}`
+    : 'N/A';
+  doc.text(`Exchange Rate: ${exchangeRate}`, 120, yPosition);
+  yPosition += 15;
+  
+  // Financial Breakdown Section
+  doc.setFontSize(14);
+  doc.setTextColor(40, 40, 40);
+  doc.text('Financial Breakdown', 20, yPosition);
+  yPosition += 10;
+  
+  doc.setFontSize(10);
+  
+  if (selectedRequest.perDiemAmount) {
+    // Per Diem Amount
+    doc.text('Per Diem Amount:', 20, yPosition);
+    doc.text(formatCurrency(selectedRequest.perDiemAmount, selectedRequest.currency || 'USD'), 120, yPosition, { align: 'right' });
+    yPosition += 8;
+    
+    // Processing Fee
+    const processingFee = selectedRequest.perDiemAmount * 0.005;
+    doc.text('Processing Fee (0.5%):', 20, yPosition);
+    doc.text(formatCurrency(processingFee, selectedRequest.currency || 'USD'), 120, yPosition, { align: 'right' });
+    yPosition += 8;
+    
+    // Total Amount
+    const totalAmount = selectedRequest.perDiemAmount + processingFee;
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('Total Amount:', 20, yPosition);
+    doc.text(formatCurrency(totalAmount, selectedRequest.currency || 'USD'), 120, yPosition, { align: 'right' });
+    doc.setFont(undefined, 'normal');
+    yPosition += 12;
+    
+    // USD Equivalent
+    if (selectedRequest.currency && exchangeRates[selectedRequest.currency]) {
+      doc.setFontSize(9);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`USD Equivalent: ${formatCurrency(totalAmount / exchangeRates[selectedRequest.currency], "USD")}`, 20, yPosition);
+      yPosition += 15;
+    }
+  }
+  
+  // Approval Section
+  doc.setFontSize(14);
+  doc.setTextColor(40, 40, 40);
+  doc.text('Approval Information', 20, yPosition);
+  yPosition += 10;
+  
+  doc.setFontSize(10);
+  doc.setTextColor(80, 80, 80);
+  
+  doc.text(`Approved By: ${selectedRequest.approvedBy || 'N/A'}`, 20, yPosition);
+  
+  const approvalDate = selectedRequest.approvedAt 
+    ? format(selectedRequest.approvedAt, "MMMM d, yyyy")
+    : 'N/A';
+  doc.text(`Approval Date: ${approvalDate}`, 120, yPosition);
+  yPosition += 8;
+  
+  // FIXED: Add null check for financialStatus
+  doc.text(`Status: ${selectedRequest.financialStatus ? selectedRequest.financialStatus.toUpperCase() : 'N/A'}`, 20, yPosition);
+  
+  if (selectedRequest.paymentDate) {
+    doc.text(`Payment Date: ${format(selectedRequest.paymentDate, "MMMM d, yyyy")}`, 120, yPosition);
+  }
+  yPosition += 15;
+  
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(150, 150, 150);
+  doc.text('This is an automatically generated transaction record. For any discrepancies, please contact the Finance Department.', 105, 280, { align: 'center' });
+  doc.text(`Generated on: ${format(new Date(), "yyyy-MM-dd HH:mm:ss")}`, 105, 285, { align: 'center' });
+  
+  // Save the PDF
+  doc.save(`${selectedRequest.id || 'transaction'}-record.pdf`);
+};
 
 const sendNotification = async () => {
   if (isSendingNotification) return;
