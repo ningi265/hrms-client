@@ -237,189 +237,9 @@ export default function VendorManagementDashboard() {
       ? process.env.REACT_APP_BACKEND_URL_PROD
       : process.env.REACT_APP_BACKEND_URL_DEV
 
-  // Helper function to transform API data to component format
-  const transformApiData = (apiData) => {
-    try {
-      if (!apiData._id) {
-        throw new Error("Missing vendor ID in API response")
-      }
 
-      const parseDate = (dateString) => {
-        if (!dateString) return null
-        const date = new Date(dateString)
-        return isNaN(date.getTime()) ? null : date
-      }
 
-      const submissionDate = parseDate(apiData.submissionDate)
-      const approvalDate = parseDate(apiData.approvalDate)
-
-      const daysInReview = submissionDate ? Math.floor((new Date() - submissionDate) / (1000 * 60 * 60 * 24)) : 0
-
-      const getCompletionPercentage = (status) => {
-        switch (status) {
-          case "pending":
-            return 25
-          case "under_review":
-            return 75
-          case "approved":
-            return 100
-          case "rejected":
-            return 50
-          default:
-            return 0
-        }
-      }
-
-      const generateTimeline = (status, submissionDate, approvalDate) => {
-        const timeline = []
-        const submissionDateObj = new Date(submissionDate)
-
-        timeline.push({
-          status: "submitted",
-          date: submissionDateObj.toLocaleDateString(),
-          time: submissionDateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          description: "Registration submitted successfully",
-          completed: true,
-        })
-
-        const docVerificationDate = new Date(submissionDateObj)
-        docVerificationDate.setDate(docVerificationDate.getDate() + 1)
-
-        timeline.push({
-          status: "document_verification",
-          date: docVerificationDate.toLocaleDateString(),
-          time: docVerificationDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          description: "Documents under verification",
-          completed: ["under_review", "approved", "rejected"].includes(status),
-        })
-
-        if (["under_review", "approved", "rejected"].includes(status)) {
-          const reviewDate = new Date(submissionDateObj)
-          reviewDate.setDate(reviewDate.getDate() + 2)
-
-          timeline.push({
-            status: status,
-            date: reviewDate.toLocaleDateString(),
-            time: reviewDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            description:
-              status === "rejected"
-                ? "Application was rejected - please review feedback"
-                : "Application under review by compliance team",
-            completed: ["approved", "rejected"].includes(status),
-            current: status === "under_review",
-          })
-        } else if (status === "pending") {
-          timeline.push({
-            status: "under_review",
-            date: "Pending",
-            time: "",
-            description: "Waiting for review by compliance team",
-            completed: false,
-            current: true,
-          })
-        }
-
-        if (status === "approved" && approvalDate) {
-          const approvalDateObj = new Date(approvalDate)
-          timeline.push({
-            status: "final_approval",
-            date: approvalDateObj.toLocaleDateString(),
-            time: approvalDateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-            description: "Final approval and account activation completed",
-            completed: true,
-          })
-        } else if (status !== "rejected") {
-          timeline.push({
-            status: "final_approval",
-            date: "Pending",
-            time: "",
-            description: "Final approval and account activation",
-            completed: false,
-          })
-        }
-
-        return timeline
-      }
-
-      const formatFileSize = (bytes) => {
-        if (!bytes || bytes === 0) return "0 Bytes"
-        const k = 1024
-        const sizes = ["Bytes", "KB", "MB", "GB"]
-        const i = Math.floor(Math.log(bytes) / Math.log(k))
-        return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
-      }
-
-      return {
-        id: apiData._id,
-        registrationStatus: apiData.registrationStatus || "pending",
-        submissionDate: submissionDate ? submissionDate.toLocaleDateString() : "N/A",
-        approvalDate: approvalDate ? approvalDate.toLocaleDateString() : null,
-        isNewUser: false,
-
-        basicInfo: {
-          countryOfRegistration: apiData.countryOfRegistration || "N/A",
-          businessName: apiData.businessName || "N/A",
-          taxpayerIdentificationNumber: apiData.taxpayerIdentificationNumber || "N/A",
-          tinIssuedDate: parseDate(apiData.tinIssuedDate)?.toLocaleDateString() || "N/A",
-          companyType: apiData.companyType || "N/A",
-          formOfBusiness: apiData.formOfBusiness || "N/A",
-          ownershipType: apiData.ownershipType || "N/A",
-          businessCategory: apiData.businessCategory || "N/A",
-          registrationNumber: apiData.registrationNumber || "N/A",
-          registrationIssuedDate: parseDate(apiData.registrationIssuedDate)?.toLocaleDateString() || "N/A",
-        },
-
-        contactInfo: apiData.vendor
-          ? {
-              authorizedUser: `${apiData.vendor.firstName || ""} ${apiData.vendor.lastName || ""}`.trim() || "N/A",
-              phone: apiData.vendor.phoneNumber || "N/A",
-              email: apiData.vendor.email || "N/A",
-            }
-          : {
-              authorizedUser: "N/A",
-              phone: "N/A",
-              email: "N/A",
-            },
-
-        documents: apiData.powerOfAttorney
-          ? {
-              powerOfAttorney: {
-                name: apiData.powerOfAttorney.fileName || "Unknown Document",
-                uploadDate: parseDate(apiData.powerOfAttorney.uploadDate)?.toLocaleDateString() || "N/A",
-                status:
-                  apiData.registrationStatus === "approved"
-                    ? "verified"
-                    : apiData.registrationStatus === "rejected"
-                      ? "rejected"
-                      : "pending",
-                size: formatFileSize(apiData.powerOfAttorney.fileSize),
-                filePath: apiData.powerOfAttorney.filePath || "",
-              },
-            }
-          : null,
-
-        timeline: generateTimeline(
-          apiData.registrationStatus || "pending",
-          apiData.submissionDate,
-          apiData.approvalDate,
-        ),
-
-        metrics: {
-          completionPercentage: getCompletionPercentage(apiData.registrationStatus),
-          daysInReview: daysInReview,
-          averageProcessingTime: "5-7 days",
-        },
-
-        vendor: apiData.vendor || null,
-      }
-    } catch (err) {
-      console.error("Error transforming API data:", err)
-      throw new Error("Failed to process vendor data: " + err.message)
-    }
-  }
-
-  // Fetch vendor data from API
-  useEffect(() => {
+        useEffect(() => {
     const fetchVendorData = async () => {
       try {
         const token = localStorage.getItem("token")
@@ -564,6 +384,186 @@ export default function VendorManagementDashboard() {
 
     fetchVendorData()
   }, [backendUrl])
+  
+
+
+  const transformApiData = (apiData) => {
+  try {
+    if (!apiData._id) {
+      throw new Error("Missing vendor ID in API response")
+    }
+
+    const parseDate = (dateString) => {
+      if (!dateString) return null
+      const date = new Date(dateString)
+      return isNaN(date.getTime()) ? null : date
+    }
+
+    const submissionDate = parseDate(apiData.createdAt) // Use createdAt instead of submissionDate
+    const approvalDate = parseDate(apiData.updatedAt)   // Use updatedAt for approval date
+
+    const daysInReview = submissionDate ? Math.floor((new Date() - submissionDate) / (1000 * 60 * 60 * 24)) : 0
+
+    const getCompletionPercentage = (status) => {
+      switch (status) {
+        case "pending":
+          return 25
+        case "under_review":
+          return 75
+        case "approved":
+          return 100
+        case "rejected":
+          return 50
+        default:
+          return 0
+      }
+    }
+
+    const generateTimeline = (status, createdAt, updatedAt) => {
+      const timeline = []
+      const submissionDateObj = new Date(createdAt)
+
+      timeline.push({
+        status: "submitted",
+        date: submissionDateObj.toLocaleDateString(),
+        time: submissionDateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        description: "Registration submitted successfully",
+        completed: true,
+      })
+
+      const docVerificationDate = new Date(submissionDateObj)
+      docVerificationDate.setDate(docVerificationDate.getDate() + 1)
+
+      timeline.push({
+        status: "document_verification",
+        date: docVerificationDate.toLocaleDateString(),
+        time: docVerificationDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        description: "Documents under verification",
+        completed: ["under_review", "approved", "rejected"].includes(status),
+      })
+
+      if (["under_review", "approved", "rejected"].includes(status)) {
+        const reviewDate = new Date(submissionDateObj)
+        reviewDate.setDate(reviewDate.getDate() + 2)
+
+        timeline.push({
+          status: status,
+          date: reviewDate.toLocaleDateString(),
+          time: reviewDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          description:
+            status === "rejected"
+              ? "Application was rejected - please review feedback"
+              : "Application under review by compliance team",
+          completed: ["approved", "rejected"].includes(status),
+          current: status === "under_review",
+        })
+      } else if (status === "pending") {
+        timeline.push({
+          status: "under_review",
+          date: "Pending",
+          time: "",
+          description: "Waiting for review by compliance team",
+          completed: false,
+          current: true,
+        })
+      }
+
+      if (status === "approved" && updatedAt) {
+        const approvalDateObj = new Date(updatedAt)
+        timeline.push({
+          status: "final_approval",
+          date: approvalDateObj.toLocaleDateString(),
+          time: approvalDateObj.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          description: "Final approval and account activation completed",
+          completed: true,
+        })
+      } else if (status !== "rejected") {
+        timeline.push({
+          status: "final_approval",
+          date: "Pending",
+          time: "",
+          description: "Final approval and account activation",
+          completed: false,
+        })
+      }
+
+      return timeline
+    }
+
+    const formatFileSize = (bytes) => {
+      if (!bytes || bytes === 0) return "0 Bytes"
+      const k = 1024
+      const sizes = ["Bytes", "KB", "MB", "GB"]
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+    }
+
+    return {
+      id: apiData._id,
+      registrationStatus: apiData.registrationStatus || "pending",
+      submissionDate: submissionDate ? submissionDate.toLocaleDateString() : "N/A",
+      approvalDate: approvalDate ? approvalDate.toLocaleDateString() : null,
+      isNewUser: false,
+
+      basicInfo: {
+        countryOfRegistration: apiData.countryOfRegistration || "N/A",
+        businessName: apiData.businessName || "N/A",
+        taxpayerIdentificationNumber: apiData.taxpayerIdentificationNumber || "N/A",
+        tinIssuedDate: parseDate(apiData.tinIssuedDate)?.toLocaleDateString() || "N/A",
+        companyType: apiData.companyType || "N/A",
+        formOfBusiness: apiData.formOfBusiness || "N/A",
+        ownershipType: apiData.ownershipType || "N/A",
+        businessCategory: apiData.categories ? apiData.categories.join(", ") : "N/A",
+        registrationNumber: apiData.registrationNumber || "N/A",
+        registrationIssuedDate: parseDate(apiData.registrationIssuedDate)?.toLocaleDateString() || "N/A",
+      },
+
+      contactInfo: apiData.vendor
+        ? {
+            authorizedUser: `${apiData.vendor.firstName || ""} ${apiData.vendor.lastName || ""}`.trim() || "N/A",
+            phone: apiData.vendor.phoneNumber || "N/A",
+            email: apiData.vendor.email || "N/A",
+          }
+        : {
+            authorizedUser: "N/A",
+            phone: "N/A",
+            email: "N/A",
+          },
+
+      documents: apiData.documents && apiData.documents.length > 0
+        ? {
+            // Map your documents here based on your actual API structure
+            powerOfAttorney: {
+              name: "Power of Attorney",
+              uploadDate: parseDate(apiData.createdAt)?.toLocaleDateString() || "N/A",
+              status: apiData.registrationStatus === "approved" ? "verified" : "pending",
+              size: "N/A",
+              filePath: "",
+            }
+          }
+        : null,
+
+      timeline: generateTimeline(
+        apiData.registrationStatus || "pending",
+        apiData.createdAt, // Use createdAt instead of submissionDate
+        apiData.updatedAt  // Use updatedAt for approval date
+      ),
+
+      metrics: {
+        completionPercentage: getCompletionPercentage(apiData.registrationStatus),
+        daysInReview: daysInReview,
+        averageProcessingTime: "5-7 days",
+      },
+
+      vendor: apiData.vendor || null,
+    }
+  } catch (err) {
+    console.error("Error transforming API data:", err)
+    throw new Error("Failed to process vendor data: " + err.message)
+  }
+}
+
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -582,39 +582,42 @@ export default function VendorManagementDashboard() {
     }
   }
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "not_started":
-        return <AlertCircle size={16} />
-      case "pending":
-        return <Clock size={16} />
-      case "under_review":
-        return <Loader size={16} className="animate-spin" />
-      case "approved":
-        return <CheckCircle size={16} />
-      case "rejected":
-        return <XCircle size={16} />
-      default:
-        return <AlertCircle size={16} />
-    }
+ const getStatusIcon = (status) => {
+  if (!status) return <AlertCircle size={16} />
+  
+  switch (status) {
+    case "not_started":
+      return <AlertCircle size={16} />
+    case "pending":
+      return <Clock size={16} />
+    case "under_review":
+      return <Loader size={16} className="animate-spin" />
+    case "approved":
+      return <CheckCircle size={16} />
+    case "rejected":
+      return <XCircle size={16} />
+    default:
+      return <AlertCircle size={16} />
   }
-
+}
   const getStatusText = (status) => {
-    switch (status) {
-      case "not_started":
-        return "Not Started"
-      case "pending":
-        return "Pending"
-      case "under_review":
-        return "Under Review"
-      case "approved":
-        return "Approved"
-      case "rejected":
-        return "Rejected"
-      default:
-        return "Unknown"
-    }
+  if (!status) return "Loading..."
+  
+  switch (status) {
+    case "not_started":
+      return "Not Started"
+    case "pending":
+      return "Pending"
+    case "under_review":
+      return "Under Review"
+    case "approved":
+      return "Approved"
+    case "rejected":
+      return "Rejected"
+    default:
+      return "Unknown"
   }
+}
 
   const showNotificationMessage = (message, type = "info") => {
     setNotificationMessage(message)
@@ -769,43 +772,45 @@ export default function VendorManagementDashboard() {
 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title="Registration Status"
-            value={isNewUser ? "Not Started" : getStatusText(vendorData.registrationStatus)}
-            icon={getStatusIcon(vendorData.registrationStatus).type}
-            color={
-              vendorData.registrationStatus === "approved"
-                ? "green"
-                : vendorData.registrationStatus === "under_review"
-                  ? "blue"
-                  : vendorData.registrationStatus === "rejected"
-                    ? "red"
-                    : "amber"
-            }
-            subtitle="Current status"
-          />
-          <MetricCard
-            title="Completion"
-            value={vendorData.metrics.completionPercentage}
-            suffix="%"
-            icon={TrendingUp}
-            color="green"
-            subtitle="Progress made"
-          />
-          <MetricCard
-            title="Days in Review"
-            value={isNewUser ? "0" : vendorData.metrics.daysInReview}
-            icon={Clock}
-            color="purple"
-            subtitle="Processing time"
-          />
-          <MetricCard
-            title="Vendor ID"
-            value={isNewUser ? "N/A" : vendorData.id?.slice(-8)}
-            icon={Award}
-            color="amber"
-            subtitle="Your identifier"
-          />
+        <MetricCard
+  title="Registration Status"
+  value={isNewUser ? "Not Started" : vendorData ? getStatusText(vendorData.registrationStatus) : "Loading..."}
+  icon={vendorData ? getStatusIcon(vendorData.registrationStatus).type : AlertCircle}
+  color={
+    !vendorData 
+      ? "gray"
+      : vendorData.registrationStatus === "approved"
+        ? "green"
+        : vendorData.registrationStatus === "under_review"
+          ? "blue"
+          : vendorData.registrationStatus === "rejected"
+            ? "red"
+            : "amber"
+  }
+  subtitle="Current status"
+/>
+        <MetricCard
+  title="Completion"
+  value={vendorData ? vendorData.metrics.completionPercentage : 0}
+  suffix="%"
+  icon={TrendingUp}
+  color="green"
+  subtitle="Progress made"
+/>
+<MetricCard
+  title="Days in Review"
+  value={isNewUser ? "0" : vendorData ? vendorData.metrics.daysInReview : 0}
+  icon={Clock}
+  color="purple"
+  subtitle="Processing time"
+/>
+<MetricCard
+  title="Vendor ID"
+  value={isNewUser ? "N/A" : vendorData ? vendorData.id?.slice(-8) : "Loading..."}
+  icon={Award}
+  color="amber"
+  subtitle="Your identifier"
+/>
         </div>
 
         {/* Progress Timeline */}
@@ -822,21 +827,21 @@ export default function VendorManagementDashboard() {
             <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
             <div
               className="absolute left-6 top-0 w-0.5 bg-gradient-to-b from-blue-500 to-purple-600 transition-all duration-1000"
-              style={{
-                height: `${(vendorData.timeline.filter((item) => item.completed).length / vendorData.timeline.length) * 100}%`,
-              }}
+            style={{
+  height: vendorData ? `${(vendorData.timeline.filter((item) => item.completed).length / vendorData.timeline.length) * 100}%` : "0%",
+}}
             ></div>
 
-            <div className="space-y-4">
-              {vendorData.timeline.map((item, index) => (
-                <TimelineStep key={index} item={item} index={index} isNewUser={isNewUser} />
-              ))}
-            </div>
+           <div className="space-y-4">
+  {vendorData && vendorData.timeline.map((item, index) => (
+    <TimelineStep key={index} item={item} index={index} isNewUser={isNewUser} />
+  ))}
+</div>
           </div>
         </div>
 
         {/* Tab Navigation - Only show if not a new user */}
-        {!isNewUser && (
+        {!isNewUser && vendorData && (
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="border-b border-gray-200">
               <nav className="flex space-x-6 px-4">

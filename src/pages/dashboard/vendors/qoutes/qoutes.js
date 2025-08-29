@@ -288,8 +288,9 @@ export default function VendorRFQsPage() {
   const totalRFQs = filteredRFQs?.length || 0
   const openRFQs = filteredRFQs?.filter((rfq) => rfq.status === "open")?.length || 0
   const closedRFQs = filteredRFQs?.filter((rfq) => rfq.status === "closed")?.length || 0
-  const submittedQuotes =
-    filteredRFQs?.filter((rfq) => rfq.quotes?.some((quote) => quote.vendorEmail === user?.email))?.length || 0
+ const submittedQuotes = filteredRFQs.reduce((total, rfq) => {
+  return total + (rfq.quoteCount ?? rfq.quotes?.length ?? 0)
+}, 0)
 
   const handleSelectRFQ = (rfq) => {
     setSelectedRFQ(rfq)

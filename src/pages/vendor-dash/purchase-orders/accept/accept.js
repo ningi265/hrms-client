@@ -21,7 +21,6 @@ import {
   PackageCheck,
   Zap,
 } from "lucide-react"
-import { useAuth } from "../../../../authcontext/authcontext"
 
 // Utility function to generate a tracking number (2 letters + 4 digits)
 const generateTrackingNumber = () => {
@@ -222,7 +221,6 @@ const POCard = ({ po, onConfirm, onUpdateDelivery, isLoading }) => {
 }
 
 export default function VendorPODetailsPage() {
-  const { token } = useAuth()
   const navigate = useNavigate()
   const [vendorId, setVendorId] = useState(null)
   const [pos, setPos] = useState([])
@@ -260,7 +258,7 @@ export default function VendorPODetailsPage() {
     }
 
     fetchVendorDetails()
-  }, [token])
+  }, [backendUrl])
 
   // Fetch purchase orders for the vendor
   useEffect(() => {
@@ -269,15 +267,19 @@ export default function VendorPODetailsPage() {
 
       try {
         const token = localStorage.getItem("token")
-        const response = await fetch(`${backendUrl}/api/purchase-orders`, {
+        const response = await fetch(`${backendUrl}/api/purchase-orders/vendor`, {
           headers: { Authorization: `Bearer ${token}` },
         })
 
         if (!response.ok) throw new Error("Failed to fetch purchase orders")
-        const data = await response.json()
-
-        const vendorPOs = data.filter((po) => po.vendor?._id === vendorId)
-        setPos(vendorPOs)
+        const result = await response.json()
+        
+        if (result.success) {
+          // Use the data from the response
+          setPos(result.data)
+        } else {
+          throw new Error(result.message || "Failed to fetch purchase orders")
+        }
       } catch (err) {
         console.error("❌ Error fetching POs:", err)
         setError("Could not fetch purchase orders.")
@@ -287,7 +289,7 @@ export default function VendorPODetailsPage() {
     }
 
     if (vendorId) fetchPOs()
-  }, [vendorId, token])
+  }, [vendorId, backendUrl])
 
   // Filter POs based on search term and status
   const filteredPOs = pos.filter((po) => {
@@ -411,8 +413,31 @@ export default function VendorPODetailsPage() {
 
   const handleRefresh = () => {
     setIsLoading(true)
-    setTimeout(() => setIsLoading(false), 1000)
-    window.location.reload()
+    // Refetch the data
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(`${backendUrl}/api/purchase-orders/vendor`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+
+        if (!response.ok) throw new Error("Failed to fetch purchase orders")
+        const result = await response.json()
+        
+        if (result.success) {
+          setPos(result.data)
+        } else {
+          throw new Error(result.message || "Failed to fetch purchase orders")
+        }
+      } catch (err) {
+        console.error("❌ Error refreshing POs:", err)
+        setError("Could not refresh purchase orders.")
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchData()
   }
 
   if (isLoading) {
@@ -453,7 +478,8 @@ export default function VendorPODetailsPage() {
           </div>
         )}
 
-        {/* Compact Statistics Grid --  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Compact Statistics Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <MetricCard title="Total POs" value={totalPOs} icon={FileText} color="blue" subtitle="All orders" />
           <MetricCard
             title="Confirmed"
@@ -474,8 +500,7 @@ export default function VendorPODetailsPage() {
             trend={8}
             subtitle="Order value"
           />
-        </div>*/}
-       
+        </div>
 
         {/* Compact Filter Section */}
         <div className="bg-white rounded-2xl border border-gray-200 p-4">

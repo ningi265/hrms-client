@@ -276,14 +276,17 @@ const clearDraft = (type) => {
 };
 
 
-    const handleCancel = () => {
-    if (window.confirm('Do you want to save this as a draft before closing?')) {
-      saveDraft(type, formData);
-    } else {
-      clearDraft(type);
-    }
-    onCancel();
-  };
+   const handleCancel = () => {
+  // Always clear the draft on modal close
+  clearDraft(type);
+  
+  // Reset form state to default (same as fresh load)
+  setFormData(loadDraft(type));
+
+  // Close modal
+  onCancel();
+};
+
 
    useEffect(() => {
     const timer = setTimeout(() => {

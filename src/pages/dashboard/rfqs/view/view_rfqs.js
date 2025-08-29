@@ -251,14 +251,9 @@ const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVe
   if (!isOpen || !rfq) return null;
 
   const quotes = rfq.quotes || [];
-  
-  // Calculate which quote has the lowest price (handle string/number conversion)
-  const validPrices = quotes
-    .map(q => Number(q.price))
-    .filter(price => !isNaN(price) && price > 0);
-  
+  const validPrices = quotes.map(q => Number(q.price)).filter(price => !isNaN(price) && price > 0);
   const lowestPrice = validPrices.length > 0 ? Math.min(...validPrices) : 0;
-  
+
   const quotesWithBestPrice = quotes.map(quote => ({
     ...quote,
     isLowestPrice: Number(quote.price) === lowestPrice && Number(quote.price) > 0
@@ -270,7 +265,6 @@ const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVe
 
   const handleConfirmSelection = async () => {
     if (!localSelectedVendor) return;
-    
     setIsSubmitting(true);
     try {
       await onVendorSelect(rfq._id || rfq.id, localSelectedVendor);
@@ -285,88 +279,74 @@ const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVe
   const selectedQuote = quotes.find(q => q.vendor === localSelectedVendor);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-        <div className="px-8 py-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
+      <div className="bg-white rounded-xl max-w-lg w-full max-h-[85vh] overflow-hidden shadow-xl">
+        {/* Compact Header */}
+        <div className="px-4 py-3 border-b border-gray-200">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <Users size={24} className="text-blue-500" />
-                Select Vendor for RFQ
-              </h2>
-              <p className="text-gray-600 mt-1">
-                Choose the best vendor quote for "{rfq.itemName}" (Qty: {rfq.quantity})
-              </p>
-            </div>
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Users size={16} className="text-blue-500" />
+              Select Vendor
+            </h2>
             <button
               onClick={onClose}
-              className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              <X size={24} />
+              <X size={16} />
             </button>
           </div>
         </div>
 
-        <div className="p-8 max-h-[75vh] overflow-y-auto">
+        {/* Compact Body */}
+        <div className="p-4 max-h-[70vh] overflow-y-auto space-y-4">
+
           {/* RFQ Summary */}
-          <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <FileText size={20} className="text-blue-500" />
+          <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+              <FileText size={14} className="text-blue-500" />
               RFQ Summary
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-2 text-xs">
               <div>
-                <p className="text-sm font-medium text-gray-600">Item</p>
-                <p className="text-gray-900 font-semibold">{rfq.itemName}</p>
+                <p className="text-gray-600">Item</p>
+                <p className="font-medium text-gray-900">{rfq.itemName}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Quantity</p>
-                <p className="text-gray-900 font-semibold">{rfq.quantity}</p>
+                <p className="text-gray-600">Quantity</p>
+                <p className="font-medium text-gray-900">{rfq.quantity}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-600">Quotes Received</p>
-                <p className="text-gray-900 font-semibold">{quotes.length}</p>
+                <p className="text-gray-600">Quotes Received</p>
+                <p className="font-medium text-gray-900">{quotes.length}</p>
               </div>
             </div>
           </div>
 
-          {/* Vendor Quotes Grid */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <BarChart3 size={20} className="text-green-500" />
+          {/* Vendor Quotes */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <BarChart3 size={14} className="text-green-500" />
                 Vendor Quotes ({quotes.length})
               </h3>
               {quotes.length > 0 && (
-                <div className="text-sm text-gray-500">
-                  Select the best quote for your needs
-                </div>
+                <span className="text-[10px] text-gray-500">Pick the best vendor</span>
               )}
             </div>
 
             {quotes.length === 0 ? (
-              <div className="text-center py-12 bg-gray-50 rounded-xl">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare size={32} className="text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Quotes Received</h3>
-                <p className="text-gray-500 mb-4">
-                  This RFQ hasn't received any vendor quotes yet.
-                </p>
-                <div className="text-sm text-gray-400 space-y-1">
-                  <p>Invited vendors: {rfq.vendors?.length || 0}</p>
-                  <p>Vendors need to submit quotes before you can select one.</p>
-                </div>
+              <div className="text-center py-6 bg-gray-50 rounded-lg">
+                <MessageSquare size={22} className="mx-auto mb-2 text-gray-400" />
+                <p className="font-medium text-gray-900 text-sm mb-1">No Quotes Yet</p>
+                <p className="text-xs text-gray-500">Vendors need to submit quotes first.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-2">
                 {quotesWithBestPrice.map((quote, index) => {
-                  // Find vendor info from the populated vendors array
                   const vendorInfo = rfq.vendors?.find(v => 
                     (v._id || v.id || v) === quote.vendor || 
-                    (typeof v === 'object' && (v._id || v.id) === quote.vendor)
+                    (typeof v === "object" && (v._id || v.id) === quote.vendor)
                   );
-                  
                   return (
                     <VendorQuoteCard
                       key={`${quote.vendor}-${index}`}
@@ -375,6 +355,7 @@ const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVe
                       isSelected={localSelectedVendor === quote.vendor}
                       onSelect={handleVendorSelect}
                       vendorInfo={vendorInfo}
+                      compact // <-- pass compact prop for smaller card style
                     />
                   );
                 })}
@@ -384,68 +365,68 @@ const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVe
 
           {/* Selected Quote Summary */}
           {localSelectedVendor && selectedQuote && (
-            <div className="bg-green-50 rounded-xl p-6 border border-green-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <CheckCircle size={20} className="text-green-500" />
-                Selected Quote Summary
+            <div className="bg-green-50 rounded-lg p-3 border border-green-200">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                <CheckCircle size={14} className="text-green-500" />
+                Selected Quote
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Vendor</p>
-                  <p className="text-gray-900 font-semibold">
+              <div className="grid grid-cols-1 gap-2 text-xs">
+                <div className="bg-white rounded p-2">
+                  <p className="text-gray-600">Vendor</p>
+                  <p className="font-medium text-gray-900">
                     {(() => {
                       const vendorInfo = rfq.vendors?.find(v => 
                         (v._id || v.id || v) === selectedQuote.vendor || 
-                        (typeof v === 'object' && (v._id || v.id) === selectedQuote.vendor)
+                        (typeof v === "object" && (v._id || v.id) === selectedQuote.vendor)
                       );
                       if (vendorInfo) {
-                        return vendorInfo.name || `${vendorInfo.firstName || ''} ${vendorInfo.lastName || ''}`.trim() || vendorInfo.email;
+                        return vendorInfo.name || `${vendorInfo.firstName || ""} ${vendorInfo.lastName || ""}`.trim() || vendorInfo.email;
                       }
-                      return `Vendor ${selectedQuote.vendor?.slice(-4) || 'Unknown'}`;
+                      return `Vendor ${selectedQuote.vendor?.slice(-4) || "Unknown"}`;
                     })()}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total Price</p>
-                  <p className="text-gray-900 font-semibold text-lg">MWK {Number(selectedQuote.price || 0).toFixed(0)}</p>
+                <div className="bg-white rounded p-2">
+                  <p className="text-gray-600">Total Price</p>
+                  <p className="font-semibold text-gray-900">MWK {Number(selectedQuote.price || 0).toFixed(0)}</p>
                 </div>
-                <div className="bg-white rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Unit Price</p>
-                  <p className="text-gray-900 font-semibold">
+                <div className="bg-white rounded p-2">
+                  <p className="text-gray-600">Unit Price</p>
+                  <p className="font-semibold text-gray-900">
                     MWK {selectedQuote.price && rfq.quantity ? (Number(selectedQuote.price) / Number(rfq.quantity)).toFixed(2) : "N/A"}
                   </p>
                 </div>
-                <div className="bg-white rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-600 mb-1">Delivery Time</p>
-                  <p className="text-gray-900 font-semibold">{selectedQuote.deliveryTime || "N/A"}</p>
+                <div className="bg-white rounded p-2">
+                  <p className="text-gray-600">Delivery</p>
+                  <p className="font-semibold text-gray-900">{selectedQuote.deliveryTime || "N/A"}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+          {/* Footer Buttons */}
+          <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
             <button
               onClick={onClose}
-              className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium flex items-center gap-2"
+              className="px-3 py-1.5 text-xs text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-1"
             >
-              <X size={20} />
+              <X size={12} />
               Cancel
             </button>
             <button
               onClick={handleConfirmSelection}
               disabled={!localSelectedVendor || isSubmitting || quotes.length === 0}
-              className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
-                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                  <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
                   Selecting...
                 </>
               ) : (
                 <>
-                  <CheckCircle size={20} />
-                  Confirm Selection
+                  <CheckCircle size={12} />
+                  Confirm
                 </>
               )}
             </button>
@@ -455,6 +436,7 @@ const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVe
     </div>
   );
 };
+
 
 // RFQ Card Component (styled like vendor cards)
 const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId, onSelectVendor }) => {
@@ -567,15 +549,20 @@ const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId,
         </div>
       </div>
 
-      {rfq.selectedVendor && (
-        <div className="mb-2">
-          <div className="text-xs text-gray-600 mb-1">Selected Vendor</div>
-          <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 flex items-center gap-1 w-fit">
-            <CheckCircle size={10} />
-            {rfq.selectedVendor}
-          </span>
-        </div>
-      )}
+    {rfq.selectedVendor && (
+  <div className="mb-2">
+    <div className="text-xs text-gray-600 mb-1">Selected Vendor</div>
+    <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+      <CheckCircle size={10} />
+      {typeof rfq.selectedVendor === "object"
+        ? (rfq.selectedVendor.email ||
+           `${rfq.selectedVendor.firstName || ""} ${rfq.selectedVendor.lastName || ""}`.trim() ||
+           `Vendor ${rfq.selectedVendor._id?.slice(-4)}`)
+        : `Vendor ${rfq.selectedVendor.slice(-4)}`}
+    </span>
+  </div>
+)}
+
 
       {rfq.description && (
         <div className="mb-2">
@@ -627,6 +614,10 @@ export default function RFQsPage() {
   const [activeSection, setActiveSection] = useState(() => {
     return searchParams.get('section') || 'dashboard' ;
   });
+  const [rateLimitExceeded, setRateLimitExceeded] = useState(false);
+const [rateLimitMessage, setRateLimitMessage] = useState("");
+const [rateLimitActive, setRateLimitActive] = useState(false);
+
   // Vendor selection modal state
   const [showVendorSelectionModal, setShowVendorSelectionModal] = useState(false);
   const [selectedRFQForVendor, setSelectedRFQForVendor] = useState(null);
@@ -650,11 +641,18 @@ export default function RFQsPage() {
     });
 
     if (!response.ok) {
+      // Check if it's a rate limit error
+      if (response.status === 429) {
+        const errorData = await response.json();
+        setRateLimitExceeded(true);
+        setRateLimitActive(true); // Set rate limit as active
+        setRateLimitMessage(errorData.message || "API rate limit exceeded. Please try again later.");
+        throw new Error("Rate limit exceeded");
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const responseData = await response.json();
-    // Extract the data array from the response
     setRfqs(responseData.data || []);
   } catch (error) {
     console.error("Failed to fetch RFQs:", error);
@@ -680,6 +678,10 @@ export default function RFQsPage() {
   const handleCreateRFQ = () => {
     handleSectionChange("create-rfq");
   }
+
+  const handleDismissRateLimit = () => {
+  setRateLimitExceeded(false); 
+};
 
   // Calculate stats - handle undefined values safely
   const totalRFQs = rfqs?.length || 0;
@@ -834,49 +836,56 @@ export default function RFQsPage() {
         isVisible={isLoading} 
         message="Loading RFQs..." 
       />
+     
+
 
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between">
-         
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search RFQs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
-              />
-            </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
-            >
-              <option value="all">All Statuses</option>
-              <option value="open">Open</option>
-              <option value="closed">Closed</option>
-              <option value="pending">Pending</option>
-            </select>
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-              Refresh
-            </button>
-            <button
-              onClick={handleCreateRFQ}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
-            >
-              <Plus size={16} />
-              Create RFQ
-            </button>
-          </div>
-        </div>
+<div className="flex items-center justify-between">
+  <div className="flex items-center gap-2">
+    {/* Search and other controls... */}
+    <div className="relative">
+      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search RFQs..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+      />
+    </div>
+    <select
+      value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value)}
+      className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+    >
+      <option value="all">All Statuses</option>
+      <option value="open">Open</option>
+      <option value="closed">Closed</option>
+      <option value="pending">Pending</option>
+    </select>
+    <button
+      onClick={handleRefresh}
+      disabled={isLoading}
+      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+    >
+      <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+      Refresh
+    </button>
+    
+    {/* Create RFQ Button in Header with Tooltip */}
+    <div className="relative">
+      <button
+        onClick={handleCreateRFQ}
+        disabled={rateLimitActive}
+        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        <Plus size={16} />
+        Create RFQ
+      </button>
+    </div>
+  </div>
+</div>
 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -925,26 +934,76 @@ export default function RFQsPage() {
           </div>
 
           {filteredRFQs.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText size={32} className="text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm || statusFilter !== "all" ? "No RFQs match your filters" : "No RFQs found"}
-              </h3>
-              <p className="text-gray-500 mb-4">
-                {searchTerm || statusFilter !== "all"
-                  ? "Try adjusting your search criteria or filters."
-                  : "Start by creating your first RFQ to begin receiving quotes."}
-              </p>
-              <button
-                onClick={handleCreateRFQ}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 mx-auto"
-              >
-                <Plus size={16} />
-                Create RFQ
-              </button>
+    <div className="text-center py-12">
+  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+    <FileText size={32} className="text-gray-400" />
+  </div>
+
+  {rateLimitExceeded ? (
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-amber-100 text-amber-800 px-4 py-6 rounded-lg shadow-md max-w-md mx-auto"
+    >
+      <div className="flex items-center gap-3 mb-2">
+        <AlertCircle size={20} className="text-amber-700" />
+        <h3 className="text-lg font-medium">Rate Limit Exceeded</h3>
+      </div>
+      <p className="text-sm mb-1">
+        {rateLimitMessage || "You've reached your API call limit."}
+      </p>
+      <p className="text-xs opacity-80">
+        Consider upgrading your plan for more API calls.
+      </p>
+
+      <button
+        onClick={() => setRateLimitExceeded(false)}
+        className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 mx-auto"
+      >
+        <X size={16} /> Dismiss
+      </button>
+    </motion.div>
+  ) : (
+    <>
+      <h3 className="text-lg font-medium text-gray-900 mb-2">
+        {searchTerm || statusFilter !== "all"
+          ? "No RFQs match your filters"
+          : "No RFQs found"}
+      </h3>
+      <p className="text-gray-500 mb-4">
+        {searchTerm || statusFilter !== "all"
+          ? "Try adjusting your search criteria or filters."
+          : "Start by creating your first RFQ to begin receiving quotes."}
+      </p>
+      
+      {/* Create RFQ Button with Tooltip */}
+      <div className="relative inline-block">
+        <button
+          onClick={handleCreateRFQ}
+          disabled={rateLimitActive}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mx-auto"
+        >
+          <Plus size={16} />
+          Create RFQ
+        </button>
+        
+        {/* Tooltip that appears when button is disabled due to rate limit */}
+        {rateLimitActive && (
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-10">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+              <span>Cannot create RFQs while rate limit is exceeded</span>
             </div>
+            {/* Tooltip arrow */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+          </div>
+        )}
+      </div>
+    </>
+  )}
+</div>
+
+
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredRFQs.map((rfq, index) => {

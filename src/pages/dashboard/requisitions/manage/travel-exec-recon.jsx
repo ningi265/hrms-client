@@ -152,7 +152,6 @@ const TripCard = ({ trip, isSelected, onClick }) => {
       <div className="flex justify-between items-start mb-2">
         <div>
           <h4 className="font-semibold text-gray-900 text-sm">{trip.purpose}</h4>
-          <p className="text-xs text-gray-500">{trip.id}</p>
         </div>
         <StatusBadge status={trip.status} />
       </div>
@@ -906,9 +905,7 @@ export default function TravelExecutionReconciliation() {
                       </div>
                       <div>
                         <h2 className="text-lg font-bold text-gray-900">{selectedTrip.purpose}</h2>
-                        <p className="text-gray-500 text-sm">
-                          {selectedTrip.id} • {selectedTrip.department}
-                        </p>
+                 
                       </div>
                     </div>
                     <div className="flex items-center gap-2">

@@ -580,7 +580,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           }}
         >
           <img 
-            src="/sidebar1.png" 
+            src="/sidebar1.svg" 
             alt="Toggle sidebar" 
             style={{ 
               width: '20px', 
