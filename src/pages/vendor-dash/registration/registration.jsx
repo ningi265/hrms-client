@@ -85,6 +85,10 @@ export default function VendorRegistration() {
     "Transport",
     "Other"
   ];
+  const backendUrl =
+    process.env.REACT_APP_ENV === "production"
+      ? process.env.REACT_APP_BACKEND_URL_PROD
+      : process.env.REACT_APP_BACKEND_URL_DEV
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -173,7 +177,7 @@ export default function VendorRegistration() {
   const checkRegistrationStatus = async (email) => {
   try {
     const response = await fetch(
-      `${process.env.REACT_APP_BACKEND_URL}/api/vendors/registration-status?email=${encodeURIComponent(email)}`
+      `${backendUrl}/api/vendors/registration-status?email=${encodeURIComponent(email)}`
     );
     
     if (!response.ok) {
@@ -216,10 +220,10 @@ export default function VendorRegistration() {
     // Add default user fields for account creation
     formDataToSend.append('firstName', formData.businessName.split(' ')[0] || 'Vendor');
     formDataToSend.append('lastName', formData.businessName.split(' ').slice(1).join(' ') || 'User');
-    formDataToSend.append('phoneNumber', '+265993773578'); // Default from contact info
+    formDataToSend.append('phoneNumber', formData.phoneNumber); // Default from contact info
     formDataToSend.append('password', 'TempPassword123!'); // You might want to add a password field to the form
     const token = localStorage.getItem('token'); // Assuming you store the JWT token in localStorage            
-    const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/vendors/register`, {
+    const response = await fetch(`${backendUrl}/api/vendors/register`, {
       method: 'POST',
       headers: {
           Authorization: `Bearer ${token}`,
@@ -347,6 +351,27 @@ export default function VendorRegistration() {
 
               <div className="p-8 space-y-6">
                 {/* Country of Registration */}
+
+                  <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.phoneNumber}
+                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm ${
+                      errors.phoneNumber ? "border-red-300" : "border-gray-300"
+                    }`}
+                    placeholder="+265-888-0000-000"
+                  />
+                  {errors.phoneNumber && (
+                    <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle size={14} />
+                      {errors.phoneNumber}
+                    </p>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Country of Registration <span className="text-red-500">*</span>

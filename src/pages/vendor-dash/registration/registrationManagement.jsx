@@ -702,7 +702,7 @@ export default function VendorManagementDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Building className="w-6 h-6 text-blue-500" />
+                       
               Vendor Management Dashboard
             </h1>
             <p className="text-gray-500 text-sm mt-1">
@@ -817,7 +817,6 @@ export default function VendorManagementDashboard() {
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Registration Progress</h3>
             </div>
           </div>
