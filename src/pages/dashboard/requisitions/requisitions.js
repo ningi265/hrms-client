@@ -373,7 +373,7 @@ export default function NewRequisition() {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/requisitions?limit=10&sort=createdAt&order=desc`, {
+      const response = await fetch(`${backendUrl}/api/requisitions?limit=10&sort=createdAt&order=desc`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

@@ -348,11 +348,23 @@ export default function VendorPODetailsPage() {
   }
 
   // Open the modal for updating delivery status
-  const handleOpenModal = (po) => {
-    setSelectedPO(po)
+  // Open the modal for updating delivery status
+const handleOpenModal = (po) => {
+  setSelectedPO(po)
+
+  // Only generate a new tracking number if PO has no tracking number yet
+  if (po.trackingNumber) {
+    setTrackingNumber(po.trackingNumber)
+  } else {
     setTrackingNumber(generateTrackingNumber())
-    setOpenModal(true)
   }
+
+  // If carrier exists from DB, use it. Otherwise start empty
+  setCarrier(po.carrier || "")
+
+  setOpenModal(true)
+}
+
 
   // Close the modal
   const handleCloseModal = () => {
@@ -363,46 +375,56 @@ export default function VendorPODetailsPage() {
   }
 
   // Update delivery status (shipped or delivered)
-  const handleUpdateDeliveryStatus = async (status) => {
-    try {
-      if (!selectedPO || !trackingNumber || !carrier) {
-        throw new Error("Missing required data.")
-      }
+const handleUpdateDeliveryStatus = async (status) => {
+  try {
+    if (!selectedPO) throw new Error("Missing PO")
 
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${backendUrl}/api/purchase-orders/${selectedPO._id}/delivery-status`, {
+    const token = localStorage.getItem("token")
+
+    const payload =
+      status === "shipped"
+        ? { deliveryStatus: status, trackingNumber, carrier, vendorId }
+        : { deliveryStatus: status, vendorId } // delivered should not overwrite tracking info
+
+    const response = await fetch(
+      `${backendUrl}/api/purchase-orders/${selectedPO._id}/delivery-status`,
+      {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          deliveryStatus: status,
-          trackingNumber,
-          carrier,
-          token,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(`Failed to update delivery status. Status: ${response.status}. Message: ${errorData.message}`)
+        body: JSON.stringify(payload),
       }
+    )
 
-      // Update the state with the updated PO
-      setPos((prevPos) =>
-        prevPos.map((po) =>
-          po._id === selectedPO._id ? { ...po, deliveryStatus: status, trackingNumber, carrier } : po,
-        ),
-      )
-
-      handleCloseModal()
-      setError("") // Clear any previous errors
-    } catch (err) {
-      console.error("❌ Error updating delivery status:", err)
-      setError(err.message)
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || "Failed to update delivery status")
     }
+
+    // Update local state
+    setPos((prevPos) =>
+      prevPos.map((po) =>
+        po._id === selectedPO._id
+          ? {
+              ...po,
+              deliveryStatus: status,
+              trackingNumber: status === "shipped" ? trackingNumber : po.trackingNumber,
+              carrier: status === "shipped" ? carrier : po.carrier,
+            }
+          : po
+      )
+    )
+
+    handleCloseModal()
+    setError("")
+  } catch (err) {
+    console.error("❌ Error updating delivery status:", err)
+    setError(err.message)
   }
+}
+
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", {
@@ -641,7 +663,7 @@ export default function VendorPODetailsPage() {
                     <input
                       type="text"
                       value={trackingNumber}
-                      readOnly
+                      readOnly={!!selectedPO.trackingNumber}
                       className="w-full px-3 py-2 border border-gray-300 rounded-2xl bg-gray-50 text-gray-700 font-mono text-sm"
                     />
                     <p className="text-xs text-gray-500 mt-1">Auto-generated tracking number</p>
@@ -657,6 +679,7 @@ export default function VendorPODetailsPage() {
                       value={carrier}
                       onChange={(e) => setCarrier(e.target.value)}
                       placeholder="e.g., FedEx, UPS, DHL"
+                      readOnly={!!selectedPO.carrier}
                       className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                       required
                     />

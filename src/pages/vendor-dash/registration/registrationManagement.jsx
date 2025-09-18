@@ -386,7 +386,6 @@ export default function VendorManagementDashboard() {
   }, [backendUrl])
   
 
-
   const transformApiData = (apiData) => {
   try {
     if (!apiData._id) {
@@ -702,30 +701,12 @@ export default function VendorManagementDashboard() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                       
+             
               Vendor Management Dashboard
             </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              {isNewUser
-                ? "Welcome! Start your registration process"
-                : "Track your registration status and manage business information"}
-            </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => showNotificationMessage("Refreshing data...", "info")}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors"
-            >
-              <RefreshCw size={16} />
-              Refresh
-            </button>
-            <button className="p-2 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-colors">
-              <Bell size={16} />
-            </button>
-            <button className="p-2 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-colors">
-              <Settings size={16} />
-            </button>
             <button
               onClick={handleStartRegistration}
               className={`p-2 rounded-2xl transition-colors ${
@@ -742,29 +723,17 @@ export default function VendorManagementDashboard() {
         {/* New User Alert */}
         {showNewUserAlert && isNewUser && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center justify-between">
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-xl">
-                  <Info size={20} className="text-blue-600" />
+                <div className="p-2 bg-red-100 rounded-xl">
+                  <Info size={20} className="text-red-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-blue-900 text-sm">Welcome to Vendor Registration!</h3>
-                  <p className="text-blue-700 text-sm">
+                  <p className="text-red-700 text-sm">
                     You haven't started your registration yet. Click the + button to begin your vendor registration
                     process.
                   </p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleStartRegistration}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-                >
-                  Start Registration
-                </button>
-                <button onClick={() => setShowNewUserAlert(false)} className="p-1 text-blue-400 hover:text-blue-600">
-                  <X size={16} />
-                </button>
               </div>
             </div>
           </motion.div>
@@ -817,6 +786,7 @@ export default function VendorManagementDashboard() {
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
+    
               <h3 className="font-semibold text-gray-900">Registration Progress</h3>
             </div>
           </div>

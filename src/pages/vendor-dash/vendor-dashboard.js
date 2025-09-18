@@ -69,7 +69,7 @@ import VendorRegistration from "./registration/registration";
 import VendorManagementDashboard from "./registration/registrationManagement";
 import UserProfilePage from "../User/user";
 import EmployeeRequisitionManagement from '../../pages/dashboard/requisitions/manage/manage';
-
+import Tenders from './tenders/tenders';
 // Compact Metric Card Component
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", isLoading = false }) => {
   const colorClasses = {
@@ -1035,6 +1035,7 @@ export default function VendorDashboard() {
               {activeSection === "registration" && <VendorRegistration />}
               {activeSection === "registration-management" && <VendorManagementDashboard/>}
               {activeSection === "user-profile" && <UserProfilePage />}
+              {activeSection === "tenders" && <Tenders />}
             </div> 
           )}
         </div>
