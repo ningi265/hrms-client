@@ -232,6 +232,7 @@ export default function EmployeeRequisitionManagement() {
       submissionTime: submissionDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       daysInProcess: daysInProcess,
       employee: apiData.employee,
+      approver: apiData.approver,
       timeline: generateTimeline(apiData.status, apiData.createdAt, apiData.updatedAt),
       trackingId: `REQ-${new Date(apiData.createdAt).getFullYear()}-${apiData._id.slice(-6).toUpperCase()}`
     };
@@ -554,8 +555,8 @@ export default function EmployeeRequisitionManagement() {
                       
                       <div className="grid grid-cols-2 gap-2 mb-3">
                         <div className="bg-purple-50 rounded-xl p-2">
-                          <span className="text-purple-600 font-medium text-xs">Department</span>
-                          <p className="font-bold text-purple-900 text-xs">{requisition.department}</p>
+                          <span className="text-purple-600 font-medium text-xs">Procurement Officer</span>
+                          <p className="font-bold text-purple-900 text-xs">{requisition.approver.email}</p>
                         </div>
                         <div className="bg-amber-50 rounded-xl p-2">
                           <span className="text-amber-600 font-medium text-xs">Budget Code</span>

@@ -526,82 +526,92 @@ export default function TravelExecutionReconciliation() {
   }
 
   // Add new expense
-  const handleAddExpense = async () => {
-    setIsAddingExpense(true)
+ const handleAddExpense = async () => {
+  setIsAddingExpense(true)
 
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${backendUrl}/api/travel-requests/${selectedTrip.id}/expenses`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          category: newExpense.category,
-          amount: newExpense.amount,
-          description: newExpense.description,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to save expense")
-      }
-
-      const updatedRequest = await response.json()
-
-      const newExpenseObj = {
-        id: updatedRequest.payment.expenses[updatedRequest.payment.expenses.length - 1]._id,
+  try {
+    const token = localStorage.getItem("token")
+    const response = await fetch(`${backendUrl}/api/travel-requests/${selectedTrip.id}/expenses`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
         category: newExpense.category,
+        amount: newExpense.amount,
         description: newExpense.description,
-        amount: Number.parseFloat(newExpense.amount),
-        currency: selectedTrip.currency,
-        date: new Date(newExpense.date),
-        paymentMethod: newExpense.paymentMethod,
-        receipt: newExpense.receipt,
-        status: "recorded",
-      }
+      }),
+    })
 
-      setSelectedTrip((prevTrip) => ({
-        ...prevTrip,
-        expenses: [...prevTrip.expenses, newExpenseObj],
-      }))
-
-      setTravelRequests((prevRequests) =>
-        prevRequests.map((request) =>
-          request.id === selectedTrip.id
-            ? {
-                ...request,
-                expenses: [...request.expenses, newExpenseObj],
-              }
-            : request,
-        ),
-      )
-
-      setSnackbarMessage("Expense added successfully")
-      setSnackbarSeverity("success")
-      setSnackbarOpen(true)
-
-      setShowExpenseForm(false)
-      setNewExpense({
-        category: "",
-        description: "",
-        amount: "",
-        currency: selectedTrip.currency,
-        date: format(new Date(), "yyyy-MM-dd"),
-        paymentMethod: "card",
-        receipt: null,
-        notes: "",
-      })
-    } catch (error) {
-      console.error("Error saving expense:", error)
-      setSnackbarMessage("Failed to save expense")
-      setSnackbarSeverity("error")
-      setSnackbarOpen(true)
-    } finally {
-      setIsAddingExpense(false)
+    if (!response.ok) {
+      throw new Error("Failed to save expense")
     }
+
+    const updatedRequest = await response.json()
+
+    const newExpenseObj = {
+      id: updatedRequest.payment.expenses[updatedRequest.payment.expenses.length - 1]._id,
+      category: newExpense.category,
+      description: newExpense.description,
+      amount: Number.parseFloat(newExpense.amount),
+      currency: selectedTrip.currency,
+      date: new Date(newExpense.date),
+      paymentMethod: newExpense.paymentMethod,
+      receipt: newExpense.receipt,
+      status: "recorded",
+    }
+
+    setSelectedTrip((prevTrip) => ({
+      ...prevTrip,
+      expenses: [...prevTrip.expenses, newExpenseObj],
+    }))
+
+    setTravelRequests((prevRequests) =>
+      prevRequests.map((request) =>
+        request.id === selectedTrip.id
+          ? {
+              ...request,
+              expenses: [...request.expenses, newExpenseObj],
+            }
+          : request,
+      ),
+    )
+
+    setSnackbarMessage("Expense added successfully")
+    setSnackbarSeverity("success")
+    setSnackbarOpen(true)
+
+    // Auto-close snackbar after 3 seconds
+    setTimeout(() => {
+      setSnackbarOpen(false)
+    }, 3000)
+
+    setShowExpenseForm(false)
+    setNewExpense({
+      category: "",
+      description: "",
+      amount: "",
+      currency: selectedTrip.currency,
+      date: format(new Date(), "yyyy-MM-dd"),
+      paymentMethod: "card",
+      receipt: null,
+      notes: "",
+    })
+  } catch (error) {
+    console.error("Error saving expense:", error)
+    setSnackbarMessage("Failed to save expense")
+    setSnackbarSeverity("error")
+    setSnackbarOpen(true)
+    
+    // Auto-close snackbar after 3 seconds for error case too
+    setTimeout(() => {
+      setSnackbarOpen(false)
+    }, 3000)
+  } finally {
+    setIsAddingExpense(false)
   }
+}
 
   // Handle file upload for receipts
   const handleFileUpload = (e) => {
@@ -710,6 +720,10 @@ export default function TravelExecutionReconciliation() {
       setSnackbarMessage(error.message || "Failed to submit reconciliation")
       setSnackbarSeverity("error")
       setSnackbarOpen(true)
+
+      setTimeout(() =>{
+        setSnackbarOpen(false)
+      },3000)
     } finally {
       setIsSubmitting(false)
     }
@@ -760,6 +774,10 @@ export default function TravelExecutionReconciliation() {
         setSnackbarMessage("Failed to fetch completed travel requests")
         setSnackbarSeverity("error")
         setSnackbarOpen(true)
+
+        setTimeout(() => {
+          setSnackbarOpen(false)
+        }, 3000)
       } finally {
         setIsLoading(false)
       }
@@ -780,9 +798,6 @@ export default function TravelExecutionReconciliation() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="p-1.5 bg-blue-50 rounded-xl">
-                <Plane className="w-5 h-5 text-blue-600" />
-              </div>
               <h1 className="text-xl font-bold text-gray-900">Travel Execution & Reconciliation</h1>
             </div>
           </div>
@@ -795,16 +810,8 @@ export default function TravelExecutionReconciliation() {
               <option value="all">All Trips</option>
               <option value="active">Active</option>
               <option value="completed">Completed</option>
-              <option value="reconciled">Reconciled</option>
               <option value="upcoming">Upcoming</option>
             </select>
-            <button
-              onClick={() => navigate("/travel-dashboard")}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors text-xs"
-            >
-              <ArrowLeft size={14} />
-              Back to Dashboard
-            </button>
           </div>
         </div>
 
@@ -841,7 +848,6 @@ export default function TravelExecutionReconciliation() {
                       label: "Completed",
                       count: filteredTrips.filter((t) => t.status === "completed").length,
                     },
-                    { id: "reconciled", label: "Reconciled", count: filteredTrips.filter((t) => t.reconciled).length },
                   ].map((tab) => (
                     <button
                       key={tab.id}
@@ -900,9 +906,6 @@ export default function TravelExecutionReconciliation() {
                 <div className="bg-white rounded-2xl border border-gray-200 p-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-50 rounded-xl">
-                        <Plane className="w-5 h-5 text-blue-600" />
-                      </div>
                       <div>
                         <h2 className="text-lg font-bold text-gray-900">{selectedTrip.purpose}</h2>
                  
@@ -1085,10 +1088,7 @@ export default function TravelExecutionReconciliation() {
                 {/* Compact Travel Arrangements */}
                 <div className="bg-white rounded-2xl border border-gray-200">
                   <div className="p-3 border-b border-gray-100">
-                    <div className="flex items-center gap-1.5">
-                      <Plane className="w-4 h-4 text-blue-600" />
-                      <h3 className="font-semibold text-gray-900 text-sm">Travel Arrangements</h3>
-                    </div>
+                   
                   </div>
                   <div className="p-3 space-y-3">
                     {/* Flight Information */}
@@ -1099,9 +1099,7 @@ export default function TravelExecutionReconciliation() {
                         <div className="p-2 bg-gray-50 rounded-xl">
                           <div className="flex justify-between items-center mb-1.5">
                             <div className="flex items-center gap-1.5">
-                              <div className="p-1 bg-blue-100 rounded">
-                                <Plane className="w-3 h-3 text-blue-600" />
-                              </div>
+                            
                               <span className="font-medium text-sm">
                                 {selectedTrip.travelArrangements?.flight?.outbound?.airline ?? "N/A"}
                               </span>
@@ -1141,9 +1139,6 @@ export default function TravelExecutionReconciliation() {
                         <div className="p-2 bg-gray-50 rounded-xl">
                           <div className="flex justify-between items-center mb-1.5">
                             <div className="flex items-center gap-1.5">
-                              <div className="p-1 bg-blue-100 rounded">
-                                <Plane className="w-3 h-3 text-blue-600" />
-                              </div>
                               <span className="font-medium text-sm">
                                 {selectedTrip.travelArrangements?.flight?.return?.airline ?? "N/A"}
                               </span>
@@ -1497,271 +1492,304 @@ export default function TravelExecutionReconciliation() {
 
         {/* Compact Reconciliation Modal */}
         <Modal
-          isOpen={showReconciliation}
-          onClose={() => setShowReconciliation(false)}
-          title="Trip Reconciliation"
-          size="xl"
-        >
-          <div className="p-4">
-            {/* Compact Stepper */}
-            <div className="flex items-center justify-center mb-6">
-              <div className="flex items-center space-x-3">
-                {[
-                  { step: 1, label: "Trip Report" },
-                  { step: 2, label: "Expense Review" },
-                  { step: 3, label: "Final Submission" },
-                ].map((item, index) => (
-                  <div key={item.step} className="flex items-center">
-                    <div
-                      className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                        reconciliationStep >= item.step ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
-                      }`}
-                    >
-                      {reconciliationStep > item.step ? <Check size={12} /> : item.step}
-                    </div>
-                    <span
-                      className={`ml-1.5 text-xs font-medium ${
-                        reconciliationStep >= item.step ? "text-blue-600" : "text-gray-500"
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                    {index < 2 && (
-                      <div
-                        className={`w-8 h-0.5 ml-3 ${reconciliationStep > item.step ? "bg-blue-600" : "bg-gray-200"}`}
-                      ></div>
-                    )}
-                  </div>
-                ))}
+  isOpen={showReconciliation}
+  onClose={() => setShowReconciliation(false)}
+  title="Trip Reconciliation"
+  size="sm"
+>
+  <div className="p-4">
+    {/* Compact Stepper */}
+    <div className="flex items-center justify-center mb-4">
+      <div className="flex items-center space-x-2">
+        {[
+          { step: 1, label: "Trip" },
+          { step: 2, label: "Expenses" },
+          { step: 3, label: "Submit" },
+        ].map((item, index) => (
+          <div key={item.step} className="flex items-center">
+            <div
+              className={`flex items-center justify-center w-5 h-5 rounded-full text-xs font-medium ${
+                reconciliationStep >= item.step ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-500"
+              }`}
+            >
+              {reconciliationStep > item.step ? <Check size={10} /> : item.step}
+            </div>
+            <span
+              className={`ml-1 text-xs font-medium ${
+                reconciliationStep >= item.step ? "text-blue-600" : "text-gray-500"
+              }`}
+            >
+              {item.label}
+            </span>
+            {index < 2 && (
+              <div
+                className={`w-6 h-0.5 ml-2 ${reconciliationStep > item.step ? "bg-blue-600" : "bg-gray-200"}`}
+              ></div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {/* Step Content */}
+    {reconciliationStep === 1 && (
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Trip Report</label>
+          <textarea
+            placeholder="Summary of your trip, meetings, outcomes"
+            value={reconciliationData.tripReport}
+            onChange={(e) => setReconciliationData({ ...reconciliationData, tripReport: e.target.value })}
+            rows={4}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Actual Return Date</label>
+          <input
+            type="date"
+            value={reconciliationData.returnDate}
+            onChange={(e) => setReconciliationData({ ...reconciliationData, returnDate: e.target.value })}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+      </div>
+    )}
+
+    {reconciliationStep === 2 && (
+      <div className="space-y-3">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-2">Expense Summary</h3>
+          <div className="grid grid-cols-1 gap-2 mb-3">
+            <div className="bg-blue-50 p-2 rounded-2xl border border-blue-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-700">Per Diem Allowance</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {formatCurrency(selectedTrip.perDiemAmount, selectedTrip.currency)}
+                </span>
               </div>
             </div>
-
-            {/* Step Content */}
-            {reconciliationStep === 1 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Trip Report</label>
-                  <textarea
-                    placeholder="Provide a summary of your trip, including key meetings, outcomes, and any follow-up actions"
-                    value={reconciliationData.tripReport}
-                    onChange={(e) => setReconciliationData({ ...reconciliationData, tripReport: e.target.value })}
-                    rows={6}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Actual Return Date</label>
-                  <input
-                    type="date"
-                    value={reconciliationData.returnDate}
-                    onChange={(e) => setReconciliationData({ ...reconciliationData, returnDate: e.target.value })}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+            
+            <div className="bg-orange-50 p-2 rounded-2xl border border-orange-100">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-700">Total Expenses</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {formatCurrency(reconciliationData.totalSpent, selectedTrip.currency)}
+                </span>
               </div>
-            )}
-
-            {reconciliationStep === 2 && (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-base font-semibold text-gray-900 mb-3">Expense Summary</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                    <MetricCard
-                      title="Per Diem Allowance"
-                      value={formatCurrency(selectedTrip.perDiemAmount, selectedTrip.currency)}
-                      icon={Wallet}
-                      color="blue"
-                    />
-                    <MetricCard
-                      title="Total Expenses"
-                      value={formatCurrency(reconciliationData.totalSpent, selectedTrip.currency)}
-                      icon={Receipt}
-                      color="orange"
-                    />
-                    <MetricCard
-                      title="Remaining Balance"
-                      value={formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)}
-                      icon={DollarSign}
-                      color={reconciliationData.remainingBalance < 0 ? "red" : "green"}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2 text-sm">Expense Details</h4>
-                  <div className="overflow-x-auto">
-                    <table className="w-full border border-gray-200 rounded-2xl">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Date</th>
-                          <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Category</th>
-                          <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">
-                            Description
-                          </th>
-                          <th className="text-right py-2 px-3 text-xs font-medium text-gray-500 uppercase">Amount</th>
-                          <th className="text-left py-2 px-3 text-xs font-medium text-gray-500 uppercase">Receipt</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {reconciliationData.expenses.map((expense, index) => (
-                          <tr key={expense.id} className="hover:bg-gray-50">
-                            <td className="py-2 px-3 text-xs">{format(expense.date, "MMM d, yyyy")}</td>
-                            <td className="py-2 px-3 text-xs">{expense.category}</td>
-                            <td className="py-2 px-3 text-xs">{expense.description}</td>
-                            <td className="py-2 px-3 text-xs text-right font-medium">
-                              {formatCurrency(expense.amount, selectedTrip.currency)}
-                            </td>
-                            <td className="py-2 px-3 text-xs">
-                              {expense.receipt ? (
-                                <button className="flex items-center gap-1 text-blue-600 hover:text-blue-700">
-                                  <FileText size={12} />
-                                  View
-                                </button>
-                              ) : (
-                                <span className="px-1.5 py-0.5 bg-red-100 text-red-800 text-xs rounded-full">
-                                  Missing
-                                </span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <Alert
-                  type={reconciliationData.remainingBalance < 0 ? "error" : "success"}
-                  title={reconciliationData.remainingBalance < 0 ? "Overspent Budget" : "Within Budget"}
-                >
-                  {reconciliationData.remainingBalance < 0
-                    ? `You have exceeded your per diem allowance by ${formatCurrency(Math.abs(reconciliationData.remainingBalance), selectedTrip.currency)}. Please provide an explanation in the notes.`
-                    : `You have ${formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)} remaining from your per diem allowance.`}
-                </Alert>
+            </div>
+            
+            <div className={`p-2 rounded-2xl border ${
+              reconciliationData.remainingBalance < 0 
+                ? "bg-red-50 border-red-100" 
+                : "bg-green-50 border-green-100"
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-gray-700">Remaining Balance</span>
+                <span className={`text-sm font-semibold ${
+                  reconciliationData.remainingBalance < 0 ? "text-red-700" : "text-green-700"
+                }`}>
+                  {formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)}
+                </span>
               </div>
-            )}
-
-            {reconciliationStep === 3 && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Additional Notes</label>
-                  <textarea
-                    placeholder="Provide any additional information or explanation for your expenses"
-                    value={reconciliationData.additionalNotes}
-                    onChange={(e) => setReconciliationData({ ...reconciliationData, additionalNotes: e.target.value })}
-                    rows={4}
-                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div className="bg-gray-50 p-3 rounded-2xl">
-                  <h4 className="font-semibold text-gray-900 mb-3 text-sm">Reconciliation Summary</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <h5 className="text-xs font-medium text-gray-500">Trip Details</h5>
-                      <div className="space-y-1 text-xs">
-                        <p>
-                          <span className="font-medium">Destination:</span> {selectedTrip.city}, {selectedTrip.country}
-                        </p>
-                        <p>
-                          <span className="font-medium">Purpose:</span> {selectedTrip.purpose}
-                        </p>
-                        <p>
-                          <span className="font-medium">Travel Period:</span>{" "}
-                          {format(selectedTrip.departureDate, "MMM d")} -{" "}
-                          {reconciliationData.returnDate && !isNaN(new Date(reconciliationData.returnDate).getTime())
-                            ? format(new Date(reconciliationData.returnDate), "MMM d, yyyy")
-                            : "N/A"}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <h5 className="text-xs font-medium text-gray-500">Financial Summary</h5>
-                      <div className="space-y-1 text-xs">
-                        <p>
-                          <span className="font-medium">Per Diem Allowance:</span>{" "}
-                          {formatCurrency(selectedTrip.perDiemAmount, selectedTrip.currency)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Total Expenses:</span>{" "}
-                          {formatCurrency(reconciliationData.totalSpent, selectedTrip.currency)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Remaining Balance:</span>{" "}
-                          {formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 pt-3 border-t border-gray-200">
-                    <h5 className="text-xs font-medium text-gray-500 mb-1">Next Steps</h5>
-                    <p className="text-xs text-gray-700">
-                      {reconciliationData.remainingBalance > 0
-                        ? `The remaining balance of ${formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)} will be returned to the company account.`
-                        : reconciliationData.remainingBalance < 0
-                          ? `Your request for additional reimbursement of ${formatCurrency(Math.abs(reconciliationData.remainingBalance), selectedTrip.currency)} will be reviewed by your manager.`
-                          : "Your expenses match exactly with your per diem allowance. No further action is required."}
-                    </p>
-                  </div>
-                </div>
-
-                <Alert type="warning" title="Confirmation">
-                  By submitting this reconciliation, you confirm that all expenses are accurate and comply with company
-                  policy. This submission will be reviewed by your manager.
-                </Alert>
-              </div>
-            )}
-
-            {/* Compact Modal Actions */}
-            <div className="flex justify-between items-center mt-6 pt-3 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={() => {
-                  if (reconciliationStep > 1) {
-                    setReconciliationStep(reconciliationStep - 1)
-                  } else {
-                    setShowReconciliation(false)
-                  }
-                }}
-                className="px-3 py-1.5 text-gray-700 border border-gray-200 rounded-2xl hover:bg-gray-50 text-xs font-medium"
-              >
-                {reconciliationStep > 1 ? "Previous" : "Cancel"}
-              </button>
-
-              {reconciliationStep < 3 ? (
-                <button
-                  type="button"
-                  onClick={() => setReconciliationStep(reconciliationStep + 1)}
-                  disabled={reconciliationStep === 1 && !reconciliationData.tripReport}
-                  className="px-3 py-1.5 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium"
-                >
-                  Next Step
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmitReconciliation}
-                  disabled={isSubmitting}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-600 text-white rounded-2xl font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <LoadingSpinner size="sm" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={14} />
-                      Submit Reconciliation
-                    </>
-                  )}
-                </button>
-              )}
             </div>
           </div>
-        </Modal>
+        </div>
+
+        <div>
+          <h4 className="font-medium text-gray-900 mb-2 text-xs">Expense Details</h4>
+          <div className="overflow-x-auto border border-gray-200 rounded-2xl text-xs">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="text-left py-1.5 px-2 font-medium text-gray-500">Date</th>
+                  <th className="text-left py-1.5 px-2 font-medium text-gray-500">Category</th>
+                  <th className="text-right py-1.5 px-2 font-medium text-gray-500">Amount</th>
+                  <th className="text-left py-1.5 px-2 font-medium text-gray-500">Receipt</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {reconciliationData.expenses.map((expense, index) => (
+                  <tr key={expense.id} className="hover:bg-gray-50">
+                    <td className="py-1.5 px-2">{format(expense.date, "MMM d")}</td>
+                    <td className="py-1.5 px-2">{expense.category}</td>
+                    <td className="py-1.5 px-2 text-right font-medium">
+                      {formatCurrency(expense.amount, selectedTrip.currency)}
+                    </td>
+                    <td className="py-1.5 px-2">
+                      {expense.receipt ? (
+                        <button className="text-blue-600 hover:text-blue-700 text-xs px-1.5 py-0.5 bg-blue-50 rounded-2xl">
+                          View
+                        </button>
+                      ) : (
+                        <span className="px-1.5 py-0.5 bg-red-100 text-red-800 rounded-2xl">
+                          Missing
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className={`p-2 rounded-2xl ${
+          reconciliationData.remainingBalance < 0 
+            ? "bg-red-50 border border-red-100" 
+            : "bg-green-50 border border-green-100"
+        }`}>
+          <div className="flex items-start gap-1.5">
+            <div className={`p-1 mt-0.5 rounded-2xl ${
+              reconciliationData.remainingBalance < 0 ? "bg-red-100" : "bg-green-100"
+            }`}>
+              {reconciliationData.remainingBalance < 0 ? (
+                <AlertCircle size={12} className="text-red-600" />
+              ) : (
+                <CheckCircle size={12} className="text-green-600" />
+              )}
+            </div>
+            <div>
+              <h4 className={`text-xs font-medium ${
+                reconciliationData.remainingBalance < 0 ? "text-red-800" : "text-green-800"
+              }`}>
+                {reconciliationData.remainingBalance < 0 ? "Overspent Budget" : "Within Budget"}
+              </h4>
+              <p className={`text-xs mt-0.5 ${
+                reconciliationData.remainingBalance < 0 ? "text-red-700" : "text-green-700"
+              }`}>
+                {reconciliationData.remainingBalance < 0
+                  ? `Exceeded by ${formatCurrency(Math.abs(reconciliationData.remainingBalance), selectedTrip.currency)}`
+                  : `${formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)} remaining`}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {reconciliationStep === 3 && (
+      <div className="space-y-3">
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">Additional Notes</label>
+          <textarea
+            placeholder="Additional information or explanation"
+            value={reconciliationData.additionalNotes}
+            onChange={(e) => setReconciliationData({ ...reconciliationData, additionalNotes: e.target.value })}
+            rows={3}
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div className="bg-gray-50 p-3 rounded-2xl border border-gray-200">
+          <h4 className="font-semibold text-gray-900 mb-2 text-xs">Reconciliation Summary</h4>
+          <div className="space-y-2 text-xs">
+            <div>
+              <h5 className="font-medium text-gray-500">Trip Details</h5>
+              <p className="text-gray-700">
+                {selectedTrip.city}, {selectedTrip.country} • {selectedTrip.purpose}
+              </p>
+              <p className="text-gray-700">
+                {format(selectedTrip.departureDate, "MMM d")} -{" "}
+                {reconciliationData.returnDate && !isNaN(new Date(reconciliationData.returnDate).getTime())
+                  ? format(new Date(reconciliationData.returnDate), "MMM d")
+                  : "N/A"}
+              </p>
+            </div>
+            
+            <div>
+              <h5 className="font-medium text-gray-500">Financial Summary</h5>
+              <p className="text-gray-700">
+                Allowance: {formatCurrency(selectedTrip.perDiemAmount, selectedTrip.currency)}
+              </p>
+              <p className="text-gray-700">
+                Expenses: {formatCurrency(reconciliationData.totalSpent, selectedTrip.currency)}
+              </p>
+              <p className={`font-medium ${
+                reconciliationData.remainingBalance < 0 ? "text-red-700" : "text-green-700"
+              }`}>
+                Balance: {formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-2 pt-2 border-t border-gray-200">
+            <h5 className="text-xs font-medium text-gray-500 mb-0.5">Next Steps</h5>
+            <p className="text-xs text-gray-700">
+              {reconciliationData.remainingBalance > 0
+                ? `Return ${formatCurrency(reconciliationData.remainingBalance, selectedTrip.currency)} to company`
+                : reconciliationData.remainingBalance < 0
+                  ? `Request ${formatCurrency(Math.abs(reconciliationData.remainingBalance), selectedTrip.currency)} reimbursement`
+                  : "No further action required"}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-yellow-50 p-2 rounded-2xl border border-yellow-100">
+          <div className="flex items-start gap-1.5">
+            <div className="p-1 mt-0.5 bg-yellow-100 rounded-2xl">
+              <AlertTriangle size={12} className="text-yellow-600" />
+            </div>
+            <div>
+              <h4 className="text-xs font-medium text-yellow-800">Confirmation</h4>
+              <p className="text-xs mt-0.5 text-yellow-700">
+                Confirm expenses are accurate and comply with company policy.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Compact Modal Actions */}
+    <div className="flex justify-between items-center mt-4 pt-3 border-t border-gray-200">
+      <button
+        type="button"
+        onClick={() => {
+          if (reconciliationStep > 1) {
+            setReconciliationStep(reconciliationStep - 1)
+          } else {
+            setShowReconciliation(false)
+          }
+        }}
+        className="px-3 py-1.5 text-xs text-gray-700 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-colors font-medium"
+      >
+        {reconciliationStep > 1 ? "Back" : "Cancel"}
+      </button>
+
+      {reconciliationStep < 3 ? (
+        <button
+          type="button"
+          onClick={() => setReconciliationStep(reconciliationStep + 1)}
+          disabled={reconciliationStep === 1 && !reconciliationData.tripReport}
+          className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={handleSubmitReconciliation}
+          disabled={isSubmitting}
+          className="flex items-center gap-1 px-3 py-1.5 bg-orange-500 text-white rounded-2xl font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-xs"
+        >
+          {isSubmitting ? (
+            <>
+              <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+              Submitting...
+            </>
+          ) : (
+            <>
+              <Check size={12} />
+              Submit
+            </>
+          )}
+        </button>
+      )}
+    </div>
+  </div>
+</Modal>
 
         {/* Compact Snackbar */}
         {snackbarOpen && (

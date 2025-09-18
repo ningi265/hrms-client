@@ -772,12 +772,12 @@ const PurchaseOrderCard = ({ po, onMenuClick, showMenuId, onApprove, onReject, a
         </span>
       </div>
 
-      {(po.receivedByCustomer || po.deliveryStatus === "confirmed") && (
+      {(po.receivedByCustomer) && (
         <div className="mb-3">
           <div className="text-xs text-gray-600 mb-1">Customer Receipt</div>
           <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 flex items-center gap-1 w-fit">
             <Star size={12} />
-            Confirmed
+            Received by {po.receivedByCustomer || "Customer"}
           </span>
         </div>
       )}

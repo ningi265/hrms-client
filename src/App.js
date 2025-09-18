@@ -80,7 +80,8 @@ import BillingManagement from './pages/billing-management';
 import SubscriptionRequired from './components/SubscriptionRequired';
 import TrialStatus from './components/TrialStatus';
 import UsageDashboard from './pages/usage';
-
+import Tenders from './pages/vendor-dash/tenders/tenders';
+import CreateTendersPage from './pages/dashboard/tenders/tenders';  
 
 
 function App() {
@@ -117,6 +118,7 @@ function App() {
               <Route path="/dash/new" element={<ProcurementDashboardWithSidebar/>}/>
               <Route path="/dashboard" element={<DashboardPage/>} />
               <Route path="/usage" element={<UsageDashboard/>} />
+              <Route path="/tenders" element={<CreateTendersPage/>} />
        
               <Route path="/purchase" element={<PurchaseOrdersPage/>} />
               <Route path="/rfqs/create" element={<CreateRFQPage/>}/>
@@ -185,7 +187,7 @@ function App() {
               <Route path="/vendor-purchase-order" element={<VendorPODetailsPage/>}/>
               <Route path="/vendor-registration" element={<VendorRegistration/>}/>
               <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>
-
+               <Route path="/tenders" element={<Tenders/>}/>
               {/* Driver Routes */}
              
               
