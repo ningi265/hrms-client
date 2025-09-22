@@ -568,8 +568,7 @@ const handleDeleteCard = async (paymentMethodId) => {
   <h3 className="text-xl font-bold text-gray-900 mt-4">
     {profileData.firstName} {profileData.lastName}
   </h3>
-  <p className="text-gray-600">{profileData.jobTitle || "User"}</p>
-  <p className="text-sm text-gray-500">{profileData.company}</p>
+
 </div>
 
 

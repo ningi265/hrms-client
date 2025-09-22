@@ -287,6 +287,16 @@ const showNotificationMessage = (message, type = "success") => {
     setTimeout(() => setShowNotification(false), 5000)
   }
 
+  // Add this inside your component
+const handleFileUpload = (e) => {
+  const files = Array.from(e.target.files);
+  setFormData((prev) => ({
+    ...prev,
+    attachments: files, // store files in state
+  }));
+};
+
+
 
 const handleInputChange = (e) => {
   const { name, value } = e.target;
@@ -302,6 +312,7 @@ const handleInputChange = (e) => {
       budget: selectedReq ? selectedReq.estimatedCost : "",
       urgency: selectedReq ? selectedReq.urgency : "Medium",
       category: selectedReq ? selectedReq.category : "",
+      location: selectedReq ? selectedReq.location : "",
     }));
   } else {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -373,7 +384,6 @@ const handleInputChange = (e) => {
     try {
       const token = localStorage.getItem("token");
       
-      
       const [requisitionsRes] = await Promise.all([
         fetch(`${backendUrl}/api/requisitions`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -386,7 +396,13 @@ const handleInputChange = (e) => {
   
       if (requisitionsRes.ok) {
         const approvedRequisitions = requisitionsData.filter(req => req.status === "approved");
-        setRequisitions(approvedRequisitions);
+
+        // Tender filter
+        const tenderRequisitions = approvedRequisitions.filter(req => 
+          req.estimatedCost > 1000 || req.urgency === "high"
+        );
+
+        setRequisitions(tenderRequisitions);
       }
     } catch (err) {
       setError("Failed to load data. Please try again.");
@@ -396,8 +412,9 @@ const handleInputChange = (e) => {
     }
   };
   
-      fetchData();
-    }, [backendUrl]);
+  fetchData();
+}, [backendUrl]);
+
 
 
       useEffect(() => {
@@ -631,202 +648,228 @@ setTenders(opentenders);
             </div>
           )}
         </div>
-      </main>
+      </main>    
+      {/* Create Tender Modal */}
+          {isCreateTenderModalOpen && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
+    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+      
+      {/* Header */}
+      <div className="px-5 py-3 border-b border-gray-200 flex justify-between items-center">
+        <h2 className="text-lg font-semibold text-gray-900">Create Tender</h2>
+        <button
+          onClick={closeCreateTenderModal}
+          className="p-1.5 hover:bg-gray-100 rounded-2xl transition-colors"
+        >
+          <X size={18} />
+        </button>
+      </div>
 
-       {isCreateTenderModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
-          <div className="bg-white rounded-xl w-full max-w-md max-h-[90vh] overflow-hidden shadow-2xl">
-            {/* Compact Header */}
-            <div className="px-5 py-3 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                  Create New Tender 
-                </h2>
-                <button
-                  onClick={closeCreateTenderModal}
-                  className="p-1.5 hover:bg-gray-100 rounded-2xl transition-colors"
-                >
-                  <X size={18} />
-                </button>
-              </div>
+      {/* Body */}
+      <div className="p-5 max-h-[75vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          
+          {/* Title + Category */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Title *</label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g., Supply of Medical Equipment"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
             </div>
-            
-            {/* Compact Form Body */}
-            <div className="p-5 max-h-[75vh] overflow-y-auto">
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Title *
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., Medical Equipment Supply"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                     Requisitions *
-                    </label>
-                    <select
-                      name="requisitionId"
-                      value={formData.requisitionId}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                     <option value="">Select requisition</option>
-  {requisitions.map((req) => (
-    <option key={req._id} value={req._id}>
-      {req.itemName} ({req.budgetCode})
-    </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-      
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Description *
-                  </label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    placeholder="Tender purpose and specifications"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-      
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Location *
-                    </label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., Downtown District"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-  <label className="block text-xs font-medium text-gray-700 mb-1">
-    Requirements (comma-separated)
-  </label>
-  <input
-    type="text"
-    name="requirements"
-   value={(formData.requirements || []).join(", ")}
-    onChange={handleInputChange}
-    placeholder="e.g., Licensed Contractor, 5+ Years Experience, Green Building Cert"
-    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-  />
-</div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                     Deadline *
-                    </label>
-                    <input
-                      type="date"
-                      name="deadline"
-                      value={formData.deadline}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                     Category
-                    </label>
-                    <input
-                      type="text"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Medical Supplies"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-      
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Budget *
-                    </label>
-                    <input
-                      type="number"
-                      name="budget"
-                      value={formData.budget}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., 500000"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Urgency *
-                    </label>
-                    <select
-                      name="urgency"
-                      value={formData.urgency}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-                 
-                </div>
-                {/* Compact Footer */}
-                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
-                  <button
-                    type="button"
-                    onClick={closeCreateTenderModal}
-                    className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-colors font-medium"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isFormSubmitting}
-                    className="px-4 py-2 text-xs bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isFormSubmitting ? (
-                      <>
-                        <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        Create Tender
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Category *</label>
+              <input
+                type="text"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                placeholder="e.g., Medical Supplies"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
             </div>
           </div>
+
+          {/* Requisition */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Requisition *</label>
+            <select
+              name="requisitionId"
+              value={formData.requisitionId}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+            >
+              <option value="">Select requisition</option>
+              {requisitions.map((req) => (
+                <option key={req._id} value={req._id}>
+                  {req.itemName} ({req.budgetCode})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Scope / Description *</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              required
+              rows={3}
+              placeholder="Provide detailed description of goods/services"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+            />
+          </div>
+
+          {/* Requirements + Technical Specs */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Requirements *</label>
+              <input
+                type="text"
+                name="requirements"
+                value={(formData.requirements || []).join(", ")}
+                onChange={handleInputChange}
+                placeholder="e.g., License, 5+ yrs exp, ISO Cert"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Technical Specs</label>
+              <input
+                type="text"
+                name="technicalSpecs"
+                value={formData.technicalSpecs || ""}
+                onChange={handleInputChange}
+                placeholder="Key specs"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Budget + Payment Terms */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Budget *</label>
+              <input
+                type="number"
+                name="budget"
+                value={formData.budget}
+                onChange={handleInputChange}
+                required
+                placeholder="e.g., 500000"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Payment Terms</label>
+              <input
+                type="text"
+                name="paymentTerms"
+                value={formData.paymentTerms || ""}
+                onChange={handleInputChange}
+                placeholder="e.g., 30% advance"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Deadline + Evaluation Criteria */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Deadline *</label>
+              <input
+                type="date"
+                name="deadline"
+                value={formData.deadline}
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Evaluation Criteria</label>
+              <input
+                type="text"
+                name="evaluationCriteria"
+                value={formData.evaluationCriteria || ""}
+                onChange={handleInputChange}
+                placeholder="e.g., 60% tech / 40% finance"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Urgency */}
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Urgency *</label>
+            <select
+              name="urgency"
+              value={formData.urgency}
+              onChange={handleInputChange}
+              required
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+               <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location || ""}
+                onChange={handleInputChange}
+                placeholder="Location"
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
+              />
+            </div>
         </div>
-      )}
+          
+
+          {/* Footer */}
+          <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={closeCreateTenderModal}
+              className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isFormSubmitting}
+              className="px-4 py-2 text-xs bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isFormSubmitting ? (
+                <>
+                  <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
+                  Creating...
+                </>
+              ) : (
+                "Create Tender"
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+)}
+
+
     </div>
   )
 }

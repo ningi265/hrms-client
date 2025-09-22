@@ -681,45 +681,51 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
     {open ? (
       <>
         {/* Company Display - matches sidebar theme */}
-        <Box 
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            flexGrow: 1
-          }}
-        >
-          <Box 
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: '8px',
-              backgroundColor: 'rgba(85, 105, 255, 0.8)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 700,
-              fontSize: '1.2rem',
-              textTransform: 'uppercase' // Added this line
-            }}
-          >
-            {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
-          </Box>
-          <Box>
-            <Typography 
-              variant="subtitle1" 
-              sx={{
-                color: sidebarColors.text,
-                fontWeight: 600,
-                lineHeight: 1.2,
-                textTransform: 'uppercase' // Added this line
-              }}
-            >
-              {user?.companyName?.toUpperCase() || 'NexusMWI'} {/* Ensures uppercase */}
-            </Typography>
-          </Box>
-        </Box>
+         <Box 
+  sx={{
+    display: 'flex',
+    alignItems: 'center',
+    gap: 2,
+    flexGrow: 1,
+    minWidth: 0 // required so the child can shrink
+  }}
+>
+  <Box 
+    sx={{
+      width: 36,
+      height: 36,
+      borderRadius: '8px',
+      backgroundColor: 'rgba(85, 105, 255, 0.8)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#ffffff',
+      fontWeight: 700,
+      fontSize: '1.2rem',
+      textTransform: 'uppercase'
+    }}
+  >
+    {user?.companyName?.charAt(0)?.toUpperCase() || 'N'}
+  </Box>
+  <Box sx={{ minWidth: 0 }}>
+    <Typography 
+      variant="subtitle1" 
+      noWrap
+      sx={{
+        color: sidebarColors.text,
+        fontWeight: 600,
+        lineHeight: 1.2,
+        textTransform: 'uppercase',
+        overflow: 'hidden',
+        textOverflow: 'clip', 
+        whiteSpace: 'nowrap'
+      }}
+    >
+      {user?.companyName?.toUpperCase() || 'NexusMWI'}
+    </Typography>
+  </Box>
+</Box>
+
         
         <ToggleButton 
           onClick={toggleDrawer}

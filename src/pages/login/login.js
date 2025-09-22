@@ -1,10 +1,12 @@
+// src/components/LoginPage.js
 "use client"
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { Eye, EyeOff, AlertCircle, FileText, Calendar, Users, ClipboardCheck, TrendingUp } from "lucide-react"
 import { useAuth } from "../../authcontext/authcontext"
-
+import { auth } from "../../firebase"; 
 
 // Add these constants at the top of your file, after the imports
 const employeeRoles = [
@@ -94,19 +96,68 @@ export default function LoginPage() {
     },
   ]
 
- useEffect(() => {
-  const interval = setInterval(() => {
-    setCurrentProcess((prev) => (prev + 1) % hrmsProcesses.length)
-  }, 4000)
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
 
-  return () => clearInterval(interval)
-}, [hrmsProcesses.length])
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentProcess((prev) => (prev + 1) % hrmsProcesses.length)
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [hrmsProcesses.length])
 
   const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true)
-    setError("")
-    console.log("Google login initiated")
-  }
+    setIsGoogleLoading(true);
+    setError("");
+
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+      const user = result.user;
+
+      // Call backend to check if this email exists
+      const response = await fetch(`${backendUrl}/api/auth/google-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user.email,
+          name: user.displayName,
+          googleId: user.uid,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message || "Google login failed");
+
+      if (data.exists) {
+         localStorage.setItem("user", JSON.stringify(data.user));
+ localStorage.setItem("token", data.token);
+ navigate("/dashboard");
+      } else {
+        // User does not exist → redirect to register, prefill email
+        navigate("/register", {
+          state: {
+            email: user.email,
+            firstName: user.displayName.split(" ")[0],
+            lastName: user.displayName.split(" ")[1] || "",
+            googleSignup: true, 
+          },
+        });
+      }
+    } catch (err) {
+      console.error("Google login error:", err);
+      setError(err.message || "Google login failed. Try again.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -169,9 +220,9 @@ export default function LoginPage() {
 
       let path = roleNavigationMap[user.role] || "/employee-dash"
 
-       if (!hasActiveSubscription && !['Vendor', 'Driver', ...enterpriseRoles, ...employeeRoles].includes(user.role)) {
-      path = "/billing"
-    }
+      if (!hasActiveSubscription && !['Vendor', 'Driver', ...enterpriseRoles, ...employeeRoles].includes(user.role)) {
+        path = "/billing"
+      }
 
       navigate(path)
     } catch (error) {
@@ -186,27 +237,27 @@ export default function LoginPage() {
   }
 
   // Helper function to check subscription status
-const checkSubscriptionStatus = (user) => {
-  if (!user.billing) return false
+  const checkSubscriptionStatus = (user) => {
+    if (!user.billing) return false
 
-  const { subscription, trialEndDate } = user.billing
-  const now = new Date()
-  const trialEnd = trialEndDate ? new Date(trialEndDate) : null
+    const { subscription, trialEndDate } = user.billing
+    const now = new Date()
+    const trialEnd = trialEndDate ? new Date(trialEndDate) : null
 
-  // Active paid subscription
-  if (subscription?.status === 'active' && subscription?.plan !== 'trial') {
-    return true
-  }
-   // Active trial period
-  if (subscription?.plan === 'trial') {
-    if (!trialEnd || isNaN(trialEnd.getTime())) {
-      return false
+    // Active paid subscription
+    if (subscription?.status === 'active' && subscription?.plan !== 'trial') {
+      return true
     }
-    return trialEnd > now
-  }
+    // Active trial period
+    if (subscription?.plan === 'trial') {
+      if (!trialEnd || isNaN(trialEnd.getTime())) {
+        return false
+      }
+      return trialEnd > now
+    }
 
-  return false
-}
+    return false
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-blue-50">

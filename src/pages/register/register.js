@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+
+import { useNavigate ,useLocation} from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -25,13 +26,17 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Calendar} from "lucide-react";
 
 export default function RegisterPage() {
+   const location = useLocation();
+    const googleData = location.state;
+
   const [activeStep, setActiveStep] = useState(0);
   const navigate = useNavigate();
-  const [email, setEmail] = useState("")
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState(googleData?.email || "");
+  const [firstName, setFirstName] = useState(googleData?.firstName || "");
+  const [lastName, setLastName] = useState(googleData?.lastName || "");
   const [companyName, setCompanyName] = useState("")
-  const [password, setPassword] = useState("")
+  const [password, setPassword] = useState(googleData?.googleSignup ? "GoogleAuth" : ""); 
+  const [skipVerification, setSkipVerification] = useState(googleData?.googleSignup || false);
   const [showPassword, setShowPassword] = useState(false)
   const [industry, setIndustry] = useState("")
   const [role, setRole] = useState("")
@@ -203,67 +208,76 @@ const [dobError, setDobError] = useState("");
     }
   }
 
-  const handleSubmit = async () => {
-    if (!phoneNumber) {
-      toast.error("Please enter your phone number");
-      return;
-    }
-
-    if (password.length < 8) {
-      toast.error("Password must be at least 8 characters");
-      return;
-    }
-
-    if (!backendUrl || backendUrl === 'undefined') {
-      toast.error('Configuration error: Unable to connect to server');
-      return;
-    }
-
-    setIsLoading(true)
-    setError("")
-
-    try {
-      const registrationData = await authRegister(
-        firstName,
-        lastName,
-        email,
-        password,
-        companyName,
-        industry,
-        role,
-        phoneNumber
-      );
-
-      setUserData(registrationData.user)
-      setAuthToken(registrationData.token)
-
-      setIsSendingSMS(true)
-      
-      const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        mode:"cors",
-        body: JSON.stringify({ email }),
-      })
-
-      if (!smsResponse.ok) {
-        const errorData = await smsResponse.json();
-        throw new Error(errorData.message || "Failed to send verification code")
-      }
-
-      toast.success("Verification code sent to your email");
-      setShowVerification(true)
-    } catch (err) {
-      console.error('Submit error:', err);
-      toast.error(err.message);
-    } finally {
-      setIsLoading(false)
-      setIsSendingSMS(false)
-    }
+const handleSubmit = async () => {
+  if (!skipVerification && !phoneNumber) {
+    toast.error("Please enter your phone number");
+    return;
   }
+
+  if (!skipVerification && password.length < 8) {
+    toast.error("Password must be at least 8 characters");
+    return;
+  }
+
+  if (!backendUrl || backendUrl === "undefined") {
+    toast.error("Configuration error: Unable to connect to server");
+    return;
+  }
+
+  setIsLoading(true);
+  setError("");
+
+  try {
+    const registrationData = await authRegister(
+      firstName,
+      lastName,
+      email,
+      password,
+      companyName,
+      industry,
+      role,
+      phoneNumber
+    );
+
+    setUserData(registrationData.user);
+    setAuthToken(registrationData.token);
+
+    if (skipVerification) {
+      // ✅ Google signup: no email verification needed
+      toast.success("Account created with Google!");
+      navigate("/dashboard");
+      return; // stop here
+    }
+
+    // ✅ Normal signup flow → send email verification
+    setIsSendingSMS(true);
+
+    const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      mode: "cors",
+      body: JSON.stringify({ email }),
+    });
+
+    if (!smsResponse.ok) {
+      const errorData = await smsResponse.json();
+      throw new Error(errorData.message || "Failed to send verification code");
+    }
+
+    toast.success("Verification code sent to your email");
+    setShowVerification(true);
+  } catch (err) {
+    console.error("Submit error:", err);
+    toast.error(err.message);
+  } finally {
+    setIsLoading(false);
+    setIsSendingSMS(false);
+  }
+};
+
 
   const handleVerify = async () => {
     if (!emailVerificationCode || emailVerificationCode.length !== 6) {
