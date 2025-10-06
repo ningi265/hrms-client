@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   FileText,
   Search,
@@ -98,23 +99,49 @@ const MetricCard = ({
 }
 
 // Tender Card Component
-const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, onStartPreApproval }) => {
+
+
+export default function TendersPage() {
+  const [tenders, setTenders] = useState([])
+  const [vendorData, setVendorData] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedTender, setSelectedTender] = useState(null)
+  const [showMenuId, setShowMenuId] = useState(null)
+  const [actionLoading, setActionLoading] = useState(null)
+  const [showNotification, setShowNotification] = useState(false)
+  const [notificationMessage, setNotificationMessage] = useState("")
+  const [notificationType, setNotificationType] = useState("success")
+  const [isNewUser, setIsNewUser] = useState(false)
+    const [showNewUserAlert, setShowNewUserAlert] = useState(false)
+       const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
+
+      const navigate = useNavigate()
+
+      
+const [appliedTenders, setAppliedTenders] = useState({})
+
+
+const TenderCard = ({ tender, onMenuClick, showMenuId, onStartPreApproval, hasApplied }) => {
   const getStatusColor = (status) => {
-    switch (status) {
-      case "open":
-        return "bg-green-100 text-green-800"
-      case "under_review":
-        return "bg-yellow-100 text-yellow-800"
-      case "closed":
-        return "bg-red-100 text-red-800"
-      case "awarded":
-        return "bg-blue-100 text-blue-800"
-      case "cancelled":
-        return "bg-gray-100 text-gray-800"
-      default:
-        return "bg-gray-100 text-gray-800"
-    }
+  switch (status) {
+    case "open":
+      return "bg-green-100 text-green-800"
+    case "under_review":
+      return "bg-yellow-100 text-yellow-800"
+    case "closed": 
+      return "bg-red-100 text-red-800"
+    case "awarded":
+      return "bg-blue-100 text-blue-800"
+    case "cancelled":
+      return "bg-gray-100 text-gray-800"
+    default:
+      return "bg-gray-100 text-gray-800"
   }
+}
 
   const getUrgencyColor = (urgency) => {
     switch (urgency) {
@@ -241,15 +268,29 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, 
           <Mail size={12} />
           <span className="truncate">{tender.contactEmail}</span>
         </div>
-        <div className="flex gap-1">
-          {tender.status === "open" && daysRemaining > 0 && (
+         <div className="flex gap-1">
+          {hasApplied ? (
             <button
-              onClick={() => onStartPreApproval(tender)}
-              className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-1"
+              onClick={() => {
+                // Navigate to bid portal to view submitted bid
+                const bidPortalUrl = `?section=bid&tenderId=${tender._id}&vendorId=${vendorData.id}`;
+                navigate(bidPortalUrl);
+              }}
+              className="px-3 py-1 bg-gray-500 text-white text-xs font-medium rounded-xl hover:bg-gray-600 transition-colors flex items-center gap-1"
             >
-              <Send size={12} />
-              Apply
+              <Eye size={12} />
+              View
             </button>
+          ) : (
+            tender.status === "open" && daysRemaining > 0 && (
+              <button
+                onClick={() => onStartPreApproval(tender)}
+                className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-1"
+              >
+                <Send size={12} />
+                Apply
+              </button>
+            )
           )}
           <button className="p-1 text-gray-400 hover:text-blue-600 rounded-xl">
             <Eye size={14} />
@@ -259,24 +300,6 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, 
     </div>
   )
 }
-
-export default function TendersPage() {
-  const [tenders, setTenders] = useState([])
-  const [vendorData, setVendorData] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedTender, setSelectedTender] = useState(null)
-  const [showMenuId, setShowMenuId] = useState(null)
-  const [actionLoading, setActionLoading] = useState(null)
-  const [showNotification, setShowNotification] = useState(false)
-  const [notificationMessage, setNotificationMessage] = useState("")
-  const [notificationType, setNotificationType] = useState("success")
-  const [isNewUser, setIsNewUser] = useState(false)
-    const [showNewUserAlert, setShowNewUserAlert] = useState(false)
-       const backendUrl = process.env.REACT_APP_ENV === 'production'
-    ? process.env.REACT_APP_BACKEND_URL_PROD
-    : process.env.REACT_APP_BACKEND_URL_DEV;
 
   
   useEffect(() => {
@@ -289,8 +312,6 @@ export default function TendersPage() {
        setIsLoading(true);
        try {
          const token = localStorage.getItem("token");
-         
-         
          const [tendersRes] = await Promise.all([
            fetch(`${backendUrl}/api/tenders`, {
              headers: { Authorization: `Bearer ${token}` }
@@ -462,6 +483,40 @@ export default function TendersPage() {
        
            fetchVendorData()
          }, [backendUrl])
+
+         useEffect(() => {
+  if (vendorData?.id && tenders.length > 0) {
+    tenders.forEach(tender => {
+      checkApplicationStatus(tender._id)
+    })
+  }
+}, [vendorData?.id, tenders])
+
+
+         const checkApplicationStatus = async (tenderId) => {
+  try {
+    const token = localStorage.getItem("token")
+    const response = await fetch(
+      `${backendUrl}/api/bids/check-application/${vendorData.id}/${tenderId}`,
+      {
+        headers: { Authorization: `Bearer ${token}` }
+      }
+    )
+
+    if (response.ok) {
+      const result = await response.json()
+      setAppliedTenders(prev => ({
+        ...prev,
+        [tenderId]: result.data.hasApplied
+      }))
+      return result.data.hasApplied
+    }
+    return false
+  } catch (err) {
+    console.error("Error checking application status:", err)
+    return false
+  }
+}
 
 
          const transformApiData = (apiData) => {
@@ -673,7 +728,9 @@ export default function TendersPage() {
     }, 1000)
   }
 
-const handleStartPreApproval = async (tender) => {
+ 
+
+   const handleStartPreApproval = async (tender) => {
   setSelectedTender(tender);
   setIsLoading(true);
   setNotificationMessage("");
@@ -720,7 +777,7 @@ const handleStartPreApproval = async (tender) => {
       preQual = created.data;
     }
 
-    // Step 3: Send email with pre-qualification results instead of UI notification
+    // Step 3: Send pre-qualification email
     const emailResponse = await fetch(`${backendUrl}/api/vendors/send-pre-qual-email`, {
       method: "POST",
       headers: {
@@ -732,28 +789,72 @@ const handleStartPreApproval = async (tender) => {
         preQualStatus: preQual.status,
         preQualScore: preQual.score,
         vendorId: vendorData.id,
+          tenderId: tender._id,  
       }),
     });
 
     if (emailResponse.ok) {
-      setNotificationMessage(
-        "Pre-qualification results have been sent to your email address."
-      );
-      setNotificationType("success");
+      const emailResult = await emailResponse.json();
+      
+      // Use the status from the email response
+      const finalStatus = emailResult.simulatedData?.status || preQual.status;
+      const finalScore = emailResult.simulatedData?.score || preQual.score;
+
+      // Step 4: Handle based on final status
+      const requiredScore = 70;
+      
+      if (finalStatus === "rejected" || finalScore < requiredScore) {
+        // Show notification for low score
+        const missingReasons = preQual.reasons || [];
+        const documentKeywords = ['certificate', 'license', 'registration', 'statement', 'policy', 'clearance', 'reference', 'insurance'];
+        const missingDocuments = missingReasons
+          .filter(reason => 
+            documentKeywords.some(keyword => 
+              reason.toLowerCase().includes(keyword)
+            )
+          )
+          .slice(0, 3);
+        
+        let message = `Score: ${finalScore}%`;
+        
+        if (missingDocuments.length > 0) {
+          const docList = missingDocuments.map(doc => 
+            doc.replace(' is missing or invalid', '')
+               .replace('Registration Certificate', 'Business Reg.')
+               .replace('Business License', 'Trade License')
+          ).join(', ');
+          message += ` - Add: ${docList}`;
+        } else {
+          message += ` - Below required ${requiredScore}%`;
+        }
+        
+        setNotificationMessage(message);
+        setNotificationType("error");
+        setShowNotification(true);
+      } else {
+        // QUALIFIED VENDOR - Auto-redirect to bid portal
+        setNotificationMessage(`Approved! Score: ${finalScore}% - Redirecting to bid portal...`);
+        setNotificationType("success");
+        setShowNotification(true);
+
+      const bidPortalUrl = `?section=bid&tenderId=${tender._id}&vendorId=${vendorData.id}&bidId=${preQual._id}`;
+        navigate(bidPortalUrl);
+      }
+
     } else {
       throw new Error("Failed to send email notification");
     }
 
   } catch (err) {
     console.error("Pre-qualification error:", err);
-    setNotificationMessage("Error processing pre-qualification. Please try again.");
+    setNotificationMessage("Error processing application");
     setNotificationType("error");
-  } finally {
     setShowNotification(true);
+  } finally {
     setIsLoading(false);
-    setTimeout(() => setShowNotification(false), 5000);
   }
 };
+
 
 
 
@@ -773,27 +874,6 @@ const handleStartPreApproval = async (tender) => {
     <div className="min-h-screen bg-gray-50">
       {/* Loading Overlay */}
       <LoadingOverlay isVisible={isLoading} message="Loading tenders..." />
-
-      {/* Notification */}
-      {showNotification && (
-        <div className="fixed top-4 right-4 z-50">
-          <div
-            className={`p-4 rounded-2xl border ${
-              notificationType === "success"
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {notificationType === "success" ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
-              <span className="text-sm font-medium">{notificationMessage}</span>
-              <button onClick={() => setShowNotification(false)} className="ml-2 text-gray-400 hover:text-gray-600">
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
@@ -907,20 +987,52 @@ const handleStartPreApproval = async (tender) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredTenders.map((tender) => (
-                <TenderCard
-                  key={tender.id}
-                  tender={tender}
-                  onMenuClick={handleMenuClick}
-                  showMenuId={showMenuId}
-                  actionLoading={actionLoading}
-                  onStartPreApproval={handleStartPreApproval}
-                />
-              ))}
+           {filteredTenders.map((tender) => (
+  <TenderCard
+    key={tender.id}
+    tender={tender}
+    onMenuClick={handleMenuClick}
+    showMenuId={showMenuId}
+    actionLoading={actionLoading}
+    onStartPreApproval={handleStartPreApproval}
+    hasApplied={appliedTenders[tender._id]}
+  />
+))}
             </div>
           )}
         </div>
       </main>
+
+
+      {/* Notification */}
+
+{showNotification && (
+  <div className="fixed top-4 right-4 z-50 max-w-sm">
+    <div
+      className={`p-3 rounded-xl border shadow-sm ${
+        notificationType === "success"
+          ? "bg-green-50 border-green-200 text-green-800"
+          : "bg-red-50 border-red-200 text-red-800"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {notificationType === "success" ? (
+          <CheckCircle size={16} className="flex-shrink-0" />
+        ) : (
+          <AlertTriangle size={16} className="flex-shrink-0" />
+        )}
+        <span className="text-sm font-medium leading-tight">{notificationMessage}</span>
+        <button 
+          onClick={() => setShowNotification(false)} 
+          className="ml-1 text-gray-400 hover:text-gray-600 flex-shrink-0"
+        >
+          <X size={16} />
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   )
 }

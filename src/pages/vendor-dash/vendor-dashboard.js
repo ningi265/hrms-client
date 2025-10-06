@@ -70,6 +70,8 @@ import VendorManagementDashboard from "./registration/registrationManagement";
 import UserProfilePage from "../User/user";
 import EmployeeRequisitionManagement from '../../pages/dashboard/requisitions/manage/manage';
 import Tenders from './tenders/tenders';
+import VendorBidPortal from "../../pages/vendor-dash/tenders/bid";
+
 // Compact Metric Card Component
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", isLoading = false }) => {
   const colorClasses = {
@@ -829,6 +831,7 @@ export default function VendorDashboard() {
   const [dashboardLoaded, setDashboardLoaded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
+  
   const [stats, setStats] = useState({
     requisitions: { counts: { total: 0, pending: 0 } },
     rfqs: { counts: { total: 0, open: 0 } },
@@ -1036,6 +1039,16 @@ export default function VendorDashboard() {
               {activeSection === "registration-management" && <VendorManagementDashboard/>}
               {activeSection === "user-profile" && <UserProfilePage />}
               {activeSection === "tenders" && <Tenders />}
+        {activeSection === "bid" && (
+  <div className="w-full">
+    <VendorBidPortal 
+      tenderId={searchParams.get('tenderId')}
+      vendorId={searchParams.get('vendorId')} 
+      bidId={searchParams.get('bidId')}
+      key={`bid-${searchParams.get('tenderId')}-${searchParams.get('vendorId')}-${searchParams.get('bidId')}`}
+    />
+  </div>
+)}
             </div> 
           )}
         </div>

@@ -88,6 +88,68 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, []);
 
+  // ADD THIS GOOGLE LOGIN METHOD
+  const googleLogin = async (googleUserData) => {
+    try {
+      console.log('Google login attempt - URL:', `${backendUrl}/api/auth/google-login`);
+      console.log('Google login attempt - Data:', googleUserData);
+      
+      if (!backendUrl || backendUrl === 'undefined') {
+        throw new Error('Backend URL is not configured properly');
+      }
+      
+      const response = await fetch(`${backendUrl}/api/auth/google-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        mode: "cors",
+        body: JSON.stringify(googleUserData),
+      });
+
+      console.log('Google login response status:', response.status);
+      
+      const data = await response.json();
+      console.log('Google login response data:', data);
+
+      if (!response.ok) {
+        console.error('Google login failed:', data);
+        throw new Error(data.message || "Google login failed");
+      }
+
+      if (data.exists && data.user && data.token) {
+        // Store user and token for existing user
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
+        setUser(data.user);
+        setToken(data.token);
+        
+        console.log('Google login successful - User role:', data.user.role);
+        
+        return {
+          success: true,
+          user: data.user,
+          requiresRegistration: false
+        };
+      } else {
+        // User doesn't exist, needs registration
+        return {
+          success: true,
+          requiresRegistration: true,
+          userData: googleUserData
+        };
+      }
+    } catch (error) {
+      console.error("Google login error:", error.message);
+      console.error("Full error:", error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  };
+
   const login = async (email, password) => {
     try {
       console.log('Login attempt - URL:', `${backendUrl}/api/auth/login`);
@@ -200,16 +262,17 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     login,
+    googleLogin, // ADD THIS
     register,
     logout,
     loading,
     isTokenExpired,
-    backendUrl, // Expose backendUrl for debugging
+    backendUrl,
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {children}
     </AuthContext.Provider>
   );
 };

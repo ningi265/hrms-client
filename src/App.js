@@ -81,7 +81,8 @@ import SubscriptionRequired from './components/SubscriptionRequired';
 import TrialStatus from './components/TrialStatus';
 import UsageDashboard from './pages/usage';
 import Tenders from './pages/vendor-dash/tenders/tenders';
-import CreateTendersPage from './pages/dashboard/tenders/tenders';  
+import CreateTendersPage from './pages/dashboard/tenders/tenders'; 
+import VendorBidPortal from './pages/vendor-dash/tenders/bid'; 
 
 
 function App() {
@@ -103,12 +104,13 @@ function App() {
             <Route path="/demo" element={<DemoPage />} />
             <Route path="/billing" element={<BillingPage/>} />
             <Route path="/billing/manage" element={<BillingManagement/>} />
-             <Route path="/driver-dash" element={<DriverDashboard/>}/>
-             <Route path="/map" element={<FleetTrackingMap/>}/>
-              <Route path="/trip-management" element={<TripManagementDashboard/>}/>
-              <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
-              <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
-              <Route path="/complete-registration" element={<CompleteRegistration />} />
+            <Route path="/driver-dash" element={<DriverDashboard/>}/>
+            <Route path="/map" element={<FleetTrackingMap/>}/>
+            <Route path="/trip-management" element={<TripManagementDashboard/>}/>
+            <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
+            <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
+            <Route path="/complete-registration" element={<CompleteRegistration />} />
+                     <Route path="/bid-portal" element={<VendorBidPortal/>}/>
           
      
               
@@ -188,6 +190,7 @@ function App() {
               <Route path="/vendor-registration" element={<VendorRegistration/>}/>
               <Route path="/vendor-registration-management" element={<VendorManagementDashboard/>}/>
                <Route path="/tenders" element={<Tenders/>}/>
+     
               {/* Driver Routes */}
              
               
