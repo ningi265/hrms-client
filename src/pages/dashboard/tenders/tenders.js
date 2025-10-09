@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useEffect} from "react"
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   FileText,
   Search,
   MoreVertical,
   X,
+  Info,
   Mail,
   Eye,
   RefreshCw,
@@ -17,9 +19,12 @@ import {
   AlertTriangle,
   Loader,
   Send,
-  Plus,
-  Save
+  Users,
+  Award,
+  Clock,
+    Download, 
 } from "lucide-react"
+import { motion } from "framer-motion"
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -97,14 +102,14 @@ const MetricCard = ({
 }
 
 // Tender Card Component
-const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, onStartPreApproval }) => {
+const TenderCard = ({ tender, onMenuClick, showMenuId, onViewTender, bidCounts }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case "open":
         return "bg-green-100 text-green-800"
       case "under_review":
         return "bg-yellow-100 text-yellow-800"
-      case "closed":
+      case "closed": 
         return "bg-red-100 text-red-800"
       case "awarded":
         return "bg-blue-100 text-blue-800"
@@ -154,6 +159,7 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, 
   }
 
   const daysRemaining = getDaysRemaining(tender.deadline)
+  const bidCount = bidCounts[tender._id] || 0
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
@@ -168,13 +174,6 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, 
           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(tender.status)}`}>
             {tender.status.replace("_", " ")}
           </span>
-          <button
-            data-tender-id={tender._id}
-            onClick={() => onMenuClick(tender.id)}
-            className="p-1 text-gray-400 hover:text-blue-600 rounded-xl"
-          >
-            <MoreVertical size={16} />
-          </button>
         </div>
       </div>
 
@@ -207,8 +206,8 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, 
           <span className="text-xs font-medium">{formatDate(tender.deadline)}</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-xs text-gray-600">Urgency</span>
-          <span className={`text-xs font-medium ${getUrgencyColor(tender.urgency)}`}>{tender.urgency}</span>
+          <span className="text-xs text-gray-600">Bids Received</span>
+          <span className="text-xs font-medium text-blue-600">{bidCount}</span>
         </div>
       </div>
 
@@ -240,231 +239,785 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onDelete, actionLoading, 
           <Mail size={12} />
           <span className="truncate">{tender.contactEmail}</span>
         </div>
+        <div className="flex gap-1">
+          <button
+            onClick={() => onViewTender(tender)}
+            className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-1"
+          >
+            <Eye size={12} />
+            View Bids
+          </button>
+        </div>
       </div>
     </div>
   )
 }
 
-export default function CreateTendersPage() {
+// Tender Details Modal Component
+// Tender Details Modal Component
+const TenderDetailsModal = ({ tender, bids, isOpen, onClose, onAwardBid }) => {
+  const [selectedBid, setSelectedBid] = useState(null)
+  const [awarding, setAwarding] = useState(false)
+  const [viewingDocuments, setViewingDocuments] = useState(null)
+
+  if (!isOpen || !tender) return null
+
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+ const downloadDocument = async (doc, vendorName, bidId) => {
+  console.log("🚀 downloadDocument called with:", { doc, vendorName, bidId });
+  
+  try {
+    // Check if we're in a browser environment
+    if (typeof window === 'undefined') {
+      throw new Error('Not in browser environment');
+    }
+    
+    if (!doc || !doc._id) {
+      throw new Error('Invalid document object');
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const downloadUrl = `${backendUrl}/api/bids/${bidId}/documents/${doc._id}/download`;
+    console.log("🔗 Download URL:", downloadUrl);
+
+    // Step 1: Make the request
+    console.log("📡 Step 1: Making fetch request...");
+    const response = await fetch(downloadUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("✅ Step 1 completed - Response status:", response.status);
+
+    // Step 2: Check response status
+    console.log("📊 Step 2: Checking response...");
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Response not OK:", { status: response.status, errorText });
+      throw new Error(`Server returned ${response.status}: ${errorText}`);
+    }
+    console.log("✅ Step 2 completed - Response is OK");
+
+    // Step 3: Get response headers
+    console.log("📋 Step 3: Checking response headers...");
+    const contentType = response.headers.get('content-type');
+    const contentLength = response.headers.get('content-length');
+    console.log("Response headers:", {
+      contentType,
+      contentLength,
+      allHeaders: Object.fromEntries(response.headers.entries())
+    });
+
+    // Step 4: Convert to blob
+    console.log("📦 Step 4: Converting to blob...");
+    const blob = await response.blob();
+    console.log("✅ Step 4 completed - Blob created:", {
+      size: blob.size,
+      type: blob.type
+    });
+
+    if (blob.size === 0) {
+      throw new Error('Received empty file (0 bytes)');
+    }
+
+    // Step 5: Create object URL
+    console.log("🔗 Step 5: Creating object URL...");
+    const objectUrl = URL.createObjectURL(blob);
+    console.log("✅ Step 5 completed - Object URL created:", objectUrl);
+
+    // Step 6: Create download link - FIXED: Use global document
+    console.log("📎 Step 6: Creating download link...");
+    const link = document.createElement('a'); // Now this uses the global document
+    console.log("✅ Link element created");
+
+    // Step 7: Configure link
+    link.href = objectUrl;
+    
+    // Create filename - FIXED: Use doc instead of document
+    const fileExtension = doc.name?.split('.').pop() || 'pdf';
+    const vendorSlug = (vendorName || 'unknown').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const docType = (doc.type || 'document').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const fileName = `${vendorSlug}_${docType}.${fileExtension}`;
+    
+    link.download = fileName;
+    link.style.display = 'none';
+    console.log("✅ Link configured with filename:", fileName);
+
+    // Step 8: Trigger download
+    console.log("🖱️ Step 8: Triggering download...");
+    document.body.appendChild(link);
+    console.log("✅ Link appended to body");
+    
+    link.click();
+    console.log("✅ Link clicked");
+
+    // Step 9: Cleanup
+    console.log("🧹 Step 9: Cleaning up...");
+    document.body.removeChild(link);
+    URL.revokeObjectURL(objectUrl);
+    console.log("✅ Cleanup completed");
+
+    console.log("🎉 Download completed successfully!");
+
+  } catch (error) {
+    console.error('❌ Download error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
+    
+    // Show detailed error alert
+    alert(`Download failed:\n\n${error.message}\n\nCheck console for details.`);
+  }
+};
+// View document function (opens in new tab)
+const viewDocument = async (document, bidId) => {
+  try {
+    const token = localStorage.getItem("token")
+    const viewUrl = `${backendUrl}/api/bids/${bidId}/documents/${document._id}/view`
+    
+    console.log("👀 Viewing document:", viewUrl)
+    
+    const response = await fetch(viewUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`View failed: ${response.status}`)
+    }
+
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    
+    // Open in new tab
+    window.open(url, '_blank')
+    
+  } catch (error) {
+    console.error('❌ Error viewing document:', error)
+    alert(`Failed to view document: ${error.message}`)
+  }
+}
+
+  const handleAwardBid = async (bid) => {
+    setAwarding(true)
+    try {
+      await onAwardBid(bid)
+      setSelectedBid(null)
+    } catch (error) {
+      console.error("Error awarding bid:", error)
+    } finally {
+      setAwarding(false)
+    }
+  }
+
+  // Documents Modal Component
+  const DocumentsModal = ({ bid, isOpen, onClose }) => {
+    if (!isOpen || !bid) return null
+
+    const getDocumentTypeName = (type) => {
+      const typeMap = {
+        'technical_proposal': 'Technical Proposal',
+        'financial_proposal': 'Financial Proposal', 
+        'company_profile': 'Company Profile',
+        'certificate_of_incorporation': 'Certificate of Incorporation',
+        'tax_clearance': 'Tax Clearance Certificate',
+        'business_license': 'Business License'
+      }
+      return typeMap[type] || type.replace('_', ' ').toUpperCase()
+    }
+
+    return (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
+        <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
+          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-gray-900">Documents - {bid.vendor?.businessName}</h3>
+              <p className="text-sm text-gray-600">View and download bid documents</p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-2xl">
+              <X size={20} />
+            </button>
+          </div>
+
+          <div className="p-6 max-h-[70vh] overflow-y-auto">
+            {bid.documents && bid.documents.length > 0 ? (
+              <div className="space-y-4">
+                {bid.documents.map((doc, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-3 flex-1">
+                      <FileText size={20} className="text-blue-500" />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {getDocumentTypeName(doc.type)}
+                        </h4>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                          <span>Original: {doc.name}</span>
+                          <span>Size: {formatFileSize(doc.size)}</span>
+                          <span>Uploaded: {formatDate(doc.uploadedAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+  <button
+    onClick={() => viewDocument(doc, bid._id)}
+    className="px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2"
+  >
+    <Eye size={16} />
+    View
+  </button>
+ <button
+  onClick={() => downloadDocument(doc, bid.vendor?.businessName, bid._id)}
+  className="px-3 py-2 bg-green-500 text-white text-sm font-medium rounded-xl hover:bg-green-600 transition-colors flex items-center gap-2"
+>
+  <Download size={16} />
+  Download
+</button>
+</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText size={48} className="text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No documents uploaded for this bid</p>
+              </div>
+            )}
+          </div>
+
+          <div className="px-6 py-4 border-t border-gray-200 flex justify-end">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-500 text-white rounded-xl hover:bg-gray-600 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
+      <div className="bg-white rounded-xl w-full max-w-6xl max-h-[90vh] overflow-hidden shadow-2xl">
+        
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">{tender.title}</h2>
+            <p className="text-sm text-gray-600">Tender Details & Vendor Bids</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 rounded-2xl transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 max-h-[75vh] overflow-y-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            {/* Tender Details */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <h3 className="font-semibold text-gray-900 mb-4">Tender Information</h3>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Budget</span>
+                    <span className="text-sm font-medium">{formatCurrency(tender.budget)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Category</span>
+                    <span className="text-sm font-medium">{tender.category}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Location</span>
+                    <span className="text-sm font-medium">{tender.location}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Deadline</span>
+                    <span className="text-sm font-medium">{formatDate(tender.deadline)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Urgency</span>
+                    <span className={`text-sm font-medium ${
+                      tender.urgency === 'high' ? 'text-red-600' : 
+                      tender.urgency === 'medium' ? 'text-yellow-600' : 'text-green-600'
+                    }`}>
+                      {tender.urgency}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Status</span>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      tender.status === 'open' ? 'bg-green-100 text-green-800' :
+                      tender.status === 'closed' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {tender.status}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-4">
+                <h3 className="font-semibold text-gray-900 mb-4">Requirements</h3>
+                <div className="space-y-2">
+                  {tender.requirements && tender.requirements.map((req, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <CheckCircle size={16} className="text-green-500" />
+                      <span className="text-sm text-gray-700">{req}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Bids List */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Vendor Bids ({bids.length})</h3>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Users size={16} />
+                  <span>Total Bids Received</span>
+                </div>
+              </div>
+
+              {bids.length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-2xl">
+                  <FileText size={48} className="text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600">No bids received yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {bids.map((bid) => (
+                    <div key={bid._id} className="bg-white border border-gray-200 rounded-2xl p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{bid.vendor?.businessName}</h4>
+                          <p className="text-sm text-gray-600">{bid.vendor?.vendor?.email}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-blue-600">
+                              {formatCurrency(bid.bidAmount)}
+                            </div>
+                            <div className="text-xs text-gray-500">Bid Amount</div>
+                          </div>
+                          <span className={`px-3 py-1 text-xs font-medium rounded-full ${
+                            bid.status === 'submitted' ? 'bg-blue-100 text-blue-800' :
+                            bid.status === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
+                            bid.status === 'awarded' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {bid.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Technical Score</p>
+                          <p className="text-sm font-medium">
+                            {bid.technicalScore || 'Not evaluated'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-600 mb-1">Submitted On</p>
+                          <p className="text-sm font-medium">{formatDate(bid.submittedAt)}</p>
+                        </div>
+                      </div>
+
+                      {bid.proposal && (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-1">Technical Proposal</p>
+                          <p className="text-sm text-gray-700 line-clamp-2">{bid.proposal}</p>
+                        </div>
+                      )}
+
+                      {/* Documents Section */}
+                      {bid.documents && bid.documents.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-600 mb-2">Supporting Documents</p>
+                          <div className="flex flex-wrap gap-2">
+                            {bid.documents.map((doc, idx) => (
+                              <span
+                                key={idx}
+                                className="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium cursor-pointer hover:bg-blue-200 transition-colors"
+                                onClick={() => setViewingDocuments(bid)}
+                                title={`Click to view all documents from ${bid.vendor?.businessName}`}
+                              >
+                                {doc.type.replace('_', ' ')}
+                                {idx < bid.documents.length - 1 ? ',' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setSelectedBid(bid)}
+                            className="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-xl hover:bg-blue-600 transition-colors"
+                          >
+                            Evaluate
+                          </button>
+                          {bid.documents && bid.documents.length > 0 && (
+                            <button 
+                              onClick={() => setViewingDocuments(bid)}
+                              className="px-3 py-1 bg-purple-500 text-white text-xs font-medium rounded-xl hover:bg-purple-600 transition-colors flex items-center gap-1"
+                            >
+                              <FileText size={12} />
+                              View Documents ({bid.documents.length})
+                            </button>
+                          )}
+                        </div>
+                        {bid.status !== 'awarded' && (
+                          <button
+                            onClick={() => handleAwardBid(bid)}
+                            disabled={awarding}
+                            className="px-3 py-1 bg-green-500 text-white text-xs font-medium rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center gap-1"
+                          >
+                            <Award size={12} />
+                            {awarding ? 'Awarding...' : 'Award'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bid Evaluation Modal */}
+      {selectedBid && (
+        <BidEvaluationModal
+          bid={selectedBid}
+          isOpen={!!selectedBid}
+          onClose={() => setSelectedBid(null)}
+          onAward={handleAwardBid}
+        />
+      )}
+
+      {/* Documents Modal */}
+      {viewingDocuments && (
+        <DocumentsModal
+          bid={viewingDocuments}
+          isOpen={!!viewingDocuments}
+          onClose={() => setViewingDocuments(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// Bid Evaluation Modal Component
+const BidEvaluationModal = ({ bid, isOpen, onClose, onAward }) => {
+  const [evaluation, setEvaluation] = useState({
+    technicalScore: bid.technicalScore || 0,
+    financialScore: bid.financialScore || 0,
+    comments: '',
+    recommendation: ''
+  })
+
+  if (!isOpen) return null
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    // Here you would typically save the evaluation
+    console.log('Evaluation submitted:', evaluation)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1100]">
+      <div className="bg-white rounded-xl w-full max-w-2xl shadow-2xl">
+        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h3 className="font-semibold text-gray-900">Evaluate Bid - {bid.vendor?.businessName}</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-2xl">
+            <X size={20} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Technical Score (0-100)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={evaluation.technicalScore}
+                onChange={(e) => setEvaluation(prev => ({...prev, technicalScore: e.target.value}))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Financial Score (0-100)
+              </label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={evaluation.financialScore}
+                onChange={(e) => setEvaluation(prev => ({...prev, financialScore: e.target.value}))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Evaluation Comments
+            </label>
+            <textarea
+              value={evaluation.comments}
+              onChange={(e) => setEvaluation(prev => ({...prev, comments: e.target.value}))}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl"
+              placeholder="Provide detailed evaluation comments..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Recommendation
+            </label>
+            <select
+              value={evaluation.recommendation}
+              onChange={(e) => setEvaluation(prev => ({...prev, recommendation: e.target.value}))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl"
+            >
+              <option value="">Select recommendation</option>
+              <option value="award">Award Contract</option>
+              <option value="shortlist">Shortlist</option>
+              <option value="reject">Reject</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+            >
+              Save Evaluation
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default function TendersPage() {
   const [tenders, setTenders] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedTender, setSelectedTender] = useState(null)
-  const [showMenuId, setShowMenuId] = useState(null)
-  const [actionLoading, setActionLoading] = useState(null)
+  const [tenderBids, setTenderBids] = useState([])
+  const [showTenderModal, setShowTenderModal] = useState(false)
+  const [bidCounts, setBidCounts] = useState({})
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState("")
   const [notificationType, setNotificationType] = useState("success")
-  const [isCreateTenderModalOpen, setIsCreateTenderModalOpen] = useState(false)
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false)
-    const [requisitions, setRequisitions] = useState([]);
-  const [formData, setFormData] = useState({
-      title: "",
-      description: "",
-      budget: "",
-      location: "",
-      urgency: "Medium",
-      category: "",
-      deadline: "",
-      requisitionId: "",
-      requirements: []
-    })
-     const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+  const [statusFilter, setStatusFilter] = useState("all")
+  
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV
+
+  const navigate = useNavigate()
 
 
+  // Fetch tenders
+  useEffect(() => {
+    const fetchTenders = async () => {
+      setIsLoading(true)
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(`${backendUrl}/api/tenders/company`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
 
-const openCreateTendersModal = () => {
-    setIsCreateTenderModalOpen(true)
-}
+        if (response.ok) {
+          const data = await response.json()
+          // Set ALL tenders, not just open ones
+          const allTenders = data.data || data || []
+          setTenders(allTenders)
+          
+          // Fetch bid counts for each tender
+          allTenders.forEach(tender => fetchBidCount(tender._id))
+        }
+      } catch (err) {
+        setError("Failed to load tenders")
+        console.error("Error fetching tenders:", err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-const showNotificationMessage = (message, type = "success") => {
-    setNotificationMessage(message)
-    setNotificationType(type)
-    setShowNotification(true)
-    setTimeout(() => setShowNotification(false), 5000)
-  }
+    fetchTenders()
+  }, [backendUrl])
 
-  // Add this inside your component
-const handleFileUpload = (e) => {
-  const files = Array.from(e.target.files);
-  setFormData((prev) => ({
-    ...prev,
-    attachments: files, // store files in state
-  }));
-};
-
-
-
-const handleInputChange = (e) => {
-  const { name, value } = e.target;
-
-  if (name === "requirements") {
-    const reqs = value.split(",").map((r) => r.trim()); 
-    setFormData((prev) => ({ ...prev, requirements: reqs }));
-  } else if (name === "requisitionId") {
-    const selectedReq = requisitions.find((req) => req._id === value);
-    setFormData((prev) => ({
-      ...prev,
-      requisitionId: value,
-      budget: selectedReq ? selectedReq.estimatedCost : "",
-      urgency: selectedReq ? selectedReq.urgency : "Medium",
-      category: selectedReq ? selectedReq.category : "",
-      location: selectedReq ? selectedReq.location : "",
-    }));
-  } else {
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }
-};
-
-
-
-  const closeCreateTenderModal = () => {
-    setIsCreateTenderModalOpen(false)
-    setFormData({
-      title: "",
-      description: "",
-      budget: "",
-      location: "",
-      urgency: "Medium",
-      category: "",
-      deadline: "",
-      requisitionId: "",
-      requirements: []
-
-    })
-  }
-
-   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setIsFormSubmitting(true)
-    setError(null)
-
+  // Fetch bid count for a tender
+ const fetchBidCount = async (tenderId) => {
     try {
       const token = localStorage.getItem("token")
-      const response = await fetch(`${backendUrl}/api/tenders`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      const response = await fetch(`${backendUrl}/api/bids/tender/${tenderId}/count`, {
+        headers: { Authorization: `Bearer ${token}` }
       })
 
-      const responseData = await response.json()
-
       if (response.ok) {
-        // Handle both response structures
-        const newTender = responseData.tender || responseData.data || responseData
-        setTenders((prev) => Array.isArray(prev) ? [...prev, newTender] : [newTender])
-        showNotificationMessage("Tender created successfully!", "success")
-        closeCreateTenderModal()
-      } else {
-        throw new Error(responseData.message || "Failed to add department")
+        const data = await response.json()
+        setBidCounts(prev => ({
+          ...prev,
+          [tenderId]: data.count || 0
+        }))
       }
     } catch (err) {
-      showNotificationMessage(err.message || "Failed to add department", "error")
-      console.error("Failed to add department:", err)
-    } finally {
-      setIsFormSubmitting(false)
+      console.error("Error fetching bid count:", err)
+    }
+  }
+
+  // Fetch bids for a tender
+  const fetchTenderBids = async (tenderId) => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${backendUrl}/api/bids/tender/${tenderId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setTenderBids(data.data || data)
+      } else {
+        setTenderBids([])
+      }
+    } catch (err) {
+      console.error("Error fetching tender bids:", err)
+      setTenderBids([])
+    }
+  }
+
+ const handleViewTender = async (tender) => {
+    setSelectedTender(tender)
+    await fetchTenderBids(tender._id)
+    setShowTenderModal(true)
+  }
+
+   const handleAwardBid = async (bid) => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${backendUrl}/api/bids/${bid._id}/award`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        }
+      })
+
+      if (response.ok) {
+        setNotificationMessage(`Bid awarded to ${bid.vendor?.businessName} successfully!`)
+        setNotificationType("success")
+        setShowNotification(true)
+        
+        // Refresh the bids list
+        if (selectedTender) {
+          await fetchTenderBids(selectedTender._id)
+        }
+      } else {
+        throw new Error('Failed to award bid')
+      }
+    } catch (err) {
+      setNotificationMessage('Error awarding bid')
+      setNotificationType("error")
+      setShowNotification(true)
     }
   }
 
 
-  useEffect(() => {
-    setTenders(tenders)
-  }, [])
-
-
-  useEffect(() => {
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      
-      const [requisitionsRes] = await Promise.all([
-        fetch(`${backendUrl}/api/requisitions`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-      ]);
-  
-      const [requisitionsData] = await Promise.all([
-        requisitionsRes.json(),
-      ]);
-  
-      if (requisitionsRes.ok) {
-        const approvedRequisitions = requisitionsData.filter(req => req.status === "approved");
-
-        // Tender filter
-        const tenderRequisitions = approvedRequisitions.filter(req => 
-          req.estimatedCost > 1000 || req.urgency === "high"
-        );
-
-        setRequisitions(tenderRequisitions);
-      }
-    } catch (err) {
-      setError("Failed to load data. Please try again.");
-      console.error("Error fetching data:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  fetchData();
-}, [backendUrl]);
-
-
-
-      useEffect(() => {
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      
-      
-      const [tendersRes] = await Promise.all([
-        fetch(`${backendUrl}/api/tenders/company`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-      ]);
-  
-      const [tendersData] = await Promise.all([
-       tendersRes.json(),
-      ]);
-  
-     if (tendersRes.ok) {
- const opentenders = (tendersData.data || []).filter(t => t.status === "open");
-setTenders(opentenders);
-}
-
-    } catch (err) {
-      setError("Failed to load data. Please try again.");
-      console.error("Error fetching data:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-      fetchData();
-    }, [backendUrl]);
+   const handleCloseTenderModal = () => {
+    setShowTenderModal(false)
+    setSelectedTender(null)
+    setTenderBids([])
+  }
 
   // Filter tenders based on search term
   const filteredTenders = tenders.filter((tender) => {
+    // Status filter
+    const statusMatch = statusFilter === "all" || tender.status === statusFilter;
+    
+    // Search term filter
     const titleMatch = tender.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false
-    const companyMatch = tender.company.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false
+    const companyMatch = tender.company?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false
     const categoryMatch = tender.category?.toLowerCase().includes(searchTerm.toLowerCase()) || false
     const locationMatch = tender.location?.toLowerCase().includes(searchTerm.toLowerCase()) || false
 
-    return titleMatch || companyMatch || categoryMatch || locationMatch
+    const searchMatch = titleMatch || companyMatch || categoryMatch || locationMatch
+
+    return statusMatch && searchMatch
   })
 
   // Calculate stats
-  const totalTenders = tenders.length
+   const totalTenders = tenders.length
   const openTenders = tenders.filter((tender) => tender.status === "open").length
+  const closedTenders = tenders.filter((tender) => tender.status === "closed").length
+  const awardedTenders = tenders.filter((tender) => tender.status === "awarded").length
+  const cancelledTenders = tenders.filter((tender) => tender.status === "cancelled").length
   const totalValue = tenders.reduce((sum, tender) => sum + (tender.budget || 0), 0)
   const avgBudget = totalTenders > 0 ? totalValue / totalTenders : 0
+  const totalBids = Object.values(bidCounts).reduce((sum, count) => sum + count, 0)
 
   const formatBudget = (budget) => {
     if (budget >= 1000000) {
@@ -475,33 +1028,36 @@ setTenders(opentenders);
     return `$${budget}`
   }
 
-  const handleRefresh = () => {
+
+ const handleRefresh = () => {
     setIsLoading(true)
-    // Simulate refresh delay
-    setTimeout(() => {
-      setIsLoading(false)
-    }, 1000)
+    // Refresh data
+    const fetchTenders = async () => {
+      try {
+        const token = localStorage.getItem("token")
+        const response = await fetch(`${backendUrl}/api/tenders/company`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const allTenders = data.data || data || []
+          setTenders(allTenders)
+          
+          // Refresh bid counts
+          allTenders.forEach(tender => fetchBidCount(tender._id))
+        }
+      } catch (err) {
+        console.error("Error refreshing tenders:", err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    fetchTenders()
   }
 
-  const handleStartPreApproval = (tender) => {
-    setSelectedTender(tender)
-    setNotificationMessage(
-      `Pre-approval process started for "${tender.title}". You will receive an email with next steps.`,
-    )
-    setNotificationType("success")
-    setShowNotification(true)
-
-    // Hide notification after 5 seconds
-    setTimeout(() => {
-      setShowNotification(false)
-    }, 5000)
-  }
-
-  const handleMenuClick = (tenderId) => {
-    setShowMenuId(showMenuId === tenderId ? null : tenderId)
-  }
-
-  if (error) {
+if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl">{error}</div>
@@ -511,23 +1067,29 @@ setTenders(opentenders);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Loading Overlay */}
       <LoadingOverlay isVisible={isLoading} message="Loading tenders..." />
 
       {/* Notification */}
       {showNotification && (
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 max-w-sm">
           <div
-            className={`p-4 rounded-2xl border ${
+            className={`p-3 rounded-xl border shadow-sm ${
               notificationType === "success"
                 ? "bg-green-50 border-green-200 text-green-800"
                 : "bg-red-50 border-red-200 text-red-800"
             }`}
           >
             <div className="flex items-center gap-2">
-              {notificationType === "success" ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
-              <span className="text-sm font-medium">{notificationMessage}</span>
-              <button onClick={() => setShowNotification(false)} className="ml-2 text-gray-400 hover:text-gray-600">
+              {notificationType === "success" ? (
+                <CheckCircle size={16} className="flex-shrink-0" />
+              ) : (
+                <AlertTriangle size={16} className="flex-shrink-0" />
+              )}
+              <span className="text-sm font-medium leading-tight">{notificationMessage}</span>
+              <button 
+                onClick={() => setShowNotification(false)} 
+                className="ml-1 text-gray-400 hover:text-gray-600 flex-shrink-0"
+              >
                 <X size={16} />
               </button>
             </div>
@@ -539,7 +1101,8 @@ setTenders(opentenders);
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Available Tenders</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Company Tenders</h1>
+            <p className="text-gray-600">Manage and review tender applications</p>
           </div>
           <div className="flex items-center gap-2">
             <div className="relative">
@@ -552,21 +1115,24 @@ setTenders(opentenders);
                 className="pl-10 pr-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
               />
             </div>
+           <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
+            >
+              <option value="all">All Status ({totalTenders})</option>
+              <option value="open">Open ({openTenders})</option>
+              <option value="closed">Closed ({closedTenders})</option>
+              <option value="awarded">Awarded ({awardedTenders})</option>
+              <option value="cancelled">Cancelled ({cancelledTenders})</option>
+            </select>
             <button
               onClick={handleRefresh}
               disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-            
-            </button>
-            <button
-              onClick={openCreateTendersModal}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-2xl font-medium hover:bg-blue-200 transition-colors disabled:opacity-50"
-            >
-              <Plus size={16} />
-             Create Tender  
+              Refresh
             </button>
           </div>
         </div>
@@ -578,14 +1144,13 @@ setTenders(opentenders);
             value={totalTenders}
             icon={FileText}
             color="blue"
-            subtitle="Available opportunities"
+            subtitle="Active opportunities"
           />
           <MetricCard
             title="Open Tenders"
             value={openTenders}
             icon={CheckCircle}
             color="green"
-            trend={8}
             subtitle="Currently accepting bids"
           />
           <MetricCard
@@ -593,16 +1158,14 @@ setTenders(opentenders);
             value={formatBudget(totalValue)}
             icon={DollarSign}
             color="purple"
-            trend={15}
             subtitle="Combined tender value"
           />
           <MetricCard
-            title="Avg Budget"
-            value={formatBudget(avgBudget)}
-            icon={BarChart3}
+            title="Total Bids"
+            value={totalBids}
+            icon={Users}
             color="orange"
-            trend={-3}
-            subtitle="Average tender budget"
+            subtitle="Bids received"
           />
         </div>
 
@@ -610,7 +1173,7 @@ setTenders(opentenders);
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-gray-900">Available Tenders</h3>
+              <h3 className="font-semibold text-gray-900">Active Tenders</h3>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>
@@ -625,12 +1188,12 @@ setTenders(opentenders);
                 <FileText size={32} className="text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {searchTerm ? "No tenders match your search" : "No tenders available"}
+                {searchTerm ? "No tenders match your search" : "No active tenders"}
               </h3>
               <p className="text-gray-500 mb-4">
                 {searchTerm
                   ? "Try adjusting your search terms to find relevant tenders."
-                  : "Check back later for new tender opportunities."}
+                  : "Create new tenders to start receiving vendor bids."}
               </p>
             </div>
           ) : (
@@ -639,239 +1202,25 @@ setTenders(opentenders);
                 <TenderCard
                   key={tender._id}
                   tender={tender}
-                  onMenuClick={handleMenuClick}
-                  showMenuId={showMenuId}
-                  actionLoading={actionLoading}
-                  onStartPreApproval={handleStartPreApproval}
+                  onViewTender={handleViewTender}
+                  bidCounts={bidCounts}
                 />
               ))}
             </div>
           )}
         </div>
-      </main>    
-      {/* Create Tender Modal */}
-          {isCreateTenderModalOpen && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
-    <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
-      
-      {/* Header */}
-      <div className="px-5 py-3 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900">Create Tender</h2>
-        <button
-          onClick={closeCreateTenderModal}
-          className="p-1.5 hover:bg-gray-100 rounded-2xl transition-colors"
-        >
-          <X size={18} />
-        </button>
-      </div>
+      </main>
 
-      {/* Body */}
-      <div className="p-5 max-h-[75vh] overflow-y-auto">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          
-          {/* Title + Category */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Title *</label>
-              <input
-                type="text"
-                name="title"
-                value={formData.title}
-                onChange={handleInputChange}
-                required
-                placeholder="e.g., Supply of Medical Equipment"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Category *</label>
-              <input
-                type="text"
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                placeholder="e.g., Medical Supplies"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-          </div>
-
-          {/* Requisition */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Requisition *</label>
-            <select
-              name="requisitionId"
-              value={formData.requisitionId}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-            >
-              <option value="">Select requisition</option>
-              {requisitions.map((req) => (
-                <option key={req._id} value={req._id}>
-                  {req.itemName} ({req.budgetCode})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Scope / Description *</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              required
-              rows={3}
-              placeholder="Provide detailed description of goods/services"
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-            />
-          </div>
-
-          {/* Requirements + Technical Specs */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Requirements *</label>
-              <input
-                type="text"
-                name="requirements"
-                value={(formData.requirements || []).join(", ")}
-                onChange={handleInputChange}
-                placeholder="e.g., License, 5+ yrs exp, ISO Cert"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Technical Specs</label>
-              <input
-                type="text"
-                name="technicalSpecs"
-                value={formData.technicalSpecs || ""}
-                onChange={handleInputChange}
-                placeholder="Key specs"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-          </div>
-
-          {/* Budget + Payment Terms */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Budget *</label>
-              <input
-                type="number"
-                name="budget"
-                value={formData.budget}
-                onChange={handleInputChange}
-                required
-                placeholder="e.g., 500000"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Payment Terms</label>
-              <input
-                type="text"
-                name="paymentTerms"
-                value={formData.paymentTerms || ""}
-                onChange={handleInputChange}
-                placeholder="e.g., 30% advance"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-          </div>
-
-          {/* Deadline + Evaluation Criteria */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Deadline *</label>
-              <input
-                type="date"
-                name="deadline"
-                value={formData.deadline}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Evaluation Criteria</label>
-              <input
-                type="text"
-                name="evaluationCriteria"
-                value={formData.evaluationCriteria || ""}
-                onChange={handleInputChange}
-                placeholder="e.g., 60% tech / 40% finance"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-          </div>
-
-          {/* Urgency */}
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">Urgency *</label>
-            <select
-              name="urgency"
-              value={formData.urgency}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-
-               <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
-              <input
-                type="text"
-                name="location"
-                value={formData.location || ""}
-                onChange={handleInputChange}
-                placeholder="Location"
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-              />
-            </div>
-        </div>
-          
-
-          {/* Footer */}
-          <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={closeCreateTenderModal}
-              className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-colors font-medium"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isFormSubmitting}
-              className="px-4 py-2 text-xs bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isFormSubmitting ? (
-                <>
-                  <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                  Creating...
-                </>
-              ) : (
-                "Create Tender"
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-)}
-
-
+      {/* Tender Details Modal */}
+      {selectedTender && (
+        <TenderDetailsModal
+          tender={selectedTender}
+          bids={tenderBids}
+          isOpen={showTenderModal}
+          onClose={handleCloseTenderModal}
+          onAwardBid={handleAwardBid}
+        />
+      )}
     </div>
   )
 }
-
-

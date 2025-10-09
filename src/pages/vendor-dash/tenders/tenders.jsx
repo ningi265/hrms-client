@@ -123,6 +123,7 @@ export default function TendersPage() {
 
       
 const [appliedTenders, setAppliedTenders] = useState({})
+  const [statusFilter, setStatusFilter] = useState("all")
 
 
 const TenderCard = ({ tender, onMenuClick, showMenuId, onStartPreApproval, hasApplied }) => {
@@ -306,37 +307,30 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onStartPreApproval, hasAp
     setTenders(tenders)
   }, [])
 
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const tendersRes = await fetch(`${backendUrl}/api/tenders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-        useEffect(() => {
-     const fetchData = async () => {
-       setIsLoading(true);
-       try {
-         const token = localStorage.getItem("token");
-         const [tendersRes] = await Promise.all([
-           fetch(`${backendUrl}/api/tenders`, {
-             headers: { Authorization: `Bearer ${token}` }
-           }),
-         ]);
-     
-         const [tendersData] = await Promise.all([
-          tendersRes.json(),
-         ]);
-     
         if (tendersRes.ok) {
-     const opentenders = tendersData.filter(t => t.status === "open");
-     setTenders(opentenders);
-   }
-   
-       } catch (err) {
-         setError("Failed to load data. Please try again.");
-         console.error("Error fetching data:", err);
-       } finally {
-         setIsLoading(false);
-       }
-     };
-     
-         fetchData();
-       }, [backendUrl]);
+          const tendersData = await tendersRes.json();
+          // Set ALL tenders, not just open ones
+          setTenders(tendersData);
+        }
+      } catch (err) {
+        setError("Failed to load data. Please try again.");
+        console.error("Error fetching data:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [backendUrl]);
 
             useEffect(() => {
            const fetchVendorData = async () => {
@@ -696,18 +690,26 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onStartPreApproval, hasAp
 }
 
   // Filter tenders based on search term
-  const filteredTenders = tenders.filter((tender) => {
+   const filteredTenders = tenders.filter((tender) => {
+    // Status filter
+    const statusMatch = statusFilter === "all" || tender.status === statusFilter;
+    
+    // Search term filter
     const titleMatch = tender.title?.toLowerCase().includes(searchTerm.toLowerCase()) || false
-    const companyMatch = tender.company.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false
+    const companyMatch = tender.company?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false
     const categoryMatch = tender.category?.toLowerCase().includes(searchTerm.toLowerCase()) || false
     const locationMatch = tender.location?.toLowerCase().includes(searchTerm.toLowerCase()) || false
 
-    return titleMatch || companyMatch || categoryMatch || locationMatch
+    const searchMatch = titleMatch || companyMatch || categoryMatch || locationMatch
+
+    return statusMatch && searchMatch
   })
 
   // Calculate stats
-  const totalTenders = tenders.length
+   const totalTenders = tenders.length
   const openTenders = tenders.filter((tender) => tender.status === "open").length
+  const closedTenders = tenders.filter((tender) => tender.status === "closed").length
+  const awardedTenders = tenders.filter((tender) => tender.status === "awarded").length
   const totalValue = tenders.reduce((sum, tender) => sum + (tender.budget || 0), 0)
   const avgBudget = totalTenders > 0 ? totalValue / totalTenders : 0
 
@@ -883,7 +885,7 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onStartPreApproval, hasAp
             <h1 className="text-2xl font-bold text-gray-900">Available Tenders</h1>
             <p className="text-gray-600">Browse and apply for business opportunities</p>
           </div>
-          <div className="flex items-center gap-2">
+         <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <input
@@ -894,6 +896,17 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onStartPreApproval, hasAp
                 className="pl-10 pr-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
               />
             </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-2xl text-sm bg-white"
+            >
+              <option value="all">All Status ({totalTenders})</option>
+              <option value="open">Open ({openTenders})</option>
+              <option value="closed">Closed ({closedTenders})</option>
+              <option value="awarded">Awarded ({awardedTenders})</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
             <button
               onClick={handleRefresh}
               disabled={isLoading}
@@ -904,7 +917,6 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onStartPreApproval, hasAp
             </button>
           </div>
         </div>
-
           {showNewUserAlert && isNewUser && (
                   <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                     <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between">

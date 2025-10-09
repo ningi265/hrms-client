@@ -14,15 +14,16 @@ import {
   User,
   Mail,
   Phone,
+  Loader
 } from "lucide-react"
 
 // LoadingOverlay Component
-const LoadingOverlay = ({ isVisible, message = "Loading..." }) => {
+const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
   if (!isVisible) return null
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-6 flex items-center gap-3">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
         <span className="font-medium">{message}</span>
       </div>
     </div>
