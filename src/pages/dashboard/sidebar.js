@@ -675,33 +675,32 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
 
   const drawer = (
     <>
-      {/* Seamless Header with either Logo+Toggle (when open) or just Toggle (when closed) */}
+    
 <DrawerHeader>
   <LogoContainer open={open}>
     {open ? (
       <>
-        {/* Company Display - matches sidebar theme */}
-          <Box
-         sx={{
-           display: 'flex',
-           alignItems: 'center',
-           justifyContent: 'flex-start', // push logo to the far left
-           flexGrow: 1,
-         }}
-       >
-         <img
-           src="/hrms-logo11.png" // your actual logo path
-           alt="Company Logo"
-           style={{
-             height: '22px', // same scale as collapse icon (around 20–22px)
-             width: '22px',
-             objectFit: 'contain',
-             marginLeft: '4px', // subtle spacing from the edge
-             transition: 'transform 0.3s ease, opacity 0.3s ease',
-           }}
-         />
-       </Box>
-
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            flexGrow: 1,
+            paddingLeft: '12px', // Match the padding of menu items
+          }}
+        >
+          <img
+            src="/hrms-logo11.png" 
+            alt="Company Logo"
+            style={{
+              height: '22px', 
+              width: '22px',
+              objectFit: 'contain',
+              // Remove marginLeft to align with icons
+              transition: 'transform 0.3s ease, opacity 0.3s ease',
+            }}
+          />
+        </Box>
         
         <ToggleButton 
           onClick={toggleDrawer}
@@ -726,44 +725,41 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           />
         </ToggleButton>
       </>
- ) : (
-  <ToggleButton
-    onClick={toggleDrawer}
-    disabled={isAnimating}
-    aria-label="open drawer"
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '100%',
-      height: 44,
-      borderRadius: '6px',
-      marginBottom: '4px',
-      padding: 0,
-      '& img': {
-        filter: 'brightness(0) invert(1)',
-        marginLeft: '-6px', 
-      },
-      '&:hover': {
-        backgroundColor: sidebarColors.itemHover,
-      },
-    }}
-  >
-    <img
-      src="/sidebar1.svg"
-      alt="Toggle sidebar"
-      style={{
-        width: '20px',
-        height: '20px',
-        objectFit: 'contain',
-        transform: 'rotate(0deg)',
-        transition: 'transform 0.3s ease',
-      }}
-    />
-  </ToggleButton>
-)}
-
-
+    ) : (
+      <ToggleButton
+        onClick={toggleDrawer}
+        disabled={isAnimating}
+        aria-label="open drawer"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: 44,
+          borderRadius: '6px',
+          marginBottom: '4px',
+          padding: 0,
+          '& img': {
+            filter: 'brightness(0) invert(1)',
+          },
+          '&:hover': {
+            backgroundColor: sidebarColors.itemHover,
+          },
+        }}
+      >
+        <img
+          src="/sidebar1.svg"
+          alt="Toggle sidebar"
+          style={{
+            width: '20px',
+            height: '20px',
+            objectFit: 'contain',
+            transform: 'rotate(0deg)',
+            transition: 'transform 0.3s ease',
+          }}
+        />
+      </ToggleButton>
+    )}
   </LogoContainer>
 </DrawerHeader>
 
