@@ -681,36 +681,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
     {open ? (
       <>
         {/* Company Display - matches sidebar theme */}
-<<<<<<< HEAD
-         <Box 
-  sx={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    flexGrow: 1,
-    minWidth: 0 // required so the child can shrink
-  }}
->
-
-  <Box sx={{ minWidth: 0 }}>
-    <Typography 
-      variant="subtitle1" 
-      noWrap
-      sx={{
-        color: sidebarColors.text,
-        fontWeight: 600,
-        lineHeight: 1.2,
-        textTransform: 'uppercase',
-        overflow: 'hidden',
-        textOverflow: 'clip', 
-        whiteSpace: 'nowrap'
-      }}
-    >
-      {user?.companyName?.toUpperCase() || 'NexusMWI'}
-    </Typography>
-  </Box>
-</Box>
-=======
           <Box
          sx={{
            display: 'flex',
@@ -731,7 +701,6 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
            }}
          />
        </Box>
->>>>>>> e6a47f3f6b47a0338c3d902bb4ddb101d2490bf2
 
         
         <ToggleButton 
