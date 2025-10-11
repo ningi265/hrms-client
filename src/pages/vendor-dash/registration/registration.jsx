@@ -1,6 +1,52 @@
 import { useState } from "react";
 import { FileText, Building, AlertCircle, Save } from "lucide-react";
 
+// Move Input component outside to prevent re-renders
+const Input = ({ label, field, type = "text", formData, onChange, ...rest }) => (
+  <div>
+    <label className="block text-xs font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <input
+      type={type}
+      name={field}
+      value={formData[field]}
+      onChange={onChange}
+      className="w-full px-3 py-2 text-xs border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+      {...rest}
+    />
+  </div>
+);
+
+// Move FileInput component outside as well
+const FileInput = ({ label, field, multiple, files, onFileChange }) => (
+  <div>
+    <label className="block text-xs font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <input
+      type="file"
+      multiple={multiple}
+      onChange={(e) => onFileChange(field, e.target.files, multiple)}
+      className="w-full text-xs text-gray-600"
+    />
+    {/* Show selected file names */}
+    {files[field] && 
+      (Array.isArray(files[field]) 
+        ? files[field].map((file, idx) => (
+            <p key={idx} className="text-[10px] text-gray-500 mt-1">
+              {file.name}
+            </p>
+          ))
+        : files[field] instanceof File && (
+            <p className="text-[10px] text-gray-500 mt-1">
+              {files[field].name}
+            </p>
+          )
+      )}
+  </div>
+);
+
 export default function VendorRegistration() {
   const [formData, setFormData] = useState({
     businessName: "",
@@ -59,14 +105,18 @@ export default function VendorRegistration() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-    const backendUrl =
+  const backendUrl =
     process.env.REACT_APP_ENV === "production"
       ? process.env.REACT_APP_BACKEND_URL_PROD
-      : process.env.REACT_APP_BACKEND_URL_DEV
+      : process.env.REACT_APP_BACKEND_URL_DEV;
 
-
-  const handleInputChange = (field, value) =>
-    setFormData((p) => ({ ...p, [field]: value }));
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
 
   const handleFileUpload = (field, selectedFiles, multiple) => {
     setFiles((prev) => ({
@@ -82,15 +132,12 @@ export default function VendorRegistration() {
 
     try {
       const formDataToSend = new FormData();
-
-      // 1. Add all non-file form data as JSON
       formDataToSend.append("data", JSON.stringify(formData));
 
-      // 2. Add all files
       Object.entries(files).forEach(([field, fileData]) => {
         if (fileData) {
           if (Array.isArray(fileData)) {
-            fileData.forEach((file, index) => {
+            fileData.forEach((file) => {
               if (file instanceof File) {
                 formDataToSend.append(field, file);
               }
@@ -101,25 +148,14 @@ export default function VendorRegistration() {
         }
       });
 
-      // Debug: Log what's being sent
-      console.log("FormData contents:");
-      for (let [key, value] of formDataToSend.entries()) {
-        console.log(key, value);
-      }
-
-      // 3. Make the API call
-      const token = localStorage.getItem("token")
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${backendUrl}/api/vendors/register`, {
         method: "POST",
         body: formDataToSend,
         headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        // Don't set Content-Type header - browser will set it automatically with boundary
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
       });
-
-      console.log("Response status:", res.status);
       
       const result = await res.json();
       console.log("Registration response:", result);
@@ -182,54 +218,6 @@ export default function VendorRegistration() {
     }
   };
 
-  const Input = ({ label, field, type = "text", ...rest }) => (
-    <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <input
-        type={type}
-        value={formData[field]}
-        onChange={(e) => handleInputChange(field, e.target.value)}
-        className="w-full px-3 py-2 text-xs border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500"
-        {...rest}
-      />
-      {errors[field] && (
-        <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
-          <AlertCircle size={12} /> {errors[field]}
-        </p>
-      )}
-    </div>
-  );
-
-  const FileInput = ({ label, field, multiple }) => (
-    <div>
-      <label className="block text-xs font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      <input
-        type="file"
-        multiple={multiple}
-        onChange={(e) => handleFileUpload(field, e.target.files, multiple)}
-        className="w-full text-xs text-gray-600"
-      />
-      {/* Show selected file names */}
-      {files[field] && 
-        (Array.isArray(files[field]) 
-          ? files[field].map((file, idx) => (
-              <p key={idx} className="text-[10px] text-gray-500 mt-1">
-                {file.name}
-              </p>
-            ))
-          : files[field] instanceof File && (
-              <p className="text-[10px] text-gray-500 mt-1">
-                {files[field].name}
-              </p>
-            )
-        )}
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-10">
       <div className="max-w-6xl mx-auto bg-white rounded-xl shadow border border-gray-200 p-6">
@@ -246,31 +234,41 @@ export default function VendorRegistration() {
               Company Information
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input label="Business Name *" field="businessName" required />
-              <Input label="TIN *" field="taxpayerIdentificationNumber" required />
-              <Input label="Registration Number *" field="registrationNumber" required />
+              <Input label="Business Name *" field="businessName" formData={formData} onChange={handleInputChange} required />
+              <Input label="TIN *" field="taxpayerIdentificationNumber" formData={formData} onChange={handleInputChange} required />
+              <Input label="Registration Number *" field="registrationNumber" formData={formData} onChange={handleInputChange} required />
               <Input
                 label="Reg. Issued Date"
                 type="date"
                 field="registrationIssuedDate"
+                formData={formData}
+                onChange={handleInputChange}
               />
-              <Input label="Phone Number" field="phoneNumber" />
-              <Input label="Address" field="address" />
-              <Input label="Contact Email" type="email" field="contactEmail" />
+              <Input label="Phone Number" field="phoneNumber" formData={formData} onChange={handleInputChange} />
+              <Input label="Address" field="address" formData={formData} onChange={handleInputChange} />
+              <Input label="Contact Email" type="email" field="contactEmail" formData={formData} onChange={handleInputChange} />
               <Input
                 label="Years in Operation"
                 type="number"
                 field="yearsInOperation"
+                formData={formData}
+                onChange={handleInputChange}
               />
               <FileInput
                 label="Registration Certificate"
                 field="registrationCertificate"
+                files={files}
+                onFileChange={handleFileUpload}
               />
-              <FileInput label="Business License" field="businessLicense" />
+              <FileInput 
+                label="Business License" 
+                field="businessLicense" 
+                files={files}
+                onFileChange={handleFileUpload}
+              />
             </div>
           </section>
 
-          {/* Other sections remain the same */}
           {/* Legal Compliance */}
           <section>
             <h2 className="text-sm font-semibold text-gray-800 mb-3 flex items-center gap-2">
@@ -278,36 +276,37 @@ export default function VendorRegistration() {
               Legal Compliance
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <FileInput label="Tax Clearance" field="taxClearance" />
-              <FileInput label="VAT Registration" field="vatRegistration" />
+              <FileInput label="Tax Clearance" field="taxClearance" files={files} onFileChange={handleFileUpload} />
+              <FileInput label="VAT Registration" field="vatRegistration" files={files} onFileChange={handleFileUpload} />
               <FileInput
                 label="Industry Licenses"
                 field="industryLicenses"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
+                  name="laborLawCompliance"
                   checked={formData.laborLawCompliance}
-                  onChange={(e) =>
-                    handleInputChange("laborLawCompliance", e.target.checked)
-                  }
+                  onChange={handleInputChange}
                 />{" "}
                 Labor Law Compliance
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={!formData.litigationHistory}
-                  onChange={(e) =>
-                    handleInputChange("litigationHistory", !e.target.checked)
-                  }
+                  name="litigationHistory"
+                  checked={formData.litigationHistory}
+                  onChange={handleInputChange}
                 />{" "}
                 No Litigation History
               </label>
             </div>
           </section>
 
+          {/* Continue with other sections... */}
           {/* Financial */}
           <section>
             <h2 className="text-sm font-semibold text-gray-800 mb-3">
@@ -318,13 +317,17 @@ export default function VendorRegistration() {
                 label="Audited Statements"
                 field="auditedStatements"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
-              <Input label="Bank Reference" field="bankReference" />
-              <Input label="Insurance Coverage" field="insuranceCoverage" />
+              <Input label="Bank Reference" field="bankReference" formData={formData} onChange={handleInputChange} />
+              <Input label="Insurance Coverage" field="insuranceCoverage" formData={formData} onChange={handleInputChange} />
               <Input
                 label="Annual Turnover"
                 type="number"
                 field="annualTurnover"
+                formData={formData}
+                onChange={handleInputChange}
               />
             </div>
           </section>
@@ -339,23 +342,31 @@ export default function VendorRegistration() {
                 label="Relevant Experience"
                 field="relevantExperience"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
               <FileInput
                 label="Key Personnel"
                 field="keyPersonnel"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
               <FileInput
                 label="Equipment/Facilities"
                 field="equipmentFacilities"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
               <FileInput
                 label="Quality Certifications"
                 field="qualityCertifications"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
-              <Input label="Delivery Capacity" field="deliveryCapacity" />
+              <Input label="Delivery Capacity" field="deliveryCapacity" formData={formData} onChange={handleInputChange} />
             </div>
           </section>
 
@@ -369,14 +380,15 @@ export default function VendorRegistration() {
                 label="Client References"
                 field="clientReferences"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
+                  name="timelyDeliveryRecord"
                   checked={formData.timelyDeliveryRecord}
-                  onChange={(e) =>
-                    handleInputChange("timelyDeliveryRecord", e.target.checked)
-                  }
+                  onChange={handleInputChange}
                 />{" "}
                 Timely Delivery Record
               </label>
@@ -384,8 +396,10 @@ export default function VendorRegistration() {
                 label="Completed Projects"
                 field="completedProjects"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
-              <Input label="Performance Ratings" field="performanceRatings" />
+              <Input label="Performance Ratings" field="performanceRatings" formData={formData} onChange={handleInputChange} />
             </div>
           </section>
 
@@ -395,20 +409,46 @@ export default function VendorRegistration() {
               Health, Safety & Environment
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input label="Safety Policy" field="safetyPolicy" />
+             <div>
+  <label className="block text-xs font-medium text-gray-700 mb-1">
+    Safety Policy
+  </label>
+  <select
+    name="safetyPolicy"
+    value={formData.safetyPolicy}
+    onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        safetyPolicy: e.target.value === "true",
+      }))
+    }
+    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+  >
+    <option value="">Select</option>
+    <option value="true">Yes</option>
+    <option value="false">No</option>
+  </select>
+</div>
+
               <FileInput
                 label="Environment Certificate"
                 field="environmentCertificate"
+                files={files}
+                onFileChange={handleFileUpload}
               />
               <FileInput
                 label="Safety Records"
                 field="safetyRecords"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
               <FileInput
                 label="Sustainability Practices"
                 field="sustainabilityPractices"
                 multiple
+                files={files}
+                onFileChange={handleFileUpload}
               />
             </div>
           </section>
@@ -419,34 +459,52 @@ export default function VendorRegistration() {
               Ethics & Governance
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Input
-                label="Anti-Corruption Policy"
-                field="antiCorruptionPolicy"
-              />
+              <div>
+  <label className="block text-xs font-medium text-gray-700 mb-1">
+    Anti-Corruption Policy
+  </label>
+  <select
+    name="antiCorruptionPolicy"
+    value={formData.antiCorruptionPolicy}
+    onChange={(e) =>
+      setFormData((prev) => ({
+        ...prev,
+        antiCorruptionPolicy: e.target.value === "true",
+      }))
+    }
+    className="w-full px-3 py-2 text-xs border border-gray-300 rounded-2xl focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+  >
+    <option value="">Select</option>
+    <option value="true">Yes</option>
+    <option value="false">No</option>
+  </select>
+</div>
+
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
-                  checked={!formData.conflictOfInterest}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "conflictOfInterest",
-                      !e.target.checked
-                    )
-                  }
+                  name="conflictOfInterest"
+                  checked={formData.conflictOfInterest}
+                  onChange={handleInputChange}
                 />{" "}
                 No Conflict of Interest
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
+                  name="codeOfConductSigned"
                   checked={formData.codeOfConductSigned}
-                  onChange={(e) =>
-                    handleInputChange("codeOfConductSigned", e.target.checked)
-                  }
+                  onChange={handleInputChange}
                 />{" "}
                 Code of Conduct Signed
               </label>
-              <FileInput label="CSR Initiatives" field="csrInitiatives" multiple />
+              <FileInput 
+                label="CSR Initiatives" 
+                field="csrInitiatives" 
+                multiple 
+                files={files}
+                onFileChange={handleFileUpload}
+              />
             </div>
           </section>
 

@@ -146,7 +146,10 @@ const [newPaymentMethod, setNewPaymentMethod] = useState({
     currentStreak: 45,
     achievementPoints: 2840
   });
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000/api";
+  const backendUrl =
+    process.env.REACT_APP_ENV === "production"
+      ? process.env.REACT_APP_BACKEND_URL_PROD
+      : process.env.REACT_APP_BACKEND_URL_DEV;
   
 
   const showNotification = (message, type = "success") => {
@@ -280,7 +283,7 @@ const loadUserProfile = async () => {
         linkedin: userData.linkedin || "",
         twitter: userData.twitter || "",
          avatar: userData.avatar 
-          ? `${API_BASE_URL.replace('/api', '')}${userData.avatar}`
+          ? `${backendUrl.replace('/api', '')}${userData.avatar}`
           : null
       };
       
@@ -365,7 +368,7 @@ const handleAvatarUpload = async (event) => {
     const response = await userAPI.uploadAvatar(file);
     
     if (response.success) {
-       const fullAvatarUrl = `${API_BASE_URL.replace('/api', '')}${response.data.avatarUrl}`;
+       const fullAvatarUrl = `${backendUrl.replace('/api', '')}${response.data.avatarUrl}`;
       setProfileData(prev => ({ ...prev, avatar:fullAvatarUrl }));
       setAvatarError(false); // Reset error state when new avatar is uploaded
       showNotification("Avatar uploaded successfully!");

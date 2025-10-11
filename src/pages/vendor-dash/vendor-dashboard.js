@@ -966,19 +966,21 @@ export default function VendorDashboard() {
             <div>
               {/* Compact Page Header */}
               <div className="flex items-center justify-between mb-7">
-                <div className="space-y-1">
-                  <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent">
-                    Vendor Dashboard
-                  </h1>
-                  <p className="text-gray-600 text-sm max-w-xl">
-                    Welcome back, <span className="font-semibold text-gray-900">{user?.firstName ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1) : 'Vendor'}</span>. 
-                    Monitor your business performance with comprehensive analytics.
-                  </p>
-                </div>
-              </div>
+  <div className="space-y-1">
+    <h1 className="text-3xl font-bold text-gray-900">
+      Vendor Dashboard
+    </h1>
+    <p className="text-gray-700 text-sm max-w-xl">
+      Welcome back, <span className="font-semibold text-black">
+        {user?.firstName ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1) : 'Vendor'}
+      </span>. 
+      Monitor your business performance with comprehensive analytics.
+    </p>
+  </div>
+</div>
 
-              {/* Compact Key Metrics */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
+
+              {/* Compact Key Metrics- <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-7">
                 <MetricCard 
                   title="Active RFQs" 
                   value="25"
@@ -1018,7 +1020,8 @@ export default function VendorDashboard() {
                   subtitle="This month"
                   isLoading={loading}
                 />
-              </div>
+              </div> */}
+              
 
               {/* Dashboard Sections */}
               <VendorRFQOverview />

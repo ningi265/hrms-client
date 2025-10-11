@@ -681,50 +681,26 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
     {open ? (
       <>
         {/* Company Display - matches sidebar theme */}
-         <Box 
-  sx={{
-    display: 'flex',
-    alignItems: 'center',
-    gap: 2,
-    flexGrow: 1,
-    minWidth: 0 // required so the child can shrink
-  }}
->
-  <Box 
-    sx={{
-      width: 36,
-      height: 36,
-      borderRadius: '8px',
-      backgroundColor: 'rgba(85, 105, 255, 0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#ffffff',
-      fontWeight: 700,
-      fontSize: '1.2rem',
-      textTransform: 'uppercase'
-    }}
-  >
-    {user?.companyName?.charAt(0)?.toUpperCase() || 'N'}
-  </Box>
-  <Box sx={{ minWidth: 0 }}>
-    <Typography 
-      variant="subtitle1" 
-      noWrap
-      sx={{
-        color: sidebarColors.text,
-        fontWeight: 600,
-        lineHeight: 1.2,
-        textTransform: 'uppercase',
-        overflow: 'hidden',
-        textOverflow: 'clip', 
-        whiteSpace: 'nowrap'
-      }}
-    >
-      {user?.companyName?.toUpperCase() || 'NexusMWI'}
-    </Typography>
-  </Box>
-</Box>
+          <Box
+         sx={{
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'flex-start', // push logo to the far left
+           flexGrow: 1,
+         }}
+       >
+         <img
+           src="/hrms-logo11.png" // your actual logo path
+           alt="Company Logo"
+           style={{
+             height: '22px', // same scale as collapse icon (around 20–22px)
+             width: '22px',
+             objectFit: 'contain',
+             marginLeft: '4px', // subtle spacing from the edge
+             transition: 'transform 0.3s ease, opacity 0.3s ease',
+           }}
+         />
+       </Box>
 
         
         <ToggleButton 

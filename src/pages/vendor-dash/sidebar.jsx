@@ -534,44 +534,28 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
       {open ? (
         <>
           {/* Company Display - matches sidebar theme */}
-          <Box 
-            sx={{
-              display: 'flex',  
-              gap: 2,
-              flexGrow: 1
-            }}
-          >
-            <Box 
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: '8px',
-                backgroundColor: 'rgba(85, 105, 255, 0.8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '1.2rem',
-                textTransform: 'uppercase' // Added this line
-              }}
-            >
-              {user?.companyName?.charAt(0)?.toUpperCase() || 'N'} {/* Ensures uppercase */}
-            </Box>
-            <Box>
-              <Typography 
-                variant="subtitle1" 
-                sx={{
-                  color: sidebarColors.text,
-                  fontWeight: 600,
-                  lineHeight: 1.2,
-                  textTransform: 'uppercase' // Added this line
-                }}
-              >
-                {user?.companyName?.toUpperCase() || 'NexusMWI'} {/* Ensures uppercase */}
-              </Typography>
-            </Box>
-          </Box>
+    <Box
+  sx={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start', // push logo to the far left
+    flexGrow: 1,
+  }}
+>
+  <img
+    src="/hrms-logo11.png" // your actual logo path
+    alt="Company Logo"
+    style={{
+      height: '22px', // same scale as collapse icon (around 20–22px)
+      width: '22px',
+      objectFit: 'contain',
+      marginLeft: '4px', // subtle spacing from the edge
+      transition: 'transform 0.3s ease, opacity 0.3s ease',
+    }}
+  />
+</Box>
+
+
           
           <ToggleButton 
             onClick={toggleDrawer}
