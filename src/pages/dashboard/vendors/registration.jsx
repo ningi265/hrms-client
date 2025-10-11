@@ -126,7 +126,6 @@ const MetricCard = ({
   )
 }
 
-// Vendor Card Component (for potential card view)
 const VendorCard = ({
   vendor,
   onViewDetails,
@@ -137,6 +136,9 @@ const VendorCard = ({
   getStatusColor,
   getStatusIcon,
 }) => {
+  // Count total documents
+  const documentCount = vendor.documents?.length || 0;
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
       <div className="flex items-center justify-between mb-1.5">
@@ -194,7 +196,7 @@ const VendorCard = ({
           <div className="w-6 h-6 bg-blue-50 rounded-full flex items-center justify-center">
             <FileText size={12} className="text-blue-600" />
           </div>
-          <span className="text-xs text-gray-500">{vendor.powerOfAttorney?.fileName ? "1 file" : "No files"}</span>
+          <span className="text-xs text-gray-500">{documentCount} file{documentCount !== 1 ? 's' : ''}</span>
         </div>
         <div className="flex gap-1">
           <button
@@ -406,15 +408,20 @@ export default function VendorApprovalPage() {
     showNotificationMessage("ID copied to clipboard!", "success")
   }
 
-  const downloadDocument = (filePath, fileName) => {
-    const link = document.createElement("a")
-    link.href = `${backendUrl}/${filePath}`
-    link.download = fileName
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    showNotificationMessage("Document downloaded successfully!", "success")
+   const downloadDocument = (filePath, fileName) => {
+  if (!filePath) {
+    showNotificationMessage("Document path not found", "error");
+    return;
   }
+  
+  const link = document.createElement("a");
+  link.href = `${backendUrl}/${filePath}`;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showNotificationMessage("Document downloaded successfully!", "success");
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -666,24 +673,22 @@ export default function VendorApprovalPage() {
                         </span>
                       </td>
 
-                      <td className="py-3 px-4">
-                        <div className="flex items-center space-x-2">
-                          {vendor.powerOfAttorney?.fileName && (
-                            <button
-                              onClick={() =>
-                                downloadDocument(vendor.powerOfAttorney.filePath, vendor.powerOfAttorney.fileName)
-                              }
-                              className="p-1 text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                              title="Download Power of Attorney"
-                            >
-                              <Paperclip size={14} />
-                            </button>
-                          )}
-                          <span className="text-sm text-gray-500">
-                            {vendor.powerOfAttorney?.fileName ? "1 file" : "No files"}
-                          </span>
-                        </div>
-                      </td>
+                  <td className="py-3 px-4">
+  <div className="flex items-center space-x-2">
+    {vendor.documents && vendor.documents.length > 0 ? (
+      <div className="flex items-center gap-1">
+        <div className="p-1 bg-blue-50 rounded-lg">
+          <FileText size={12} className="text-blue-600" />
+        </div>
+        <span className="text-sm text-gray-500">
+          {vendor.documents.length} file{vendor.documents.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+    ) : (
+      <span className="text-sm text-gray-500">No files</span>
+    )}
+  </div>
+</td>
 
                       <td className="py-3 px-4 text-center">
                         <button
@@ -722,60 +727,37 @@ export default function VendorApprovalPage() {
             <div className="p-5 max-h-[75vh] overflow-y-auto">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Business Information */}
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Building size={16} />
-                      Business Information
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">Business Name</label>
-                        <p className="text-gray-900 font-medium text-sm">{selectedVendor.businessName}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">Registration Number</label>
-                        <p className="text-gray-900 text-sm">{selectedVendor.registrationNumber}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">TIN</label>
-                        <p className="text-gray-900 text-sm">{selectedVendor.taxpayerIdentificationNumber}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">Business Category</label>
-                        <p className="text-gray-900 text-sm">{selectedVendor.businessCategory}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">Company Type</label>
-                        <p className="text-gray-900 text-sm">{selectedVendor.companyType}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Contact Information */}
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Users size={16} />
-                      Contact Information
-                    </h3>
-                    <div className="space-y-3">
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">Primary Contact</label>
-                        <p className="text-gray-900 text-sm">
-                          {selectedVendor.vendor?.firstName} {selectedVendor.vendor?.lastName}
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">Email</label>
-                        <p className="text-gray-900 text-sm">{selectedVendor.vendor?.email}</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-xl p-3">
-                        <label className="text-xs font-medium text-gray-500">Phone</label>
-                        <p className="text-gray-900 text-sm">{selectedVendor.authorizedContact?.phone}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+             {/* Business Information - Enhanced */}
+<div className="space-y-4">
+  <div>
+    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+      <Building size={16} />
+      Business Information
+    </h3>
+    <div className="space-y-3">
+      <div className="bg-gray-50 rounded-xl p-3">
+        <label className="text-xs font-medium text-gray-500">Business Name</label>
+        <p className="text-gray-900 font-medium text-sm">{selectedVendor.businessName}</p>
+      </div>
+      <div className="bg-gray-50 rounded-xl p-3">
+        <label className="text-xs font-medium text-gray-500">Registration Number</label>
+        <p className="text-gray-900 text-sm">{selectedVendor.registrationNumber}</p>
+      </div>
+      <div className="bg-gray-50 rounded-xl p-3">
+        <label className="text-xs font-medium text-gray-500">TIN</label>
+        <p className="text-gray-900 text-sm">{selectedVendor.taxpayerIdentificationNumber}</p>
+      </div>
+      <div className="bg-gray-50 rounded-xl p-3">
+        <label className="text-xs font-medium text-gray-500">Address</label>
+        <p className="text-gray-900 text-sm">{selectedVendor.address || "N/A"}</p>
+      </div>
+      <div className="bg-gray-50 rounded-xl p-3">
+        <label className="text-xs font-medium text-gray-500">Phone</label>
+        <p className="text-gray-900 text-sm">{selectedVendor.phoneNumber || "N/A"}</p>
+      </div>
+    </div>
+  </div>
+</div>
 
                 {/* Registration Details */}
                 <div className="space-y-4">
@@ -809,52 +791,54 @@ export default function VendorApprovalPage() {
                     </div>
                   </div>
 
-                  {/* Documents */}
-                  <div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                      <Paperclip size={16} />
-                      Uploaded Documents
-                    </h3>
-                    <div className="space-y-2">
-                      {selectedVendor.powerOfAttorney?.fileName ? (
-                        <div className="bg-white rounded-2xl border border-gray-200 p-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <div className="p-1.5 bg-blue-50 rounded-xl">
-                                <FileText className="w-4 h-4 text-blue-600" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-gray-900 text-sm">
-                                  {selectedVendor.powerOfAttorney.fileName}
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  {(selectedVendor.powerOfAttorney.fileSize / 1024).toFixed(1)} KB •{" "}
-                                  {formatDate(selectedVendor.powerOfAttorney.uploadDate)}
-                                </p>
-                              </div>
-                            </div>
-                            <button
-                              onClick={() =>
-                                downloadDocument(
-                                  selectedVendor.powerOfAttorney.filePath,
-                                  selectedVendor.powerOfAttorney.fileName,
-                                )
-                              }
-                              className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 text-sm"
-                            >
-                              <Download size={14} />
-                              Download
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="text-center py-6 bg-gray-50 rounded-xl">
-                          <FileText size={32} className="text-gray-400 mx-auto mb-2" />
-                          <p className="text-gray-500 text-sm">No documents uploaded</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              
+ {/* Documents */}
+<div>
+  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+    <Paperclip size={16} />
+    Uploaded Documents
+  </h3>
+  <div className="space-y-2 max-h-60 overflow-y-auto">
+    {selectedVendor.documents && selectedVendor.documents.length > 0 ? (
+      selectedVendor.documents.map((doc, index) => (
+        <div key={doc._id || index} className="bg-white rounded-2xl border border-gray-200 p-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-blue-50 rounded-xl">
+                <FileText className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="font-medium text-gray-900 text-sm">
+                  Document {index + 1}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Uploaded: {formatDate(doc.uploadedAt || selectedVendor.submissionDate)}
+                </p>
+                {doc.fileName && (
+                  <p className="text-xs text-gray-500">File: {doc.fileName}</p>
+                )}
+              </div>
+            </div>
+            {doc.filePath && (
+              <button
+                onClick={() => downloadDocument(doc.filePath, doc.fileName || `document-${index + 1}`)}
+                className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1 text-sm"
+              >
+                <Download size={14} />
+                Download
+              </button>
+            )}
+          </div>
+        </div>
+      ))
+    ) : (
+      <div className="text-center py-6 bg-gray-50 rounded-xl">
+        <FileText size={32} className="text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-500 text-sm">No documents uploaded</p>
+      </div>
+    )}
+  </div>
+</div>
                 </div>
               </div>
 
@@ -976,16 +960,22 @@ export default function VendorApprovalPage() {
                   label: "Send Message",
                   action: () => {},
                 },
-                {
-                  icon: Download,
-                  label: "Download Documents",
-                  action: () => {
-                    const vendor = filteredVendors.find((v) => v._id === showMenuId)
-                    if (vendor?.powerOfAttorney?.filePath) {
-                      downloadDocument(vendor.powerOfAttorney.filePath, vendor.powerOfAttorney.fileName)
-                    }
-                  },
-                },
+             {
+  icon: Download,
+  label: "Download Documents",
+  action: () => {
+    const vendor = filteredVendors.find((v) => v._id === showMenuId);
+    if (vendor?.documents && vendor.documents.length > 0) {
+      vendor.documents.forEach((doc, index) => {
+        if (doc.filePath) {
+          downloadDocument(doc.filePath, doc.fileName || `document-${index + 1}`);
+        }
+      });
+    } else {
+      showNotificationMessage("No documents available for download", "error");
+    }
+  },
+},
                 {
                   icon: Copy,
                   label: "Copy Vendor ID",

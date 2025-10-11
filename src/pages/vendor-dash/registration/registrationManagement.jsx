@@ -529,18 +529,38 @@ export default function VendorManagementDashboard() {
             email: "N/A",
           },
 
-      documents: apiData.documents && apiData.documents.length > 0
-        ? {
-            // Map your documents here based on your actual API structure
-            powerOfAttorney: {
-              name: "Power of Attorney",
-              uploadDate: parseDate(apiData.createdAt)?.toLocaleDateString() || "N/A",
-              status: apiData.registrationStatus === "approved" ? "verified" : "pending",
-              size: "N/A",
-              filePath: "",
-            }
+   documents:
+  apiData.documents
+    ? Object.entries(apiData.documents)
+        .flatMap(([key, value]) => {
+          if (!value) return [];
+          if (Array.isArray(value)) {
+            return value.map((v) => ({
+              name: v.fileName || key,
+              uploadDate: parseDate(v.uploadedAt)?.toLocaleDateString() || "N/A",
+              status:
+                apiData.registrationStatus === "approved"
+                  ? "verified"
+                  : "pending",
+              size: v.size ? formatFileSize(v.size) : "N/A",
+              filePath: v.filePath || "",
+            }));
           }
-        : null,
+          // Single file case
+          return {
+            name: value.fileName || key,
+            uploadDate: parseDate(value.uploadedAt)?.toLocaleDateString() || "N/A",
+            status:
+              apiData.registrationStatus === "approved"
+                ? "verified"
+                : "pending",
+            size: value.size ? formatFileSize(value.size) : "N/A",
+            filePath: value.filePath || "",
+          };
+        })
+    : [],
+
+
 
       timeline: generateTimeline(
         apiData.registrationStatus || "pending",
@@ -867,19 +887,20 @@ export default function VendorManagementDashboard() {
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Uploaded Documents</h3>
 
-                  {vendorData.documents ? (
-                    <div className="space-y-3">
-                      <DocumentCard
-                        document={vendorData.documents.powerOfAttorney}
-                        onDownload={handleDownloadDocument}
-                      />
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <FileText size={48} className="text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500">No documents uploaded yet</p>
-                    </div>
-                  )}
+             {vendorData.documents && vendorData.documents.length > 0 ? (
+  <div className="space-y-3">
+    {vendorData.documents.map((doc, index) => (
+      <DocumentCard key={index} document={doc} onDownload={handleDownloadDocument} />
+    ))}
+  </div>
+) : (
+  <div className="text-center py-8">
+    <FileText size={48} className="text-gray-300 mx-auto mb-4" />
+    <p className="text-gray-500">No documents uploaded yet</p>
+  </div>
+)}
+
+
                 </motion.div>
               )}
 

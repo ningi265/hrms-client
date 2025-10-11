@@ -681,6 +681,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
     {open ? (
       <>
         {/* Company Display - matches sidebar theme */}
+<<<<<<< HEAD
          <Box 
   sx={{
     display: 'flex',
@@ -709,6 +710,28 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
     </Typography>
   </Box>
 </Box>
+=======
+          <Box
+         sx={{
+           display: 'flex',
+           alignItems: 'center',
+           justifyContent: 'flex-start', // push logo to the far left
+           flexGrow: 1,
+         }}
+       >
+         <img
+           src="/hrms-logo11.png" // your actual logo path
+           alt="Company Logo"
+           style={{
+             height: '22px', // same scale as collapse icon (around 20–22px)
+             width: '22px',
+             objectFit: 'contain',
+             marginLeft: '4px', // subtle spacing from the edge
+             transition: 'transform 0.3s ease, opacity 0.3s ease',
+           }}
+         />
+       </Box>
+>>>>>>> e6a47f3f6b47a0338c3d902bb4ddb101d2490bf2
 
         
         <ToggleButton 
