@@ -690,23 +690,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
     minWidth: 0 // required so the child can shrink
   }}
 >
-  <Box 
-    sx={{
-      width: 36,
-      height: 36,
-      borderRadius: '8px',
-      backgroundColor: 'rgba(85, 105, 255, 0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#ffffff',
-      fontWeight: 700,
-      fontSize: '1.2rem',
-      textTransform: 'uppercase'
-    }}
-  >
-    {user?.companyName?.charAt(0)?.toUpperCase() || 'N'}
-  </Box>
+
   <Box sx={{ minWidth: 0 }}>
     <Typography 
       variant="subtitle1" 
