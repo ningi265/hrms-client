@@ -492,41 +492,6 @@ const handleDeleteCard = async (paymentMethodId) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
-      {/* Enhanced Header */}
-      <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl text-white">
-                  <User size={32} />
-                </div>
-                My Profile
-              </h1>
-              <p className="text-gray-500 text-lg mt-2">
-                Manage your account settings and preferences
-              </p>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className="px-4 py-2 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md flex items-center gap-2"
-              >
-                <Edit3 size={16} />
-                {isEditing ? "Cancel" : "Edit Profile"}
-              </button>
-              <button
-                onClick={logout}
-                className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md"
-              >
-                <LogOut size={20} />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Profile Summary Card */}
@@ -574,39 +539,6 @@ const handleDeleteCard = async (paymentMethodId) => {
 
 </div>
 
-
-              {/* Quick Stats */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-                  <div className="flex items-center gap-2">
-                    <Crown size={16} className="text-purple-600" />
-                    <span className="text-sm font-medium text-purple-900">Premium Member</span>
-                  </div>
-                  <Star size={16} className="text-yellow-500" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 bg-blue-50 rounded-xl border border-blue-100">
-                    <div className="text-lg font-bold text-blue-900">{userStats.totalTransactions}</div>
-                    <div className="text-xs text-blue-600">Transactions</div>
-                  </div>
-                  <div className="text-center p-3 bg-green-50 rounded-xl border border-green-100">
-                    <div className="text-lg font-bold text-green-900">{userStats.successRate}%</div>
-                    <div className="text-xs text-green-600">Success Rate</div>
-                  </div>
-                </div>
-
-                <div className="p-3 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border border-orange-100">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-orange-900">Achievement Points</div>
-                      <div className="text-lg font-bold text-orange-800">{userStats.achievementPoints.toLocaleString()}</div>
-                    </div>
-                    <Award size={20} className="text-orange-600" />
-                  </div>
-                </div>
-              </div>
-
               {/* Navigation */}
               <div className="mt-6 space-y-2">
                 {tabs.map((tab) => {
@@ -647,6 +579,15 @@ const handleDeleteCard = async (paymentMethodId) => {
                       <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
                       <p className="text-gray-600 mt-1">Update your personal details and contact information</p>
                     </div>
+                    <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className="px-4 py-2 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md flex items-center gap-2"
+              >
+                <Edit3 size={16} />
+                {isEditing ? "Cancel" : "Edit Profile"}
+              </button>
+            </div>
                     {isEditing && (
                       <button
                         onClick={handleProfileSave}

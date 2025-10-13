@@ -120,6 +120,7 @@ import InvoicePaymentPage from "./finance/invoice";
 import AnalyticsPage from "./analytics";
 import ReportsPage from "./reports"; 
 import CreateTendersPage from "./tenders/tenders";
+import VendorDetailsPage from '../dashboard/vendors/vendor-details';
 
 // Sample data for RevenueChart
 const salesData = [
@@ -1031,7 +1032,9 @@ if (isLoading) {
       {activeSection === "employees" && <EmployeesPage/>}
       {activeSection === "departments" && <DepartmentsPage/>}
       {activeSection === "user-profile" && <UserProfilePage />}
-      {activeSection === "pending-registration" && <VendorApprovalPage />}
+     {activeSection === "pending-registration" && (
+  <VendorApprovalPage handleSectionChange={handleSectionChange} />
+)}
       {activeSection === "employees-details" && <EmployeeDetailPage />}
        {activeSection === "employees-edit" && <EditEmployeePage/>}
        {activeSection === "employee-performance" && <EmployeePerformancePage />}
@@ -1041,6 +1044,15 @@ if (isLoading) {
           {activeSection === "invoice-payment" && <InvoicePaymentPage/>}
            {activeSection === "analytics" && <AnalyticsPage/>}
             {activeSection === "reports" && <ReportsPage/>}
+            {activeSection === "vendor-details" && (
+  <VendorDetailsPage 
+    vendorId={localStorage.getItem('selectedVendorId')}
+    onBack={() => handleSectionChange('pending-registration')}
+  />
+)}
+
+            
+
             {activeSection === "tenders" && <CreateTendersPage />}
     </Box>
   )}

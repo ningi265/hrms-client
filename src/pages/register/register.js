@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
-
-import { useNavigate ,useLocation} from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Eye,
   EyeOff,
@@ -23,11 +22,22 @@ import {
 import { useAuth } from "../../authcontext/authcontext";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Calendar} from "lucide-react";
+import { Calendar } from "lucide-react";
 
 export default function RegisterPage() {
-   const location = useLocation();
-    const googleData = location.state;
+  const location = useLocation();
+  const googleData = location.state;
+
+  // Secure password generation function
+  const generateSecurePassword = () => {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+    let password = "";
+    for (let i = 0; i < 32; i++) {
+      const randomIndex = Math.floor(Math.random() * charset.length);
+      password += charset[randomIndex];
+    }
+    return password;
+  };
 
   const [activeStep, setActiveStep] = useState(0);
   const navigate = useNavigate();
@@ -35,7 +45,9 @@ export default function RegisterPage() {
   const [firstName, setFirstName] = useState(googleData?.firstName || "");
   const [lastName, setLastName] = useState(googleData?.lastName || "");
   const [companyName, setCompanyName] = useState("")
-  const [password, setPassword] = useState(googleData?.googleSignup ? "GoogleAuth" : ""); 
+  const [password, setPassword] = useState(
+    googleData?.googleSignup ? generateSecurePassword() : ""
+  );
   const [skipVerification, setSkipVerification] = useState(googleData?.googleSignup || false);
   const [showPassword, setShowPassword] = useState(false)
   const [industry, setIndustry] = useState("")
@@ -56,8 +68,8 @@ export default function RegisterPage() {
 
   const [userData, setUserData] = useState(null)
   const [authToken, setAuthToken] = useState(null)
-const [dob, setDob] = useState("");
-const [dobError, setDobError] = useState("");
+  const [dob, setDob] = useState("");
+  const [dobError, setDobError] = useState("");
 
   useEffect(() => {
     if (!backendUrl || backendUrl === 'undefined') {
@@ -114,7 +126,6 @@ const [dobError, setDobError] = useState("");
     "Enterprise(CEO, CFO, etc.)",
     "Vendor",
     "Other",
-   
   ]
 
   const getRoleBasedPath = (userRole) => {
@@ -141,7 +152,7 @@ const [dobError, setDobError] = useState("");
       toast.error("Please enter your email address");
       return;
     }
-    if (activeStep === 1 && (!firstName || !lastName || !password)) {
+    if (activeStep === 1 && (!firstName || !lastName || (!googleData?.googleSignup && !password))) {
       toast.error("Please fill all required fields");
       return;
     }
@@ -208,76 +219,75 @@ const [dobError, setDobError] = useState("");
     }
   }
 
-const handleSubmit = async () => {
-  if (!skipVerification && !phoneNumber) {
-    toast.error("Please enter your phone number");
-    return;
-  }
-
-  if (!skipVerification && password.length < 8) {
-    toast.error("Password must be at least 8 characters");
-    return;
-  }
-
-  if (!backendUrl || backendUrl === "undefined") {
-    toast.error("Configuration error: Unable to connect to server");
-    return;
-  }
-
-  setIsLoading(true);
-  setError("");
-
-  try {
-    const registrationData = await authRegister(
-      firstName,
-      lastName,
-      email,
-      password,
-      companyName,
-      industry,
-      role,
-      phoneNumber
-    );
-
-    setUserData(registrationData.user);
-    setAuthToken(registrationData.token);
-
-    if (skipVerification) {
-      // ✅ Google signup: no email verification needed
-      toast.success("Account created with Google!");
-      navigate("/dashboard");
-      return; // stop here
+  const handleSubmit = async () => {
+    if (!skipVerification && !phoneNumber) {
+      toast.error("Please enter your phone number");
+      return;
     }
 
-    // ✅ Normal signup flow → send email verification
-    setIsSendingSMS(true);
-
-    const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      mode: "cors",
-      body: JSON.stringify({ email }),
-    });
-
-    if (!smsResponse.ok) {
-      const errorData = await smsResponse.json();
-      throw new Error(errorData.message || "Failed to send verification code");
+    if (!skipVerification && !googleData?.googleSignup && password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
     }
 
-    toast.success("Verification code sent to your email");
-    setShowVerification(true);
-  } catch (err) {
-    console.error("Submit error:", err);
-    toast.error(err.message);
-  } finally {
-    setIsLoading(false);
-    setIsSendingSMS(false);
-  }
-};
+    if (!backendUrl || backendUrl === "undefined") {
+      toast.error("Configuration error: Unable to connect to server");
+      return;
+    }
 
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const registrationData = await authRegister(
+        firstName,
+        lastName,
+        email,
+        password,
+        companyName,
+        industry,
+        role,
+        phoneNumber
+      );
+
+      setUserData(registrationData.user);
+      setAuthToken(registrationData.token);
+
+      if (skipVerification) {
+        // ✅ Google signup: no email verification needed
+        toast.success("Account created with Google!");
+        navigate("/dashboard");
+        return; // stop here
+      }
+
+      // ✅ Normal signup flow → send email verification
+      setIsSendingSMS(true);
+
+      const smsResponse = await fetch(`${backendUrl}/api/auth/email/send`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        mode: "cors",
+        body: JSON.stringify({ email }),
+      });
+
+      if (!smsResponse.ok) {
+        const errorData = await smsResponse.json();
+        throw new Error(errorData.message || "Failed to send verification code");
+      }
+
+      toast.success("Verification code sent to your email");
+      setShowVerification(true);
+    } catch (err) {
+      console.error("Submit error:", err);
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+      setIsSendingSMS(false);
+    }
+  };
 
   const handleVerify = async () => {
     if (!emailVerificationCode || emailVerificationCode.length !== 6) {
@@ -682,200 +692,209 @@ const handleSubmit = async () => {
       case 1:
         return (
           <div className="space-y-4">
-  {/* Name Fields (unchanged) */}
-  <div className="grid grid-cols-2 gap-4">
-    <div>
-      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-        First Name
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-          <User size={16} />
-        </div>
-        <input
-          id="firstName"
-          type="text"
-          value={firstName}
-          onChange={(e) => {
-            const value = e.target.value.replace(/[^a-zA-Z\-' ]/g, "");
-            setFirstName(value);
-          }}
-          className={`w-full pl-9 px-3 py-2 border ${
-            firstName.length === 0 ? "border-gray-200" : "border-green-200"
-          } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
-          placeholder="John"
-          required
-          minLength={2}
-          maxLength={50}
-        />
-      </div>
-      {firstName.length > 0 && firstName.length < 2 && (
-        <p className="mt-1 text-xs text-red-500">
-          First name must be at least 2 characters
-        </p>
-      )}
-    </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                  First Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <User size={16} />
+                  </div>
+                  <input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^a-zA-Z\-' ]/g, "");
+                      setFirstName(value);
+                    }}
+                    className={`w-full pl-9 px-3 py-2 border ${
+                      firstName.length === 0 ? "border-gray-200" : "border-green-200"
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
+                    placeholder="John"
+                    required
+                    minLength={2}
+                    maxLength={50}
+                  />
+                </div>
+                {firstName.length > 0 && firstName.length < 2 && (
+                  <p className="mt-1 text-xs text-red-500">
+                    First name must be at least 2 characters
+                  </p>
+                )}
+              </div>
 
-    <div>
-      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-        Last Name
-      </label>
-      <div className="relative">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-          <User size={16} />
-        </div>
-        <input
-          id="lastName"
-          type="text"
-          value={lastName}
-          onChange={(e) => {
-            const value = e.target.value.replace(/[^a-zA-Z\-' ]/g, "");
-            setLastName(value);
-          }}
-          className={`w-full pl-9 px-3 py-2 border ${
-            lastName.length === 0 ? "border-gray-200" : "border-green-200"
-          } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
-          placeholder="Doe"
-          required
-          minLength={2}
-          maxLength={50}
-        />
-      </div>
-      {lastName.length > 0 && lastName.length < 2 && (
-        <p className="mt-1 text-xs text-red-500">
-          Last name must be at least 2 characters
-        </p>
-      )}
-    </div>
-  </div>
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                  Last Name
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <User size={16} />
+                  </div>
+                  <input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^a-zA-Z\-' ]/g, "");
+                      setLastName(value);
+                    }}
+                    className={`w-full pl-9 px-3 py-2 border ${
+                      lastName.length === 0 ? "border-gray-200" : "border-green-200"
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
+                    placeholder="Doe"
+                    required
+                    minLength={2}
+                    maxLength={50}
+                  />
+                </div>
+                {lastName.length > 0 && lastName.length < 2 && (
+                  <p className="mt-1 text-xs text-red-500">
+                    Last name must be at least 2 characters
+                  </p>
+                )}
+              </div>
+            </div>
 
-  {/* New: Date of Birth Field */}
-  <div>
-    <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-1">
-      Date of Birth
-    </label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-        <Calendar size={16} /> {/* Make sure to import Calendar from your icon library */}
-      </div>
-      <input
-        id="dob"
-        type="date"
-        value={dob}
-        onChange={(e) => {
-          const selectedDate = new Date(e.target.value);
-          const today = new Date();
-          const minAgeDate = new Date(
-            today.getFullYear() - 18,
-            today.getMonth(),
-            today.getDate()
-          );
-          
-          if (selectedDate <= minAgeDate) {
-            setDob(e.target.value);
-            setDobError('');
-          } else {
-            setDobError('You must be at least 18 years old');
-          }
-        }}
-        className={`w-full pl-9 px-3 py-2 border ${
-          dob && !dobError ? "border-green-200" : dobError ? "border-red-200" : "border-gray-200"
-        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
-        max={new Date().toISOString().split('T')[0]}
-        required
-      />
-    </div>
-    {dobError && (
-      <p className="mt-1 text-xs text-red-500">{dobError}</p>
-    )}
-  </div>
+            <div>
+              <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-1">
+                Date of Birth
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  <Calendar size={16} />
+                </div>
+                <input
+                  id="dob"
+                  type="date"
+                  value={dob}
+                  onChange={(e) => {
+                    const selectedDate = new Date(e.target.value);
+                    const today = new Date();
+                    const minAgeDate = new Date(
+                      today.getFullYear() - 18,
+                      today.getMonth(),
+                      today.getDate()
+                    );
+                    
+                    if (selectedDate <= minAgeDate) {
+                      setDob(e.target.value);
+                      setDobError('');
+                    } else {
+                      setDobError('You must be at least 18 years old');
+                    }
+                  }}
+                  className={`w-full pl-9 px-3 py-2 border ${
+                    dob && !dobError ? "border-green-200" : dobError ? "border-red-200" : "border-gray-200"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
+                  max={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+              {dobError && (
+                <p className="mt-1 text-xs text-red-500">{dobError}</p>
+              )}
+            </div>
 
-  {/* New: Phone Number Field */}
-  <div>
-    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-      Phone Number
-    </label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-        <Phone size={16} />
-      </div>
-      <input
-        id="phone"
-        type="tel"
-        value={phoneNumber}
-        onChange={(e) => {
-          const value = e.target.value.replace(/[^0-9+]/g, "");
-          setPhoneNumber(value);
-        }}
-        className={`w-full pl-9 px-3 py-2 border ${
-          phoneNumber.length === 0 ? "border-gray-200" : 
-          phoneNumber.length >= 10 ? "border-green-200" : "border-red-200"
-        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
-        placeholder="+265 123 456 789"
-        required
-      />
-    </div>
-    {phoneNumber.length > 0 && phoneNumber.length < 10 && (
-      <p className="mt-1 text-xs text-red-500">
-        Phone number must be at least 10 digits
-      </p>
-    )}
-  </div>
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                Phone Number
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  <Phone size={16} />
+                </div>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={phoneNumber}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9+]/g, "");
+                    setPhoneNumber(value);
+                  }}
+                  className={`w-full pl-9 px-3 py-2 border ${
+                    phoneNumber.length === 0 ? "border-gray-200" : 
+                    phoneNumber.length >= 10 ? "border-green-200" : "border-red-200"
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
+                  placeholder="+265 123 456 789"
+                  required
+                />
+              </div>
+              {phoneNumber.length > 0 && phoneNumber.length < 10 && (
+                <p className="mt-1 text-xs text-red-500">
+                  Phone number must be at least 10 digits
+                </p>
+              )}
+            </div>
 
-  {/* Password Field (unchanged) */}
-  <div>
-    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-      Password
-    </label>
-    <div className="relative">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-        <Lock size={16} />
-      </div>
-      <input
-        id="password"
-        type={showPassword ? "text" : "password"}
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className={`w-full pl-9 px-3 py-2 border ${
-          password.length === 0 ? "border-gray-200" : 
-          password.length >= 8 ? "border-green-200" : "border-red-200"
-        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
-        placeholder="••••••••"
-        required
-        minLength={8}
-      />
-      <button
-        type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-        aria-label={showPassword ? "Hide password" : "Show password"}
-      >
-        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-      </button>
-    </div>
-    <div className="mt-1 text-xs text-gray-500">
-      {password.length > 0 && (
-        <div className="space-y-1">
-          <p className={password.length >= 8 ? "text-green-500" : "text-red-500"}>
-            • {password.length >= 8 ? "✓" : "✗"} At least 8 characters
-          </p>
-          <p className={/[A-Z]/.test(password) ? "text-green-500" : "text-red-500"}>
-            • {/[A-Z]/.test(password) ? "✓" : "✗"} At least one uppercase letter
-          </p>
-          <p className={/[0-9]/.test(password) ? "text-green-500" : "text-red-500"}>
-            • {/[0-9]/.test(password) ? "✓" : "✗"} At least one number
-          </p>
-          <p className={/[^A-Za-z0-9]/.test(password) ? "text-green-500" : "text-red-500"}>
-            • {/[^A-Za-z0-9]/.test(password) ? "✓" : "✗"} At least one special character
-          </p>
-        </div>
-      )}
-      {password.length === 0 && (
-        <p>Password must be at least 8 characters</p>
-      )}
-    </div>
-  </div>
-</div>
+            {!googleData?.googleSignup && (
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                    <Lock size={16} />
+                  </div>
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`w-full pl-9 px-3 py-2 border ${
+                      password.length === 0 ? "border-gray-200" : 
+                      password.length >= 8 ? "border-green-200" : "border-red-200"
+                    } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200`}
+                    placeholder="••••••••"
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <div className="mt-1 text-xs text-gray-500">
+                  {password.length > 0 && (
+                    <div className="space-y-1">
+                      <p className={password.length >= 8 ? "text-green-500" : "text-red-500"}>
+                        • {password.length >= 8 ? "✓" : "✗"} At least 8 characters
+                      </p>
+                      <p className={/[A-Z]/.test(password) ? "text-green-500" : "text-red-500"}>
+                        • {/[A-Z]/.test(password) ? "✓" : "✗"} At least one uppercase letter
+                      </p>
+                      <p className={/[0-9]/.test(password) ? "text-green-500" : "text-red-500"}>
+                        • {/[0-9]/.test(password) ? "✓" : "✗"} At least one number
+                      </p>
+                      <p className={/[^A-Za-z0-9]/.test(password) ? "text-green-500" : "text-red-500"}>
+                        • {/[^A-Za-z0-9]/.test(password) ? "✓" : "✗"} At least one special character
+                      </p>
+                    </div>
+                  )}
+                  {password.length === 0 && (
+                    <p>Password must be at least 8 characters</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {googleData?.googleSignup && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center">
+                  <CheckCircle className="text-blue-600 mr-2" size={16} />
+                  <p className="text-sm text-blue-800">
+                    Your account is secured with Google authentication. A strong password has been auto-generated for your account.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         )
       case 2:
         return (
@@ -1007,7 +1026,7 @@ const handleSubmit = async () => {
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-         Email
+                Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
