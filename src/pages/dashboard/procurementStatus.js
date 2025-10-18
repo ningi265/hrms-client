@@ -334,8 +334,7 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
         </div>
       </div>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      {/* Quick Stats Grid -  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {quickStats.map((stat, index) => {
           const getIcon = (title) => {
             switch(title) {
@@ -363,10 +362,10 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
             />
           );
         })}
-      </div>
+      </div>*/}
+    
 
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mt-auto">
+      {/* Action Cards- <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mt-auto">
         <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
@@ -396,7 +395,8 @@ const ProcurementStatusCard = ({ summaryData = [], allData = [], activeIndex = n
             View All Procurement
           </button>
         </div>
-      </div>
+      </div> */}
+     
     </div>
   );
 };

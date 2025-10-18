@@ -17,13 +17,14 @@ import {
   useTheme,
   styled,
   alpha,
-  Avatar
+  Avatar,
+  SwipeableDrawer
 } from '@mui/material';
-import { Menu as MenuIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, Close as CloseIcon } from '@mui/icons-material';
 
 // Modern color palette with a professional look
 const sidebarColors = {
-  background: '#141b2d', // Rich dark blue
+  background: '#141b2d',
   headerBg: '#1f2940',
   itemHover: 'rgba(145, 158, 171, 0.08)',
   itemSelected: 'rgba(85, 105, 255, 0.16)',
@@ -36,7 +37,7 @@ const sidebarColors = {
   divider: 'rgba(145, 158, 171, 0.16)',
 };
 
-// Modern SVG Icons
+// Modern SVG Icons (kept the same)
 const ModernIcons = {
   Dashboard: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -54,28 +55,25 @@ const ModernIcons = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ),
-
-Department: (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
-    <path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2" />
-    <path d="M10 6h4" />
-    <path d="M10 10h4" />
-    <path d="M10 14h4" />
-    <path d="M10 18h4" />
-  </svg>
-),
-
-
-Vendors: (props) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M2 3h6l2 12h10" />
-    <path d="M9 8h12l-1 8H10" />
-    <circle cx="9" cy="19" r="1" />
-    <circle cx="20" cy="19" r="1" />
-    <path d="M7 8L5.5 3H2" />
-  </svg>
-),
+  Department: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+      <path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2" />
+      <path d="M10 6h4" />
+      <path d="M10 10h4" />
+      <path d="M10 14h4" />
+      <path d="M10 18h4" />
+    </svg>
+  ),
+  Vendors: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M2 3h6l2 12h10" />
+      <path d="M9 8h12l-1 8H10" />
+      <circle cx="9" cy="19" r="1" />
+      <circle cx="20" cy="19" r="1" />
+      <path d="M7 8L5.5 3H2" />
+    </svg>
+  ),
   Requisitions: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
@@ -178,11 +176,12 @@ Vendors: (props) => (
   ),
 };
 
-// Styled components with seamless design
-const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
+// Styled components with mobile optimization
+const StyledListItemButton = styled(ListItemButton)(({ theme, ismobile }) => ({
   color: sidebarColors.text,
-  margin: '2px 12px',
-  padding: '10px 16px',
+  margin: '2px 8px',
+  padding: '10px 12px',
+  minHeight: 44,
   borderRadius: '6px',
   transition: 'all 0.15s ease-in-out',
   '&.Mui-selected': { 
@@ -201,6 +200,12 @@ const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
   '&:hover': { 
     backgroundColor: sidebarColors.itemHover,
   },
+  [theme.breakpoints.down('md')]: {
+    padding: ismobile ? '12px 16px' : '12px',
+    minHeight: 48,
+    margin: '2px 6px',
+    justifyContent: 'flex-start !important',
+  },
 }));
 
 const SidebarGroupLabel = styled(Typography)(({ theme, open }) => ({
@@ -208,20 +213,27 @@ const SidebarGroupLabel = styled(Typography)(({ theme, open }) => ({
   fontSize: '0.6875rem',
   fontWeight: 500,
   textTransform: 'uppercase',
-  padding: open ? '16px 28px 6px' : '16px 0',
+  padding: open ? '16px 20px 6px' : '8px 0',
   letterSpacing: '0.6px',
   textAlign: open ? 'left' : 'center',
   opacity: open ? 1 : 0,
   height: open ? 'auto' : 0,
   marginBottom: open ? '4px' : 0,
   transition: 'opacity 0.2s ease, height 0.2s ease, margin 0.2s ease',
+  [theme.breakpoints.down('md')]: {
+    fontSize: '0.75rem',
+    padding: open ? '12px 16px 4px' : '6px 0',
+    textAlign: 'left',
+    opacity: 1,
+    height: 'auto',
+  },
 }));
 
-// Improved drawer with smooth transitions
+// Updated drawer with proper mobile width
 const SeamlessSidebarDrawer = styled(Drawer, {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'isMobile'
 })(({ theme, open, isMobile }) => ({
-  width: open ? 256 : 70,
+  width: isMobile ? 'auto' : (open ? 256 : 64),
   flexShrink: 0,
   whiteSpace: 'nowrap',
   boxSizing: 'border-box',
@@ -229,33 +241,52 @@ const SeamlessSidebarDrawer = styled(Drawer, {
   '& .MuiDrawer-paper': {
     backgroundColor: sidebarColors.background,
     borderRight: 'none',
-    width: open ? 256 : (isMobile ? 0 : 70),
+    width: isMobile ? '280px' : (open ? 256 : 64),
     overflowX: 'hidden',
-    transition: theme.transitions.create('width', {
+    transition: theme.transitions.create(['width', 'transform'], {
       easing: theme.transitions.easing.easeInOut,
       duration: theme.transitions.duration.standard,
+    }),
+    ...(isMobile && {
+      position: 'fixed',
+      height: '100%',
+      zIndex: 1300,
     }),
   },
 }));
 
-const MenuItemIcon = styled(ListItemIcon)(({ theme, selected }) => ({
-  minWidth: 0,
-  marginRight: 16,
-  justifyContent: 'center',
+const MenuItemIcon = styled(ListItemIcon)(({ theme, selected, ismobile }) => ({
+  minWidth: ismobile ? 40 : 0,
+  marginRight: ismobile ? 16 : (selected ? 16 : 0),
+  justifyContent: ismobile ? 'flex-start' : 'center',
   color: selected ? sidebarColors.iconSelectedColor : sidebarColors.iconColor,
   transition: 'color 0.15s ease, transform 0.2s ease',
   '&:hover': {
     transform: 'scale(1.05)'
-  }
+  },
+  [theme.breakpoints.down('md')]: {
+    marginRight: 16,
+    justifyContent: 'flex-start',
+    minWidth: 40,
+    '& svg': {
+      width: 20,
+      height: 20,
+    }
+  },
 }));
 
-// Drawer Header - seamless with the rest of the sidebar
 const DrawerHeader = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center', // Center for collapsed mode
-  padding: '20px 12px 10px',
+  justifyContent: 'center',
+  padding: '16px 8px 8px',
   backgroundColor: 'transparent',
+  minHeight: 56,
+  [theme.breakpoints.down('md')]: {
+    padding: '16px 20px 12px',
+    minHeight: 60,
+    justifyContent: 'space-between',
+  },
 }));
 
 const LogoContainer = styled(Box)(({ theme, open }) => ({
@@ -264,61 +295,54 @@ const LogoContainer = styled(Box)(({ theme, open }) => ({
   alignItems: 'center',
   justifyContent: open ? 'space-between' : 'center',
   transition: 'all 0.3s ease',
+  [theme.breakpoints.down('md')]: {
+    justifyContent: 'space-between',
+  },
 }));
 
-// Logo Box - conditionally used for H or toggle icon
-const LogoBox = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  width: 36,
-  height: 36,
-  borderRadius: '8px',
-  backgroundColor: 'rgba(85, 105, 255, 0.8)',
-  backgroundImage: 'linear-gradient(135deg, #5569ff 0%, #6b8aff 100%)',
-  boxShadow: '0 2px 10px rgba(85, 105, 255, 0.4)',
-  color: '#ffffff',
-  fontWeight: 700,
-  fontSize: '1.2rem',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'scale(1.05)',
-  }
-}));
-
-// Custom Toggle Button that looks like the logo
 const ToggleButton = styled(IconButton)(({ theme }) => ({
   color: sidebarColors.textSecondary,
   '&:hover': {
     backgroundColor: 'transparent',
   },
   transition: 'all 0.15s ease',
-  padding: 0,
+  padding: 8,
+  minWidth: 40,
+  minHeight: 40,
+  [theme.breakpoints.down('md')]: {
+    minWidth: 36,
+    minHeight: 36,
+  },
 }));
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
   '& .MuiBadge-badge': {
     right: -4,
     top: 4,
-    minWidth: 18,
-    height: 18,
-    fontSize: '0.625rem',
+    minWidth: 16,
+    height: 16,
+    fontSize: '0.6rem',
     fontWeight: 600,
     padding: '0 4px',
-    borderRadius: 9,
-    backgroundColor: '#ef4444', // Red
+    borderRadius: 8,
+    backgroundColor: '#ef4444',
     color: 'white',
-  }
+  },
+  [theme.breakpoints.down('md')]: {
+    '& .MuiBadge-badge': {
+      minWidth: 14,
+      height: 14,
+      fontSize: '0.55rem',
+    },
+  },
 }));
 
-// Animated badge dot
 const PulseBadge = styled('span')(({ theme }) => ({
   position: 'absolute',
-  top: 8,
-  right: 8,
-  width: 8,
-  height: 8,
+  top: 6,
+  right: 6,
+  width: 6,
+  height: 6,
   borderRadius: '50%',
   backgroundColor: '#ef4444',
   '&::after': {
@@ -348,6 +372,23 @@ const PulseBadge = styled('span')(({ theme }) => ({
   },
 }));
 
+// Mobile toggle button with sidebar1.svg
+const MobileToggleButton = styled(IconButton)(({ theme }) => ({
+  position: 'fixed',
+  top: 12,
+  left: 12,
+  zIndex: 1200,
+  backdropFilter: 'blur(8px)',
+  borderRadius: '8px',
+  width: 44,
+  height: 44,
+  '&:hover': {
+    backgroundColor: alpha(sidebarColors.background, 0.95),
+    transform: 'scale(1.05)',
+  },
+  transition: 'all 0.2s ease-in-out',
+}));
+
 // Main component
 const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange, onSidebarToggle, user }) => {
   const theme = useTheme();
@@ -361,25 +402,17 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   const [isAnimating, setIsAnimating] = useState(false);
 
   // Remember sidebar state in localStorage
- useEffect(() => {
+  useEffect(() => {
     const savedOpenState = localStorage.getItem('sidebarOpen');
     if (savedOpenState !== null && !isMobile) {
       const parsedState = JSON.parse(savedOpenState);
       setOpen(parsedState);
-      onSidebarToggle?.(parsedState); // Notify parent component
+      onSidebarToggle?.(parsedState);
     }
   }, [isMobile, onSidebarToggle]);
 
-
-   const companyInitial = user?.companyName?.charAt(0);
-  
-  // Get full company name or default
-  const companyFullName = user?.companyName;
-   console.log('Company Initial:', companyInitial);
-   console.log('Company Full Name:', companyFullName);
-
-  // Improved toggle behavior with animation lock
- const toggleDrawer = () => {
+  // Improved toggle with mobile-specific behavior
+  const toggleDrawer = () => {
     if (isAnimating) return;
     
     setIsAnimating(true);
@@ -391,163 +424,70 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
       const newOpenState = !open;
       setOpen(newOpenState);
       localStorage.setItem('sidebarOpen', JSON.stringify(newOpenState));
-      
-      // Notify parent component about sidebar state change
       onSidebarToggle?.(newOpenState);
-      
-      // Dispatch custom event for components that might need to know about sidebar changes
       window.dispatchEvent(new CustomEvent('sidebarToggle', { 
         detail: { open: newOpenState } 
       }));
-      
-      // Wait for animation to complete before allowing another toggle
       setTimeout(() => setIsAnimating(false), 300);
     }
   };
 
-  // Menu data structure with grouping and modern icons
+  // Close mobile drawer after navigation
+  const handleMobileNavigation = (sectionId) => {
+    handleSectionChange(sectionId);
+    if (isMobile) {
+      setTimeout(() => setMobileOpen(false), 150);
+    }
+  };
+
+  // Menu data structure
   const menuSections = [
     {
       id: 'main',
       label: 'Main',
       items: [
-        { 
-          id: 'dashboard', 
-          label: 'Dashboard', 
-          icon: <ModernIcons.Dashboard />,
-          badge: null
-        },
-        { 
-          id: 'departments', 
-          label: 'Departments', 
-          icon: <ModernIcons.Department/>,
-        },
-        { 
-          id: 'employees', 
-          label: 'Employees', 
-          icon: <ModernIcons.Employees />,
-          badge: stats.employees?.counts?.pending || null
-        },
-         
-        { 
-          id: 'vendors', 
-          label: 'Vendors', 
-          icon: <ModernIcons.Vendors />,
-          badge: stats.vendors?.counts?.open || null
-        },
-        { 
-          id: 'requisitions', 
-          label: 'Requisitions', 
-          icon: <ModernIcons.Requisitions />,
-          badge: stats.requisitions?.counts?.pending || null
-        },
-        {
-          id: 'tenders',
-          label: 'Tenders',
-          icon: <ModernIcons.Requisitions />,
-          badge: stats.tenders?.counts?.open || null
-        },
-        { 
-          id: 'rfqs', 
-          label: 'RFQs', 
-          icon: <ModernIcons.RFQs />,
-          badge: stats.rfqs?.counts?.open || null
-        },
-        { 
-          id: 'purchase-orders', 
-          label: 'Purchase Orders', 
-          icon: <ModernIcons.PurchaseOrders />,
-          badge: stats.purchaseOrders?.counts?.pending || null
-        },
-        { 
-          id: 'invoices', 
-          label: 'Invoices', 
-          icon: <ModernIcons.Invoices />,
-          badge: stats.invoices?.counts?.pending || null
-        },
+        { id: 'dashboard', label: 'Dashboard', icon: <ModernIcons.Dashboard />, badge: null },
+        { id: 'departments', label: 'Departments', icon: <ModernIcons.Department/> },
+        { id: 'employees', label: 'Employees', icon: <ModernIcons.Employees />, badge: stats.employees?.counts?.pending || null },
+        { id: 'vendors', label: 'Vendors', icon: <ModernIcons.Vendors />, badge: stats.vendors?.counts?.open || null },
+        { id: 'requisitions', label: 'Requisitions', icon: <ModernIcons.Requisitions />, badge: stats.requisitions?.counts?.pending || null },
+        { id: 'tenders', label: 'Tenders', icon: <ModernIcons.Requisitions />, badge: stats.tenders?.counts?.open || null },
+        { id: 'rfqs', label: 'RFQs', icon: <ModernIcons.RFQs />, badge: stats.rfqs?.counts?.open || null },
+        { id: 'purchase-orders', label: 'Purchase Orders', icon: <ModernIcons.PurchaseOrders />, badge: stats.purchaseOrders?.counts?.pending || null },
+        { id: 'invoices', label: 'Invoices', icon: <ModernIcons.Invoices />, badge: stats.invoices?.counts?.pending || null },
       ]
     },
     {
       id: 'travel',
       label: 'Travel Management',
       items: [
-        { 
-          id: 'travel-requests', 
-          label: 'Travel Requests', 
-          icon: <ModernIcons.TravelRequests />,
-          badge: null
-        },
-        { 
-          id: 'final-approval', 
-          label: 'Final Approval', 
-          icon: <ModernIcons.FinalApproval />,
-          badge: null
-        },
-        { 
-          id: 'fleet-management', 
-          label: 'Fleet Management', 
-          icon: <ModernIcons.FleetManagement />,
-          badge: null
-        },
+        { id: 'travel-requests', label: 'Travel Requests', icon: <ModernIcons.TravelRequests />, badge: null },
+        { id: 'final-approval', label: 'Final Approval', icon: <ModernIcons.FinalApproval />, badge: null },
+        { id: 'fleet-management', label: 'Fleet Management', icon: <ModernIcons.FleetManagement />, badge: null },
       ]
     },
     {
       id: 'finance',
       label: 'Finance Processing',
       items: [
-         { 
-          id: 'invoice-payment', 
-          label: 'Invoice Payment', 
-          icon: <ModernIcons.Processing />,
-          badge: null
-        },{ 
-          id: 'finance-processing', 
-          label: 'Processing', 
-          icon: <ModernIcons.Processing />,
-          badge: null
-        },
-        { 
-          id: 'reconciliation', 
-          label: 'Reconciliation', 
-          icon: <ModernIcons.Reconciliation />,
-          badge: null
-        },
-         { 
-          id: 'budget', 
-          label: 'Budgeting', 
-          icon: <ModernIcons.Invoices />,
-          badge: stats.invoices?.counts?.pending || null
-        },
-        { 
-          id: 'budgeting', 
-          label: 'Budget Code', 
-          icon: <ModernIcons.Invoices />,
-          badge: stats.invoices?.counts?.pending || null
-        },
+        { id: 'invoice-payment', label: 'Invoice Payment', icon: <ModernIcons.Processing />, badge: null },
+        { id: 'finance-processing', label: 'Processing', icon: <ModernIcons.Processing />, badge: null },
+        { id: 'reconciliation', label: 'Reconciliation', icon: <ModernIcons.Reconciliation />, badge: null },
+        { id: 'budget', label: 'Budgeting', icon: <ModernIcons.Invoices />, badge: stats.invoices?.counts?.pending || null },
+        { id: 'budgeting', label: 'Budget Code', icon: <ModernIcons.Invoices />, badge: stats.invoices?.counts?.pending || null },
       ]
     },
     {
       id: 'reports',
       label: 'Reports',
       items: [
-        { 
-          id: 'analytics', 
-          label: 'Analytics', 
-          icon: <ModernIcons.Analytics />,
-          badge: null
-        },
-        { 
-          id: 'reports', 
-          label: 'Reports', 
-          icon: <ModernIcons.Reports />,
-          badge: null
-        },
+        { id: 'analytics', label: 'Analytics', icon: <ModernIcons.Analytics />, badge: null },
+        { id: 'reports', label: 'Reports', icon: <ModernIcons.Reports />, badge: null },
       ]
     },
   ];
 
-
-  // Render menu item with or without tooltip based on drawer state
+  // Render menu item with responsive behavior
   const renderMenuItem = (item) => {
     const isActive = activeSection === item.id;
     const isHovered = hovered === item.id;
@@ -556,14 +496,13 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
       <StyledListItemButton
         key={item.id}
         selected={isActive}
-        onClick={() => handleSectionChange(item.id)}
+        onClick={() => handleMobileNavigation(item.id)}
         onMouseEnter={() => setHovered(item.id)}
         onMouseLeave={() => setHovered('')}
+        ismobile={isMobile ? 1 : 0}
         sx={{
-          justifyContent: open ? 'initial' : 'center',
-          px: 2,
-          py: 1,
-          minHeight: 44,
+          justifyContent: (open || isMobile) ? 'flex-start' : 'center',
+          px: (open || isMobile) ? 2 : 1,
           position: 'relative',
           overflow: 'hidden',
           '&::after': isActive ? {
@@ -579,7 +518,14 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           } : {}
         }}
       >
-        <MenuItemIcon selected={isActive}>
+        <MenuItemIcon 
+          selected={isActive} 
+          ismobile={isMobile ? 1 : 0}
+          sx={{ 
+            marginRight: (open || isMobile) ? 2 : 0,
+            minWidth: (open || isMobile) ? 40 : 'auto',
+          }}
+        >
           {React.cloneElement(item.icon, {
             style: { 
               transform: isHovered && !isActive ? 'scale(1.1)' : 'scale(1)',
@@ -588,7 +534,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           })}
         </MenuItemIcon>
         
-        {open && (
+        {(open || isMobile) && (
           <>
             <ListItemText 
               primary={item.label} 
@@ -604,7 +550,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
                 }
               }} 
               sx={{ 
-                opacity: open ? 1 : 0,
+                opacity: (open || isMobile) ? 1 : 0,
                 ml: 0.5,
               }}
             />
@@ -614,15 +560,14 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
           </>
         )}
         
-        {/* Show badge differently when sidebar is collapsed */}
-        {!open && item.badge && (
+        {!open && !isMobile && item.badge && (
           <PulseBadge />
         )}
       </StyledListItemButton>
     );
 
-    // Add tooltips when sidebar is collapsed
-    return !open ? (
+    // Add tooltips when sidebar is collapsed (desktop only)
+    return !open && !isMobile ? (
       <Tooltip 
         title={item.label} 
         placement="right" 
@@ -657,17 +602,19 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   // Render menu section
   const renderMenuSection = (section, index) => (
     <React.Fragment key={section.id}>
-      {index > 0 && open && (
+      {index > 0 && (open || isMobile) && (
         <Divider 
           sx={{ 
             borderColor: sidebarColors.divider, 
-            margin: '12px 24px 8px', 
+            margin: '12px 16px 8px', 
             opacity: 0.4,
           }} 
         />
       )}
-      <SidebarGroupLabel open={open}>{section.label}</SidebarGroupLabel>
-      <List disablePadding sx={{ mb: 1 }}>
+      {(open || isMobile) && (
+        <SidebarGroupLabel open={open || isMobile}>{section.label}</SidebarGroupLabel>
+      )}
+      <List disablePadding sx={{ mb: (open || isMobile) ? 1 : 0 }}>
         {section.items.map((item) => renderMenuItem(item))}
       </List>
     </React.Fragment>
@@ -675,99 +622,74 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
 
   const drawer = (
     <>
-    
-<DrawerHeader>
-  <LogoContainer open={open}>
-    {open ? (
-      <>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            flexGrow: 1,
-            paddingLeft: '12px', // Match the padding of menu items
-          }}
-        >
-          <img
-            src="/hrms-logo11.png" 
-            alt="Company Logo"
-            style={{
-              height: '22px', 
-              width: '22px',
-              objectFit: 'contain',
-              // Remove marginLeft to align with icons
-              transition: 'transform 0.3s ease, opacity 0.3s ease',
+      <DrawerHeader>
+        <LogoContainer open={open || isMobile}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              flexGrow: 1,
+              paddingLeft: isMobile ? 0 : '12px',
             }}
-          />
-        </Box>
-        
-        <ToggleButton 
-          onClick={toggleDrawer}
-          disabled={isAnimating}
-          aria-label="close drawer"
-          sx={{
-            '& img': {
-              filter: 'brightness(0) invert(1)', 
-            }
-          }}
-        >
-          <img 
-            src="/sidebar1.svg" 
-            alt="Toggle sidebar" 
-            style={{ 
-              width: '20px', 
-              height: '20px', 
-              objectFit: 'contain',
-              transform: 'rotate(0deg)',
-              transition: 'transform 0.3s ease' 
-            }} 
-          />
-        </ToggleButton>
-      </>
-    ) : (
-      <ToggleButton
-        onClick={toggleDrawer}
-        disabled={isAnimating}
-        aria-label="open drawer"
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: '100%',
-          height: 44,
-          borderRadius: '6px',
-          marginBottom: '4px',
-          padding: 0,
-          '& img': {
-            filter: 'brightness(0) invert(1)',
-          },
-          '&:hover': {
-            backgroundColor: sidebarColors.itemHover,
-          },
-        }}
-      >
-        <img
-          src="/sidebar1.svg"
-          alt="Toggle sidebar"
-          style={{
-            width: '20px',
-            height: '20px',
-            objectFit: 'contain',
-            transform: 'rotate(0deg)',
-            transition: 'transform 0.3s ease',
-          }}
-        />
-      </ToggleButton>
-    )}
-  </LogoContainer>
-</DrawerHeader>
+          >
+            <img
+              src="/hrms-logo11.png" 
+              alt="Company Logo"
+              style={{
+                height: isMobile ? '24px' : '20px',
+                width: isMobile ? '24px' : '20px',
+                objectFit: 'contain',
+              }}
+            />
+            {(open || isMobile) && (
+              <Typography
+                variant="h6"
+                sx={{
+                  color: sidebarColors.text,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  marginLeft: 2,
+                  display: { xs: 'block', md: open ? 'block' : 'none' }
+                }}
+              >
+                NEXUSMWI
+              </Typography>
+            )}
+          </Box>
+          
+          <ToggleButton 
+            onClick={toggleDrawer}
+            disabled={isAnimating}
+            aria-label={isMobile ? "close menu" : "toggle sidebar"}
+            sx={{
+              '& img': {
+                filter: 'brightness(0) invert(1)', 
+              }
+            }}
+          >
+            {isMobile ? (
+              <CloseIcon sx={{ fontSize: 20, color: sidebarColors.text }} />
+            ) : (
+              <img 
+                src="/sidebar1.svg" 
+                alt="Toggle sidebar" 
+                style={{ 
+                  width: '16px',
+                  height: '16px',
+                  objectFit: 'contain',
+                }} 
+              />
+            )}
+          </ToggleButton>
+        </LogoContainer>
+      </DrawerHeader>
 
       {/* Scrollable Content */}
       <Box sx={{
         overflowY: 'auto',
         overflowX: 'hidden',
-        height: 'calc(100vh - 64px)',
+        height: 'calc(100vh - 80px)',
         '&::-webkit-scrollbar': { width: 4 },
         '&::-webkit-scrollbar-track': { background: 'transparent' },
         '&::-webkit-scrollbar-thumb': { 
@@ -777,65 +699,61 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
             backgroundColor: alpha(sidebarColors.textSecondary, 0.5),
           }
         },
-        padding: '10px 0 0',
-        mt: 1,
+        padding: '8px 0',
+        WebkitOverflowScrolling: 'touch',
       }}>
-        {/* Menu Sections */}
         {menuSections.map((section, index) => renderMenuSection(section, index))}
-
       </Box>
     </>
   );
 
   return (
     <>
-      {/* Mobile menu button */}
-      {isMobile && (
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          onClick={toggleDrawer}
-          edge="start"
-          disabled={isAnimating}
-          sx={{
-            position: 'fixed',
-            top: 12,
-            left: 16,
-            zIndex: 1300,
-            backgroundColor: alpha(sidebarColors.background, 0.8),
-            backdropFilter: 'blur(8px)',
-            borderRadius: '6px',
-            width: 40,
-            height: 40,
-            '&:hover': {
-              backgroundColor: alpha(sidebarColors.background, 0.95),
-            },
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
-      )}
+      {/* Mobile toggle button - replaced MenuIcon with sidebar1.svg */}
+     {isMobile && !mobileOpen && (
+  <MobileToggleButton
+    color="inherit"
+    aria-label="open drawer"
+    onClick={toggleDrawer}
+    edge="start"
+    disabled={isAnimating}
+  >
+    <img 
+      src="/sidebar1.svg" 
+      alt="Open sidebar" 
+      style={{ 
+        width: '20px',
+        height: '20px',
+        objectFit: 'contain',
+      }} 
+    />
+  </MobileToggleButton>
+)}
 
       {/* Mobile drawer */}
       {isMobile ? (
-        <Drawer
+        <SwipeableDrawer
           variant="temporary"
           open={mobileOpen}
           onClose={toggleDrawer}
+          onOpen={() => setMobileOpen(true)}
+          disableBackdropTransition={!isMobile}
+          disableDiscovery={isMobile}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile
+            keepMounted: true,
           }}
           sx={{
             display: { xs: 'block', md: 'none' },
             '& .MuiDrawer-paper': { 
-              width: 256,
+              width: '280px',
               backgroundColor: sidebarColors.background,
               borderRight: 'none',
+              boxShadow: '2px 0 20px rgba(0, 0, 0, 0.3)',
             },
           }}
         >
           {drawer}
-        </Drawer>
+        </SwipeableDrawer>
       ) : (
         // Desktop drawer
         <SeamlessSidebarDrawer 
@@ -850,7 +768,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
   );
 };
 
-// Default stats to prevent errors when props are not provided
+// Default stats to prevent errors
 const defaultStats = {
   employees: { counts: { pending: 0 } },
   vendors: { counts: { open: 0 } },
@@ -858,6 +776,7 @@ const defaultStats = {
   rfqs: { counts: { open: 0 } },
   purchaseOrders: { counts: { pending: 0 } },
   invoices: { counts: { pending: 0 } },
+  tenders: { counts: { open: 0 } },
 };
 
 HRMSSidebar.propTypes = {
@@ -868,10 +787,12 @@ HRMSSidebar.propTypes = {
     rfqs: PropTypes.object,
     purchaseOrders: PropTypes.object,
     invoices: PropTypes.object,
+    tenders: PropTypes.object,
   }),
   activeSection: PropTypes.string.isRequired,
   handleSectionChange: PropTypes.func.isRequired,
-  onSidebarToggle: PropTypes.func
+  onSidebarToggle: PropTypes.func,
+  user: PropTypes.object,
 };
 
 export default HRMSSidebar;

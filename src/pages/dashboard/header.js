@@ -1,16 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ModernHeaderComponent, GlobalStyles } from "./ModernHeaderComponent";
 import { useNavigate, useSearchParams } from "react-router-dom";
-
+import { useMediaQuery, useTheme } from '@mui/material';
 
 const DashboardHeader = ({ 
   user, 
   onMobileMenuToggle, 
   scrollPosition,
-  sidebarOpen = true, // New prop to track sidebar state
-  sidebarWidth = 256, // New prop for sidebar width
-  collapsedSidebarWidth = 70 // New prop for collapsed sidebar width
+  sidebarOpen = true,
+  sidebarWidth = 256,
+  collapsedSidebarWidth = 70
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   // Define important dates with detailed information
   const PROCUREMENT_DATES = [
     { 
@@ -92,69 +96,149 @@ const DashboardHeader = ({
     return searchParams.get('section') || 'dashboard';
   });
   
-  // Notification counter for demo
+  // Notification counter for demo - make it responsive
   const [notificationCount, setNotificationCount] = useState(3);
   
-  // Event handlers
-  const handleNotificationClick = () => {
+  // Memoized event handlers for better performance
+  const handleNotificationClick = useCallback(() => {
     console.log("Notification clicked");
-    // Here you could open a notification panel or navigate to notifications page
-  };
+    // Mobile-specific notification handling
+    if (isMobile) {
+      // On mobile, you might want to open a full-screen notification panel
+      navigate('/notifications');
+    } else {
+      // On desktop, open a dropdown or sidebar
+      console.log("Open notification panel");
+    }
+  }, [isMobile, navigate]);
   
-  const handleSectionChange = (section) => {
+  const handleSectionChange = useCallback((section) => {
     setActiveSection(section);
     navigate(`?section=${section}`, { replace: true });
-  };
+    
+    // Auto-close mobile menu when navigating on mobile
+    if (isMobile) {
+      onMobileMenuToggle?.(false);
+    }
+  }, [navigate, isMobile, onMobileMenuToggle]);
   
-  const handleHelpClick = () => {
+  const handleHelpClick = useCallback(() => {
     console.log("Help clicked");
-    // Open help center or documentation
-  };
+    // Mobile-optimized help experience
+    if (isMobile) {
+      navigate('/help-center');
+    } else {
+      // Open help modal on desktop
+      console.log("Open help modal");
+    }
+  }, [isMobile, navigate]);
   
-  const handleAssistantClick = () => {
+  const handleAssistantClick = useCallback(() => {
     console.log("AI Assistant clicked");
-    // Open AI assistant chat or modal
-  };
+    // Mobile-optimized AI assistant
+    if (isMobile) {
+      // Open full-screen AI chat on mobile
+      navigate('/ai-assistant');
+    } else {
+      // Open sidebar AI chat on desktop
+      console.log("Open AI assistant sidebar");
+    }
+  }, [isMobile, navigate]);
   
-  const handlePreferencesClick = () => {
+  const handlePreferencesClick = useCallback(() => {
     console.log("Preferences clicked");
-    // Open user preferences or settings modal
-  };
+    // Mobile-responsive preferences
+    if (isMobile) {
+      navigate('/preferences');
+    } else {
+      // Open preferences modal on desktop
+      console.log("Open preferences modal");
+    }
+  }, [isMobile, navigate]);
  
-  const handleProfileClick = () => {
+  const handleProfileClick = useCallback(() => {
     console.log("Profile clicked");
-    handleSectionChange("user-profile"); // This will update the active section
-  };
+    handleSectionChange("user-profile");
+  }, [handleSectionChange]);
   
-  const handleSettingsClick = () => {
+  const handleSettingsClick = useCallback(() => {
     console.log("Settings clicked");
-    // Navigate to settings page
-  };
+    // Mobile-responsive settings navigation
+    if (isMobile) {
+      navigate('/settings');
+    } else {
+      handleSectionChange("settings");
+    }
+  }, [isMobile, navigate, handleSectionChange]);
   
-  const handleSignOutClick = () => {
+  const handleSignOutClick = useCallback(() => {
     console.log("Sign out clicked");
-    // Handle sign out logic
-  };
-  
-  // Fetch important dates from API
+    // Mobile-optimized sign out confirmation
+    if (isMobile) {
+      // Show mobile-friendly confirmation dialog
+      if (window.confirm("Are you sure you want to sign out?")) {
+        // Handle sign out logic
+        console.log("User signed out");
+      }
+    } else {
+      // Handle desktop sign out
+      console.log("User signed out");
+    }
+  }, [isMobile]);
+
+  // Mobile-specific notification count adjustment
+  useEffect(() => {
+    // On mobile, you might want to cap the notification count display
+    if (isSmallMobile && notificationCount > 9) {
+      // Don't show exact count on very small screens
+      setNotificationCount(9);
+    }
+  }, [isSmallMobile, notificationCount]);
+
+  // Fetch important dates from API with mobile optimization
   useEffect(() => {
     const fetchImportantDates = async () => {
       try {
         // In a real app, you'd make an API call here
-        // const response = await fetch(`${backendUrl}/api/procurement-events`);
-        // const data = await response.json();
-        // setImportantDates(data.map(d => ({ ...d, date: new Date(d.date) })));
+        // For mobile, you might want to limit the number of dates fetched
+        const limit = isMobile ? 5 : PROCUREMENT_DATES.length;
+        const datesToShow = PROCUREMENT_DATES.slice(0, limit);
         
-        // For demo, we'll use the static data
-        console.log("Important dates would be fetched from API here");
+        setImportantDates(datesToShow);
+        console.log(`Loaded ${datesToShow.length} important dates for ${isMobile ? 'mobile' : 'desktop'}`);
       } catch (error) {
         console.error("Failed to fetch important dates:", error);
+        // Fallback to static data
+        setImportantDates(PROCUREMENT_DATES.slice(0, isMobile ? 3 : 5));
       }
     };
     
     fetchImportantDates();
+  }, [isMobile]);
+
+  // Handle mobile menu toggle with state synchronization
+  const handleMobileMenuToggle = useCallback((open) => {
+    onMobileMenuToggle?.(open);
+    
+    // Additional mobile-specific logic
+    if (open && isMobile) {
+      // When opening mobile menu, you might want to:
+      // - Disable body scroll
+      document.body.style.overflow = 'hidden';
+    } else {
+      // When closing mobile menu, restore scroll
+      document.body.style.overflow = '';
+    }
+  }, [onMobileMenuToggle, isMobile]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Ensure body scroll is restored when component unmounts
+      document.body.style.overflow = '';
+    };
   }, []);
-  
+
   return (
     <>
       <GlobalStyles />
@@ -165,19 +249,17 @@ const DashboardHeader = ({
         onHelpClick={handleHelpClick}
         onAssistantClick={handleAssistantClick}
         onPreferencesClick={handlePreferencesClick}
-        onProfileClick={() => handleSectionChange("user-profile")}
+        onProfileClick={handleProfileClick}
         onSettingsClick={handleSettingsClick}
         onSignOutClick={handleSignOutClick}
-        onMobileMenuToggle={onMobileMenuToggle}
+        onMobileMenuToggle={handleMobileMenuToggle}
         scrollPosition={scrollPosition}
         importantDates={importantDates}
         sidebarOpen={sidebarOpen}
         sidebarWidth={sidebarWidth}
         collapsedSidebarWidth={collapsedSidebarWidth}
-        
       />
     </>
-    
   );
 };
 

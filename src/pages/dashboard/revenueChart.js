@@ -406,8 +406,7 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
         </div>
       </div>
 
-      {/* Revenue Metrics Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
+      {/* Revenue Metrics Grid - <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {finalMetricsData.map((metric, index) => (
           <MetricCard 
             key={index}
@@ -418,10 +417,10 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
             trend={metric.trend}
           />
         ))}
-      </div>
+      </div>*/}
+     
 
-      {/* Action Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mt-auto">
+      {/* Action Cards -<div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mt-auto">
         <div className="bg-white rounded-xl border border-gray-200 p-4 lg:p-5 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
@@ -451,7 +450,8 @@ const RevenueChart = ({ salesData = [], revenueBreakdown = [] }) => {
             View Analytics
           </button>
         </div>
-      </div>
+      </div> */}
+      
     </div>
   );
 };
