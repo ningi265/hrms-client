@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Users,
   Building,
@@ -33,6 +34,7 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "../../../authcontext/authcontext"
+
 
 // LoadingOverlay Component (matching vendors.js style)
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -135,9 +137,12 @@ const VendorCard = ({
   formatDate,
   getStatusColor,
   getStatusIcon,
+   handleSectionChange
 }) => {
   // Count total documents
   const documentCount = vendor.documents?.length || 0;
+
+const navigate = useNavigate()
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
@@ -199,13 +204,32 @@ const VendorCard = ({
           <span className="text-xs text-gray-500">{documentCount} file{documentCount !== 1 ? 's' : ''}</span>
         </div>
         <div className="flex gap-1">
-          <button
-            onClick={() => onViewDetails(vendor)}
-            className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs font-medium hover:bg-blue-600 transition-colors flex items-center gap-1"
-          >
-            <Eye size={12} />
-            View
-          </button>
+        <button
+  onClick={() => {
+    console.log('👁️ View button clicked, vendor._id:', vendor._id);
+    console.log('👁️ Vendor object:', vendor);
+    
+    if (!vendor._id) {
+      console.error('🚨 vendor._id is undefined!');
+      return;
+    }
+    
+    localStorage.setItem('selectedVendorId', vendor._id);
+    console.log('💾 Saved to localStorage:', vendor._id);
+    
+    if (handleSectionChange) {
+      handleSectionChange('vendor-details');
+    } else {
+      window.dispatchEvent(new CustomEvent('dashboardNavigation', {
+        detail: { section: 'vendor-details' }
+      }));
+    }
+  }}
+  className="px-2 py-1 bg-blue-500 text-white rounded-lg text-xs font-medium hover:bg-blue-600 transition-colors flex items-center gap-1"
+>
+  <Eye size={12} />
+  View
+</button>
           {vendor.registrationStatus === "pending" && (
             <>
               <button
@@ -232,7 +256,7 @@ const VendorCard = ({
   )
 }
 
-export default function VendorApprovalPage() {
+export default function VendorApprovalPage({ handleSectionChange }) {
   const { user } = useAuth()
   const [vendors, setVendors] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -246,6 +270,7 @@ export default function VendorApprovalPage() {
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState("")
   const [notificationType, setNotificationType] = useState("success")
+
 
   const backendUrl =
     process.env.REACT_APP_ENV === "production"
@@ -577,6 +602,7 @@ export default function VendorApprovalPage() {
                   formatDate={formatDate}
                   getStatusColor={getStatusColor}
                   getStatusIcon={getStatusIcon}
+                   handleSectionChange={handleSectionChange} 
                 />
               ))}
             </div>

@@ -174,7 +174,7 @@ const TimelineStep = ({ item, index, isNewUser }) => {
   )
 }
 
-// Document Card Component
+//  Document Card Component
 const DocumentCard = ({ document, onDownload }) => {
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
@@ -187,6 +187,7 @@ const DocumentCard = ({ document, onDownload }) => {
             <h4 className="font-semibold text-sm text-gray-900">{document.name}</h4>
             <p className="text-xs text-gray-500">
               {document.uploadDate} • {document.size}
+              {document.type && ` • ${document.type.replace(/([A-Z])/g, ' $1').toLowerCase()}`}
             </p>
           </div>
         </div>
@@ -214,7 +215,6 @@ const DocumentCard = ({ document, onDownload }) => {
     </div>
   )
 }
-
 export default function VendorManagementDashboard() {
   const navigate = useNavigate()
   const [vendorData, setVendorData] = useState(null)
@@ -386,7 +386,8 @@ export default function VendorManagementDashboard() {
   }, [backendUrl])
   
 
-  const transformApiData = (apiData) => {
+
+const transformApiData = (apiData) => {
   try {
     if (!apiData._id) {
       throw new Error("Missing vendor ID in API response")
@@ -398,8 +399,8 @@ export default function VendorManagementDashboard() {
       return isNaN(date.getTime()) ? null : date
     }
 
-    const submissionDate = parseDate(apiData.createdAt) // Use createdAt instead of submissionDate
-    const approvalDate = parseDate(apiData.updatedAt)   // Use updatedAt for approval date
+    const submissionDate = parseDate(apiData.createdAt)
+    const approvalDate = parseDate(apiData.updatedAt)
 
     const daysInReview = submissionDate ? Math.floor((new Date() - submissionDate) / (1000 * 60 * 60 * 24)) : 0
 
@@ -497,6 +498,98 @@ export default function VendorManagementDashboard() {
       return Number.parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
     }
 
+    // Enhanced document processing
+    const processDocuments = (documents) => {
+      if (!documents || typeof documents !== 'object') {
+        console.log('No documents found or invalid documents structure:', documents)
+        return []
+      }
+      
+      const allDocuments = []
+      
+      // Log the documents structure for debugging
+      console.log('Documents structure:', documents)
+      
+      try {
+        Object.entries(documents).forEach(([documentType, documentData]) => {
+          if (!documentData) {
+            console.log(`No data for document type: ${documentType}`)
+            return
+          }
+          
+          // Handle array of documents
+          if (Array.isArray(documentData)) {
+            documentData.forEach((doc, index) => {
+              if (doc && (doc.fileName || doc.originalName || doc.filename)) {
+                const fileName = doc.fileName || doc.originalName || doc.filename || `${documentType}_${index + 1}`
+                const uploadDate = parseDate(doc.uploadedAt || doc.uploadDate || doc.createdAt)?.toLocaleDateString() || "N/A"
+                const fileSize = doc.size ? formatFileSize(doc.size) : "N/A"
+                const filePath = doc.filePath || doc.path || doc.url || ""
+                
+                allDocuments.push({
+                  name: fileName,
+                  type: documentType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+                  uploadDate: uploadDate,
+                  status: getDocumentStatus(apiData.registrationStatus, doc.status),
+                  size: fileSize,
+                  filePath: filePath,
+                })
+              }
+            })
+          } 
+          // Handle single document object
+          else if (typeof documentData === 'object' && (documentData.fileName || documentData.originalName || documentData.filename)) {
+            const fileName = documentData.fileName || documentData.originalName || documentData.filename || documentType
+            const uploadDate = parseDate(documentData.uploadedAt || documentData.uploadDate || documentData.createdAt)?.toLocaleDateString() || "N/A"
+            const fileSize = documentData.size ? formatFileSize(documentData.size) : "N/A"
+            const filePath = documentData.filePath || documentData.path || documentData.url || ""
+            
+            allDocuments.push({
+              name: fileName,
+              type: documentType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+              uploadDate: uploadDate,
+              status: getDocumentStatus(apiData.registrationStatus, documentData.status),
+              size: fileSize,
+              filePath: filePath,
+            })
+          }
+          // Handle case where documentData is just a file path or string
+          else if (typeof documentData === 'string') {
+            allDocuments.push({
+              name: documentType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
+              type: documentType,
+              uploadDate: "N/A",
+              status: getDocumentStatus(apiData.registrationStatus),
+              size: "N/A",
+              filePath: documentData,
+            })
+          }
+        })
+        
+        console.log(`Processed ${allDocuments.length} documents:`, allDocuments)
+      } catch (error) {
+        console.error('Error processing documents:', error)
+      }
+      
+      return allDocuments
+    }
+
+    // Helper function to determine document status
+    const getDocumentStatus = (registrationStatus, docStatus) => {
+      if (docStatus) {
+        return docStatus.toLowerCase()
+      }
+      
+      switch (registrationStatus) {
+        case "approved":
+          return "verified"
+        case "rejected":
+          return "rejected"
+        default:
+          return "pending"
+      }
+    }
+
     return {
       id: apiData._id,
       registrationStatus: apiData.registrationStatus || "pending",
@@ -529,43 +622,12 @@ export default function VendorManagementDashboard() {
             email: "N/A",
           },
 
-   documents:
-  apiData.documents
-    ? Object.entries(apiData.documents)
-        .flatMap(([key, value]) => {
-          if (!value) return [];
-          if (Array.isArray(value)) {
-            return value.map((v) => ({
-              name: v.fileName || key,
-              uploadDate: parseDate(v.uploadedAt)?.toLocaleDateString() || "N/A",
-              status:
-                apiData.registrationStatus === "approved"
-                  ? "verified"
-                  : "pending",
-              size: v.size ? formatFileSize(v.size) : "N/A",
-              filePath: v.filePath || "",
-            }));
-          }
-          // Single file case
-          return {
-            name: value.fileName || key,
-            uploadDate: parseDate(value.uploadedAt)?.toLocaleDateString() || "N/A",
-            status:
-              apiData.registrationStatus === "approved"
-                ? "verified"
-                : "pending",
-            size: value.size ? formatFileSize(value.size) : "N/A",
-            filePath: value.filePath || "",
-          };
-        })
-    : [],
-
-
+      documents: processDocuments(apiData.documents),
 
       timeline: generateTimeline(
         apiData.registrationStatus || "pending",
-        apiData.createdAt, // Use createdAt instead of submissionDate
-        apiData.updatedAt  // Use updatedAt for approval date
+        apiData.createdAt,
+        apiData.updatedAt
       ),
 
       metrics: {
@@ -581,7 +643,6 @@ export default function VendorManagementDashboard() {
     throw new Error("Failed to process vendor data: " + err.message)
   }
 }
-
 
 
   const getStatusColor = (status) => {
@@ -650,40 +711,62 @@ export default function VendorManagementDashboard() {
   }
 
   const handleDownloadDocument = async (docName, filePath) => {
-    try {
-      showNotificationMessage(`Downloading ${docName}...`, "info")
-
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${backendUrl}/api/vendors/download-document`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({ filePath }),
-      })
-
-      if (!response.ok) {
-        throw new Error("Download failed")
-      }
-
-      const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.style.display = "none"
-      a.href = url
-      a.download = docName
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-
-      showNotificationMessage(`${docName} downloaded successfully!`, "success")
-    } catch (error) {
-      console.error("Download error:", error)
-      showNotificationMessage(`Failed to download ${docName}`, "error")
+  try {
+    if (!filePath) {
+      showNotificationMessage(`No file path available for ${docName}`, "error")
+      return
     }
+
+    showNotificationMessage(`Downloading ${docName}...`, "info")
+
+    const token = localStorage.getItem("token")
+    
+    // Create a more flexible download approach
+    let downloadUrl = filePath
+    
+    // If it's a relative path, construct the full URL
+    if (!filePath.startsWith('http') && !filePath.startsWith('/api/')) {
+      downloadUrl = `${backendUrl}/api/vendors/download-document`
+    }
+    
+    const response = await fetch(downloadUrl, {
+      method: filePath.startsWith('http') ? 'GET' : 'POST',
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      ...(!filePath.startsWith('http') && {
+        body: JSON.stringify({ filePath })
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`Download failed with status: ${response.status}`)
+    }
+
+    const blob = await response.blob()
+    
+    // Check if blob is valid
+    if (blob.size === 0) {
+      throw new Error("Downloaded file is empty")
+    }
+    
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.style.display = "none"
+    a.href = url
+    a.download = docName
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+
+    showNotificationMessage(`${docName} downloaded successfully!`, "success")
+  } catch (error) {
+    console.error("Download error:", error)
+    showNotificationMessage(`Failed to download ${docName}: ${error.message}`, "error")
   }
+}
 
   const handleEditRegistration = () => {
     navigate("/vendor-registration/edit")
@@ -883,26 +966,32 @@ export default function VendorManagementDashboard() {
                 </motion.div>
               )}
 
-              {activeTab === "documents" && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Uploaded Documents</h3>
+            {activeTab === "documents" && (
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+    <div className="flex items-center justify-between">
+      <h3 className="text-lg font-semibold text-gray-900">Uploaded Documents</h3>
+      <div className="text-sm text-gray-500">
+        {vendorData.documents?.length || 0} document(s)
+      </div>
+    </div>
 
-             {vendorData.documents && vendorData.documents.length > 0 ? (
-  <div className="space-y-3">
-    {vendorData.documents.map((doc, index) => (
-      <DocumentCard key={index} document={doc} onDownload={handleDownloadDocument} />
-    ))}
-  </div>
-) : (
-  <div className="text-center py-8">
-    <FileText size={48} className="text-gray-300 mx-auto mb-4" />
-    <p className="text-gray-500">No documents uploaded yet</p>
-  </div>
+    {vendorData.documents && vendorData.documents.length > 0 ? (
+      <div className="space-y-3">
+        {vendorData.documents.map((doc, index) => (
+          <DocumentCard key={index} document={doc} onDownload={handleDownloadDocument} />
+        ))}
+      </div>
+    ) : (
+      <div className="text-center py-12 bg-gray-50 rounded-2xl border border-gray-200">
+        <FileText size={48} className="text-gray-300 mx-auto mb-4" />
+        <h4 className="text-lg font-medium text-gray-500 mb-2">No Documents Uploaded</h4>
+        <p className="text-gray-400 max-w-md mx-auto">
+          No documents have been uploaded yet. Documents will appear here once you upload them during the registration process.
+        </p>
+      </div>
+    )}
+  </motion.div>
 )}
-
-
-                </motion.div>
-              )}
 
               {activeTab === "contact" && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">

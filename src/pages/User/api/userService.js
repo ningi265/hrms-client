@@ -28,7 +28,7 @@ export const userAPI = {
 
      // Payment Methods API
     getPaymentMethods: async () => {
-        const response = await fetch(`${backendUrl}/auth/payment-methods`, {
+        const response = await fetch(`${backendUrl}/api/auth/payment-methods`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
@@ -41,7 +41,7 @@ export const userAPI = {
     },
 
     addPaymentMethod: async (paymentData) => {
-        const response = await fetch(`${backendUrl}/auth/payment-methods`, {
+        const response = await fetch(`${backendUrl}/api/auth/payment-methods`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify(paymentData)
@@ -56,7 +56,7 @@ export const userAPI = {
     },
 
     updatePaymentMethod: async (paymentMethodId, updateData) => {
-        const response = await fetch(`${backendUrl}/auth/payment-methods/${paymentMethodId}`, {
+        const response = await fetch(`${backendUrl}/api/auth/payment-methods/${paymentMethodId}`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify(updateData)
@@ -71,7 +71,7 @@ export const userAPI = {
     },
 
     deletePaymentMethod: async (paymentMethodId) => {
-        const response = await fetch(`${backendUrl}/auth/payment-methods/${paymentMethodId}`, {
+        const response = await fetch(`${backendUrl}/api/auth/payment-methods/${paymentMethodId}`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
@@ -85,7 +85,7 @@ export const userAPI = {
     },
 
     setDefaultPaymentMethod: async (paymentMethodId) => {
-        const response = await fetch(`${backendUrl}/auth/payment-methods/${paymentMethodId}/default`, {
+        const response = await fetch(`${backendUrl}/api/auth/payment-methods/${paymentMethodId}/default`, {
             method: 'PUT',
             headers: getAuthHeaders()
         });
@@ -100,7 +100,7 @@ export const userAPI = {
 
     // Get user profile
     getProfile: async () => {
-        const response = await fetch(`${backendUrl}/auth/profile`, {
+        const response = await fetch(`${backendUrl}/api/auth/profile`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
@@ -114,7 +114,7 @@ export const userAPI = {
 
     // Update user profile
     updateProfile: async (profileData) => {
-        const response = await fetch(`${backendUrl}/auth/profile`, {
+        const response = await fetch(`${backendUrl}/api/auth/profile`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify(profileData)
@@ -129,7 +129,7 @@ export const userAPI = {
 
     // Update security settings
     updateSecuritySettings: async (securityData) => {
-        const response = await fetch(`${backendUrl}/auth/security`, {
+        const response = await fetch(`${backendUrl}/api/auth/security`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify(securityData)
@@ -144,7 +144,7 @@ export const userAPI = {
 
     // Change password
     changePassword: async (passwordData) => {
-        const response = await fetch(`${backendUrl}/auth/change-password`, {
+        const response = await fetch(`${backendUrl}/api/auth/change-password`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify(passwordData)
@@ -160,7 +160,7 @@ export const userAPI = {
 
     // Update email
     updateEmail: async (emailData) => {
-        const response = await fetch(`${backendUrl}/auth/update-email`, {
+        const response = await fetch(`${backendUrl}/api/auth/update-email`, {
             method: 'PUT',
             headers: getAuthHeaders(),
             body: JSON.stringify(emailData)
@@ -176,7 +176,7 @@ export const userAPI = {
 
     // Get user statistics
     getUserStats: async () => {
-        const response = await fetch(`${backendUrl}/auth/stats`, {
+        const response = await fetch(`${backendUrl}/api/auth/stats`, {
             method: 'GET',
             headers: getAuthHeaders()
         });
@@ -193,7 +193,7 @@ export const userAPI = {
         const formData = new FormData();
         formData.append('avatar', file);
         
-        const response = await fetch(`${backendUrl}/auth/upload-avatar`, {
+        const response = await fetch(`${backendUrl}/api/auth/upload-avatar`, {
             method: 'POST',
             headers: getFormDataHeaders(),
             body: formData
@@ -213,7 +213,7 @@ export const userAPI = {
         formData.append('logo', file);
         formData.append('email', email);
         
-        const response = await fetch(`${backendUrl}/auth/upload-logo`, {
+        const response = await fetch(`${backendUrl}/api/auth/upload-logo`, {
             method: 'POST',
             body: formData
         });
@@ -232,7 +232,7 @@ export const userAPI = {
         formData.append('signature', file);
         formData.append('email', email);
         
-        const response = await fetch(`${backendUrl}/auth/upload-signature`, {
+        const response = await fetch(`${backendUrl}/api/auth/upload-signature`, {
             method: 'POST',
             body: formData
         });
@@ -247,7 +247,7 @@ export const userAPI = {
 
     // Delete account
     deleteAccount: async (password) => {
-        const response = await fetch(`${backendUrl}/auth/account`, {
+        const response = await fetch(`${backendUrl}/api/auth/account`, {
             method: 'DELETE',
             headers: getAuthHeaders(),
             body: JSON.stringify({ 

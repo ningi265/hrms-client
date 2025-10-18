@@ -22,6 +22,7 @@ import {
   styled,
   alpha,
   ThemeProvider,
+<<<<<<< HEAD
   useMediaQuery,
 } from "@mui/material"
 import { DotLottieReact } from "@lottiefiles/dotlottie-react"
@@ -74,6 +75,61 @@ import AnalyticsPage from "./analytics"
 import ReportsPage from "./reports"
 import CreateTendersPage from "./tenders/tenders"
 import MobileLayoutWrapper from "./MobileLayoutWrapper"
+=======
+} from "@mui/material";
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import './dashboard.css';
+import RevenueChart from './revenueChart';
+import DateComponent from './date';
+import ProcurementStatusCard from './procurementStatus';
+import ProductReviewsAnalysis from './productProcurement';
+import StatsCardsGrid from './statsCard';
+import FinancialDashboard from './financial';
+import HRMSSidebar from './sidebar';
+import DashboardHeader from './header';
+import UserProfilePage from "../../pages/User/user";
+import { motion, AnimatePresence } from 'framer-motion';
+import RequisitionsSection from "../dashboard/requisitions/manage/manage";
+import ReconciliationSection from "../dashboard/requisitions/manage/finance-recon-review";
+import PurchaseOrdersSection  from '../../pages/dashboard/purchase-orders/purchase-order';
+import NewRequisitionSection  from '../../pages/dashboard/requisitions/requisitions';
+import RFQsSection  from '../../pages/dashboard/rfqs/view/view_rfqs';
+import ManageRequisitionsSection  from '../../pages/dashboard/requisitions/manage/manage';
+import RFQDetailsSection  from '../../pages/dashboard/rfqs/view/view_rfqs';
+import CreateRFQSection  from '../../pages/dashboard/rfqs/create/create';
+import AddVendorSection  from '../../pages/dashboard/vendors/add/add';
+import VendorRFQsSection  from '../../pages/dashboard/vendors/qoutes/qoutes';
+import SubmitQuoteSection  from '../../pages/dashboard/vendors/qoutes/submit/submit';
+import SelectVendorSection  from '../../pages/dashboard/vendors/select/select';
+import VendorPODetailsSection from '../../pages/vendor-dash/purchase-orders/accept/accept';
+import TrackDeliveriesSection from '../../pages/dashboard/purchase-orders/confirm/confirm';
+import InvoicesSection from '../../pages/dashboard/invoice/invoice';
+import InvoiceManagementSection from '../../pages/dashboard/invoice/manage/manage';
+import PaymentPage from '../../pages/dashboard/invoice/pay/pay'; 
+import SupervisorApprovalSection from '../../pages/dashboard/requisitions/travel';
+import FinalApproverSection from '../../pages/dashboard/requisitions/final';
+import FinanceProcessingSection from '../../pages/dashboard/requisitions/manage/finance-travel';
+import TravelSection from '../../pages/dashboard/requisitions/manage/travel-dash';
+import InternationalTravelRequestSection from '../../pages/dashboard/requisitions/manage/international';
+import FinanceReconciliationReviewSection from '../../pages/dashboard/requisitions/manage/finance-recon-review';
+import FleetCoordinatorSection from '../../pages/dashboard/requisitions/manage/fleet';
+import VendorsPage from '../../pages/dashboard/vendors/vendors';
+import { useAuth } from "../../authcontext/authcontext"; 
+import EmployeesPage from "./employee/employee";
+import DepartmentsPage from "./departments/departments";
+import VendorApprovalPage from "./vendors/registration";
+import EmployeeDetailPage from "./employee/view-details";
+import EmployeePerformancePage from "./employee/performance";
+import EditEmployeePage from "./employee/edit";
+import BudgetOverviewDashboard from "./finance/budget";
+import ApprovalWorkflow from "./finance/budgeting";
+import BudgetAllocationPage from "./finance/allocate";
+import InvoicePaymentPage from "./finance/invoice";
+import AnalyticsPage from "./analytics";
+import ReportsPage from "./reports"; 
+import CreateTendersPage from "./tenders/tenders";
+import VendorDetailsPage from '../dashboard/vendors/vendor-details';
+>>>>>>> 458b7599beea575faed00b63e1e9e9eec169496c
 
 // Sample data for RevenueChart
 const salesData = [

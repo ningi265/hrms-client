@@ -83,6 +83,7 @@ import UsageDashboard from './pages/usage';
 import Tenders from './pages/vendor-dash/tenders/tenders';
 import CreateTendersPage from './pages/dashboard/tenders/tenders'; 
 import VendorBidPortal from './pages/vendor-dash/tenders/bid'; 
+import VendorDetailsPage from "./pages/dashboard/vendors/vendor-details";
 
 
 function App() {
@@ -117,10 +118,13 @@ function App() {
             
             {/* Protected Routes with Subscription Check */}
             <Route element={<SubscriptionRequired />}>
+             <Route path="/vendors/:id" element={<VendorDetailsPage />} />
+  
               <Route path="/dash/new" element={<ProcurementDashboardWithSidebar/>}/>
               <Route path="/dashboard" element={<DashboardPage/>} />
               <Route path="/usage" element={<UsageDashboard/>} />
               <Route path="/tenders" element={<CreateTendersPage/>} />
+            
        
               <Route path="/purchase" element={<PurchaseOrdersPage/>} />
               <Route path="/rfqs/create" element={<CreateRFQPage/>}/>
