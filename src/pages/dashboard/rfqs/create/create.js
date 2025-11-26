@@ -319,76 +319,115 @@ const fetchData = async () => {
       {/* Step Content */}
       <div className="flex-1 px-8 py-6 overflow-hidden">
         {/* Step 1: Select Requisition */}
-        {currentStep === 0 && (
-          <div className="h-full flex flex-col">
-            <div className="mb-4">
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Select Requisition</h4>
-              <p className="text-gray-600 text-sm">Choose an approved requisition to create an RFQ</p>
-            </div>
+         {currentStep === 0 && (
+  <div className="h-full flex flex-col">
+    <div className="mb-4">
+      <h4 className="text-lg font-semibold text-gray-900 mb-2">Select Requisition</h4>
+      <p className="text-gray-600 text-sm">Choose an approved requisition to create an RFQ</p>
+    </div>
 
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search requisitions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+    {/* Search */}
+    <div className="relative mb-4">
+      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search requisitions..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
 
-            {/* Requisitions List */}
-            <div className="flex-1 space-y-3 overflow-y-auto">
-              {filteredRequisitions.map((req) => (
-                <div
-                  key={req._id}
-                  onClick={() => handleRequisitionSelect(req)}
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                    selectedRequisition?._id === req._id
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h5 className="font-semibold text-gray-900">{req.itemName}</h5>
-                    {selectedRequisition?._id === req._id && (
-                      <CheckCircle size={20} className="text-blue-600" />
-                    )}
+    {/* Requisitions Grid - Card Layout */}
+    <div className="flex-1 overflow-y-auto">
+      {filteredRequisitions.length === 0 ? (
+        <div className="text-center py-8">
+          <FileText size={48} className="text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">
+            {searchTerm ? "No requisitions match your search" : "No approved requisitions available"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredRequisitions.map((req) => (
+            <div
+              key={req._id}
+              onClick={() => handleRequisitionSelect(req)}
+              className={`bg-white rounded-xl border-2 cursor-pointer transition-all hover:shadow-sm ${
+                selectedRequisition?._id === req._id
+                  ? 'border-blue-500 bg-blue-50 shadow-sm'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="p-3">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-semibold text-gray-900 text-sm truncate">{req.itemName}</h5>
+                    <p className="text-xs text-gray-500 truncate">{req.department}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Quantity:</span>
-                      <span className="ml-2 font-medium">{req.quantity}</span>
+                  {selectedRequisition?._id === req._id && (
+                    <CheckCircle size={16} className="text-blue-600 flex-shrink-0 ml-2" />
+                  )}
+                </div>
+
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="text-center p-2 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-bold text-gray-900">{req.quantity}</div>
+                    <div className="text-xs text-gray-500">Quantity</div>
+                  </div>
+                  <div className="text-center p-2 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-bold text-green-600">
+                      ${req.estimatedCost || 'N/A'}
                     </div>
-                    <div>
-                      <span className="text-gray-500">Department:</span>
-                      <span className="ml-2 font-medium">{req.department}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Budget:</span>
-                      <span className="ml-2 font-medium text-green-600">${req.estimatedCost || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Urgency:</span>
-                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        req.urgency === 'high' ? 'bg-red-100 text-red-800' :
-                        req.urgency === 'medium' ? 'bg-amber-100 text-amber-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {req.urgency || 'Medium'}
-                      </span>
-                    </div>
+                    <div className="text-xs text-gray-500">Budget</div>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            {validationErrors.requisition && (
-              <p className="text-sm text-red-600 mt-2">{validationErrors.requisition}</p>
-            )}
-          </div>
-        )}
+                {/* Details */}
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Urgency:</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      req.urgency === 'high' ? 'bg-red-100 text-red-800' :
+                      req.urgency === 'medium' ? 'bg-amber-100 text-amber-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {req.urgency || 'Medium'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Category:</span>
+                    <span className="font-medium text-gray-900">{req.category || 'General'}</span>
+                  </div>
+                  {req.budgetCode && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Budget Code:</span>
+                      <span className="font-medium text-gray-900">{req.budgetCode}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Reason Preview */}
+                {req.reason && (
+                  <div className="mt-2 pt-2 border-t border-gray-100">
+                    <div className="text-xs text-gray-600 mb-1">Reason:</div>
+                    <p className="text-xs text-gray-800 line-clamp-2">{req.reason}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {validationErrors.requisition && (
+      <p className="text-sm text-red-600 mt-3 text-center">{validationErrors.requisition}</p>
+    )}
+  </div>
+)}
 
         {/* Step 2: RFQ Details */}
         {currentStep === 1 && (
@@ -539,85 +578,177 @@ const fetchData = async () => {
 
         {/* Step 3: Select Vendors */}
         {currentStep === 2 && (
-          <div className="h-full flex flex-col">
-            <div className="mb-4">
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Select Vendors</h4>
-              <div className="flex items-center justify-between">
-                <p className="text-gray-600 text-sm">Choose vendors to invite for quotes</p>
-                <span className="text-sm text-blue-600 font-medium">
-                  {formData.vendors.length} selected
-                </span>
-              </div>
-            </div>
+  <div className="h-full flex flex-col">
+    <div className="mb-4">
+      <h4 className="text-lg font-semibold text-gray-900 mb-2">Select Vendors</h4>
+      <div className="flex items-center justify-between">
+        <p className="text-gray-600 text-sm">Choose vendors to invite for quotes</p>
+        <span className="text-sm text-blue-600 font-medium">
+          {formData.vendors.length} selected
+        </span>
+      </div>
+    </div>
 
-            {/* Search */}
-            <div className="relative mb-4">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search vendors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+    {/* Search */}
+    <div className="relative mb-4">
+      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search vendors..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+    </div>
 
-            {/* Vendors List */}
-            <div className="flex-1 space-y-3 overflow-y-auto">
-              {filteredVendors.map((vendor) => (
-                <div
-                  key={vendor._id}
-                  onClick={() => handleVendorToggle(vendor._id)}
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
-                    formData.vendors.includes(vendor._id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div>
-                      <h5 className="font-semibold text-gray-900">
+    {/* Vendors Grid - Card Layout */}
+    <div className="flex-1 overflow-y-auto">
+      {filteredVendors.length === 0 ? (
+        <div className="text-center py-8">
+          <Users size={48} className="text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 text-sm">
+            {searchTerm ? "No vendors match your search" : "No vendors available"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredVendors.map((vendor) => {
+            // Safely extract values that might be objects
+            const vendorLocation = typeof vendor.location === 'object' 
+              ? vendor.location?.city || vendor.location?.address || 'N/A'
+              : vendor.location || 'N/A';
+            
+            const vendorIndustry = typeof vendor.industry === 'string' 
+              ? vendor.industry 
+              : 'General';
+            
+            const vendorPhone = typeof vendor.phoneNumber === 'string' 
+              ? vendor.phoneNumber 
+              : 'N/A';
+            
+            const vendorCompany = typeof vendor.companyName === 'string' 
+              ? vendor.companyName 
+              : 'N/A';
+            
+            // Safely handle specializations array
+            const specializations = Array.isArray(vendor.specializations) 
+              ? vendor.specializations 
+              : [];
+
+            return (
+              <div
+                key={vendor._id}
+                onClick={() => handleVendorToggle(vendor._id)}
+                className={`bg-white rounded-xl border-2 cursor-pointer transition-all hover:shadow-sm ${
+                  formData.vendors.includes(vendor._id)
+                    ? 'border-blue-500 bg-blue-50 shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="p-3">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-semibold text-gray-900 text-sm truncate">
                         {vendor.firstName} {vendor.lastName}
                       </h5>
-                      <p className="text-sm text-gray-600">{vendor.email}</p>
+                      <p className="text-xs text-gray-500 truncate">{vendor.email}</p>
                     </div>
                     {formData.vendors.includes(vendor._id) && (
-                      <CheckCircle size={20} className="text-blue-600" />
+                      <CheckCircle size={16} className="text-blue-600 flex-shrink-0 ml-2" />
                     )}
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+
+                  {/* Company & Industry */}
+                  <div className="flex items-center justify-between mb-2 text-xs">
                     <div>
-                      <span className="text-gray-500">Industry:</span>
-                      <span className="ml-2 font-medium">{vendor.industry || 'General'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Phone:</span>
-                      <span className="ml-2 font-medium">{vendor.phoneNumber}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Company:</span>
-                      <span className="ml-2 font-medium">{vendor.companyName || 'N/A'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Status:</span>
-                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
-                        vendor.isVerified 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {vendor.isVerified ? 'Verified' : 'Pending'}
+                      <span className="text-gray-600">Company:</span>
+                      <span className="ml-1 font-medium text-gray-900">
+                        {vendorCompany}
                       </span>
                     </div>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      vendor.isVerified 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {vendor.isVerified ? 'Verified' : 'Pending'}
+                    </span>
                   </div>
-                </div>
-              ))}
-            </div>
 
-            {validationErrors.vendors && (
-              <p className="text-sm text-red-600 mt-2">{validationErrors.vendors}</p>
-            )}
-          </div>
-        )}
+                  {/* Key Info */}
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="text-center p-2 bg-gray-50 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 truncate">
+                        {vendorIndustry}
+                      </div>
+                      <div className="text-xs text-gray-500">Industry</div>
+                    </div>
+                    <div className="text-center p-2 bg-gray-50 rounded-lg">
+                      <div className="text-xs font-medium text-gray-900 truncate">
+                        {vendorPhone}
+                      </div>
+                      <div className="text-xs text-gray-500">Phone</div>
+                    </div>
+                  </div>
+
+                  {/* Additional Details */}
+                  <div className="space-y-1 text-xs">
+                    {vendor.businessType && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Business Type:</span>
+                        <span className="font-medium text-gray-900">
+                          {typeof vendor.businessType === 'string' ? vendor.businessType : 'N/A'}
+                        </span>
+                      </div>
+                    )}
+                    {vendor.yearsInBusiness && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Experience:</span>
+                        <span className="font-medium text-gray-900">
+                          {typeof vendor.yearsInBusiness === 'number' ? `${vendor.yearsInBusiness} years` : 'N/A'}
+                        </span>
+                      </div>
+                    )}
+                    {vendorLocation && vendorLocation !== 'N/A' && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Location:</span>
+                        <span className="font-medium text-gray-900 truncate">{vendorLocation}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Specializations */}
+                  {specializations.length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      <div className="text-xs text-gray-600 mb-1">Specializations:</div>
+                      <div className="flex flex-wrap gap-1">
+                        {specializations.slice(0, 2).map((spec, idx) => (
+                          <span key={idx} className="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
+                            {typeof spec === 'string' ? spec : 'Specialization'}
+                          </span>
+                        ))}
+                        {specializations.length > 2 && (
+                          <span className="px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
+                            +{specializations.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+
+    {validationErrors.vendors && (
+      <p className="text-sm text-red-600 mt-3 text-center">{validationErrors.vendors}</p>
+    )}
+  </div>
+)}
 
         {/* Step 4: Review & Submit */}
         {currentStep === 3 && (

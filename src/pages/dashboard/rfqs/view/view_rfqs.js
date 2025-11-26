@@ -870,7 +870,6 @@ const [rateLimitActive, setRateLimitActive] = useState(false);
       className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
     >
       <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-      Refresh
     </button>
     
     {/* Create RFQ Button in Header with Tooltip */}

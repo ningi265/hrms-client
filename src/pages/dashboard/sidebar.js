@@ -161,6 +161,14 @@ const ModernIcons = {
       <path d="M16.24 7.76 19.07 4.93" />
     </svg>
   ),
+  Tenders: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="m9 15 2 2 4-4" />
+      <path d="M16 13h0" />
+    </svg>
+  ),
   Settings: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
@@ -451,7 +459,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
         { id: 'employees', label: 'Employees', icon: <ModernIcons.Employees />, badge: stats.employees?.counts?.pending || null },
         { id: 'vendors', label: 'Vendors', icon: <ModernIcons.Vendors />, badge: stats.vendors?.counts?.open || null },
         { id: 'requisitions', label: 'Requisitions', icon: <ModernIcons.Requisitions />, badge: stats.requisitions?.counts?.pending || null },
-        { id: 'tenders', label: 'Tenders', icon: <ModernIcons.Requisitions />, badge: stats.tenders?.counts?.open || null },
+        { id: 'tenders', label: 'Tenders', icon: <ModernIcons.Tenders />, badge: stats.tenders?.counts?.open || null },
         { id: 'rfqs', label: 'RFQs', icon: <ModernIcons.RFQs />, badge: stats.rfqs?.counts?.open || null },
         { id: 'purchase-orders', label: 'Purchase Orders', icon: <ModernIcons.PurchaseOrders />, badge: stats.purchaseOrders?.counts?.pending || null },
         { id: 'invoices', label: 'Invoices', icon: <ModernIcons.Invoices />, badge: stats.invoices?.counts?.pending || null },

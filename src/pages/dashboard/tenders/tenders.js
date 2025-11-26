@@ -889,7 +889,7 @@ useEffect(() => {
         fetch(`${backendUrl}/api/tenders/company`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch(`${backendUrl}/api/requisitions`, {
+        fetch(`${backendUrl}/api/requisitions/all/approved`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ])
@@ -1103,9 +1103,6 @@ const handleViewTender = async (tender) => {
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Tender Management</h1>
-          </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -1128,13 +1125,7 @@ const handleViewTender = async (tender) => {
               <option value="closed">Closed</option>
               <option value="awarded">Awarded</option>
             </select>
-            <button
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-            </button>
+          
             <button
               onClick={openCreateTenderModal}
               disabled={isLoading}
@@ -1142,6 +1133,13 @@ const handleViewTender = async (tender) => {
             >
               <Plus size={16} />
               Create Tender
+            </button>
+              <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
             </button>
           </div>
         </div>

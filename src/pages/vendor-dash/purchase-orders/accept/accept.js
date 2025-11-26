@@ -20,6 +20,7 @@ import {
   Hash,
   PackageCheck,
   Zap,
+  Loader
 } from "lucide-react"
 
 // Utility function to generate a tracking number (2 letters + 4 digits)
@@ -462,30 +463,26 @@ const handleUpdateDeliveryStatus = async (status) => {
     fetchData()
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full"></div>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Loading Purchase Orders</h2>
-          <p className="text-gray-600">Please wait while we fetch your orders...</p>
-        </div>
+  const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
       </div>
-    )
-  }
+    </div>
+  )
+}
 
   return (
     <div className="min-h-screen bg-gray-50">
+       <LoadingOverlay isVisible={isLoading} message="Loading Purchase Orders..." />
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Compact Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <div className="p-2 bg-orange-500 rounded-2xl text-white">
-                <Package size={20} />
-              </div>
               Purchase Orders
             </h1>
             <p className="text-gray-500 text-sm mt-1">Manage your assigned purchase orders and delivery tracking</p>

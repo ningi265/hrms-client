@@ -487,7 +487,6 @@ const SupervisorDashboard = () => {
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
-              Refresh
             </button>
             <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors">
               <Plus size={16} />

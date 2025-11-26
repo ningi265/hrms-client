@@ -546,11 +546,6 @@ const FinalApproverDashboard = () => {
                   <option value="rental">Rental Vehicle</option>
                   <option value="public_transport">Public Transport</option>
                 </select>
-
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl hover:bg-gray-200 transition-colors font-medium text-sm">
-                  <Filter size={16} />
-                  More Filters
-                </button>
               </div>
             </div>
 
@@ -564,7 +559,7 @@ const FinalApproverDashboard = () => {
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
-              Refresh
+             
             </button>
               <button className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50 border border-gray-200 text-sm">
                 <Download size={16} />

@@ -31,7 +31,8 @@ import {
   CheckSquare,
   FileCheck,
   Banknote,
-  Calculator
+  Calculator,
+  Loader
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
@@ -52,6 +53,8 @@ export default function VendorInvoiceSubmissionPage() {
     const backendUrl = process.env.REACT_APP_ENV === 'production'
   ? process.env.REACT_APP_BACKEND_URL_PROD
   : process.env.REACT_APP_BACKEND_URL_DEV;
+
+  
 
   // Fetch vendor details
   useEffect(() => {
@@ -89,7 +92,7 @@ export default function VendorInvoiceSubmissionPage() {
         const data = await response.json();
 
         // Filter POs assigned to the vendor
-        const vendorPOs = data.filter((po) => po.vendor?._id === vendorId);
+       const vendorPOs = (data.data || []).filter((po) => po.vendor?._id === vendorId);
         setPos(vendorPOs);
       } catch (err) {
         console.error("❌ Error fetching POs:", err);
@@ -236,29 +239,23 @@ export default function VendorInvoiceSubmissionPage() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20 flex items-center justify-center">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="text-center"
-        >
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            <div className="animate-spin w-8 h-8 border-2 border-white border-t-transparent rounded-full"></div>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Loading Purchase Orders</h2>
-          <p className="text-gray-600">
-            Please wait while we fetch your invoicing data...
-          </p>
-        </motion.div>
+  const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
+  if (!isVisible) return null
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl p-6 flex items-center gap-3">
+        <Loader className="animate-spin w-6 h-6 text-blue-500" />
+        <span className="font-medium">{message}</span>
       </div>
-    );
-  }
+    </div>
+  )
+}
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-purple-50/20">
+          <LoadingOverlay isVisible={isLoading} message="Loading Invoices..." />
       {/* Enhanced Header */}
       <div className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 px-6 py-4 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto">
@@ -266,21 +263,12 @@ export default function VendorInvoiceSubmissionPage() {
             <div className="flex items-center gap-6">
                           <div>
                 <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                  <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl text-white">
-                    <Receipt size={32} />
-                  </div>
                   Invoice Submission
                 </h1>
                 <p className="text-gray-500 text-lg mt-2">
                   Submit invoices for your completed purchase orders
                 </p>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button className="p-3 bg-white/80 text-gray-700 rounded-xl hover:bg-gray-50 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md">
-                <Bell size={20} />
-              </button>
             </div>
           </div>
 

@@ -151,74 +151,77 @@ export default function FinanceReconciliationReview() {
     dueDate: format(new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"),
   })
 
-  const transformRequestData = (apiData) => {
-    return apiData.map((request) => {
-      const today = new Date()
-      const departureDate = safeDateParse(request.departureDate)
-      const returnDate = safeDateParse(request.returnDate || new Date(departureDate.getTime() + 86400000))
-      const isCompleted = returnDate < today
-      const isReconciled = request.reconciled || false
-      const status = request.reconciliation ? request.reconciliation.status : request.status
-      const totalSpent = request.payment?.expenses?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0
-      const perDiemAmount = request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000)
-      const employee = request.employee || {}
-      const employeeName = employee.name || "Unknown Employee"
-      const department = employee.department || "Unknown Department"
+const transformRequestData = (apiData) => {
+  return apiData.map((request) => {
+    const today = new Date();
+    const departureDate = safeDateParse(request.departureDate);
+    const returnDate = safeDateParse(request.returnDate || new Date(departureDate.getTime() + 86400000));
+    const isCompleted = returnDate < today;
+    const isReconciled = request.reconciled || false;
+    const status = request.reconciliation ? request.reconciliation.status : request.status;
+    const totalSpent = request.payment?.expenses?.reduce((sum, exp) => sum + (exp.amount || 0), 0) || 0;
+    const perDiemAmount = request.payment?.perDiemAmount || (request.currency === "MWK" ? 100000 : 1000);
+    
+    // Handle null employee data safely
+    const employee = request.employee || {};
+    const employeeName = employee.name || "Unknown Employee";
+    const department = employee.department || "Unknown Department";
+    const employeeId = employee._id || "Unknown ID";
 
-      return {
-        id: request._id,
-        employeeName: request.employee?.name || "Unknown Employee",
-        employeeId: request.employee._id,
-        department: request.employee?.department || "Unknown Department",
-        purpose: request.purpose,
-        country: request.travelType === "international" ? "International" : request.location || "Local",
-        city: request.location || "Local",
-        departureDate: departureDate,
-        returnDate: returnDate,
-        status: status,
-        reconciled: isReconciled,
-        perDiemAmount: perDiemAmount,
-        currency: request.currency || "USD",
-        submittedDate: safeDateParse(request.reconciliation?.submittedDate || request.createdAt),
-        totalExpenses: totalSpent,
-        remainingBalance: perDiemAmount - totalSpent,
-        tripReport: request.reconciliation?.tripReport || "No trip report submitted",
-        additionalNotes: request.reconciliation?.notes || "",
-        email: request.employee?.email || "unknown@company.com",
-        expenses:
-          request.payment?.expenses?.map((exp) => ({
-            id: exp._id || Math.random().toString(36).substr(2, 9),
-            category: exp.category || "Miscellaneous",
-            description: exp.description || "No description",
-            amount: exp.amount || 0,
-            currency: request.currency || "USD",
-            date: safeDateParse(exp.date || request.departureDate),
-            paymentMethod: exp.paymentMethod || "card",
-            receipt: exp.receipt || null,
-            status: exp.status || "recorded",
-          })) || [],
-        reconciliation: request.reconciliation
-          ? {
-              submittedDate: safeDateParse(request.reconciliation.submittedDate || request.updatedAt),
-              approvedDate: request.reconciliation.approvedDate
-                ? safeDateParse(request.reconciliation.approvedDate)
-                : null,
-              approvedBy: request.reconciliation.approvedBy || request.finalApprover,
-              totalSpent: totalSpent,
-              remainingBalance: perDiemAmount - totalSpent,
-              status: request.reconciliation.status,
-              notes: request.reconciliation.notes || "",
-            }
-          : null,
-        bankDetails: request.bankDetails || {
-          accountName: "John Doe",
-          accountNumber: "1234567890",
-          bankName: "Example Bank",
-          routingNumber: "987654321",
-        },
-      }
-    })
-  }
+    return {
+      id: request._id,
+      employeeName: employeeName,
+      employeeId: employeeId,
+      department: department,
+      purpose: request.purpose,
+      country: request.travelType === "international" ? "International" : request.location || "Local",
+      city: request.location || "Local",
+      departureDate: departureDate,
+      returnDate: returnDate,
+      status: status,
+      reconciled: isReconciled,
+      perDiemAmount: perDiemAmount,
+      currency: request.currency || "USD",
+      submittedDate: safeDateParse(request.reconciliation?.submittedDate || request.createdAt),
+      totalExpenses: totalSpent,
+      remainingBalance: perDiemAmount - totalSpent,
+      tripReport: request.reconciliation?.tripReport || "No trip report submitted",
+      additionalNotes: request.reconciliation?.notes || "",
+      email: employee.email || "unknown@company.com",
+      expenses:
+        request.payment?.expenses?.map((exp) => ({
+          id: exp._id || Math.random().toString(36).substr(2, 9),
+          category: exp.category || "Miscellaneous",
+          description: exp.description || "No description",
+          amount: exp.amount || 0,
+          currency: request.currency || "USD",
+          date: safeDateParse(exp.date || request.departureDate),
+          paymentMethod: exp.paymentMethod || "card",
+          receipt: exp.receipt || null,
+          status: exp.status || "recorded",
+        })) || [],
+      reconciliation: request.reconciliation
+        ? {
+            submittedDate: safeDateParse(request.reconciliation.submittedDate || request.updatedAt),
+            approvedDate: request.reconciliation.approvedDate
+              ? safeDateParse(request.reconciliation.approvedDate)
+              : null,
+            approvedBy: request.reconciliation.approvedBy || request.finalApprover,
+            totalSpent: totalSpent,
+            remainingBalance: perDiemAmount - totalSpent,
+            status: request.reconciliation.status,
+            notes: request.reconciliation.notes || "",
+          }
+        : null,
+      bankDetails: request.bankDetails || {
+        accountName: "John Doe",
+        accountNumber: "1234567890",
+        bankName: "Example Bank",
+        routingNumber: "987654321",
+      },
+    };
+  });
+};
 
   useEffect(() => {
     const fetchPendingReconciliations = async () => {
@@ -912,12 +915,7 @@ export default function FinanceReconciliationReview() {
 
                   {/* Action Footer */}
                   <div className="bg-gray-50 border-t border-gray-200 p-3 flex justify-between items-center rounded-b-2xl">
-                    <button
-                      onClick={() => navigate("/travel-dashboard")}
-                      className="px-3 py-1.5 text-gray-700 border border-gray-300 rounded-2xl hover:bg-gray-100 transition-colors text-xs"
-                    >
-                      Back to Dashboard
-                    </button>
+           
 
                     {(selectedReconciliation.status === "pending" ||
                       selectedReconciliation.status === "pending_reconciliation") && (

@@ -1034,59 +1034,68 @@ setTravelRequests((prevRequests) =>
             </div>
 
             {/* Requests List */}
-            <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
-              {activeTab === "pending" && (
-                <>
-                  {filteredRequests.filter(
-  (request) => !request.fleetNotification || !request.fleetNotification.sent
-).length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-                      <FileText size={32} className="mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending requests found</h3>
-                      <p className="text-gray-600">All travel requests have been processed</p>
-                    </div>
-                  ) : (
-                    filteredRequests
-                      .filter(
-                        (request) =>
-                          (!request.fleetNotification || !request.fleetNotification.sent) && request.requiresDriver,
-                      )
-                      .map((request) => (
-                        <RequestCard
-                          key={request.id}
-                          request={request}
-                          isSelected={selectedRequest?.id === request.id}
-                          onClick={() => handleSelectRequest(request)}
-                        />
-                      ))
-                  )}
-                </>
-              )}
+           <div className="space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
+  {activeTab === "pending" && (
+    <>
+      {(() => {
+        // Use the same filter for both empty state and display
+        const pendingDriverRequests = filteredRequests.filter(
+          (request) =>
+            (!request.fleetNotification || !request.fleetNotification.sent) && 
+            request.requiresDriver
+        );
+        
+        return pendingDriverRequests.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+            <FileText size={32} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No pending driver requests found</h3>
+            <p className="text-gray-600">
+              {filteredRequests.filter(req => !req.fleetNotification || !req.fleetNotification.sent).length > 0 
+                ? "There are pending requests that don't require drivers" 
+                : "All travel requests have been processed"}
+            </p>
+          </div>
+        ) : (
+          pendingDriverRequests.map((request) => (
+            <RequestCard
+              key={request.id}
+              request={request}
+              isSelected={selectedRequest?.id === request.id}
+              onClick={() => handleSelectRequest(request)}
+            />
+          ))
+        );
+      })()}
+    </>
+  )}
 
-              {activeTab === "completed" && (
-                <>
-                  {filteredRequests.filter((request) => request.fleetNotification && request.fleetNotification.sent)
-                    .length === 0 ? (
-                    <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
-                      <CheckCircle size={32} className="mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No completed requests found</h3>
-                      <p className="text-gray-600">Completed requests will appear here</p>
-                    </div>
-                  ) : (
-                    filteredRequests
-                      .filter((request) => request.fleetNotification && request.fleetNotification.sent)
-                      .map((request) => (
-                        <RequestCard
-                          key={request.id}
-                          request={request}
-                          isSelected={selectedRequest?.id === request.id}
-                          onClick={() => handleSelectRequest(request)}
-                        />
-                      ))
-                  )}
-                </>
-              )}
-            </div>
+  {activeTab === "completed" && (
+    <>
+      {(() => {
+        const completedRequests = filteredRequests.filter(
+          (request) => request.fleetNotification && request.fleetNotification.sent
+        );
+        
+        return completedRequests.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+            <CheckCircle size={32} className="mx-auto text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No completed requests found</h3>
+            <p className="text-gray-600">Completed requests will appear here</p>
+          </div>
+        ) : (
+          completedRequests.map((request) => (
+            <RequestCard
+              key={request.id}
+              request={request}
+              isSelected={selectedRequest?.id === request.id}
+              onClick={() => handleSelectRequest(request)}
+            />
+          ))
+        );
+      })()}
+    </>
+  )}
+</div>
           </div>
 
           {/* Right Column - Request Details and Actions */}
