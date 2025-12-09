@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Add useRef
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Users,
@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
+import * as XLSX from "xlsx"; // Add this import
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -269,6 +270,7 @@ export default function VendorsPage() {
     return searchParams.get('section') || 'dashboard';
   });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const fileInputRef = useRef(null); // Add file input ref
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -304,6 +306,286 @@ export default function VendorsPage() {
 
     fetchVendors();
   }, [backendUrl]);
+
+  // Excel Export Functionality
+  const handleExportToExcel = () => {
+    if (!vendors || vendors.length === 0) {
+      showNotificationMessage("No vendors to export", "error");
+      return;
+    }
+
+    const formatted = vendors.map((vendor) => {
+      // Handle both User and Vendor object structures
+      const vendorName = vendor.name || `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim();
+      const companyName = vendor.businessName || vendor.companyName || '';
+      const email = vendor.email || '';
+      const phone = vendor.phoneNumber || vendor.phone || '';
+      const industry = vendor.industry || '';
+      const status = vendor.status || vendor.registrationStatus || 'pending';
+      const rating = vendor.rating || 0;
+      const categories = vendor.categories ? vendor.categories.join(", ") : '';
+      
+      return {
+        "Vendor ID": vendor._id || "N/A",
+        "Name": vendorName,
+        "Email": email,
+        "Phone": phone,
+        "Company": companyName,
+        "Industry": industry,
+        "Status": status,
+        "Rating": rating,
+        "Categories": categories,
+        "Address": vendor.address || "",
+        "Tax ID": vendor.taxpayerIdentificationNumber || "",
+        "Registration Number": vendor.registrationNumber || "",
+        "Created Date": vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : new Date().toLocaleDateString()
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Vendors");
+
+    XLSX.writeFile(workbook, "vendors.xlsx");
+
+    showNotificationMessage("Export successful!", "success");
+  };
+
+  // Excel Import Functionality
+  const handleImportFromExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      const token = localStorage.getItem("token");
+
+      for (const row of rows) {
+        // Parse categories from Excel
+        let categories = [];
+        if (row.Categories) {
+          categories = row.Categories.split(",").map(cat => cat.trim()).filter(cat => cat !== '');
+        }
+
+        // Handle name splitting
+        const fullName = row.Name || '';
+        let firstName = '', lastName = '';
+        if (fullName) {
+          const nameParts = fullName.split(' ');
+          firstName = nameParts[0] || '';
+          lastName = nameParts.slice(1).join(' ') || '';
+        }
+
+        const payload = {
+          firstName: firstName || row["First Name"] || '',
+          lastName: lastName || row["Last Name"] || '',
+          email: row.Email || '',
+          phoneNumber: row.Phone || '',
+          address: row.Address || '',
+          companyName: row.Company || row["Company Name"] || '',
+          businessName: row.Company || row["Company Name"] || '',
+          industry: row.Industry || '',
+          categories: categories,
+          taxpayerIdentificationNumber: row["Tax ID"] || `TIN-${Date.now()}`,
+          registrationNumber: row["Registration Number"] || `REG-${Date.now()}`,
+          companyType: 'Private Limited Company',
+          formOfBusiness: 'Limited Liability Company',
+          ownershipType: 'Private Ownership',
+          countryOfRegistration: 'Malawi',
+          role: "Vendor",
+          status: row.Status || 'pending'
+        };
+
+        await fetch(`${backendUrl}/api/vendors`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      showNotificationMessage("Excel import completed successfully!", "success");
+      handleRefresh();
+    } catch (err) {
+      console.error(err);
+      showNotificationMessage("Excel import failed!", "error");
+    }
+  };
+
+  // Print Functionality
+  const handlePrint = () => {
+    const printContents = document.getElementById("vendors-section")?.innerHTML;
+    if (!printContents) {
+      showNotificationMessage("Nothing to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Vendors Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .print-grid { 
+              display: grid; 
+              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+              gap: 15px; 
+              margin-top: 20px; 
+            }
+            .print-card { 
+              border: 1px solid #ddd; 
+              padding: 15px; 
+              border-radius: 10px; 
+              page-break-inside: avoid;
+            }
+            .print-header { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center; 
+              margin-bottom: 10px; 
+              border-bottom: 1px solid #eee; 
+              padding-bottom: 10px; 
+            }
+            .print-metrics { 
+              display: grid; 
+              grid-template-columns: repeat(4, 1fr); 
+              gap: 10px; 
+              margin-bottom: 20px; 
+            }
+            .print-metric { 
+              text-align: center; 
+              padding: 10px; 
+              border: 1px solid #ddd; 
+              border-radius: 8px; 
+            }
+            .stars { display: flex; gap: 2px; margin-top: 5px; }
+            .star { width: 16px; height: 16px; }
+            .star-filled { color: #fbbf24; fill: #fbbf24; }
+            .star-empty { color: #d1d5db; }
+            @media print {
+              body { padding: 0; }
+              .print-card { margin-bottom: 15px; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Vendor Network</h1>
+          <div class="print-metrics">
+            <div class="print-metric">
+              <h3>Total Vendors</h3>
+              <p>${totalVendors}</p>
+            </div>
+            <div class="print-metric">
+              <h3>Active Vendors</h3>
+              <p>${activeVendors}</p>
+            </div>
+            <div class="print-metric">
+              <h3>Categories</h3>
+              <p>${totalCategories}</p>
+            </div>
+            <div class="print-metric">
+              <h3>Avg Rating</h3>
+              <p>${avgRating}/5</p>
+            </div>
+          </div>
+          <div class="print-grid">
+            ${filteredVendors.map(vendor => {
+              const vendorData = vendor.name ? vendor : {
+                name: `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim(),
+                companyName: vendor.businessName || vendor.companyName,
+                email: vendor.email,
+                phone: vendor.phoneNumber || vendor.phone,
+                industry: vendor.industry,
+                status: vendor.status || vendor.registrationStatus,
+                rating: vendor.rating || 0,
+                categories: vendor.categories || []
+              };
+              
+              // Generate star rating HTML
+              const renderStars = (rating) => {
+                const stars = [];
+                const fullStars = Math.floor(rating);
+                const hasHalfStar = rating % 1 >= 0.5;
+                
+                for (let i = 0; i < fullStars; i++) {
+                  stars.push(`<div class="star star-filled">★</div>`);
+                }
+                
+                if (hasHalfStar) {
+                  stars.push(`<div class="star star-filled" style="clip-path: inset(0 50% 0 0);">★</div>`);
+                }
+                
+                const emptyStars = 5 - stars.length;
+                for (let i = 0; i < emptyStars; i++) {
+                  stars.push(`<div class="star star-empty">★</div>`);
+                }
+                
+                return `<div class="stars">${stars.join('')}</div>`;
+              };
+              
+              return `
+                <div class="print-card">
+                  <div class="print-header">
+                    <div>
+                      <h3>${vendorData.name || 'N/A'}</h3>
+                      <p>${vendorData.companyName || 'N/A'}</p>
+                    </div>
+                    <span style="
+                      padding: 4px 8px; 
+                      border-radius: 12px; 
+                      font-size: 12px;
+                      ${vendorData.status === 'active' || vendorData.status === 'approved' ? 'background-color: #d1fae5; color: #065f46;' : 
+                        vendorData.status === 'pending' ? 'background-color: #fef3c7; color: #92400e;' :
+                        'background-color: #f3f4f6; color: #374151;'}
+                    ">
+                      ${vendorData.status || 'N/A'}
+                    </span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+                    <div style="text-align: center; padding: 8px; background-color: #f9fafb; border-radius: 8px;">
+                      <strong>${vendorData.rating ? vendorData.rating.toFixed(1) : '0.0'}</strong>
+                      ${renderStars(vendorData.rating || 0)}
+                      <p style="font-size: 12px; color: #6b7280;">Rating</p>
+                    </div>
+                    <div style="text-align: center; padding: 8px; background-color: #f9fafb; border-radius: 8px;">
+                      <strong>${vendorData.categories?.length || 0}</strong>
+                      <p style="font-size: 12px; color: #6b7280;">Categories</p>
+                    </div>
+                  </div>
+                  <div style="font-size: 13px;">
+                    <p><strong>Email:</strong> ${vendorData.email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${vendorData.phone || 'N/A'}</p>
+                    <p><strong>Industry:</strong> ${vendorData.industry || 'N/A'}</p>
+                    ${vendorData.categories && vendorData.categories.length > 0 ? `
+                      <p><strong>Categories:</strong> ${vendorData.categories.slice(0, 3).join(', ')}${vendorData.categories.length > 3 ? '...' : ''}</p>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px;">
+            Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.print();
+  };
 
   const filteredVendors = (vendors || []).filter((vendor) => {
     // Handle both User and Vendor objects for search
@@ -553,6 +835,15 @@ export default function VendorsPage() {
       <LoadingOverlay isVisible={isLoading} message="Loading vendors..." />
 
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Hidden file input for Excel import */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx, .xls"
+          className="hidden"
+          onChange={handleImportFromExcel}
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between">
         
@@ -630,15 +921,43 @@ export default function VendorsPage() {
           />
         </div>
 
-        {/* Vendor Cards */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        {/* Vendor Cards Section */}
+        <div id="vendors-section" className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Building className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Vendor Network</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{filteredVendors.length} of {totalVendors} vendors</span>
+
+            <div className="flex items-center gap-3">
+              {/* Print Button */}
+              <button
+                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handlePrint}
+              >
+                Print
+              </button>
+              
+              {/* Excel Import Button */}
+              <button
+                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={() => fileInputRef.current.click()}
+              >
+                Excel Import
+              </button>
+              
+              {/* Excel Export Button */}
+              <button
+                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handleExportToExcel}
+              >
+                Excel Export
+              </button>
+              
+              {/* Count */}
+              <span className="text-sm text-gray-500">
+                {filteredVendors.length} of {totalVendors} vendors
+              </span>
             </div>
           </div>
 
