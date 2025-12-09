@@ -38,6 +38,8 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "../../../authcontext/authcontext"
+import * as XLSX from "xlsx";
+
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -345,6 +347,92 @@ export default function DepartmentsPage() {
     }
   }
 
+
+  const handleExportToExcel = () => {
+  if (!departments || departments.length === 0) {
+    showNotificationMessage("No departments to export", "error");
+    return;
+  }
+
+  const formatted = departments.map((dept) => ({
+    Name: dept.name,
+    Description: dept.description,
+    DepartmentHead: dept.departmentHead,
+    Email: dept.headEmail,
+    Phone: dept.headPhone,
+    Budget: dept.budget,
+    Location: dept.location,
+    Building: dept.building,
+    Floor: dept.floor,
+    Status: dept.status,
+    Goals: dept.goals?.join(", "),
+    Established: dept.establishedDate
+      ? new Date(dept.establishedDate).toLocaleDateString()
+      : "",
+    MaxCapacity: dept.maxCapacity,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(formatted);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Departments");
+
+  XLSX.writeFile(workbook, "departments.xlsx");
+
+  showNotificationMessage("Export successful!", "success");
+};
+
+
+const handleImportFromExcel = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet);
+
+    const token = localStorage.getItem("token");
+
+    for (const row of rows) {
+      const payload = {
+        name: row.Name || "",
+        description: row.Description || "",
+        departmentHead: row.DepartmentHead || "",
+        headEmail: row.Email || "",
+        headPhone: row.Phone || "",
+        budget: Number(row.Budget) || 0,
+        location: row.Location || "",
+        building: row.Building || "",
+        floor: row.Floor || "",
+        status: row.Status || "active",
+        goals: row.Goals ? row.Goals.split(",").map((g) => g.trim()) : [],
+        establishedDate: row.Established
+          ? new Date(row.Established).toISOString()
+          : "",
+        maxCapacity: Number(row.MaxCapacity) || "",
+      };
+
+      await fetch(`${backendUrl}/api/departments`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+    }
+
+    showNotificationMessage("Excel import completed successfully!", "success");
+    handleRefresh();
+  } catch (err) {
+    console.error(err);
+    showNotificationMessage("Excel import failed!", "error");
+  }
+};
+
+
   const openAddDepartmentModal = () => {
     setIsAddDepartmentModalOpen(true)
   }
@@ -455,12 +543,24 @@ export default function DepartmentsPage() {
     )
   }
 
+  const fileInputRef = useRef(null);
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Loading Overlay */}
       <LoadingOverlay isVisible={isLoading} message="Loading departments..." />
 
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
+
+        <input
+  ref={fileInputRef}
+  type="file"
+  accept=".xlsx, .xls"
+  className="hidden"
+  onChange={handleImportFromExcel}
+/>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -543,19 +643,19 @@ export default function DepartmentsPage() {
 
     {/* Excel Import */}
     <button
-      className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
-      onClick={() => alert("Excel Import clicked")}
-    >
-      Excel Import
-    </button>
+  className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+  onClick={() => fileInputRef.current.click()}
+>
+  Excel Import
+</button>
 
     {/* Excel Export */}
     <button
-      className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
-      onClick={() => alert("Excel Export clicked")}
-    >
-      Excel Export
-    </button>
+  className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+  onClick={handleExportToExcel}
+>
+  Excel Export
+</button>
   </div>
 </div>
 
