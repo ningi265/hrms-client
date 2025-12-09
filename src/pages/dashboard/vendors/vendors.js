@@ -583,14 +583,14 @@ export default function VendorsPage() {
               className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-2xl font-medium hover:bg-green-600 transition-colors"
             >
               <CheckCircle size={16} />
-              Approve Vendors
+              Approve
             </button>
             <button
               onClick={openAddVendorModal}
               className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-2xl font-medium hover:bg-blue-600 transition-colors"
             >
               <Plus size={16} />
-              Add Vendor
+              Add
             </button>
           </div>
         </div>
