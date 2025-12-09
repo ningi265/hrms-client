@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Users,
@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
+import * as XLSX from "xlsx"; // Add this import
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -245,8 +246,9 @@ export default function EmployeesPage() {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState("");
   const [notificationType, setNotificationType] = useState("success");
-  const [departments, setDepartments] = useState([])
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
+  const [departments, setDepartments] = useState([]);
+  const fileInputRef = useRef(null); // Add this ref for file input
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
   ? process.env.REACT_APP_BACKEND_URL_PROD
   : process.env.REACT_APP_BACKEND_URL_DEV;
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -351,6 +353,242 @@ export default function EmployeesPage() {
     );
     
     return department || null;
+  };
+
+  // Excel Export Functionality
+  const handleExportToExcel = () => {
+    if (!employees || employees.length === 0) {
+      showNotificationMessage("No employees to export", "error");
+      return;
+    }
+
+    const formatted = employees.map((emp) => {
+      const employeeId = emp._id || emp.id || emp.employeeId;
+      const employeeDepartment = findEmployeeDepartment(employeeId);
+      
+      return {
+        "Employee ID": employeeId || "N/A",
+        "First Name": emp.firstName || "",
+        "Last Name": emp.lastName || "",
+        "Full Name": `${emp.firstName || ""} ${emp.lastName || ""}`.trim(),
+        "Email": emp.email || "",
+        "Phone": emp.phoneNumber || emp.phone || "",
+        "Position": emp.position || "",
+        "Department": employeeDepartment ? employeeDepartment.name : "",
+        "Department Code": employeeDepartment ? employeeDepartment.departmentCode : "",
+        "Salary": emp.salary || 0,
+        "Hire Date": emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : "",
+        "Status": emp.status || "",
+        "Address": emp.address || "",
+        "Emergency Contact": emp.emergencyContact || "",
+        "Skills": emp.skills ? emp.skills.join(", ") : "",
+        "Years of Service": emp.hireDate 
+          ? Math.floor((new Date() - new Date(emp.hireDate)) / (1000 * 60 * 60 * 24 * 365))
+          : 0
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+
+    XLSX.writeFile(workbook, "employees.xlsx");
+
+    showNotificationMessage("Export successful!", "success");
+  };
+
+  // Excel Import Functionality
+  const handleImportFromExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      const token = localStorage.getItem("token");
+
+      for (const row of rows) {
+        // Find department by name or code
+        let departmentId = "";
+        if (row.Department || row["Department Code"]) {
+          const dept = departments.find(d => 
+            d.name === row.Department || d.departmentCode === row["Department Code"]
+          );
+          departmentId = dept ? dept._id : "";
+        }
+
+        const payload = {
+          firstName: row["First Name"] || "",
+          lastName: row["Last Name"] || "",
+          email: row.Email || "",
+          phoneNumber: row.Phone || "",
+          address: row.Address || "",
+          department: departmentId,
+          position: row.Position || "",
+          hireDate: row["Hire Date"] 
+            ? new Date(row["Hire Date"]).toISOString()
+            : new Date().toISOString(),
+          salary: Number(row.Salary) || 0,
+          status: row.Status || "active",
+          emergencyContact: row["Emergency Contact"] || "",
+          skills: row.Skills ? row.Skills.split(",").map(s => s.trim()) : [],
+          employmentType: "full-time",
+          workLocation: "office"
+        };
+
+        await fetch(`${backendUrl}/api/auth/employees`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      showNotificationMessage("Excel import completed successfully!", "success");
+      handleRefresh();
+    } catch (err) {
+      console.error(err);
+      showNotificationMessage("Excel import failed!", "error");
+    }
+  };
+
+  // Print Functionality
+  const handlePrint = () => {
+    const printContents = document.getElementById("employees-section")?.innerHTML;
+    if (!printContents) {
+      showNotificationMessage("Nothing to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Employees Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .print-grid { 
+              display: grid; 
+              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+              gap: 15px; 
+              margin-top: 20px; 
+            }
+            .print-card { 
+              border: 1px solid #ddd; 
+              padding: 15px; 
+              border-radius: 10px; 
+              page-break-inside: avoid;
+            }
+            .print-header { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center; 
+              margin-bottom: 10px; 
+              border-bottom: 1px solid #eee; 
+              padding-bottom: 10px; 
+            }
+            .print-metrics { 
+              display: grid; 
+              grid-template-columns: repeat(4, 1fr); 
+              gap: 10px; 
+              margin-bottom: 20px; 
+            }
+            .print-metric { 
+              text-align: center; 
+              padding: 10px; 
+              border: 1px solid #ddd; 
+              border-radius: 8px; 
+            }
+            @media print {
+              body { padding: 0; }
+              .print-card { margin-bottom: 15px; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Employee List</h1>
+          <div class="print-metrics">
+            <div class="print-metric">
+              <h3>Total Employees</h3>
+              <p>${totalEmployees}</p>
+            </div>
+            <div class="print-metric">
+              <h3>Active Employees</h3>
+              <p>${activeEmployees}</p>
+            </div>
+            <div class="print-metric">
+              <h3>Departments</h3>
+              <p>${totalDepartments}</p>
+            </div>
+            <div class="print-metric">
+              <h3>Avg Tenure</h3>
+              <p>${avgTenure} years</p>
+            </div>
+          </div>
+          <div class="print-grid">
+            ${filteredEmployees.map(emp => {
+              const employeeId = emp._id || emp.id || emp.employeeId;
+              const employeeDepartment = findEmployeeDepartment(employeeId);
+              return `
+                <div class="print-card">
+                  <div class="print-header">
+                    <div>
+                      <h3>${emp.firstName || ''} ${emp.lastName || ''}</h3>
+                      <p>${emp.position || 'N/A'}</p>
+                    </div>
+                    <span style="
+                      padding: 4px 8px; 
+                      border-radius: 12px; 
+                      font-size: 12px;
+                      ${emp.status === 'active' ? 'background-color: #d1fae5; color: #065f46;' : 
+                        emp.status === 'on-leave' ? 'background-color: #fef3c7; color: #92400e;' :
+                        'background-color: #fee2e2; color: #991b1b;'}
+                    ">
+                      ${emp.status}
+                    </span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
+                    <div style="text-align: center; padding: 8px; background-color: #f9fafb; border-radius: 8px;">
+                      <strong>$${emp.salary ? emp.salary.toLocaleString() : 0}</strong>
+                      <p style="font-size: 12px; color: #6b7280;">Salary</p>
+                    </div>
+                    <div style="text-align: center; padding: 8px; background-color: #f9fafb; border-radius: 8px;">
+                      <strong>${emp.hireDate ? Math.floor((new Date() - new Date(emp.hireDate)) / (1000 * 60 * 60 * 24 * 365)) : 0}</strong>
+                      <p style="font-size: 12px; color: #6b7280;">Years</p>
+                    </div>
+                  </div>
+                  <div style="font-size: 13px;">
+                    <p><strong>Email:</strong> ${emp.email || 'N/A'}</p>
+                    <p><strong>Phone:</strong> ${emp.phoneNumber || emp.phone || 'N/A'}</p>
+                    <p><strong>Department:</strong> ${employeeDepartment ? employeeDepartment.departmentCode : 'N/A'}</p>
+                    <p><strong>Hired:</strong> ${emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : 'N/A'}</p>
+                    ${emp.skills && emp.skills.length > 0 ? `
+                      <p><strong>Skills:</strong> ${emp.skills.slice(0, 3).join(', ')}${emp.skills.length > 3 ? '...' : ''}</p>
+                    ` : ''}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px;">
+            Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.print();
   };
 
   // Ensure filteredEmployees always works with an array
@@ -678,6 +916,15 @@ export default function EmployeesPage() {
       <LoadingOverlay isVisible={isLoading} message="Loading employees..." />
 
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Hidden file input for Excel import */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx, .xls"
+          className="hidden"
+          onChange={handleImportFromExcel}
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between">
 
@@ -745,15 +992,43 @@ export default function EmployeesPage() {
           />
         </div>
 
-        {/* Employee Cards */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        {/* Employee Cards Section */}
+        <div id="employees-section" className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Team Members</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{filteredEmployees.length} of {totalEmployees} employees</span>
+
+            <div className="flex items-center gap-3">
+              {/* Print Button */}
+              <button
+                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handlePrint}
+              >
+                Print
+              </button>
+              
+              {/* Excel Import Button */}
+              <button
+                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={() => fileInputRef.current.click()}
+              >
+                Excel Import
+              </button>
+              
+              {/* Excel Export Button */}
+              <button
+                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handleExportToExcel}
+              >
+                Excel Export
+              </button>
+              
+              {/* Count */}
+              <span className="text-sm text-gray-500">
+                {filteredEmployees.length} of {totalEmployees} employees
+              </span>
             </div>
           </div>
 
