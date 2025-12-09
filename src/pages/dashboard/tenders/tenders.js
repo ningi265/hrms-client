@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
@@ -10,6 +9,8 @@ import {
   X,
   Info,
   Mail,
+  Edit,
+  Trash2,
   Eye,
   RefreshCw,
   DollarSign,
@@ -24,9 +25,13 @@ import {
   Award,
   Plus,
   Clock,
-  Download, 
+  Download,
+  Printer,
+  FileSpreadsheet,
+  Upload
 } from "lucide-react"
 import { motion } from "framer-motion"
+import * as XLSX from "xlsx"
 
 const backendUrl = process.env.REACT_APP_ENV === 'production'
     ? process.env.REACT_APP_BACKEND_URL_PROD
@@ -108,7 +113,7 @@ const MetricCard = ({
 }
 
 // Tender Card Component
-const TenderCard = ({ tender, onMenuClick, showMenuId, onViewTender, bidCounts }) => {
+const TenderCard = ({ tender, onMenuClick, showMenuId, onViewTender, bidCounts, actionLoading }) => {
   const getStatusColor = (status) => {
     switch (status) {
       case "open":
@@ -167,7 +172,6 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onViewTender, bidCounts }
   const daysRemaining = getDaysRemaining(tender.deadline)
   const bidCount = bidCounts[tender._id] || 0
 
-
   return (
     <div className="bg-white rounded-2xl border border-gray-200 p-2 hover:shadow-sm transition-shadow">
       <div className="flex items-center justify-between mb-1.5">
@@ -181,6 +185,13 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onViewTender, bidCounts }
           <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(tender.status)}`}>
             {tender.status.replace("_", " ")}
           </span>
+          <button
+            data-tender-id={tender._id}
+            onClick={() => onMenuClick(tender._id)}
+            className="p-1 text-gray-400 hover:text-blue-600 rounded-xl"
+          >
+            <MoreVertical size={16} />
+          </button>
         </div>
       </div>
 
@@ -792,9 +803,10 @@ export default function TendersPage() {
       requisitionId: "",
       requirements: []
     })
+  const [showMenuId, setShowMenuId] = useState(null)
+  const [actionLoading, setActionLoading] = useState(null)
+  const fileInputRef = useState(null)
   
-  
-
   const navigate = useNavigate()
 
   const openCreateTenderModal = () => {
@@ -878,125 +890,286 @@ export default function TendersPage() {
     }
   }
 
- // Replace the useEffect with this improved version:
-useEffect(() => {
-  const fetchData = async () => {
-    setIsLoading(true)
+  // Excel Export Function
+  const handleExportToExcel = () => {
+    if (!tenders || tenders.length === 0) {
+      showNotificationMessage("No tenders to export", "error");
+      return;
+    }
+
+    const formatted = tenders.map((tender) => ({
+      Title: tender.title,
+      Description: tender.description,
+      Company: tender.company?.name || "",
+      Budget: tender.budget,
+      Category: tender.category,
+      Location: tender.location,
+      Urgency: tender.urgency,
+      Status: tender.status,
+      Deadline: tender.deadline ? new Date(tender.deadline).toLocaleDateString() : "",
+      ContactEmail: tender.contactEmail,
+      Requirements: tender.requirements?.join(", ") || "",
+      Created: tender.createdAt ? new Date(tender.createdAt).toLocaleDateString() : "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Tenders");
+
+    XLSX.writeFile(workbook, "tenders.xlsx");
+
+    showNotificationMessage("Export successful!", "success");
+  };
+
+  // Excel Import Function
+  const handleImportFromExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      const token = localStorage.getItem("token");
+
+      for (const row of rows) {
+        const payload = {
+          title: row.Title || "",
+          description: row.Description || "",
+          budget: Number(row.Budget) || 0,
+          category: row.Category || "",
+          location: row.Location || "",
+          urgency: row.Urgency || "medium",
+          status: row.Status || "open",
+          deadline: row.Deadline ? new Date(row.Deadline).toISOString() : new Date().toISOString(),
+          contactEmail: row.ContactEmail || "",
+          requirements: row.Requirements ? row.Requirements.split(",").map((r) => r.trim()) : [],
+        };
+
+        await fetch(`${backendUrl}/api/tenders`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      showNotificationMessage("Excel import completed successfully!", "success");
+      handleRefresh();
+    } catch (err) {
+      console.error(err);
+      showNotificationMessage("Excel import failed!", "error");
+    }
+  };
+
+  // Print Function
+  const handlePrint = () => {
+    const printContents = document.getElementById("tenders-section")?.innerHTML;
+    if (!printContents) {
+      showNotificationMessage("Nothing to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Tenders Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .tenders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
+            .tender-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+            .tender-card h3 { margin: 0 0 10px 0; color: #333; }
+            .tender-card p { margin: 5px 0; color: #666; font-size: 14px; }
+            .status { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+            .open { background-color: #d1fae5; color: #065f46; }
+            .closed { background-color: #fee2e2; color: #991b1b; }
+            .under_review { background-color: #fef3c7; color: #92400e; }
+            .awarded { background-color: #dbeafe; color: #1e40af; }
+          </style>
+        </head>
+        <body>
+          <h1>Tenders List</h1>
+          <div class="tenders-grid">
+            ${printContents}
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.print();
+  };
+
+  // Handle Delete Tender
+  const handleDeleteTender = async (tenderId) => {
+    setActionLoading(tenderId);
     try {
       const token = localStorage.getItem("token")
-      
-      const [tendersRes, requisitionsRes] = await Promise.all([
-        fetch(`${backendUrl}/api/tenders/company`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${backendUrl}/api/requisitions/all/approved`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ])
+      const response = await fetch(`${backendUrl}/api/tenders/${tenderId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
 
-      let tendersData = []
-      let requisitionsData = []
-
-      if (tendersRes.ok) {
-        const response = await tendersRes.json()
-        tendersData = response.data || response || []
-        setTenders(tendersData)
+      if (response.ok) {
+        setTenders((prev) => Array.isArray(prev) ? prev.filter((tender) => tender._id !== tenderId) : [])
+        showNotificationMessage("Tender deleted successfully!", "success")
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.message || "Failed to delete tender")
       }
+    } catch (error) {
+      showNotificationMessage(error.message || "Failed to delete tender", "error")
+      console.error("Failed to delete tender:", error)
+    } finally {
+      setActionLoading(null);
+      setShowMenuId(null)
+    }
+  };
 
-      if (requisitionsRes.ok) {
-        const response = await requisitionsRes.json()
-        requisitionsData = Array.isArray(response) ? response : response.data || []
-        const approvedRequisitions = requisitionsData.filter(req => req.status === "approved")
-        const tenderRequisitions = approvedRequisitions.filter(req => 
-          req.estimatedCost > 1000 || req.urgency === "high"
-        )
-        setRequisitions(tenderRequisitions)
-      }
+  // Copy to Clipboard
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showNotificationMessage("Tender ID copied to clipboard!", "success");
+    setShowMenuId(null);
+  };
 
-      // Fetch bid counts for each tender
-      const bidCountPromises = tendersData.map(async (tender) => {
-        try {
-          const bidsRes = await fetch(`${backendUrl}/api/bids/tender/${tender._id}`, {
+  // Format budget for display
+  const formatBudget = (budget) => {
+    if (budget >= 1000000) {
+      return `$${(budget / 1000000).toFixed(1)}M`
+    } else if (budget >= 1000) {
+      return `$${(budget / 1000).toFixed(0)}K`
+    }
+    return `$${budget}`
+  }
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true)
+      try {
+        const token = localStorage.getItem("token")
+        
+        const [tendersRes, requisitionsRes] = await Promise.all([
+          fetch(`${backendUrl}/api/tenders/company`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(`${backendUrl}/api/requisitions/all/approved`, {
             headers: { Authorization: `Bearer ${token}` }
           })
-          if (bidsRes.ok) {
-            const bidsData = await bidsRes.json()
-            // Handle different response structures for bids
-            let bidsArray = []
-            if (Array.isArray(bidsData)) {
-              bidsArray = bidsData
-            } else if (bidsData.data && Array.isArray(bidsData.data)) {
-              bidsArray = bidsData.data
-            } else if (bidsData.bids && Array.isArray(bidsData.bids)) {
-              bidsArray = bidsData.bids
-            }
-            return { tenderId: tender._id, count: bidsArray.length }
-          }
-          return { tenderId: tender._id, count: 0 }
-        } catch (error) {
-          console.error(`Error fetching bids for tender ${tender._id}:`, error)
-          return { tenderId: tender._id, count: 0 }
+        ])
+
+        let tendersData = []
+        let requisitionsData = []
+
+        if (tendersRes.ok) {
+          const response = await tendersRes.json()
+          tendersData = response.data || response || []
+          setTenders(tendersData)
         }
-      })
 
-      const bidCountResults = await Promise.all(bidCountPromises)
-      const bidCountsMap = {}
-      bidCountResults.forEach(result => {
-        bidCountsMap[result.tenderId] = result.count
-      })
-      setBidCounts(bidCountsMap)
+        if (requisitionsRes.ok) {
+          const response = await requisitionsRes.json()
+          requisitionsData = Array.isArray(response) ? response : response.data || []
+          const approvedRequisitions = requisitionsData.filter(req => req.status === "approved")
+          const tenderRequisitions = approvedRequisitions.filter(req => 
+            req.estimatedCost > 1000 || req.urgency === "high"
+          )
+          setRequisitions(tenderRequisitions)
+        }
 
-    } catch (err) {
-      setError("Failed to load data. Please try again.")
-      console.error("Error fetching data:", err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+        // Fetch bid counts for each tender
+        const bidCountPromises = tendersData.map(async (tender) => {
+          try {
+            const bidsRes = await fetch(`${backendUrl}/api/bids/tender/${tender._id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            if (bidsRes.ok) {
+              const bidsData = await bidsRes.json()
+              // Handle different response structures for bids
+              let bidsArray = []
+              if (Array.isArray(bidsData)) {
+                bidsArray = bidsData
+              } else if (bidsData.data && Array.isArray(bidsData.data)) {
+                bidsArray = bidsData.data
+              } else if (bidsData.bids && Array.isArray(bidsData.bids)) {
+                bidsArray = bidsData.bids
+              }
+              return { tenderId: tender._id, count: bidsArray.length }
+            }
+            return { tenderId: tender._id, count: 0 }
+          } catch (error) {
+            console.error(`Error fetching bids for tender ${tender._id}:`, error)
+            return { tenderId: tender._id, count: 0 }
+          }
+        })
 
-  fetchData()
-}, [backendUrl])
+        const bidCountResults = await Promise.all(bidCountPromises)
+        const bidCountsMap = {}
+        bidCountResults.forEach(result => {
+          bidCountsMap[result.tenderId] = result.count
+        })
+        setBidCounts(bidCountsMap)
 
-
-const handleViewTender = async (tender) => {
-  try {
-    const token = localStorage.getItem("token")
-    const response = await fetch(`${backendUrl}/api/bids/tender/${tender._id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-
-    if (response.ok) {
-      const responseData = await response.json()
-      
-    
-      let bidsData = []
-      if (Array.isArray(responseData)) {
-        bidsData = responseData
-      } else if (responseData.data && Array.isArray(responseData.data)) {
-        bidsData = responseData.data
-      } else if (responseData.bids && Array.isArray(responseData.bids)) {
-        bidsData = responseData.bids
-      } else if (typeof responseData === 'object' && responseData !== null) {
-     
-        bidsData = [responseData]
+      } catch (err) {
+        setError("Failed to load data. Please try again.")
+        console.error("Error fetching data:", err)
+      } finally {
+        setIsLoading(false)
       }
-      
-      console.log('Bids data:', bidsData) 
-      setTenderBids(bidsData)
+    }
+
+    fetchData()
+  }, [backendUrl])
+
+  const handleViewTender = async (tender) => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch(`${backendUrl}/api/bids/tender/${tender._id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+
+      if (response.ok) {
+        const responseData = await response.json()
+        
+        let bidsData = []
+        if (Array.isArray(responseData)) {
+          bidsData = responseData
+        } else if (responseData.data && Array.isArray(responseData.data)) {
+          bidsData = responseData.data
+        } else if (responseData.bids && Array.isArray(responseData.bids)) {
+          bidsData = responseData.bids
+        } else if (typeof responseData === 'object' && responseData !== null) {
+          bidsData = [responseData]
+        }
+        
+        console.log('Bids data:', bidsData) 
+        setTenderBids(bidsData)
+        setSelectedTender(tender)
+        setShowTenderModal(true)
+      } else {
+        throw new Error("Failed to fetch bids")
+      }
+    } catch (error) {
+      console.error("Error fetching bids:", error)
+      showNotificationMessage("Failed to load tender details", "error")
+
+      setTenderBids([])
       setSelectedTender(tender)
       setShowTenderModal(true)
-    } else {
-      throw new Error("Failed to fetch bids")
     }
-  } catch (error) {
-    console.error("Error fetching bids:", error)
-    showNotificationMessage("Failed to load tender details", "error")
-
-    setTenderBids([])
-    setSelectedTender(tender)
-    setShowTenderModal(true)
   }
-}
 
   const handleAwardBid = async (bid) => {
     try {
@@ -1057,15 +1230,6 @@ const handleViewTender = async (tender) => {
   const totalValue = tenders.reduce((sum, tender) => sum + (tender.budget || 0), 0)
   const avgBudget = totalTenders > 0 ? totalValue / totalTenders : 0
 
-  const formatBudget = (budget) => {
-    if (budget >= 1000000) {
-      return `$${(budget / 1000000).toFixed(1)}M`
-    } else if (budget >= 1000) {
-      return `$${(budget / 1000).toFixed(0)}K`
-    }
-    return `$${budget}`
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1079,28 +1243,16 @@ const handleViewTender = async (tender) => {
       {/* Loading Overlay */}
       <LoadingOverlay isVisible={isLoading} message="Loading tenders..." />
 
-      {/* Notification */}
-      {showNotification && (
-        <div className="fixed top-4 right-4 z-50">
-          <div
-            className={`p-4 rounded-2xl border ${
-              notificationType === "success"
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {notificationType === "success" ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
-              <span className="text-sm font-medium">{notificationMessage}</span>
-              <button onClick={() => setShowNotification(false)} className="ml-2 text-gray-400 hover:text-gray-600">
-                <X size={16} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Hidden file input for Excel import */}
+        <input
+          type="file"
+          accept=".xlsx, .xls"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleImportFromExcel}
+        />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -1140,6 +1292,7 @@ const handleViewTender = async (tender) => {
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
+              Refresh
             </button>
           </div>
         </div>
@@ -1177,13 +1330,43 @@ const handleViewTender = async (tender) => {
         </div>
 
         {/* Tender Cards */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <div id="tenders-section" className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-gray-900">Tender List</h3>
+              <FileText className="w-5 h-5 text-gray-600" />
+              <h3 className="font-semibold text-gray-900">Tenders</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>
+
+            <div className="flex items-center gap-3">
+              {/* Print Button */}
+              <button
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handlePrint}
+              >
+                <Printer size={16} />
+                Print
+              </button>
+
+              {/* Excel Import */}
+              <button
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FileSpreadsheet size={16} />
+                Excel Import
+              </button>
+
+              {/* Excel Export */}
+              <button
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handleExportToExcel}
+              >
+                <Upload size={16} />
+                Excel Export
+              </button>
+
+              {/* Count */}
+              <span className="text-sm text-gray-500">
                 {filteredTenders.length} of {totalTenders} tenders
               </span>
             </div>
@@ -1209,14 +1392,113 @@ const handleViewTender = async (tender) => {
                 <TenderCard
                   key={tender._id}
                   tender={tender}
+                  onMenuClick={setShowMenuId}
+                  showMenuId={showMenuId}
                   onViewTender={handleViewTender}
                   bidCounts={bidCounts}
+                  actionLoading={actionLoading}
                 />
               ))}
             </div>
           )}
         </div>
       </main>
+
+      {/* Action Dropdown Menu */}
+      {showMenuId && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 z-[100] bg-transparent"
+            onClick={() => setShowMenuId(null)}
+          />
+          
+          {/* Menu positioned exactly at button edge */}
+          <motion.div
+            initial={{ opacity: 0, y: -5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="fixed z-[101] w-56 bg-white rounded-2xl shadow-xl border border-gray-200"
+            style={{
+              top: (() => {
+                const button = document.querySelector(`[data-tender-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  return `${rect.bottom + window.scrollY}px`;
+                }
+                return '50px';
+              })(),
+              left: (() => {
+                const button = document.querySelector(`[data-tender-id="${showMenuId}"]`);
+                if (button) {
+                  const rect = button.getBoundingClientRect();
+                  const menuWidth = 224;
+                  const rightEdge = rect.right + window.scrollX;
+                  
+                  if (rightEdge + menuWidth > window.innerWidth) {
+                    return `${window.innerWidth - menuWidth - 8}px`;
+                  }
+                  return `${rect.right - menuWidth + window.scrollX}px`;
+                }
+                return '50px';
+              })()
+            }}
+            transition={{
+              duration: 0.1,
+              ease: "easeOut"
+            }}
+          >
+            <div className="py-1">
+              <button
+                onClick={() => {
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
+              >
+                <Eye size={16} className="text-gray-500" />
+                View Details
+              </button>
+              
+              <button
+                onClick={() => {
+                  setShowMenuId(null);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
+              >
+                <Edit size={16} className="text-gray-500" />
+                Edit Tender
+              </button>
+
+              <button
+                onClick={() => {
+                  copyToClipboard(showMenuId);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
+              >
+                <FileText size={16} className="text-gray-500" />
+                Copy Tender ID
+              </button>
+
+              <div className="border-t border-gray-100 my-1"></div>
+
+              <button
+                onClick={() => handleDeleteTender(showMenuId)}
+                disabled={actionLoading === showMenuId}
+                className="w-full flex items-center gap-3 px-4 py-2 text-red-600 hover:bg-red-50 text-left text-sm rounded-xl"
+              >
+                <Trash2 size={16} />
+                Delete Tender
+                {actionLoading === showMenuId && (
+                  <div className="ml-auto">
+                    <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </button>
+            </div>
+          </motion.div>
+        </>
+      )}
 
       {/* Tender Details Modal */}
       {showTenderModal && (
@@ -1445,6 +1727,44 @@ const handleViewTender = async (tender) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Notification */}
+      {showNotification && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.3 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 20, scale: 0.5 }}
+          className="fixed bottom-4 right-4 z-50"
+        >
+          <div
+            className={`px-6 py-4 rounded-2xl shadow-2xl border ${
+              notificationType === "success"
+                ? "bg-green-50 text-green-800 border-green-200"
+                : "bg-red-50 text-red-800 border-red-200"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {notificationType === "success" ? (
+                <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+              )}
+              <span className="font-medium">{notificationMessage}</span>
+              <button onClick={() => setShowNotification(false)} className="ml-4 text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+          </div>
+        </motion.div>
       )}
     </div>
   )
