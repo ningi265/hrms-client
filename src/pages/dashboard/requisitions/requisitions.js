@@ -4,8 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
 import { debounce } from "lodash";
 
-// API configuration
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000';
+
 
 const steps = [
   { 
@@ -292,7 +291,7 @@ export default function NewRequisition() {
       }
 
       // Fetch departments data with new structure
-      const deptResponse = await fetch(`${API_BASE_URL}/api/departments`, {
+      const deptResponse = await fetch(`${backendUrl}/api/departments`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
