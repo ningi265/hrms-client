@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect,useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   Building2,
@@ -251,6 +251,7 @@ export default function DepartmentsPage() {
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState("")
   const [notificationType, setNotificationType] = useState("success")
+    const fileInputRef = useRef(null);
 
    const backendUrl = process.env.REACT_APP_ENV === 'production'
   ? process.env.REACT_APP_BACKEND_URL_PROD
@@ -543,7 +544,7 @@ const handleImportFromExcel = async (event) => {
     )
   }
 
-  const fileInputRef = useRef(null);
+
 
 
   return (
