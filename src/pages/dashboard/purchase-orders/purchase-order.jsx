@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Plus,
   Search,
@@ -43,10 +43,13 @@ import {
   MessageCircle,
   Camera,
   Upload,
-  Loader
+  Loader,
+  Printer,
+  FileSpreadsheet
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
+import * as XLSX from "xlsx";
 
 // LoadingOverlay Component (compact like view_rfqs.js)
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -953,6 +956,10 @@ export default function PurchaseOrdersPage() {
   // New state for RFQ modal
   const [rfqSearchTerm, setRfqSearchTerm] = useState("");
   const [rfqStatusFilter, setRfqStatusFilter] = useState("all");
+  
+  // Excel import/export and print functionality
+  const fileInputRef = useRef(null);
+  
   const backendUrl = process.env.REACT_APP_ENV === 'production'
   ? process.env.REACT_APP_BACKEND_URL_PROD
   : process.env.REACT_APP_BACKEND_URL_DEV;
@@ -1138,7 +1145,6 @@ export default function PurchaseOrdersPage() {
   }
 };
 
-
   const handleTrackDelivery = (po) => {
     setSelectedPOForTracking(po);
     setShowDeliveryTrackingModal(true);
@@ -1270,8 +1276,172 @@ export default function PurchaseOrdersPage() {
     window.location.reload();
   };
 
+  // Excel Export Functionality
+  const handleExportToExcel = () => {
+    if (!purchaseOrders || purchaseOrders.length === 0) {
+      showNotificationMessage("No purchase orders to export", "error");
+      return;
+    }
+
+    const formatted = purchaseOrders.map((po) => ({
+      "PO Number": po._id?.slice(-8) || "N/A",
+      "Vendor Name": po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A",
+      "Vendor Email": po.vendor?.email || "N/A",
+      "Total Amount": `MWK ${po.totalAmount?.toFixed(0) || 0}`,
+      "Status": po.status || "N/A",
+      "Delivery Status": po.deliveryStatus || "Pending",
+      "Created Date": po.createdAt ? new Date(po.createdAt).toLocaleDateString() : "N/A",
+      "Estimated Delivery": po.estimatedDelivery ? new Date(po.estimatedDelivery).toLocaleDateString() : "N/A",
+      "Items Count": po.items?.length || 0,
+      "Received By Customer": po.receivedByCustomer ? "Yes" : "No",
+      "Customer Rating": po.customerRating || "N/A",
+      "Delivery Address": po.deliveryAddress || "N/A",
+      "Tracking Number": po.trackingNumber || "N/A",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Orders");
+
+    XLSX.writeFile(workbook, "purchase_orders.xlsx");
+
+    showNotificationMessage("Export successful!", "success");
+  };
+
+  // Excel Import Functionality
+  const handleImportFromExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      const token = localStorage.getItem("token");
+      let importCount = 0;
+
+      for (const row of rows) {
+        // Parse the row data to match your PO structure
+        const poData = {
+          // Map Excel columns to your PO fields
+          // You'll need to adjust this based on your Excel structure
+          vendorId: row["Vendor ID"] || "", // This might need to be looked up
+          items: row["Items"] ? JSON.parse(row["Items"]) : [],
+          totalAmount: Number(row["Total Amount"]) || 0,
+          deliveryAddress: row["Delivery Address"] || "",
+          status: row["Status"] || "pending",
+          deliveryStatus: row["Delivery Status"] || "processing",
+        };
+
+        const response = await fetch(`${backendUrl}/api/purchase-orders`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(poData),
+        });
+
+        if (response.ok) {
+          importCount++;
+        } else {
+          console.warn(`Failed to import row: ${JSON.stringify(row)}`);
+        }
+      }
+
+      showNotificationMessage(`Successfully imported ${importCount} purchase orders!`, "success");
+      handleRefresh();
+    } catch (err) {
+      console.error(err);
+      showNotificationMessage("Excel import failed!", "error");
+    }
+  };
+
+  // Print Functionality
+  const handlePrint = () => {
+    const printContents = document.getElementById("purchase-orders-section")?.innerHTML;
+    if (!printContents) {
+      showNotificationMessage("Nothing to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Purchase Orders Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .print-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .print-date { text-align: right; color: #666; }
+            .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+            .metric-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; }
+            .metric-value { font-size: 24px; font-weight: bold; color: #333; }
+            .metric-label { font-size: 12px; color: #666; text-transform: uppercase; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+            th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
+            th { background-color: #f4f4f4; text-align: left; }
+            .status-approved { background-color: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; }
+            .status-pending { background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; }
+            .status-rejected { background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; }
+            .print-footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <h1>Purchase Orders Report</h1>
+          <div class="print-header">
+            <div>Generated by Procurement System</div>
+            <div class="print-date">${new Date().toLocaleDateString()}</div>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-value">${totalPOs}</div>
+              <div class="metric-label">Total POs</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${approvedPOs}</div>
+              <div class="metric-label">Approved</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${pendingPOs}</div>
+              <div class="metric-label">Pending</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">MWK ${totalAmount.toFixed(0)}</div>
+              <div class="metric-label">Total Amount</div>
+            </div>
+          </div>
+          ${printContents}
+          <div class="print-footer">
+            <p>Confidential - For internal use only</p>
+            <p>Page 1 of 1</p>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.print();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Hidden file input for Excel import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx, .xls"
+        className="hidden"
+        onChange={handleImportFromExcel}
+      />
+
       {/* LoadingOverlay with Loader icon */}
       <LoadingOverlay 
         isVisible={isLoading} 
@@ -1356,14 +1526,45 @@ export default function PurchaseOrdersPage() {
         </div>
 
         {/* Purchase Order Cards */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div id="purchase-orders-section" className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Purchase Orders</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{filteredPurchaseOrders.length} of {totalPOs} orders</span>
+
+            {/* Export/Import/Print Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Print Button */}
+              <button
+                onClick={handlePrint}
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+              >
+                <Printer size={16} />
+                Print
+              </button>
+              
+              {/* Excel Import */}
+              <button
+                onClick={() => fileInputRef.current.click()}
+               className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+              >
+                <FileSpreadsheet size={16} />
+                Excel Import
+              </button>
+
+              {/* Excel Export */}
+              <button
+                onClick={handleExportToExcel}
+               className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+              >
+                <Upload size={16} />
+                Excel Export
+              </button>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>{filteredPurchaseOrders.length} of {totalPOs} orders</span>
+              </div>
             </div>
           </div>
 

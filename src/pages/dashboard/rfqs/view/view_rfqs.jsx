@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Link,useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import {
   Package,
   Tag,
@@ -54,11 +54,14 @@ import {
   DollarSign,
   User,
   Check,
-  Loader
+  Loader,
+  Printer,
+  FileSpreadsheet
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../../authcontext/authcontext";
 import CreateRFQForm from "../create/create";
+import * as XLSX from "xlsx";
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -437,7 +440,6 @@ const VendorSelectionModal = ({ rfq, isOpen, onClose, onVendorSelect, selectedVe
   );
 };
 
-
 // RFQ Card Component (styled like vendor cards)
 const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId, onSelectVendor }) => {
   const getStatusColor = (status) => {
@@ -549,20 +551,19 @@ const RFQCard = ({ rfq, onMenuClick, showMenuId, onDelete, actionLoading, rfqId,
         </div>
       </div>
 
-    {rfq.selectedVendor && (
-  <div className="mb-2">
-    <div className="text-xs text-gray-600 mb-1">Selected Vendor</div>
-    <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 flex items-center gap-1 w-fit">
-      <CheckCircle size={10} />
-      {typeof rfq.selectedVendor === "object"
-        ? (rfq.selectedVendor.email ||
-           `${rfq.selectedVendor.firstName || ""} ${rfq.selectedVendor.lastName || ""}`.trim() ||
-           `Vendor ${rfq.selectedVendor._id?.slice(-4)}`)
-        : `Vendor ${rfq.selectedVendor.slice(-4)}`}
-    </span>
-  </div>
-)}
-
+      {rfq.selectedVendor && (
+        <div className="mb-2">
+          <div className="text-xs text-gray-600 mb-1">Selected Vendor</div>
+          <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800 flex items-center gap-1 w-fit">
+            <CheckCircle size={10} />
+            {typeof rfq.selectedVendor === "object"
+              ? (rfq.selectedVendor.email ||
+                `${rfq.selectedVendor.firstName || ""} ${rfq.selectedVendor.lastName || ""}`.trim() ||
+                `Vendor ${rfq.selectedVendor._id?.slice(-4)}`)
+              : `Vendor ${rfq.selectedVendor.slice(-4)}`}
+          </span>
+        </div>
+      )}
 
       {rfq.description && (
         <div className="mb-2">
@@ -615,52 +616,53 @@ export default function RFQsPage() {
     return searchParams.get('section') || 'dashboard' ;
   });
   const [rateLimitExceeded, setRateLimitExceeded] = useState(false);
-const [rateLimitMessage, setRateLimitMessage] = useState("");
-const [rateLimitActive, setRateLimitActive] = useState(false);
+  const [rateLimitMessage, setRateLimitMessage] = useState("");
+  const [rateLimitActive, setRateLimitActive] = useState(false);
+  const fileInputRef = useRef(null);
 
   // Vendor selection modal state
   const [showVendorSelectionModal, setShowVendorSelectionModal] = useState(false);
   const [selectedRFQForVendor, setSelectedRFQForVendor] = useState(null);
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
 
   useEffect(() => {
-   const fetchRFQs = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
+    const fetchRFQs = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
 
-    const response = await fetch(`${backendUrl}/api/rfqs`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+        const response = await fetch(`${backendUrl}/api/rfqs`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
 
-    if (!response.ok) {
-      // Check if it's a rate limit error
-      if (response.status === 429) {
-        const errorData = await response.json();
-        setRateLimitExceeded(true);
-        setRateLimitActive(true); // Set rate limit as active
-        setRateLimitMessage(errorData.message || "API rate limit exceeded. Please try again later.");
-        throw new Error("Rate limit exceeded");
+        if (!response.ok) {
+          // Check if it's a rate limit error
+          if (response.status === 429) {
+            const errorData = await response.json();
+            setRateLimitExceeded(true);
+            setRateLimitActive(true); // Set rate limit as active
+            setRateLimitMessage(errorData.message || "API rate limit exceeded. Please try again later.");
+            throw new Error("Rate limit exceeded");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseData = await response.json();
+        setRfqs(responseData.data || []);
+      } catch (error) {
+        console.error("Failed to fetch RFQs:", error);
+        setRfqs([]);
+      } finally {
+        setIsLoading(false);
       }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const responseData = await response.json();
-    setRfqs(responseData.data || []);
-  } catch (error) {
-    console.error("Failed to fetch RFQs:", error);
-    setRfqs([]);
-  } finally {
-    setIsLoading(false);
-  }
-};
+    };
 
     fetchRFQs();
   }, [backendUrl]);
@@ -680,8 +682,8 @@ const [rateLimitActive, setRateLimitActive] = useState(false);
   }
 
   const handleDismissRateLimit = () => {
-  setRateLimitExceeded(false); 
-};
+    setRateLimitExceeded(false); 
+  };
 
   // Calculate stats - handle undefined values safely
   const totalRFQs = rfqs?.length || 0;
@@ -781,53 +783,197 @@ const [rateLimitActive, setRateLimitActive] = useState(false);
   };
 
   const handleRFQSuccess = async () => {
-  setIsLoading(true);
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    const response = await fetch(`${backendUrl}/api/rfqs`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+      const response = await fetch(`${backendUrl}/api/rfqs`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (response.ok) {
-      const responseData = await response.json();
-      setRfqs(responseData.data || []);
+      if (response.ok) {
+        const responseData = await response.json();
+        setRfqs(responseData.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to refresh RFQs:", error);
+    } finally {
+      setIsLoading(false);
+      handleCloseModal();
     }
-  } catch (error) {
-    console.error("Failed to refresh RFQs:", error);
-  } finally {
-    setIsLoading(false);
-    handleCloseModal();
-  }
-};
+  };
 
- const handleRefresh = async () => {
-  setIsLoading(true);
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+  const handleRefresh = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
-    const response = await fetch(`${backendUrl}/api/rfqs`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+      const response = await fetch(`${backendUrl}/api/rfqs`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
-    if (response.ok) {
-      const responseData = await response.json();
-      setRfqs(responseData.data || []);
+      if (response.ok) {
+        const responseData = await response.json();
+        setRfqs(responseData.data || []);
+      }
+    } catch (error) {
+      console.error("Failed to refresh RFQs:", error);
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("Failed to refresh RFQs:", error);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
+
+  // Excel Export Function
+  const handleExportToExcel = () => {
+    if (!rfqs || rfqs.length === 0) {
+      showNotificationMessage("No RFQs to export", "error");
+      return;
+    }
+
+    const formatted = rfqs.map((rfq) => ({
+      'RFQ ID': `rfq-${rfq._id?.slice(-6) || rfq.id?.slice(-6) || 'N/A'}`,
+      'Item Name': rfq.itemName || "",
+      'Description': rfq.description || "",
+      'Quantity': rfq.quantity || 0,
+      'Status': rfq.status || "",
+      'Deadline': rfq.deadline ? new Date(rfq.deadline).toLocaleDateString() : "",
+      'Created': rfq.createdAt ? new Date(rfq.createdAt).toLocaleDateString() : "",
+      'Vendor Count': rfq.vendors?.length || 0,
+      'Quote Count': rfq.quotes?.length || 0,
+      'Selected Vendor': rfq.selectedVendor ? 
+        (typeof rfq.selectedVendor === 'object' 
+          ? (rfq.selectedVendor.email || `${rfq.selectedVendor.firstName || ''} ${rfq.selectedVendor.lastName || ''}`.trim())
+          : `Vendor ${rfq.selectedVendor.slice(-4)}`)
+        : "",
+      'Unit': rfq.unit || "",
+      'Priority': rfq.priority || "",
+      'Category': rfq.category || "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "RFQs");
+
+    XLSX.writeFile(workbook, "rfqs.xlsx");
+
+    showNotificationMessage("Export successful!", "success");
+  };
+
+  // Excel Import Function
+  const handleImportFromExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      const token = localStorage.getItem("token");
+
+      for (const row of rows) {
+        const payload = {
+          itemName: row['Item Name'] || "",
+          description: row['Description'] || "",
+          quantity: Number(row['Quantity']) || 0,
+          status: row['Status'] || "open",
+          deadline: row['Deadline'] ? new Date(row['Deadline']).toISOString() : new Date().toISOString(),
+          unit: row['Unit'] || "pcs",
+          priority: row['Priority'] || "medium",
+          category: row['Category'] || "General",
+        };
+
+        await fetch(`${backendUrl}/api/rfqs`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      showNotificationMessage("Excel import completed successfully!", "success");
+      handleRefresh();
+    } catch (err) {
+      console.error(err);
+      showNotificationMessage("Excel import failed!", "error");
+    }
+  };
+
+  // Print Function
+  const handlePrint = () => {
+    const printContents = document.getElementById("rfqs-section")?.innerHTML;
+    if (!printContents) {
+      showNotificationMessage("Nothing to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>RFQs Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .rfqs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
+            .rfq-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+            .rfq-card h3 { margin: 0 0 10px 0; color: #333; }
+            .rfq-card p { margin: 5px 0; color: #666; font-size: 14px; }
+            .status { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+            .open { background-color: #d1fae5; color: #065f46; }
+            .closed { background-color: #dbeafe; color: #1e40af; }
+            .pending { background-color: #fef3c7; color: #92400e; }
+            .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+            .metric-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; text-align: center; }
+            .metric-value { font-size: 24px; font-weight: bold; color: #333; }
+            .metric-title { font-size: 12px; color: #666; text-transform: uppercase; }
+          </style>
+        </head>
+        <body>
+          <h1>Request for Quotations (RFQs)</h1>
+          <div class="metrics">
+            <div class="metric-card">
+              <div class="metric-value">${totalRFQs}</div>
+              <div class="metric-title">Total RFQs</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${openRFQs}</div>
+              <div class="metric-title">Active RFQs</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${closedRFQs}</div>
+              <div class="metric-title">Completed</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${totalQuotes}</div>
+              <div class="metric-title">Total Quotes</div>
+            </div>
+          </div>
+          <div class="rfqs-grid">
+            ${printContents}
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.print();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -836,55 +982,63 @@ const [rateLimitActive, setRateLimitActive] = useState(false);
         isVisible={isLoading} 
         message="Loading RFQs..." 
       />
-     
-
 
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
+        {/* Hidden file input for Excel import */}
+        <input
+          type="file"
+          accept=".xlsx, .xls"
+          className="hidden"
+          ref={fileInputRef}
+          onChange={handleImportFromExcel}
+        />
+
         {/* Header */}
-<div className="flex items-center justify-between">
-  <div className="flex items-center gap-2">
-    {/* Search and other controls... */}
-    <div className="relative">
-      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-      <input
-        type="text"
-        placeholder="Search RFQs..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
-      />
-    </div>
-    <select
-      value={statusFilter}
-      onChange={(e) => setStatusFilter(e.target.value)}
-      className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
-    >
-      <option value="all">All Statuses</option>
-      <option value="open">Open</option>
-      <option value="closed">Closed</option>
-      <option value="pending">Pending</option>
-    </select>
-    <button
-      onClick={handleRefresh}
-      disabled={isLoading}
-      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
-    >
-      <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-    </button>
-    
-    {/* Create RFQ Button in Header with Tooltip */}
-    <div className="relative">
-      <button
-        onClick={handleCreateRFQ}
-        disabled={rateLimitActive}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <Plus size={16} />
-        Create RFQ
-      </button>
-    </div>
-  </div>
-</div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Search and other controls... */}
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search RFQs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white"
+            >
+              <option value="all">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+              <option value="pending">Pending</option>
+            </select>
+            <button
+              onClick={handleRefresh}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              Refresh
+            </button>
+            
+            {/* Create RFQ Button in Header with Tooltip */}
+            <div className="relative">
+              <button
+                onClick={handleCreateRFQ}
+                disabled={rateLimitActive}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus size={16} />
+                Create RFQ
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Key Metrics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -921,88 +1075,116 @@ const [rateLimitActive, setRateLimitActive] = useState(false);
         </div>
 
         {/* RFQ Cards */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div id="rfqs-section" className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Request for Quotations</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{filteredRFQs.length} of {totalRFQs} RFQs</span>
+
+            <div className="flex items-center gap-3">
+              {/* Print Button */}
+              <button
+                 className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handlePrint}
+              >
+                <Printer size={16} />
+                Print
+              </button>
+
+              {/* Excel Import */}
+              <button
+                 className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <FileSpreadsheet size={16} />
+                Excel Import
+              </button>
+
+              {/* Excel Export */}
+              <button
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                onClick={handleExportToExcel}
+              >
+                <Upload size={16} />
+                Excel Export
+              </button>
+
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>{filteredRFQs.length} of {totalRFQs} RFQs</span>
+              </div>
             </div>
           </div>
 
           {filteredRFQs.length === 0 ? (
-    <div className="text-center py-12">
-  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-    <FileText size={32} className="text-gray-400" />
-  </div>
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText size={32} className="text-gray-400" />
+              </div>
 
-  {rateLimitExceeded ? (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-amber-100 text-amber-800 px-4 py-6 rounded-lg shadow-md max-w-md mx-auto"
-    >
-      <div className="flex items-center gap-3 mb-2">
-        <AlertCircle size={20} className="text-amber-700" />
-        <h3 className="text-lg font-medium">Rate Limit Exceeded</h3>
-      </div>
-      <p className="text-sm mb-1">
-        {rateLimitMessage || "You've reached your API call limit."}
-      </p>
-      <p className="text-xs opacity-80">
-        Consider upgrading your plan for more API calls.
-      </p>
+              {rateLimitExceeded ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-amber-100 text-amber-800 px-4 py-6 rounded-lg shadow-md max-w-md mx-auto"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <AlertCircle size={20} className="text-amber-700" />
+                    <h3 className="text-lg font-medium">Rate Limit Exceeded</h3>
+                  </div>
+                  <p className="text-sm mb-1">
+                    {rateLimitMessage || "You've reached your API call limit."}
+                  </p>
+                  <p className="text-xs opacity-80">
+                    Consider upgrading your plan for more API calls.
+                  </p>
 
-      <button
-        onClick={() => setRateLimitExceeded(false)}
-        className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 mx-auto"
-      >
-        <X size={16} /> Dismiss
-      </button>
-    </motion.div>
-  ) : (
-    <>
-      <h3 className="text-lg font-medium text-gray-900 mb-2">
-        {searchTerm || statusFilter !== "all"
-          ? "No RFQs match your filters"
-          : "No RFQs found"}
-      </h3>
-      <p className="text-gray-500 mb-4">
-        {searchTerm || statusFilter !== "all"
-          ? "Try adjusting your search criteria or filters."
-          : "Start by creating your first RFQ to begin receiving quotes."}
-      </p>
-      
-      {/* Create RFQ Button with Tooltip */}
-      <div className="relative inline-block">
-        <button
-          onClick={handleCreateRFQ}
-          disabled={rateLimitActive}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mx-auto"
-        >
-          <Plus size={16} />
-          Create RFQ
-        </button>
-        
-        {/* Tooltip that appears when button is disabled due to rate limit */}
-        {rateLimitActive && (
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-10">
-            <div className="flex items-start gap-2">
-              <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-              <span>Cannot create RFQs while rate limit is exceeded</span>
+                  <button
+                    onClick={() => setRateLimitExceeded(false)}
+                    className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 mx-auto"
+                  >
+                    <X size={16} /> Dismiss
+                  </button>
+                </motion.div>
+              ) : (
+                <>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {searchTerm || statusFilter !== "all"
+                      ? "No RFQs match your filters"
+                      : "No RFQs found"}
+                  </h3>
+                  <p className="text-gray-500 mb-4">
+                    {searchTerm || statusFilter !== "all"
+                      ? "Try adjusting your search criteria or filters."
+                      : "Start by creating your first RFQ to begin receiving quotes."}
+                  </p>
+                  
+                  {/* Create RFQ Button with Tooltip */}
+                  <div className="relative inline-block">
+                    <button
+                      onClick={handleCreateRFQ}
+                      disabled={rateLimitActive}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mx-auto"
+                    >
+                      <Plus size={16} />
+                      Create RFQ
+                    </button>
+                    
+                    {/* Tooltip that appears when button is disabled due to rate limit */}
+                    {rateLimitActive && (
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-48 bg-gray-800 text-white text-xs p-2 rounded shadow-lg z-10">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
+                          <span>Cannot create RFQs while rate limit is exceeded</span>
+                        </div>
+                        {/* Tooltip arrow */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-            {/* Tooltip arrow */}
-            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
-          </div>
-        )}
-      </div>
-    </>
-  )}
-</div>
-
-
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {filteredRFQs.map((rfq, index) => {
@@ -1121,6 +1303,38 @@ const [rateLimitActive, setRateLimitActive] = useState(false);
                 <Copy size={16} className="text-gray-500" />
                 Copy RFQ ID
               </button>
+
+              {/* Export to Excel option */}
+              <button
+                onClick={() => {
+                  const rfq = filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId);
+                  if (rfq) {
+                    // Export single RFQ
+                    const formatted = [{
+                      'RFQ ID': showMenuId,
+                      'Item Name': rfq.itemName || "",
+                      'Description': rfq.description || "",
+                      'Quantity': rfq.quantity || 0,
+                      'Status': rfq.status || "",
+                      'Deadline': rfq.deadline ? new Date(rfq.deadline).toLocaleDateString() : "",
+                      'Vendor Count': rfq.vendors?.length || 0,
+                      'Quote Count': rfq.quotes?.length || 0,
+                    }];
+
+                    const worksheet = XLSX.utils.json_to_sheet(formatted);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "RFQ Details");
+                    XLSX.writeFile(workbook, `${showMenuId}-details.xlsx`);
+                    
+                    showNotificationMessage(`${showMenuId} exported to Excel!`, "success");
+                    setShowMenuId(null);
+                  }
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+              >
+                <Download size={16} className="text-gray-500" />
+                Export to Excel
+              </button>
               
               <button
                 onClick={() => {
@@ -1168,41 +1382,6 @@ const [rateLimitActive, setRateLimitActive] = useState(false);
         onVendorSelect={handleVendorSelect}
         selectedVendor={selectedRFQForVendor?.selectedVendor}
       />
-
-      {/* Create RFQ Modal - Keep Original Functionality --  {openModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl"
-          >
-            <div className="px-8 py-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                    <Plus size={24} className="text-blue-500" />
-                    Create New RFQ
-                  </h2>
-                  <p className="text-gray-600 mt-1">Request quotes from vendors for your procurement needs</p>
-                </div>
-                <button
-                  onClick={handleCloseModal}
-                  className="p-3 hover:bg-gray-100 rounded-xl transition-colors"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-            </div>
-            
-            <div className="max-h-[75vh] overflow-y-auto">
-              <CreateRFQForm onClose={handleCloseModal} onSuccess={handleRFQSuccess} />
-            </div>
-          </motion.div>
-        </div>
-      )} */}
-     
 
       {/* Notification */}
       {showNotification && (

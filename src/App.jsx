@@ -11,7 +11,7 @@ import RegisterPage from './pages/register/register';
 import DashboardPage from './pages/dashboard/dashboard';
 import PurchaseOrdersPage from './pages/dashboard/purchase-orders/purchase-order';
 import NewRequisitionPage from './pages/dashboard/requisitions/requisitions';
-import RFQsPage from './pages/dashboard/rfqs/rfqs';
+//mport RFQsPage from './pages/dashboard/rfqs/rfqs';
 import VendorsPage from './pages/dashboard/vendors/vendors';
 import ManageRequisitionsPage from './pages/dashboard/requisitions/manage/manage';
 import RFQDetailsPage from './pages/dashboard/rfqs/view/view_rfqs';
@@ -27,7 +27,7 @@ import TrackDeliveriesPage from './pages/dashboard/purchase-orders/confirm/confi
 import InvoicesPage from './pages/dashboard/invoice/invoice';
 import SubmitInvoicePage from './pages/vendor-dash/invoices/invoices';
 import VendorInvoiceSubmissionPage from './pages/vendor-dash/invoices/invoices';
-import InvoiceManagement from './pages/dashboard/invoice/manage/manage';
+//import InvoiceManagement from './pages/dashboard/invoice/manage/manage';
 import PaymentPage from './pages/dashboard/invoice/pay/pay';
 import TravelRequestForm from './pages/employee-dash/travel';
 import SupervisorApprovalPage from './pages/dashboard/requisitions/travel';
@@ -54,7 +54,7 @@ import VendorApprovalPage from './pages/dashboard/vendors/registration';
 import VendorManagementDashboard from './pages/vendor-dash/registration/registrationManagement';
 import EmployeeRequisitionManagement from './pages/employee-dash/requisition/requistionManagement';
 import DriverDashboard from './pages/driver-dash/driver-dashboard';
-import FleetTrackingMap from './pages/driver-dash/fleetMap';
+//import FleetTrackingMap from './pages/driver-dash/fleetMap';
 import EmployeeDetailPage from './pages/dashboard/employee/view-details';
 import EditEmployeePage from './pages/dashboard/employee/edit';
 import EmployeePerformancePage from './pages/dashboard/employee/performance';
@@ -79,7 +79,7 @@ import BillingPage from './pages/billing';
 import BillingManagement from './pages/billing-management';
 import SubscriptionRequired from './components/SubscriptionRequired';
 import TrialStatus from './components/TrialStatus';
-import UsageDashboard from './pages/usage';
+//import UsageDashboard from './pages/usage';
 import Tenders from './pages/vendor-dash/tenders/tenders';
 import CreateTendersPage from './pages/dashboard/tenders/tenders'; 
 import VendorBidPortal from './pages/vendor-dash/tenders/bid'; 
@@ -106,7 +106,6 @@ function App() {
             <Route path="/billing" element={<BillingPage/>} />
             <Route path="/billing/manage" element={<BillingManagement/>} />
             <Route path="/driver-dash" element={<DriverDashboard/>}/>
-            <Route path="/map" element={<FleetTrackingMap/>}/>
             <Route path="/trip-management" element={<TripManagementDashboard/>}/>
             <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
             <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
@@ -122,7 +121,7 @@ function App() {
   
               <Route path="/dash/new" element={<ProcurementDashboardWithSidebar/>}/>
               <Route path="/dashboard" element={<DashboardPage/>} />
-              <Route path="/usage" element={<UsageDashboard/>} />
+             
               <Route path="/tenders" element={<CreateTendersPage/>} />
             
        

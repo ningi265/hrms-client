@@ -17,7 +17,7 @@ import {
   Activity,
   Zap,
   Trophy,
-  Progress,
+  Loader2,
   FileText,
   Download,
   Plus,

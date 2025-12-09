@@ -48,7 +48,6 @@ import {
   Search,
   AlertCircle,
   XCircle,
-  Tool,
   Battery,
   Thermometer,
   RotateCcw
