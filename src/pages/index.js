@@ -969,57 +969,57 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section id="process" className="py-10 bg-gradient-to-br from-gray-50 to-blue-50" data-animate>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-10 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-2xl text-sm font-medium mb-4 shadow-lg">
-              <Gauge className="w-4 h-4" />
-              <span>Simple Process</span>
+      {/* How It Works Section */}
+<section id="process" className="py-10 bg-gradient-to-br from-gray-50 to-blue-50" data-animate>
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="text-center mb-10 max-w-3xl mx-auto">
+      <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-2xl text-sm font-medium mb-4 shadow-lg">
+        <Gauge className="w-4 h-4" />
+        <span>Simple Process</span>
+      </div>
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">How NexusMWI Works</h2>
+      <p className="text-lg text-gray-600">
+        Our streamlined process makes procurement management effortless, from requisition to payment.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+      {processSteps.map((step, index) => (
+        <div
+          key={index}
+          className="relative group"
+          style={{
+            transform: counterStarted ? "translateY(0)" : "translateY(30px)",
+            opacity: counterStarted ? 1 : 0,
+            transition: `all 0.6s ease-out ${index * 150}ms`,
+          }}
+        >
+          <div
+            className={`bg-gradient-to-br ${step.bgGradient} rounded-2xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center group-hover:border-transparent`}
+          >
+            <div
+              className={`w-12 h-12 bg-gradient-to-r ${step.gradient} rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg`}
+            >
+              <span className="text-white font-bold text-sm">{step.step}</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">How NexusMWI Works</h2>
-            <p className="text-lg text-gray-600">
-              Our streamlined process makes procurement management effortless, from requisition to payment.
-            </p>
+            <div
+              className={`mb-3 flex justify-center p-2 rounded-2xl bg-gradient-to-r ${step.gradient} w-fit mx-auto group-hover:scale-110 transition-transform shadow-md`}
+            >
+              {step.icon}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">{step.title}</h3>
+            <p className="text-gray-600 leading-relaxed text-sm">{step.description}</p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-            {processSteps.map((step, index) => (
-              <div
-                key={index}
-                className="relative group"
-                style={{
-                  transform: isVisible[index] ? "translateY(0)" : "translateY(30px)",
-                  opacity: isVisible[index] ? 1 : 0,
-                  transitionDelay: `${index * 200}ms`,
-                }}
-              >
-                <div
-                  className={`bg-gradient-to-br ${step.bgGradient} rounded-2xl p-6 border border-gray-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-center group-hover:border-transparent`}
-                >
-                  <div
-                    className={`w-12 h-12 bg-gradient-to-r ${step.gradient} rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform shadow-lg`}
-                  >
-                    <span className="text-white font-bold text-sm">{step.step}</span>
-                  </div>
-                  <div
-                    className={`mb-3 flex justify-center p-2 rounded-2xl bg-gradient-to-r ${step.gradient} w-fit mx-auto group-hover:scale-110 transition-transform shadow-md`}
-                  >
-                    {step.icon}
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">{step.title}</h3>
-                  <p className="text-gray-600 leading-relaxed text-sm">{step.description}</p>
-                </div>
-                {index < processSteps.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2">
-                    <ArrowRight className="w-5 h-5 text-gray-300" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+          {index < processSteps.length - 1 && (
+            <div className="hidden lg:block absolute top-1/2 -right-3 transform -translate-y-1/2">
+              <ArrowRight className="w-5 h-5 text-gray-300" />
+            </div>
+          )}
         </div>
-      </section>
-
+      ))}
+    </div>
+  </div>
+</section>
       {/* Features Section */}
       <section id="features" className="py-10 bg-white" data-animate>
         <div className="max-w-6xl mx-auto px-4">
