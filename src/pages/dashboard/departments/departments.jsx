@@ -433,6 +433,42 @@ const handleImportFromExcel = async (event) => {
   }
 };
 
+const handlePrint = () => {
+  const printContents = document.getElementById("departments-section")?.innerHTML;
+  if (!printContents) {
+    showNotificationMessage("Nothing to print", "error");
+    return;
+  }
+
+  const printWindow = window.open("", "_blank", "width=900,height=700");
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Departments Print</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { text-align: center; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
+          th { background-color: #f4f4f4; text-align: left; }
+          .section-title { font-size: 22px; margin-bottom: 10px; }
+        </style>
+      </head>
+      <body>
+        <h1>Department List</h1>
+        ${printContents}
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+  printWindow.focus();
+
+  printWindow.print();
+};
+
+
 
   const openAddDepartmentModal = () => {
     setIsAddDepartmentModalOpen(true)
@@ -629,7 +665,8 @@ const handleImportFromExcel = async (event) => {
         </div>
 
         {/* Department Cards */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+       <div id="departments-section" className="bg-white rounded-2xl border border-gray-200 p-4">
+
            <div className="flex items-center justify-between mb-4">
   <div className="flex items-center gap-2">
     <Building2 className="w-5 h-5 text-gray-600" />
@@ -637,11 +674,13 @@ const handleImportFromExcel = async (event) => {
   </div>
 
   <div className="flex items-center gap-3">
-    {/* Count */}
-    <span className="text-sm text-gray-500">
-      {filteredDepartments.length} of {totalDepartments} departments
-    </span>
-
+  {/* Print */}
+<button
+  className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+  onClick={handlePrint}
+>
+  Print
+</button>
     {/* Excel Import */}
     <button
   className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
@@ -657,6 +696,10 @@ const handleImportFromExcel = async (event) => {
 >
   Excel Export
 </button>
+{/* Count */}
+    <span className="text-sm text-gray-500">
+      {filteredDepartments.length} of {totalDepartments} departments
+    </span>
   </div>
 </div>
 
