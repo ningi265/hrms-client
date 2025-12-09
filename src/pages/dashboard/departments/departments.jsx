@@ -529,15 +529,36 @@ export default function DepartmentsPage() {
 
         {/* Department Cards */}
         <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-gray-600" />
-              <h3 className="font-semibold text-gray-900">Departments</h3>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{filteredDepartments.length} of {totalDepartments} departments</span>
-            </div>
-          </div>
+           <div className="flex items-center justify-between mb-4">
+  <div className="flex items-center gap-2">
+    <Building2 className="w-5 h-5 text-gray-600" />
+    <h3 className="font-semibold text-gray-900">Departments</h3>
+  </div>
+
+  <div className="flex items-center gap-3">
+    {/* Count */}
+    <span className="text-sm text-gray-500">
+      {filteredDepartments.length} of {totalDepartments} departments
+    </span>
+
+    {/* Excel Import */}
+    <button
+      className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+      onClick={() => alert("Excel Import clicked")}
+    >
+      Excel Import
+    </button>
+
+    {/* Excel Export */}
+    <button
+      className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+      onClick={() => alert("Excel Export clicked")}
+    >
+      Excel Export
+    </button>
+  </div>
+</div>
+
 
           {filteredDepartments.length === 0 ? (
             <div className="text-center py-12">
