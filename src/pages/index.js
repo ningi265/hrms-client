@@ -1021,103 +1021,104 @@ export default function Home() {
   </div>
 </section>
       {/* Features Section */}
-      <section id="features" className="py-10 bg-white" data-animate>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-10 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white px-4 py-2 rounded-2xl text-sm font-medium mb-4 shadow-lg">
-              <Settings className="w-4 h-4" />
-              <span>Powerful Features</span>
-            </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Everything You Need in One Platform</h2>
-            <p className="text-lg text-gray-600">
-              Our comprehensive solution covers the entire procurement lifecycle with advanced automation and
-              intelligent insights.
-            </p>
+      {/* Features Section */}
+<section id="features" className="py-10 bg-white" data-animate>
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="text-center mb-10 max-w-3xl mx-auto">
+      <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-green-500 text-white px-4 py-2 rounded-2xl text-sm font-medium mb-4 shadow-lg">
+        <Settings className="w-4 h-4" />
+        <span>Powerful Features</span>
+      </div>
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Everything You Need in One Platform</h2>
+      <p className="text-lg text-gray-600">
+        Our comprehensive solution covers the entire procurement lifecycle with advanced automation and
+        intelligent insights.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      {features.map((feature, index) => (
+        <div
+          key={index}
+          className={`bg-gradient-to-br ${feature.bgGradient} rounded-2xl border border-gray-200 p-6 hover:shadow-xl transition-all duration-500 hover:-translate-y-2 group hover:border-transparent`}
+          style={{
+            transform: counterStarted ? "translateY(0)" : "translateY(30px)",
+            opacity: counterStarted ? 1 : 0,
+            transition: `all 0.6s ease-out ${index * 150}ms`,
+          }}
+        >
+          <div
+            className={`p-3 rounded-2xl mb-4 w-fit group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r ${feature.gradient} shadow-lg`}
+          >
+            {feature.icon}
           </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-3">{feature.title}</h3>
+          <p className="text-gray-600 leading-relaxed mb-4 text-sm">{feature.description}</p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {features.map((feature, index) => (
-              <div
-                key={index}
-                className={`bg-gradient-to-br ${feature.bgGradient} rounded-2xl border border-gray-200 p-6 hover:shadow-xl transition-all duration-500 hover:-translate-y-2 group hover:border-transparent`}
-                style={{
-                  transform: counterStarted ? "translateY(0)" : "translateY(30px)",
-                  opacity: counterStarted ? 1 : 0,
-                  transitionDelay: `${index * 150}ms`,
-                }}
-              >
-                <div
-                  className={`p-3 rounded-2xl mb-4 w-fit group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r ${feature.gradient} shadow-lg`}
-                >
-                  {feature.icon}
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed mb-4 text-sm">{feature.description}</p>
-
-                <div className="space-y-2">
-                  {feature.benefits.map((benefit, benefitIndex) => (
-                    <div key={benefitIndex} className="flex items-center gap-2">
-                      <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
-                      <span className="text-sm text-gray-600">{benefit}</span>
-                    </div>
-                  ))}
-                </div>
+          <div className="space-y-2">
+            {feature.benefits.map((benefit, benefitIndex) => (
+              <div key={benefitIndex} className="flex items-center gap-2">
+                <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                <span className="text-sm text-gray-600">{benefit}</span>
               </div>
             ))}
           </div>
         </div>
-      </section>
-
+      ))}
+    </div>
+  </div>
+</section>
       {/* Benefits Section */}
-      <section id="benefits" className="py-10 bg-gradient-to-br from-blue-50 to-purple-50" data-animate>
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="text-center mb-10 max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white px-4 py-2 rounded-2xl text-sm font-medium mb-4 shadow-lg">
-              <Target className="w-4 h-4" />
-              <span>Proven Results</span>
+   {/* Benefits Section */}
+<section id="benefits" className="py-10 bg-gradient-to-br from-blue-50 to-purple-50" data-animate>
+  <div className="max-w-6xl mx-auto px-4">
+    <div className="text-center mb-10 max-w-3xl mx-auto">
+      <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white px-4 py-2 rounded-2xl text-sm font-medium mb-4 shadow-lg">
+        <Target className="w-4 h-4" />
+        <span>Proven Results</span>
+      </div>
+
+      <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Measurable Business Impact</h2>
+
+      <p className="text-lg text-gray-600 leading-relaxed">
+        Our procurement system delivers tangible business benefits that directly impact your bottom line and
+        operational efficiency.
+      </p>
+    </div>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+      {benefits.map((benefit, index) => (
+        <div
+          key={index}
+          className={`bg-gradient-to-br ${benefit.bgGradient} rounded-2xl border border-gray-200 p-6 hover:shadow-xl transition-all duration-500 hover:-translate-y-2 group hover:border-transparent`}
+          style={{
+            transform: counterStarted ? "translateY(0)" : "translateY(30px)",
+            opacity: counterStarted ? 1 : 0,
+            transition: `all 0.6s ease-out ${index * 150}ms`,
+          }}
+        >
+          <div className="flex items-start gap-3 mb-4">
+            <div
+              className={`p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r ${benefit.gradient} shadow-lg`}
+            >
+              {benefit.icon}
             </div>
-
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Measurable Business Impact</h2>
-
-            <p className="text-lg text-gray-600 leading-relaxed">
-              Our procurement system delivers tangible business benefits that directly impact your bottom line and
-              operational efficiency.
-            </p>
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-gray-900">{benefit.title}</h3>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {benefits.map((benefit, index) => (
-              <div
-                key={index}
-                className={`bg-gradient-to-br ${benefit.bgGradient} rounded-2xl border border-gray-200 p-6 hover:shadow-xl transition-all duration-500 hover:-translate-y-2 group hover:border-transparent`}
-                style={{
-                  transform: isVisible[index] ? "translateY(0)" : "translateY(30px)",
-                  opacity: isVisible[index] ? 1 : 0,
-                  transitionDelay: `${index * 150}ms`,
-                }}
-              >
-                <div className="flex items-start gap-3 mb-4">
-                  <div
-                    className={`p-3 rounded-2xl group-hover:scale-110 transition-transform duration-300 bg-gradient-to-r ${benefit.gradient} shadow-lg`}
-                  >
-                    {benefit.icon}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-semibold text-gray-900">{benefit.title}</h3>
-                  </div>
-                </div>
-
-                <div className="text-center mb-3">
-                  <div className="text-3xl font-bold text-gray-900 mb-1">{benefit.metric}</div>
-                  <div className="text-sm text-gray-500 font-medium">{benefit.subtext}</div>
-                </div>
-
-                <p className="text-gray-600 leading-relaxed text-center text-sm">{benefit.description}</p>
-              </div>
-            ))}
+          <div className="text-center mb-3">
+            <div className="text-3xl font-bold text-gray-900 mb-1">{benefit.metric}</div>
+            <div className="text-sm text-gray-500 font-medium">{benefit.subtext}</div>
           </div>
+
+          <p className="text-gray-600 leading-relaxed text-center text-sm">{benefit.description}</p>
         </div>
-      </section>
+      ))}
+    </div>
+  </div>
+</section>
 
       {/* Integrations Section */}
       <section className="py-10 bg-white" data-animate>
