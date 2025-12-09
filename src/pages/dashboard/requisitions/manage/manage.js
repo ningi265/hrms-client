@@ -28,9 +28,13 @@ import {
   Tag,
   Shield,
   CheckCircle,
-  Loader
+  Loader,
+  Printer,
+  Upload,
+  FileSpreadsheet
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import * as XLSX from "xlsx";
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -214,65 +218,68 @@ export default function ManageRequisitionsPage() {
   const [notificationType, setNotificationType] = useState("success");
   const [showMenuId, setShowMenuId] = useState(null);
   const navigate = useNavigate();
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+  const fileInputRef = useRef(null);
+  
+  const backendUrl = process.env.REACT_APP_ENV === 'production'
+    ? process.env.REACT_APP_BACKEND_URL_PROD
+    : process.env.REACT_APP_BACKEND_URL_DEV;
 
   // Fetch pending requisitions
   useEffect(() => {
     const fetchPendingRequisitions = async () => {
-  try {
-    setIsLoading(true);
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${backendUrl}/api/requisitions/pending`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch requisitions');
-    }
-    
-    const result = await response.json();
-    
-    // Check if the response has the expected structure
-    if (result.success && Array.isArray(result.data)) {
-      setRequisitions(result.data);
-    } else {
-      // Fallback to empty array if structure is unexpected
-      setRequisitions([]);
-    }
-    
-    setError(null);
-  } catch (err) {
-    setError(err.message);
-    console.error(err);
-    setRequisitions([]); // Ensure we have an array even on error
-  } finally {
-    setIsLoading(false);
-  }
-};
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        const response = await fetch(`${backendUrl}/api/requisitions/pending`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch requisitions');
+        }
+        
+        const result = await response.json();
+        
+        // Check if the response has the expected structure
+        if (result.success && Array.isArray(result.data)) {
+          setRequisitions(result.data);
+        } else {
+          // Fallback to empty array if structure is unexpected
+          setRequisitions([]);
+        }
+        
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        console.error(err);
+        setRequisitions([]); // Ensure we have an array even on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     fetchPendingRequisitions();
   }, [backendUrl]);
 
   // Filter requisitions based on search term and status
   const filteredRequisitions = requisitions.filter((requisition) => {
-  const matchesSearch = 
-    (requisition.itemName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (requisition.employee?.firstName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (requisition.employee?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-  
-  const matchesStatus = statusFilter === "all" || requisition.urgency === statusFilter;
-  return matchesSearch && matchesStatus;
-});
+    const matchesSearch = 
+      (requisition.itemName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (requisition.employee?.firstName?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+      (requisition.employee?.email?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === "all" || requisition.urgency === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   // Calculate stats
   const totalRequisitions = requisitions.length;
-const highUrgency = requisitions.filter(req => req.urgency === "high").length;
-const mediumUrgency = requisitions.filter(req => req.urgency === "medium").length;
-const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
+  const highUrgency = requisitions.filter(req => req.urgency === "high").length;
+  const mediumUrgency = requisitions.filter(req => req.urgency === "medium").length;
+  const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
+
   // Handle accept/reject action
   const handleAction = async (requisitionId, action) => {
     try {
@@ -336,6 +343,236 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
       console.error(err);
     }
     setShowMenuId(null);
+  };
+
+  // Export to Excel
+  const handleExportToExcel = () => {
+    if (!requisitions || requisitions.length === 0) {
+      showNotificationMessage("No requisitions to export", "error");
+      return;
+    }
+
+    const formatted = requisitions.map((req) => ({
+      "Item Name": req.itemName || "N/A",
+      "Quantity": req.quantity || 0,
+      "Budget Code": req.budgetCode || "N/A",
+      "Urgency": req.urgency || "N/A",
+      "Employee Name": req.employee?.firstName + " " + req.employee?.lastName || "N/A",
+      "Employee Email": req.employee?.email || "N/A",
+      "Description": req.description || "",
+      "Submitted Date": req.createdAt ? formatDate(req.createdAt) : "N/A",
+      "Department": req.department || "N/A",
+      "Project Code": req.projectCode || "N/A",
+      "Status": "Pending"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Requisitions");
+
+    XLSX.writeFile(workbook, "pending-requisitions.xlsx");
+
+    showNotificationMessage("Export successful!", "success");
+  };
+
+  // Import from Excel
+  const handleImportFromExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      const token = localStorage.getItem("token");
+
+      for (const row of rows) {
+        const payload = {
+          itemName: row["Item Name"] || "",
+          quantity: Number(row["Quantity"]) || 0,
+          budgetCode: row["Budget Code"] || "",
+          urgency: row["Urgency"]?.toLowerCase() || "medium",
+          description: row["Description"] || "",
+          department: row["Department"] || "",
+          projectCode: row["Project Code"] || "",
+          // Note: Employee information would typically be looked up by email
+        };
+
+        // This is a simplified import - in production you'd need to handle employee mapping
+        await fetch(`${backendUrl}/api/requisitions`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      showNotificationMessage("Excel import completed successfully!", "success");
+      handleRefresh();
+    } catch (err) {
+      console.error(err);
+      showNotificationMessage("Excel import failed!", "error");
+    }
+  };
+
+  // Print functionality
+  const handlePrint = () => {
+    const printContents = document.getElementById("requisitions-section")?.innerHTML;
+    if (!printContents) {
+      showNotificationMessage("Nothing to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Pending Requisitions Print</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .print-header { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center; 
+              margin-bottom: 20px; 
+              padding-bottom: 10px;
+              border-bottom: 1px solid #ddd;
+            }
+            .print-metrics {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 15px;
+              margin-bottom: 20px;
+            }
+            .metric-box {
+              border: 1px solid #ddd;
+              padding: 15px;
+              text-align: center;
+              border-radius: 8px;
+            }
+            .metric-value {
+              font-size: 24px;
+              font-weight: bold;
+              margin: 5px 0;
+            }
+            .metric-title {
+              font-size: 14px;
+              color: #666;
+              text-transform: uppercase;
+            }
+            .requisitions-grid {
+              display: grid;
+              grid-template-columns: repeat(2, 1fr);
+              gap: 15px;
+              margin-top: 20px;
+            }
+            .requisition-card {
+              border: 1px solid #ddd;
+              border-radius: 8px;
+              padding: 15px;
+              margin-bottom: 15px;
+            }
+            .requisition-header {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+            }
+            .urgency-badge {
+              padding: 3px 8px;
+              border-radius: 12px;
+              font-size: 12px;
+              font-weight: bold;
+            }
+            .urgency-high { background-color: #fee; color: #c00; border: 1px solid #fcc; }
+            .urgency-medium { background-color: #ffe; color: #c90; border: 1px solid #ffc; }
+            .urgency-low { background-color: #efe; color: #090; border: 1px solid #cfc; }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 20px; 
+            }
+            th, td { 
+              border: 1px solid #ddd; 
+              padding: 8px; 
+              text-align: left; 
+              font-size: 14px; 
+            }
+            th { background-color: #f4f4f4; }
+            @media print {
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-header">
+            <h1>Pending Requisitions Report</h1>
+            <div>Generated: ${new Date().toLocaleDateString()}</div>
+          </div>
+          
+          <div class="print-metrics">
+            <div class="metric-box">
+              <div class="metric-value">${totalRequisitions}</div>
+              <div class="metric-title">Total Pending</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-value">${highUrgency}</div>
+              <div class="metric-title">High Urgency</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-value">${mediumUrgency}</div>
+              <div class="metric-title">Medium Urgency</div>
+            </div>
+            <div class="metric-box">
+              <div class="metric-value">${lowUrgency}</div>
+              <div class="metric-title">Low Urgency</div>
+            </div>
+          </div>
+          
+          <h2>Requisitions List (${filteredRequisitions.length} items)</h2>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Item Name</th>
+                <th>Quantity</th>
+                <th>Employee</th>
+                <th>Urgency</th>
+                <th>Budget Code</th>
+                <th>Submitted Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredRequisitions.map(req => `
+                <tr>
+                  <td>${req.itemName || "N/A"}</td>
+                  <td>${req.quantity || 0}</td>
+                  <td>${req.employee?.firstName || "Unknown"} ${req.employee?.lastName || ""}</td>
+                  <td>
+                    <span class="urgency-badge urgency-${req.urgency || 'medium'}">
+                      ${req.urgency || "N/A"}
+                    </span>
+                  </td>
+                  <td>${req.budgetCode || "N/A"}</td>
+                  <td>${req.createdAt ? new Date(req.createdAt).toLocaleDateString() : "N/A"}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.print();
   };
 
   const showNotificationMessage = (message, type = "success") => {
@@ -415,10 +652,18 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
       {/* Loading Overlay */}
       <LoadingOverlay isVisible={isLoading} message="Loading requisitions..." />
 
+      {/* Hidden file input for Excel import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx, .xls"
+        className="hidden"
+        onChange={handleImportFromExcel}
+      />
+
       <main className="p-4 space-y-4 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -448,6 +693,11 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
               <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
               Refresh
             </button>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+          
           </div>
         </div>
 
@@ -486,12 +736,39 @@ const lowUrgency = requisitions.filter(req => req.urgency === "low").length;
         </div>
 
         {/* Requisitions Cards */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
+        <div id="requisitions-section" className="bg-white rounded-2xl border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Pending Requisitions</h3>
             </div>
+
+              {/* Print Button */}
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+            >
+              <Printer size={16} />
+              Print
+            </button>
+
+            {/* Excel Import Button */}
+            <button
+              onClick={() => fileInputRef.current.click()}
+              className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+            >
+              <Upload size={16} />
+              Excel Import
+            </button>
+
+            {/* Excel Export Button */}
+            <button
+              onClick={handleExportToExcel}
+              className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+            >
+              <FileSpreadsheet size={16} />
+              Excel Export
+            </button>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>{filteredRequisitions.length} of {totalRequisitions} requisitions</span>
             </div>

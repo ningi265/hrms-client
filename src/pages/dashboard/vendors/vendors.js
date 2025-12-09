@@ -7,6 +7,9 @@ import {
   MoreVertical,
   Save,
   X,
+  Printer,
+  FileSpreadsheet,
+  Upload,
   Star,
   Phone,
   Mail,
@@ -932,25 +935,28 @@ export default function VendorsPage() {
             <div className="flex items-center gap-3">
               {/* Print Button */}
               <button
-                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                 className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
                 onClick={handlePrint}
               >
+                 <Printer size={16} />
                 Print
               </button>
               
               {/* Excel Import Button */}
               <button
-                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
                 onClick={() => fileInputRef.current.click()}
               >
+                <FileSpreadsheet size={16} />
                 Excel Import
               </button>
               
               {/* Excel Export Button */}
               <button
-                className="px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
                 onClick={handleExportToExcel}
               >
+                  <Upload size={16} />
                 Excel Export
               </button>
               
