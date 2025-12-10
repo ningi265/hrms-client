@@ -114,9 +114,9 @@ export default function EmployeeReconciliationPage() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [tabValue, setTabValue] = useState(0);
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+   const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
   
   const expenseCategories = [
     'Transportation',

@@ -56,9 +56,9 @@ import { useSnackbar } from "notistack"
 
 // API configuration
 const API_BASE_URL =
-  process.env.REACT_APP_ENV === "production"
-    ? process.env.REACT_APP_BACKEND_URL_PROD
-    : process.env.REACT_APP_BACKEND_URL_DEV
+  import.meta.env.VITE_ENV === "production"
+    ? import.meta.env.VITE_BACKEND_URL_PROD
+    : import.meta.env.VITE_BACKEND_URL_DEV
 
 export default function TravelDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -115,7 +115,7 @@ const [internationalFormDraft, setInternationalFormDraft] = useState(null);
   const [pendingClaims, setPendingClaims] = useState([])
   const [selectedFormTab, setSelectedFormTab] = useState("details") 
 
-  const backendUrl = process.env.REACT_APP_BACKEND_URL
+  const backendUrl = import.meta.env.VITE_BACKEND_URL
 
 const loadDraft = (type) => {
   const draftKey = type === 'local' ? 'localTravelDraft' : 'internationalTravelDraft';

@@ -239,9 +239,9 @@ export default function VendorRFQsPage() {
   const [viewMode, setViewMode] = useState("cards") // cards or table
 
   const backendUrl =
-    process.env.REACT_APP_ENV === "production"
-      ? process.env.REACT_APP_BACKEND_URL_PROD
-      : process.env.REACT_APP_BACKEND_URL_DEV
+    import.meta.env.VITE_ENV === "production"
+      ? import.meta.env.VITE_BACKEND_URL_PROD
+      : import.meta.env.VITE_BACKEND_URL_DEV
 
   // Fetch all RFQs from the backend
   const fetchRFQs = async () => {

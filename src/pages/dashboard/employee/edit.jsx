@@ -55,9 +55,9 @@ export default function EditEmployeePage() {
     return searchParams.get('section') || 'dashboard';
   });
 
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+   const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
 
   const handleSectionChange = (section) => {
     setActiveSection(section);

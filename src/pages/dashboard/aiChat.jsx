@@ -17,9 +17,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../authcontext/authcontext";
 
 // API base URL
-const backendUrl = process.env.REACT_APP_ENV === 'development'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV; 
+const backendUrl = import.meta.env.VITE_ENV === 'development'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV; 
 
 // Initial welcome message from AI
 const createInitialMessage = (firstName) => {

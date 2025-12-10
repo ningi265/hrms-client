@@ -48,9 +48,9 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
 
-  const backendUrl = process.env.REACT_APP_ENV === 'production'
-    ? process.env.REACT_APP_BACKEND_URL_PROD
-    : process.env.REACT_APP_BACKEND_URL_DEV;
+  const backendUrl = import.meta.env.VITE_ENV === 'production'
+    ? import.meta.env.VITE_BACKEND_URL_PROD
+    : import.meta.env.VITE_BACKEND_URL_DEV;
 
   const steps = [
     { id: 1, title: 'Select Requisition', icon: FileText, description: 'Choose from approved requisitions' },

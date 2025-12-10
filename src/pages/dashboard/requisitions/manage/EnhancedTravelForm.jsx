@@ -120,7 +120,7 @@ const EnhancedTravelForm = ({
         receipts: formData.receipts.map((file) => file.name),
       }
 
-      const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/travel-requests`, payload, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/travel-requests`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

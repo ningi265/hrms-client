@@ -21,9 +21,9 @@ export default function SubmitQuotePage() {
   const [notes, setNotes] = useState("");
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+   const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
   const handleSubmit = async (e) => {
     e.preventDefault();
 

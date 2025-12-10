@@ -4,7 +4,7 @@ import { useAuth } from './authcontext';
 const AIChatContext = createContext();
 
 // FIX: Make sure this includes /api
-const API_BASE = process.env.REACT_APP_API_URL;
+const API_BASE = import.meta.env.VITE_API_URL;
 
 // Action types
 const ACTION_TYPES = {

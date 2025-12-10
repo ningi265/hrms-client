@@ -251,9 +251,9 @@ export default function EmployeesPage() {
   const [notificationType, setNotificationType] = useState("success");
   const [departments, setDepartments] = useState([]);
   const fileInputRef = useRef(null); // Add this ref for file input
-  const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+  const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const handleSectionChange = (section) => {

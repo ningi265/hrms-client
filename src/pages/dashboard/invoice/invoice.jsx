@@ -29,11 +29,15 @@ import {
   Copy,
   History,
   MessageSquare,
-  Loader
+  Loader,
+  Printer,
+  FileSpreadsheet,
+  Upload
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { useNavigate } from "react-router-dom";
+import * as XLSX from "xlsx";
 
 // LoadingOverlay Component (compact like view_rfqs.js)
 const LoadingOverlay = ({ isVisible, message = "Loading Invoices..." }) => {
@@ -261,11 +265,14 @@ export default function InvoicesPage() {
   const [notificationType, setNotificationType] = useState("success");
   const [showMenuId, setShowMenuId] = useState(null);
   const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0, bottom: 'auto' });
-  const menuRef = useRef(null);
+  
+  // Excel import/export and print functionality
+  const fileInputRef = useRef(null);
+  
   const navigate = useNavigate();
-   const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+   const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -334,7 +341,7 @@ export default function InvoicesPage() {
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (showMenuId && !event.target.closest(`[data-invoice-id="${showMenuId}"]`)) {
         setShowMenuId(null);
       }
     };
@@ -442,6 +449,213 @@ export default function InvoicesPage() {
     setShowMenuId(null);
   };
 
+  // Excel Export Functionality
+  const handleExportToExcel = () => {
+    if (!invoices || invoices.length === 0) {
+      showNotificationMessage("No invoices to export", "error");
+      return;
+    }
+
+    const formatted = invoices.map((invoice) => ({
+      "Invoice Number": invoice.invoiceNumber || "N/A",
+      "Vendor Name": `${invoice.vendor?.firstName || ""} ${invoice.vendor?.lastName || ""}`.trim() || "N/A",
+      "Vendor Email": invoice.vendor?.email || "N/A",
+      "Amount Due": invoice.amountDue || 0,
+      "Status": invoice.status || "N/A",
+      "PO Number": invoice.po?.poNumber || "N/A",
+      "Created Date": invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : "N/A",
+      "Due Date": invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "N/A",
+      "Payment Method": invoice.paymentMethod || "N/A",
+      "Notes": invoice.notes || "",
+      "Currency": "USD",
+      "Items Count": invoice.items?.length || 0,
+      "Tax Amount": invoice.taxAmount || 0,
+      "Shipping Amount": invoice.shippingAmount || 0,
+      "Discount Amount": invoice.discountAmount || 0,
+      "Total Amount": invoice.totalAmount || 0,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Invoices");
+
+    XLSX.writeFile(workbook, "invoices.xlsx");
+
+    showNotificationMessage("Export successful!", "success");
+  };
+
+  // Excel Import Functionality
+  const handleImportFromExcel = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet);
+
+      const token = localStorage.getItem("token");
+      let importCount = 0;
+
+      for (const row of rows) {
+        // Parse the row data to match your invoice structure
+        const invoiceData = {
+          invoiceNumber: row["Invoice Number"] || "",
+          vendorId: row["Vendor ID"] || "", // This might need to be looked up
+          poId: row["PO ID"] || "", // This might need to be looked up
+          amountDue: Number(row["Amount Due"]) || 0,
+          dueDate: row["Due Date"] ? new Date(row["Due Date"]) : new Date(),
+          status: row["Status"] || "pending",
+          notes: row["Notes"] || "",
+          paymentMethod: row["Payment Method"] || "bank_transfer",
+          items: row["Items"] ? JSON.parse(row["Items"]) : [],
+          taxAmount: Number(row["Tax Amount"]) || 0,
+          shippingAmount: Number(row["Shipping Amount"]) || 0,
+          discountAmount: Number(row["Discount Amount"]) || 0,
+          totalAmount: Number(row["Total Amount"]) || 0,
+        };
+
+        const response = await fetch(`${backendUrl}/api/invoices`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(invoiceData),
+        });
+
+        if (response.ok) {
+          importCount++;
+        } else {
+          console.warn(`Failed to import row: ${JSON.stringify(row)}`);
+        }
+      }
+
+      showNotificationMessage(`Successfully imported ${importCount} invoices!`, "success");
+      handleRefresh();
+    } catch (err) {
+      console.error(err);
+      showNotificationMessage("Excel import failed!", "error");
+    }
+  };
+
+  // Print Functionality
+  const handlePrint = () => {
+    const printContents = document.getElementById("invoices-section")?.innerHTML;
+    if (!printContents) {
+      showNotificationMessage("Nothing to print", "error");
+      return;
+    }
+
+    const printWindow = window.open("", "_blank", "width=900,height=700");
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Invoices Report</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            h1 { text-align: center; margin-bottom: 20px; }
+            .print-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+            .print-date { text-align: right; color: #666; }
+            .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
+            .metric-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; }
+            .metric-value { font-size: 20px; font-weight: bold; color: #333; }
+            .metric-label { font-size: 12px; color: #666; text-transform: uppercase; }
+            .invoice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+            .invoice-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; break-inside: avoid; }
+            .invoice-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+            .invoice-number { font-weight: bold; font-size: 16px; }
+            .invoice-status { padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+            .status-pending { background-color: #fef3c7; color: #92400e; }
+            .status-approved { background-color: #d1fae5; color: #065f46; }
+            .status-paid { background-color: #dbeafe; color: #1e40af; }
+            .status-rejected { background-color: #fee2e2; color: #991b1b; }
+            .invoice-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+            .invoice-amount { font-size: 18px; font-weight: bold; color: #059669; }
+            .print-footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
+            @media print {
+              .invoice-grid { 
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+              }
+              .invoice-card {
+                page-break-inside: avoid;
+                break-inside: avoid;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Invoices Report</h1>
+          <div class="print-header">
+            <div>Generated by Procurement System</div>
+            <div class="print-date">${new Date().toLocaleDateString()}</div>
+          </div>
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div class="metric-value">${totalInvoices}</div>
+              <div class="metric-label">Total Invoices</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${pendingInvoices}</div>
+              <div class="metric-label">Pending</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${approvedInvoices}</div>
+              <div class="metric-label">Approved</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">${paidInvoices}</div>
+              <div class="metric-label">Paid</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-value">$${totalAmount.toFixed(0)}</div>
+              <div class="metric-label">Total Amount</div>
+            </div>
+          </div>
+          <div class="invoice-grid">
+            ${filteredInvoices.map(invoice => {
+              const vendorName = `${invoice.vendor?.firstName || ""} ${invoice.vendor?.lastName || ""}`.trim() || "N/A";
+              const statusClass = `status-${invoice.status?.toLowerCase() || 'pending'}`;
+              
+              return `
+                <div class="invoice-card">
+                  <div class="invoice-header">
+                    <div class="invoice-number">${invoice.invoiceNumber || "N/A"}</div>
+                    <span class="invoice-status ${statusClass}">${invoice.status || "Pending"}</span>
+                  </div>
+                  <div class="vendor-name">${vendorName}</div>
+                  <div class="invoice-details">
+                    <div>Amount Due:</div>
+                    <div class="invoice-amount">$${invoice.amountDue?.toFixed(0) || 0}</div>
+                    <div>PO Number:</div>
+                    <div>${invoice.po?.poNumber || "N/A"}</div>
+                    <div>Created:</div>
+                    <div>${invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : "N/A"}</div>
+                    <div>Due Date:</div>
+                    <div>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "N/A"}</div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+          <div class="print-footer">
+            <p>Confidential - For internal use only</p>
+            <p>Page 1 of 1</p>
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+
+    printWindow.print();
+  };
+
   const showNotificationMessage = (message, type = "success") => {
     setNotificationMessage(message);
     setNotificationType(type);
@@ -489,6 +703,15 @@ export default function InvoicesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Hidden file input for Excel import */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx, .xls"
+        className="hidden"
+        onChange={handleImportFromExcel}
+      />
+
       {/* Loading Overlay */}
       <LoadingOverlay isVisible={isLoading} message="Loading invoices..." />
 
@@ -572,14 +795,45 @@ export default function InvoicesPage() {
         </div>
 
         {/* Invoice Cards */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div id="invoices-section" className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-gray-600" />
               <h3 className="font-semibold text-gray-900">Invoices</h3>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{filteredInvoices.length} of {totalInvoices} invoices</span>
+
+            {/* Export/Import/Print Buttons */}
+            <div className="flex items-center gap-3">
+              {/* Print Button */}
+              <button
+                onClick={handlePrint}
+               className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+              >
+                <Printer size={16} />
+                Print
+              </button>
+              
+              {/* Excel Import */}
+              <button
+                onClick={() => fileInputRef.current.click()}
+                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+              >
+                <FileSpreadsheet size={16} />
+                Excel Import
+              </button>
+
+              {/* Excel Export */}
+              <button
+                onClick={handleExportToExcel}
+               className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+              >
+                <Upload size={16} />
+                Excel Export
+              </button>
+              
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <span>{filteredInvoices.length} of {totalInvoices} invoices</span>
+              </div>
             </div>
           </div>
 

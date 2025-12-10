@@ -33,9 +33,9 @@ const BetaInvitationPage = () => {
   const [submitError, setSubmitError] = useState('');
   const [submissionData, setSubmissionData] = useState(null);
   const [queueStatus, setQueueStatus] = useState(null);
-    const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+    const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
   // Fetch current queue status on component mount
   useEffect(() => {
     const fetchQueueStatus = async () => {

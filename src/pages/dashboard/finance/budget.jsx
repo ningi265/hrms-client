@@ -20,9 +20,9 @@ import {
 import { DollarSign, TrendingUp, TrendingDown, Calendar, Users, CheckCircle, Clock, AlertTriangle, RefreshCw, Filter, Download, ChevronRight, Building2, Target, CreditCard, FileText, Award, BarChart3, Activity, Settings, Plus, Wallet, Eye, Edit, X, Loader } from 'lucide-react';
 
 // API configuration
-const API_BASE_URL = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+const API_BASE_URL = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
 
 // Compact Metric Card Component
 const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix = "", suffix = "", size = "normal", onClick }) => {

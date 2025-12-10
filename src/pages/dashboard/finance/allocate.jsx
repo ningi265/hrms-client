@@ -36,9 +36,9 @@ import {
 } from 'lucide-react';
 
 // API configuration
-const API_BASE_URL = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+const API_BASE_URL = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
 
 // Budget categories
 const budgetCategories = [

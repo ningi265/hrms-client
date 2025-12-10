@@ -130,9 +130,9 @@ export default function FinanceReconciliationReview() {
   const [snackbarOpen, setSnackbarOpen] = useState(false)
   const [travelRequests, setTravelRequests] = useState([])
   const backendUrl =
-    process.env.REACT_APP_ENV === "production"
-      ? process.env.REACT_APP_BACKEND_URL_PROD
-      : process.env.REACT_APP_BACKEND_URL_DEV
+    import.meta.env.VITE_ENV === "production"
+      ? import.meta.env.VITE_BACKEND_URL_PROD
+      : import.meta.env.VITE_BACKEND_URL_DEV
 
   const [reviewNotes, setReviewNotes] = useState({
     internalNotes: "",

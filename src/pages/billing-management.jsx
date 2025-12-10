@@ -6,9 +6,9 @@ import { CreditCard, Cancel, Refresh, Event } from '@mui/icons-material';
 const BillingManagement = ({ user }) => {
   const [subscription, setSubscription] = useState(user.billing?.subscription || {});
   const [loading, setLoading] = useState(false);
-     const backendUrl = process.env.REACT_APP_ENV === 'production'
-  ? process.env.REACT_APP_BACKEND_URL_PROD
-  : process.env.REACT_APP_BACKEND_URL_DEV;
+     const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
 
 
   // Add these API calls to your dashboard component or a separate service file

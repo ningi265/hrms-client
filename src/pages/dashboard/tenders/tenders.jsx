@@ -33,9 +33,9 @@ import {
 import { motion } from "framer-motion"
 import * as XLSX from "xlsx"
 
-const backendUrl = process.env.REACT_APP_ENV === 'production'
-    ? process.env.REACT_APP_BACKEND_URL_PROD
-    : process.env.REACT_APP_BACKEND_URL_DEV
+const backendUrl = import.meta.env.VITE_ENV === 'production'
+    ? import.meta.env.VITE_BACKEND_URL_PROD
+    : import.meta.env.VITE_BACKEND_URL_DEV
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -279,9 +279,9 @@ const TenderDetailsModal = ({ tender, bids, isOpen, onClose, onAwardBid }) => {
   if (!isOpen || !tender) return null
 
   const bidsArray = Array.isArray(bids) ? bids : []
-  const backendUrl = process.env.REACT_APP_ENV === 'production'
-    ? process.env.REACT_APP_BACKEND_URL_PROD
-    : process.env.REACT_APP_BACKEND_URL_DEV
+  const backendUrl = import.meta.env.VITE_ENV === 'production'
+    ? import.meta.env.VITE_BACKEND_URL_PROD
+    : import.meta.env.VITE_BACKEND_URL_DEV
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {

@@ -12,9 +12,9 @@ export const AuthProvider = ({ children }) => {
 
   // Fix environment variable handling with fallback
   const getBackendUrl = () => {
-    const env = process.env.REACT_APP_ENV || 'production';
-    const devUrl = process.env.REACT_APP_BACKEND_URL_DEV;
-    const prodUrl = process.env.REACT_APP_BACKEND_URL_PROD;
+    const env = import.meta.env.VITE_ENV || 'production';
+    const devUrl = import.meta.env.VITE_BACKEND_URL_DEV;
+    const prodUrl = import.meta.env.VITE_BACKEND_URL_PROD;
     
     console.log('Environment variables:', {
       REACT_APP_ENV: env,
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     // Fallback if environment variables are not set
     if (!backendUrl) {
       console.warn('Backend URL not found in environment variables, using fallback');
-      backendUrl = 'https://backend.nexusmwi.com';
+      backendUrl = 'https://backend.nexusmwi.com'; // Default fallback URL 
     }
     
     console.log('Using backend URL:', backendUrl);

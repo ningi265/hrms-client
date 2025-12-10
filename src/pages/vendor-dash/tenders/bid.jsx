@@ -319,9 +319,9 @@ export default function VendorBidPortal({
 
   const navigate = useNavigate()
 
-  const backendUrl = process.env.REACT_APP_ENV === 'production'
-    ? process.env.REACT_APP_BACKEND_URL_PROD
-    : process.env.REACT_APP_BACKEND_URL_DEV
+  const backendUrl = import.meta.env.VITE_ENV === 'production'
+    ? import.meta.env.VITE_BACKEND_URL_PROD
+    : import.meta.env.VITE_BACKEND_URL_DEV
 
   console.log("Backend URL:", backendUrl)
 
