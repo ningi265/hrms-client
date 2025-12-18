@@ -376,9 +376,6 @@ export default function EmployeeRequisitionManagement() {
       <main className="p-3 space-y-3 max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">My Requisitions</h1>
-          </div>
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
@@ -554,10 +551,12 @@ export default function EmployeeRequisitionManagement() {
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="bg-purple-50 rounded-xl p-2">
-                          <span className="text-purple-600 font-medium text-xs">Procurement Officer</span>
-                          <p className="font-bold text-purple-900 text-xs">{requisition.approver.email}</p>
-                        </div>
+                     <div className="bg-purple-50 rounded-xl p-2">
+  <span className="text-purple-600 font-medium text-xs">Procurement Officer</span>
+  <p className="font-bold text-purple-900 text-xs">
+    {requisition.approver?.email || 'Not assigned'}
+  </p>
+</div>
                         <div className="bg-amber-50 rounded-xl p-2">
                           <span className="text-amber-600 font-medium text-xs">Budget Code</span>
                           <p className="font-bold text-amber-900 text-xs">{requisition.budgetCode}</p>

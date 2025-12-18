@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     // Fallback if environment variables are not set
     if (!backendUrl) {
       console.warn('Backend URL not found in environment variables, using fallback');
-      backendUrl = 'https://backend.nexusmwi.com'; // Default fallback URL 
+      backendUrl = 'http://localhost:5173'; // Default fallback URL 
     }
     
     console.log('Using backend URL:', backendUrl);

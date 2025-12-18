@@ -33,12 +33,12 @@ const categories = [
     icon: <Monitor size={16} />,
     color: "blue",
     items: [
-      { name: "Laptop", icon: <Monitor size={14} />, avgCost: "$1,200", leadTime: "3-5 days" },
-      { name: "Desktop Computer", icon: <Cpu size={14} />, avgCost: "$800", leadTime: "2-4 days" },
-      { name: "Tablet", icon: <Smartphone size={14} />, avgCost: "$600", leadTime: "1-3 days" },
-      { name: "Monitor", icon: <Monitor size={14} />, avgCost: "$300", leadTime: "1-2 days" },
-      { name: "Keyboard", icon: <Keyboard size={14} />, avgCost: "$150", leadTime: "1-2 days" },
-      { name: "Mouse", icon: <Mouse size={14} />, avgCost: "$80", leadTime: "1-2 days" }
+      { name: "Laptop", icon: <Monitor size={14} />, leadTime: "3-5 days" },
+      { name: "Desktop Computer", icon: <Cpu size={14} />, leadTime: "2-4 days" },
+      { name: "Tablet", icon: <Smartphone size={14} />, leadTime: "1-3 days" },
+      { name: "Monitor", icon: <Monitor size={14} />, leadTime: "1-2 days" },
+      { name: "Keyboard", icon: <Keyboard size={14} />, leadTime: "1-2 days" },
+      { name: "Mouse", icon: <Mouse size={14} />, leadTime: "1-2 days" }
     ]
   },
   { 
@@ -46,11 +46,11 @@ const categories = [
     icon: <FileText size={16} />,
     color: "emerald",
     items: [
-      { name: "Printer", icon: <Printer size={14} />, avgCost: "$400", leadTime: "2-3 days" },
-      { name: "Scanner", icon: <Camera size={14} />, avgCost: "$250", leadTime: "2-3 days" },
-      { name: "Projector", icon: <Monitor size={14} />, avgCost: "$800", leadTime: "3-5 days" },
-      { name: "Whiteboard", icon: <FileText size={14} />, avgCost: "$200", leadTime: "1-2 days" },
-      { name: "Shredder", icon: <FileText size={14} />, avgCost: "$150", leadTime: "1-2 days" }
+      { name: "Printer", icon: <Printer size={14} />, leadTime: "2-3 days" },
+      { name: "Scanner", icon: <Camera size={14} />, leadTime: "2-3 days" },
+      { name: "Projector", icon: <Monitor size={14} />, leadTime: "3-5 days" },
+      { name: "Whiteboard", icon: <FileText size={14} />, leadTime: "1-2 days" },
+      { name: "Shredder", icon: <FileText size={14} />, leadTime: "1-2 days" }
     ]
   },
   { 
@@ -58,11 +58,11 @@ const categories = [
     icon: <Building size={16} />,
     color: "purple",
     items: [
-      { name: "Office Chair", icon: <Building size={14} />, avgCost: "$350", leadTime: "5-7 days" },
-      { name: "Standing Desk", icon: <Building size={14} />, avgCost: "$600", leadTime: "7-10 days" },
-      { name: "Filing Cabinet", icon: <Building size={14} />, avgCost: "$200", leadTime: "3-5 days" },
-      { name: "Bookshelf", icon: <Building size={14} />, avgCost: "$180", leadTime: "3-5 days" },
-      { name: "Desk Lamp", icon: <Zap size={14} />, avgCost: "$80", leadTime: "1-2 days" }
+      { name: "Office Chair", icon: <Building size={14} />, leadTime: "5-7 days" },
+      { name: "Standing Desk", icon: <Building size={14} />, leadTime: "7-10 days" },
+      { name: "Filing Cabinet", icon: <Building size={14} />, leadTime: "3-5 days" },
+      { name: "Bookshelf", icon: <Building size={14} />, leadTime: "3-5 days" },
+      { name: "Desk Lamp", icon: <Zap size={14} />, leadTime: "1-2 days" }
     ]
   },
   { 
@@ -70,10 +70,10 @@ const categories = [
     icon: <Settings size={16} />,
     color: "amber",
     items: [
-      { name: "Microsoft Office", icon: <FileText size={14} />, avgCost: "$150/year", leadTime: "Instant" },
-      { name: "Adobe Creative Suite", icon: <Settings size={14} />, avgCost: "$600/year", leadTime: "Instant" },
-      { name: "Project Management Tool", icon: <Target size={14} />, avgCost: "$120/year", leadTime: "Instant" },
-      { name: "Antivirus Software", icon: <Shield size={14} />, avgCost: "$80/year", leadTime: "Instant" }
+      { name: "Microsoft Office", icon: <FileText size={14} />, leadTime: "Instant" },
+      { name: "Adobe Creative Suite", icon: <Settings size={14} />, leadTime: "Instant" },
+      { name: "Project Management Tool", icon: <Target size={14} />, leadTime: "Instant" },
+      { name: "Antivirus Software", icon: <Shield size={14} />, leadTime: "Instant" }
     ]
   },
   { 
@@ -81,10 +81,10 @@ const categories = [
     icon: <Wifi size={16} />,
     color: "teal",
     items: [
-      { name: "Network Router", icon: <Router size={14} />, avgCost: "$300", leadTime: "2-4 days" },
-      { name: "Ethernet Switch", icon: <Database size={14} />, avgCost: "$200", leadTime: "2-4 days" },
-      { name: "External Hard Drive", icon: <HardDrive size={14} />, avgCost: "$120", leadTime: "1-3 days" },
-      { name: "Server Equipment", icon: <Server size={14} />, avgCost: "$2,500", leadTime: "7-14 days" }
+      { name: "Network Router", icon: <Router size={14} />, leadTime: "2-4 days" },
+      { name: "Ethernet Switch", icon: <Database size={14} />, leadTime: "2-4 days" },
+      { name: "External Hard Drive", icon: <HardDrive size={14} />, leadTime: "1-3 days" },
+      { name: "Server Equipment", icon: <Server size={14} />, leadTime: "7-14 days" }
     ]
   },
   { 
@@ -92,10 +92,10 @@ const categories = [
     icon: <Headphones size={16} />,
     color: "rose",
     items: [
-      { name: "Headphones", icon: <Headphones size={14} />, avgCost: "$200", leadTime: "1-3 days" },
-      { name: "Webcam", icon: <Camera size={14} />, avgCost: "$150", leadTime: "1-3 days" },
-      { name: "Microphone", icon: <Phone size={14} />, avgCost: "$180", leadTime: "1-3 days" },
-      { name: "Speakers", icon: <Headphones size={14} />, avgCost: "$250", leadTime: "2-4 days" }
+      { name: "Headphones", icon: <Headphones size={14} />, leadTime: "1-3 days" },
+      { name: "Webcam", icon: <Camera size={14} />, leadTime: "1-3 days" },
+      { name: "Microphone", icon: <Phone size={14} />, leadTime: "1-3 days" },
+      { name: "Speakers", icon: <Headphones size={14} />, leadTime: "2-4 days" }
     ]
   }
 ];
@@ -105,7 +105,6 @@ const templates = [
     name: "New Employee Setup", 
     description: "Complete workstation for new hire",
     items: ["Laptop", "Monitor", "Office Chair", "Keyboard", "Mouse"],
-    estimatedCost: "$2,100",
     category: "Computing Hardware",
     department: "IT",
     popular: true
@@ -114,7 +113,6 @@ const templates = [
     name: "Home Office Package", 
     description: "Remote work essentials",
     items: ["Laptop", "Webcam", "Headphones", "Desk Lamp"],
-    estimatedCost: "$1,650",
     category: "Computing Hardware",
     department: "HR",
     popular: true
@@ -123,7 +121,6 @@ const templates = [
     name: "Conference Room Setup", 
     description: "Meeting room equipment",
     items: ["Projector", "Webcam", "Speakers", "Whiteboard"],
-    estimatedCost: "$1,400",
     category: "Office Equipment",
     department: "Operations",
     popular: false
@@ -132,7 +129,6 @@ const templates = [
     name: "Software Developer Kit", 
     description: "Development tools and licenses",
     items: ["Adobe Creative Suite", "Project Management Tool", "External Hard Drive"],
-    estimatedCost: "$950",
     category: "Software & Licenses", 
     department: "Engineering",
     popular: true
@@ -451,18 +447,17 @@ export default function NewRequisition() {
     fetchRequisitionHistory();
   }, []);
 
-  // Calculate estimated total
+  // Calculate estimated total - Updated to only calculate for custom items
   useEffect(() => {
-    if (selectedItems.length > 0) {
-      const total = selectedItems.reduce((sum, item) => {
-        const cost = parseFloat(item.avgCost.replace(/[$,]/g, '')) || 0;
-        return sum + (cost * item.quantity);
-      }, 0);
-      setEstimatedTotal(total);
-    } else if (formData.estimatedCost) {
+    // Since we don't have predefined prices anymore, we can't calculate totals for catalog items
+    // The estimated total should only come from custom items where the user enters a cost
+    if (useCustomItem && formData.estimatedCost) {
       setEstimatedTotal(parseFloat(formData.estimatedCost) || 0);
+    } else {
+      // For catalog items, we can't estimate without prices
+      setEstimatedTotal(0);
     }
-  }, [selectedItems, formData.estimatedCost]);
+  }, [selectedItems, formData.estimatedCost, useCustomItem]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -476,23 +471,23 @@ export default function NewRequisition() {
   const validateStep = (stepIndex) => {
     const errors = {};
     
-   if (stepIndex === 0) {
-  if (!useCustomItem) {
-    if (!formData.category) {
-      errors.category = "Category is required";
+    if (stepIndex === 0) {
+      if (!useCustomItem) {
+        if (!formData.category) {
+          errors.category = "Category is required";
+        }
+        if (selectedItems.length === 0) {
+          errors.selectedItem = "At least one item must be selected";
+        }
+      } else {
+        if (!formData.itemName) {
+          errors.itemName = "Item name is required";
+        }
+        if (!formData.quantity || formData.quantity <= 0) {
+          errors.quantity = "Valid quantity is required";
+        }
+      }
     }
-    if (selectedItems.length === 0) {
-      errors.selectedItem = "At least one item must be selected";
-    }
-  } else {
-    if (!formData.itemName) {
-      errors.itemName = "Item name is required";
-    }
-    if (!formData.quantity || formData.quantity <= 0) {
-      errors.quantity = "Valid quantity is required";
-    }
-  }
-}
 
     if (stepIndex === 1) {
       if (!formData.budgetCode) errors.budgetCode = "Budget code is required";
@@ -536,7 +531,7 @@ export default function NewRequisition() {
     setIsSubmitting(true);
     
     try {
-      // Calculate the correct estimated cost
+      // Calculate the estimated cost
       let calculatedEstimatedCost = 0;
       
       if (useCustomItem) {
@@ -545,11 +540,8 @@ export default function NewRequisition() {
           calculatedEstimatedCost = parseFloat(formData.estimatedCost.toString().replace(/[$,]/g, '')) || 0;
         }
       } else {
-        // For catalog items, calculate from selected items
-        calculatedEstimatedCost = selectedItems.reduce((sum, item) => {
-          const cost = parseFloat(item.avgCost.replace(/[$,]/g, '')) || 0;
-          return sum + (cost * item.quantity);
-        }, 0);
+        // For catalog items, price will be determined by procurement team
+        calculatedEstimatedCost = 0;
       }
 
       // Prepare the data to match backend expectations
@@ -586,8 +578,8 @@ export default function NewRequisition() {
       if (!submissionData.department) {
         throw new Error('Department is required');
       }
-      if (submissionData.estimatedCost <= 0) {
-        throw new Error('Estimated cost must be greater than 0');
+      if (useCustomItem && submissionData.estimatedCost <= 0) {
+        throw new Error('For custom items, estimated cost must be greater than 0');
       }
 
       console.log('Submitting data:', submissionData); // Debug log
@@ -664,28 +656,29 @@ export default function NewRequisition() {
       ...prev,
       category: template.category,
       department: template.department,
-      estimatedCost: template.estimatedCost.replace('$', '').replace(',', '')
+      // Removed: estimatedCost: template.estimatedCost.replace('$', '').replace(',', '')
     }));
     setShowTemplates(false);
   };
 
   const handleItemSelect = (item, category) => {
-  const newItem = {
-    ...item,
-    category: category.name,
-    categoryColor: category.color,
-    quantity: 1,
-    id: Date.now()
+    const newItem = {
+      ...item,
+      category: category.name,
+      categoryColor: category.color,
+      quantity: 1,
+      id: Date.now()
+    };
+    
+    // Ensure category is set when adding an item
+    setFormData(prev => ({ 
+      ...prev, 
+      category: category.name 
+    }));
+    
+    setSelectedItems(prev => [...prev, newItem]);
   };
-  
-  // Ensure category is set when adding an item
-  setFormData(prev => ({ 
-    ...prev, 
-    category: category.name 
-  }));
-  
-  setSelectedItems(prev => [...prev, newItem]);
-};
+
   const updateItemQuantity = (itemId, quantity) => {
     setSelectedItems(prev => 
       prev.map(item => 
@@ -743,17 +736,8 @@ export default function NewRequisition() {
       <div className="bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <button 
-              onClick={() => navigate("/employee-dash")}
-              className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors duration-200"
-            >
-              <ArrowLeft size={18} />
-            </button>
             <div>
               <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <div className="p-1.5 bg-blue-500 rounded-xl text-white">
-                  <Sparkles size={20} />
-                </div>
                 New Requisition Request
               </h1>
             </div>
@@ -810,7 +794,7 @@ export default function NewRequisition() {
                     {steps[activeStep].icon}
                     {steps[activeStep].title}
                   </h3>
-                  {estimatedTotal > 0 && (
+                  {estimatedTotal > 0 && useCustomItem && (
                     <div className="bg-blue-50 border border-blue-200 rounded-xl px-2 py-1">
                       <span className="text-sm text-blue-600 font-medium">
                         Estimated Total: MWK {estimatedTotal.toLocaleString()}
@@ -852,7 +836,7 @@ export default function NewRequisition() {
                             <p className="text-xs text-blue-600 mb-1">{template.description}</p>
                             <div className="flex items-center justify-between">
                               <span className="text-xs text-blue-500">{template.items.length} items</span>
-                              <span className="font-bold text-blue-900 text-xs">{template.estimatedCost}</span>
+                              <span className="font-bold text-blue-900 text-xs">Price determined by Procurement</span>
                             </div>
                           </button>
                         ))}
@@ -906,7 +890,7 @@ export default function NewRequisition() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Estimated Unit Cost (MWK)
+                                Estimated Unit Cost (MWK) - Optional
                               </label>
                               <div className="relative">
                                 <span className="absolute left-3 top-2 text-gray-400 text-sm">MWK</span>
@@ -919,6 +903,9 @@ export default function NewRequisition() {
                                   placeholder="0.00"
                                 />
                               </div>
+                              <p className="mt-1 text-xs text-gray-500">
+                                Provide estimated cost if known (Procurement will verify)
+                              </p>
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1018,7 +1005,7 @@ export default function NewRequisition() {
                                         </div>
                                         <div>
                                           <h4 className="font-medium text-gray-900 text-xs">{item.name}</h4>
-                                          <p className="text-xs text-gray-500">{item.avgCost}</p>
+                                          {/* Price removed */}
                                         </div>
                                       </div>
                                       <button
@@ -1079,7 +1066,7 @@ export default function NewRequisition() {
                                           />
                                         </div>
                                         <span className="font-medium text-gray-900 text-xs">
-                                          MWK {(parseFloat(item.avgCost.replace(/[$,]/g, '')) * item.quantity).toLocaleString()}
+                                          Price to be determined
                                         </span>
                                         <button
                                           type="button"
@@ -1094,9 +1081,9 @@ export default function NewRequisition() {
                                 </div>
                                 <div className="mt-2 pt-2 border-t border-blue-200">
                                   <div className="flex items-center justify-between">
-                                    <span className="font-bold text-blue-900 text-sm">Estimated Total:</span>
+                                    <span className="font-bold text-blue-900 text-sm">Total Cost:</span>
                                     <span className="text-lg font-bold text-blue-900">
-                                      MWK {estimatedTotal.toLocaleString()}
+                                      To be determined by Procurement
                                     </span>
                                   </div>
                                 </div>
@@ -1507,19 +1494,19 @@ export default function NewRequisition() {
                               </div>
                               <div className="text-right">
                                 <p className="font-medium text-gray-900 text-sm">
-                                  {item.quantity} × {item.avgCost}
+                                  Quantity: {item.quantity}
                                 </p>
-                                <p className="text-xs font-bold text-blue-600">
-                                  MWK {(parseFloat(item.avgCost.replace(/[$,]/g, '')) * item.quantity).toLocaleString()}
+                                <p className="text-xs text-gray-500">
+                                  Price to be determined by Procurement
                                 </p>
                               </div>
                             </div>
                           ))}
                           <div className="pt-2 border-t border-gray-200">
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-gray-900 text-sm">Total Estimated Cost:</span>
+                              <span className="font-bold text-gray-900 text-sm">Total Cost:</span>
                               <span className="text-lg font-bold text-blue-600">
-                                MWK {estimatedTotal.toLocaleString()}
+                                To be determined by Procurement
                               </span>
                             </div>
                           </div>
@@ -1606,9 +1593,7 @@ export default function NewRequisition() {
                               const budget = getBudgetInfo(formData.budgetCode);
                               const remaining = budget.remaining;
                               const total = budget.budget;
-                              const afterPurchase = remaining - estimatedTotal;
                               const percentage = total > 0 ? (remaining / total) * 100 : 0;
-                              const afterPercentage = total > 0 ? (afterPurchase / total) * 100 : 0;
                               
                               return (
                                 <>
@@ -1659,34 +1644,16 @@ export default function NewRequisition() {
                                   
                                   <div className="p-2 bg-blue-50 border border-blue-200 rounded-xl">
                                     <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs font-medium text-blue-900">After This Purchase</span>
-                                      <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                        afterPercentage >= 0 
-                                          ? 'bg-blue-100 text-blue-800' 
-                                          : 'bg-red-100 text-red-800'
-                                      }`}>
-                                        {afterPercentage >= 0 ? `${afterPercentage.toFixed(1)}% Remaining` : 'Over Budget'}
+                                      <span className="text-xs font-medium text-blue-900">Purchase Impact</span>
+                                      <span className="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-800">
+                                        Cost determined by Procurement
                                       </span>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                      <div>
-                                        <span className="text-blue-700">Request Cost:</span>
-                                        <span className="ml-1 font-bold">MWK {estimatedTotal.toLocaleString()}</span>
-                                      </div>
-                                      <div>
-                                        <span className="text-blue-700">Remaining:</span>
-                                        <span className={`ml-1 font-bold ${
-                                          afterPurchase >= 0 ? 'text-blue-900' : 'text-red-600'
-                                        }`}>
-                                          MWK {afterPurchase.toLocaleString()}
-                                        </span>
-                                      </div>
+                                    <div className="text-xs text-blue-700">
+                                      <p>• Procurement team will source items at best market prices</p>
+                                      <p>• Final cost will be confirmed during approval process</p>
+                                      <p>• Budget impact will be calculated upon supplier selection</p>
                                     </div>
-                                    {afterPurchase < 0 && (
-                                      <div className="mt-1 p-1.5 bg-red-100 border border-red-200 rounded text-xs text-red-800">
-                                        ⚠️ This request exceeds available budget. Additional approval may be required.
-                                      </div>
-                                    )}
                                   </div>
 
                                   {/* Additional Department Info */}
@@ -1886,9 +1853,7 @@ export default function NewRequisition() {
                       <div className="text-xs text-gray-500 space-y-0.5">
                         <p>• Budget year: {budget.period || new Date().getFullYear()}</p>
                         <p>• Utilization: {budget.utilizationPercentage?.toFixed(1) || '0.0'}%</p>
-                        {estimatedTotal > 0 && (
-                          <p>• This request uses {((estimatedTotal / total) * 100).toFixed(1)}% of total budget</p>
-                        )}
+                        <p>• Cost will be determined by Procurement</p>
                         {budget.departmentHead && (
                           <p>• Approver: {budget.departmentHead}</p>
                         )}
@@ -1974,8 +1939,8 @@ export default function NewRequisition() {
                         <p className="text-gray-600 text-xs">{template.description}</p>
                       </div>
                       <div className="ml-3 text-right">
-                        <div className="text-lg font-bold text-emerald-600">{template.estimatedCost}</div>
                         <div className="text-xs text-gray-500">{template.items.length} items</div>
+                        <div className="text-xs text-blue-600 font-medium">Cost determined by Procurement</div>
                       </div>
                     </div>
                     
@@ -2269,7 +2234,11 @@ export default function NewRequisition() {
                     {useCustomItem ? formData.itemName : selectedItems.map(item => item.name).join(', ')}
                   </div>
                   <div className="text-xs text-blue-700 mt-1">
-                    Estimated Total: MWK {estimatedTotal.toLocaleString()}
+                    {useCustomItem && estimatedTotal > 0 ? (
+                      <>Estimated Total: MWK {estimatedTotal.toLocaleString()}</>
+                    ) : (
+                      <>Cost to be determined by Procurement</>
+                    )}
                   </div>
                 </div>
                 <p className="text-xs">This action cannot be undone once submitted.</p>
@@ -2398,22 +2367,22 @@ export default function NewRequisition() {
                 
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div className="bg-gray-50 rounded-xl p-2">
-                    <span className="text-gray-600 font-medium text-xs">Average Cost</span>
-                    <p className="font-bold text-gray-900 text-sm">{selectedItemDetails.avgCost}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-xl p-2">
                     <span className="text-gray-600 font-medium text-xs">Lead Time</span>
                     <p className="font-bold text-gray-900 text-sm">{selectedItemDetails.leadTime}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-xl p-2">
+                    <span className="text-gray-600 font-medium text-xs">Pricing</span>
+                    <p className="font-bold text-gray-900 text-sm">Determined by Procurement</p>
                   </div>
                 </div>
                 
                 <div className="bg-blue-50 rounded-xl p-2 border border-blue-200">
-                  <h5 className="font-medium text-blue-900 mb-1 text-sm">Specifications</h5>
+                  <h5 className="font-medium text-blue-900 mb-1 text-sm">Procurement Process</h5>
                   <ul className="text-xs text-blue-800 space-y-0.5">
-                    <li>• Standard business quality</li>
-                    <li>• Warranty included</li>
-                    <li>• Compatible with existing systems</li>
-                    <li>• Energy efficient design</li>
+                    <li>• Procurement will source best market prices</li>
+                    <li>• Multiple supplier quotes will be obtained</li>
+                    <li>• Final cost confirmed during approval</li>
+                    <li>• Energy efficient options considered</li>
                   </ul>
                 </div>
                 
