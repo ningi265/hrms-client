@@ -55,6 +55,14 @@ const ModernIcons = {
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ),
+  ApprovalWorkflows: (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <path d="M14 2v6h6" />
+      <path d="m9 15 2 2 4-4" />
+      <path d="M16 13h0" />
+    </svg>
+  ),
   Department: (props) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
       <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
@@ -455,6 +463,7 @@ const HRMSSidebar = ({ stats = defaultStats, activeSection, handleSectionChange,
       label: 'Main',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: <ModernIcons.Dashboard />, badge: null },
+        { id: 'approval-workflows', label: 'Approval Workflows', icon: <ModernIcons.ApprovalWorkflows />, badge: stats.approvalWorkflows?.counts?.pending || null },
         { id: 'departments', label: 'Departments', icon: <ModernIcons.Department/> },
         { id: 'employees', label: 'Employees', icon: <ModernIcons.Employees />, badge: stats.employees?.counts?.pending || null },
         { id: 'vendors', label: 'Vendors', icon: <ModernIcons.Vendors />, badge: stats.vendors?.counts?.open || null },

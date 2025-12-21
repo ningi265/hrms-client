@@ -74,6 +74,7 @@ import AnalyticsPage from "./analytics"
 import ReportsPage from "./reports"
 import CreateTendersPage from "./tenders/tenders"
 import MobileLayoutWrapper from "./MobileLayoutWrapper"
+import ApprovalWorkflowConfig from "./workflows/workflows"
 
 // Sample data for RevenueChart
 const salesData = [
@@ -1279,6 +1280,12 @@ export default function ProcurementDashboard() {
                   <CreateTendersPage/>
                 </MobileLayoutWrapper>
               )}
+              {activeSection === "approval-workflows" && (
+                <MobileLayoutWrapper>
+                  <ApprovalWorkflowConfig/>
+                </MobileLayoutWrapper>
+              )}
+
             </Box>
           )}
         </Box>
