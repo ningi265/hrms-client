@@ -1,5 +1,5 @@
 // Remove the problematic imports and replace with available icons
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Settings,
   Users,
@@ -146,16 +146,7 @@ import {
   Droplet,
   Flag,
   Compass,
-  // Icons that don't exist in lucide-react are removed
 } from 'lucide-react';
-
-// For any missing icons, we can create simple text alternatives or use existing ones
-// Remove all the problematic imports and just use the ones above
-
-const backendUrl = import.meta.env.VITE_ENV === 'production'
-  ? import.meta.env.VITE_BACKEND_URL_PROD
-  : import.meta.env.VITE_BACKEND_URL_DEV;
-
 
 // For icons that don't exist, let's create simple components
 const Plane = (props) => (
@@ -171,150 +162,15 @@ const Forward = (props) => (
   </svg>
 );
 
-// Sample department data structure
-const sampleDepartments = [
-  { id: 'dept-001', name: 'Finance', code: 'FIN', head: 'Jane Doe', email: 'jane.doe@company.com' },
-  { id: 'dept-002', name: 'Human Resources', code: 'HR', head: 'John Smith', email: 'john.smith@company.com' },
-  { id: 'dept-003', name: 'Information Technology', code: 'IT', head: 'Mike Johnson', email: 'mike.johnson@company.com' },
-  { id: 'dept-004', name: 'Operations', code: 'OPS', head: 'Sarah Williams', email: 'sarah.williams@company.com' },
-  { id: 'dept-005', name: 'Marketing', code: 'MKT', head: 'David Brown', email: 'david.brown@company.com' },
-  { id: 'dept-006', name: 'Procurement', code: 'PROC', head: 'Lisa Miller', email: 'lisa.miller@company.com' },
-  { id: 'dept-007', name: 'Legal', code: 'LEGAL', head: 'Robert Taylor', email: 'robert.taylor@company.com' },
-];
-
-// Sample approvers/users
-const sampleApprovers = [
-  { id: 'user-001', name: 'Alex Johnson', email: 'alex.johnson@company.com', role: 'CFO', department: 'Finance', avatar: 'AJ' },
-  { id: 'user-002', name: 'Maria Garcia', email: 'maria.garcia@company.com', role: 'Procurement Manager', department: 'Procurement', avatar: 'MG' },
-  { id: 'user-003', name: 'James Wilson', email: 'james.wilson@company.com', role: 'IT Director', department: 'Information Technology', avatar: 'JW' },
-  { id: 'user-004', name: 'Emma Davis', email: 'emma.davis@company.com', role: 'Operations Manager', department: 'Operations', avatar: 'ED' },
-  { id: 'user-005', name: 'Tom Brown', email: 'tom.brown@company.com', role: 'Department Head', department: 'Marketing', avatar: 'TB' },
-  { id: 'user-006', name: 'Sophie Chen', email: 'sophie.chen@company.com', role: 'Legal Counsel', department: 'Legal', avatar: 'SC' },
-  { id: 'user-007', name: 'Michael Lee', email: 'michael.lee@company.com', role: 'Procurement Officer', department: 'Procurement', avatar: 'ML' },
-  { id: 'user-008', name: 'Olivia Martin', email: 'olivia.martin@company.com', role: 'Finance Officer', department: 'Finance', avatar: 'OM' },
-];
-
-// Sample categories
-const sampleCategories = [
-  { id: 'cat-001', name: 'Computing Hardware', color: 'blue', icon: <Cpu size={14} /> },
-  { id: 'cat-002', name: 'Office Equipment', color: 'green', icon: <Printer size={14} /> },
-  { id: 'cat-003', name: 'Furniture', color: 'purple', icon: <Building size={14} /> },
-  { id: 'cat-004', name: 'Software & Licenses', color: 'amber', icon: <FileCode size={14} /> },
-  { id: 'cat-005', name: 'Networking', color: 'teal', icon: <Globe size={14} /> },
-  { id: 'cat-006', name: 'Audio/Visual', color: 'rose', icon: <Camera size={14} /> },
-  { id: 'cat-007', name: 'Travel & Accommodation', color: 'indigo', icon: <Plane size={14} /> },
-];
-
-
-
-// Workflow node types
-const nodeTypes = [
-  { id: 'start', name: 'Start Node', icon: <Play size={16} />, color: 'emerald' },
-  { id: 'approval', name: 'Approval Step', icon: <UserCheck size={16} />, color: 'blue' },
-  { id: 'condition', name: 'Condition', icon: <GitBranch size={16} />, color: 'amber' },
-  { id: 'parallel', name: 'Parallel Approval', icon: <GitMerge size={16} />, color: 'purple' },
-  { id: 'notification', name: 'Notification', icon: <Bell size={16} />, color: 'teal' },
-  { id: 'end', name: 'End Node', icon: <StopCircle size={16} />, color: 'red' },
-];
-
-// Workflow Condition Operators
-const conditionOperators = [
-  { id: 'eq', name: 'Equals', symbol: '=' },
-  { id: 'neq', name: 'Not Equals', symbol: '≠' },
-  { id: 'gt', name: 'Greater Than', symbol: '>' },
-  { id: 'gte', name: 'Greater Than or Equal', symbol: '≥' },
-  { id: 'lt', name: 'Less Than', symbol: '<' },
-  { id: 'lte', name: 'Less Than or Equal', symbol: '≤' },
-  { id: 'contains', name: 'Contains', symbol: '⊃' },
-  { id: 'in', name: 'In List', symbol: '∈' },
-  { id: 'not-in', name: 'Not In List', symbol: '∉' },
-];
-
-// Available conditions/filters for workflows
-const availableConditions = [
-  { 
-    id: 'amount', 
-    name: 'Request Amount', 
-    type: 'number',
-    field: 'estimatedCost',
-    description: 'Total cost of the requisition',
-    unit: 'MWK',
-    icon: <DollarSign size={14} />
-  },
-  { 
-    id: 'department', 
-    name: 'Department', 
-    type: 'select',
-    field: 'department',
-    description: 'Requesting department',
-    options: sampleDepartments.map(dept => ({ value: dept.id, label: dept.name })),
-    icon: <Building size={14} />
-  },
-  { 
-    id: 'category', 
-    name: 'Item Category', 
-    type: 'select',
-    field: 'category',
-    description: 'Category of requested items',
-    options: sampleCategories.map(cat => ({ value: cat.id, label: cat.name })),
-    icon: <Package size={14} />
-  },
-  { 
-    id: 'urgency', 
-    name: 'Urgency Level', 
-    type: 'select',
-    field: 'urgency',
-    description: 'Priority level of the request',
-    options: [
-      { value: 'low', label: 'Low' },
-      { value: 'medium', label: 'Medium' },
-      { value: 'high', label: 'High' },
-      { value: 'critical', label: 'Critical' }
-    ],
-    icon: <Zap size={14} />
-  },
-  { 
-    id: 'budget-code', 
-    name: 'Budget Code', 
-    type: 'text',
-    field: 'budgetCode',
-    description: 'Specific budget code',
-    icon: <CreditCard size={14} />
-  },
-  { 
-    id: 'supplier', 
-    name: 'Preferred Supplier', 
-    type: 'text',
-    field: 'preferredSupplier',
-    description: 'Designated supplier preference',
-    icon: <Truck size={14} />
-  },
-  { 
-    id: 'custom-item', 
-    name: 'Custom Item Request', 
-    type: 'boolean',
-    field: 'isCustomItem',
-    description: 'Whether this is a custom item request',
-    icon: <Settings size={14} />
-  },
-  { 
-    id: 'quarter', 
-    name: 'Fiscal Quarter', 
-    type: 'select',
-    field: 'fiscalQuarter',
-    description: 'Quarter of the fiscal year',
-    options: [
-      { value: 'Q1', label: 'Q1' },
-      { value: 'Q2', label: 'Q2' },
-      { value: 'Q3', label: 'Q3' },
-      { value: 'Q4', label: 'Q4' }
-    ],
-    icon: <Calendar size={14} />
-  },
-];
+const backendUrl = import.meta.env.VITE_ENV === 'production'
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV;
 
 export default function ApprovalWorkflowConfig() {
   const [workflows, setWorkflows] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [approvers, setApprovers] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [activeWorkflow, setActiveWorkflow] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -324,50 +180,82 @@ export default function ApprovalWorkflowConfig() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [isLoading, setIsLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
-  const [dragOverId, setDragOverId] = useState(null);
   
+  // Drag and Drop state
+  const [draggedNodeId, setDraggedNodeId] = useState(null);
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  
+  // Zoom state (keeping zoom functionality but removing pan)
+  const [zoomLevel, setZoomLevel] = useState(1);
+  
+  // Workflow node types
+  const nodeTypes = [
+    { id: 'start', name: 'Start Node', icon: <Play size={16} />, color: 'emerald' },
+    { id: 'approval', name: 'Approval Step', icon: <UserCheck size={16} />, color: 'blue' },
+    { id: 'condition', name: 'Condition', icon: <GitBranch size={16} />, color: 'amber' },
+    { id: 'parallel', name: 'Parallel Approval', icon: <GitMerge size={16} />, color: 'purple' },
+    { id: 'notification', name: 'Notification', icon: <Bell size={16} />, color: 'teal' },
+    { id: 'end', name: 'End Node', icon: <StopCircle size={16} />, color: 'red' },
+  ];
+
+  // Workflow Condition Operators
+  const conditionOperators = [
+    { id: 'eq', name: 'Equals', symbol: '=' },
+    { id: 'neq', name: 'Not Equals', symbol: '≠' },
+    { id: 'gt', name: 'Greater Than', symbol: '>' },
+    { id: 'gte', name: 'Greater Than or Equal', symbol: '≥' },
+    { id: 'lt', name: 'Less Than', symbol: '<' },
+    { id: 'lte', name: 'Less Than or Equal', symbol: '≤' },
+    { id: 'contains', name: 'Contains', symbol: '⊃' },
+    { id: 'in', name: 'In List', symbol: '∈' },
+    { id: 'not-in', name: 'Not In List', symbol: '∉' },
+  ];
+
   // New workflow form state
   const [newWorkflow, setNewWorkflow] = useState({
     name: '',
     description: '',
     isActive: true,
-    priority: 1,
-    applyToAll: true,
+    priority: 5,
+    applyToAll: false,
     departments: [],
     categories: [],
-    minAmount: '',
-    maxAmount: '',
-    conditions: [],
+    minAmount: 0,
+    maxAmount: null,
+    triggerConditions: [],
     nodes: [],
-    approvalActions: [],
-    notifications: [],
-    escalationRules: [],
+    connections: [],
     slaHours: 72,
-    autoApproveBelow: '',
+    autoApproveBelow: null,
     requireCFOAbove: 500000,
     requireLegalReview: false,
     requireITReview: false,
     allowDelegation: true,
+    notifications: [],
     version: '1.0',
+    isDraft: false,
   });
 
   // Node form state
   const [nodeForm, setNodeForm] = useState({
     id: '',
-    name: '',
     type: 'approval',
+    name: '',
     description: '',
+    position: { x: 0, y: 0 },
     approvers: [],
-    approvalType: 'sequential', // sequential, parallel, any
+    approvalType: 'sequential',
     minApprovals: 1,
     conditions: [],
-    actions: [],
+    trueBranch: '',
+    falseBranch: '',
     timeoutHours: 24,
     escalationTo: '',
     isMandatory: true,
     canDelegate: true,
-    position: { x: 0, y: 0 },
-    nextNodes: [],
+    actions: [],
   });
 
   // Condition form state
@@ -375,15 +263,85 @@ export default function ApprovalWorkflowConfig() {
     field: '',
     operator: 'gt',
     value: '',
-    valueType: 'number',
-    valueOptions: [],
-    logicalOperator: 'AND', // AND, OR
-    groupWithNext: false,
+    logicalOperator: 'AND',
   });
 
-  // Load workflows from backend
+  // Available conditions/filters for workflows
+  const [availableConditions, setAvailableConditions] = useState([
+    { 
+      id: 'estimatedCost', 
+      name: 'Estimated Cost', 
+      type: 'number',
+      field: 'estimatedCost',
+      description: 'Total cost of the requisition',
+      unit: 'MWK',
+      icon: <DollarSign size={14} />
+    },
+    { 
+      id: 'department', 
+      name: 'Department', 
+      type: 'select',
+      field: 'department',
+      description: 'Requesting department',
+      icon: <Building size={14} />
+    },
+    { 
+      id: 'category', 
+      name: 'Item Category', 
+      type: 'select',
+      field: 'category',
+      description: 'Category of requested items',
+      icon: <Package size={14} />
+    },
+    { 
+      id: 'urgency', 
+      name: 'Urgency Level', 
+      type: 'select',
+      field: 'urgency',
+      description: 'Priority level of the request',
+      icon: <Zap size={14} />
+    },
+    { 
+      id: 'budgetCode', 
+      name: 'Budget Code', 
+      type: 'text',
+      field: 'budgetCode',
+      description: 'Specific budget code',
+      icon: <CreditCard size={14} />
+    },
+  ]);
+
+  const workflowContainerRef = useRef(null);
+
+  // Load initial data from backend
   useEffect(() => {
     fetchWorkflows();
+    fetchDepartments();
+    fetchApprovers();
+  }, []);
+
+  // Handle keyboard shortcuts for zoom
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Ctrl/Cmd + = for zoom in
+      if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
+        e.preventDefault();
+        handleZoomIn();
+      }
+      // Ctrl/Cmd + - for zoom out
+      if ((e.ctrlKey || e.metaKey) && e.key === '-') {
+        e.preventDefault();
+        handleZoomOut();
+      }
+      // Ctrl/Cmd + 0 for reset zoom
+      if ((e.ctrlKey || e.metaKey) && e.key === '0') {
+        e.preventDefault();
+        handleZoomReset();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const fetchWorkflows = async () => {
@@ -395,7 +353,7 @@ export default function ApprovalWorkflowConfig() {
         return;
       }
 
-      const response = await fetch(`${backendUrl}/api/approval-workflows`, {
+      const response = await fetch(`${backendUrl}/api/workflows`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -406,213 +364,64 @@ export default function ApprovalWorkflowConfig() {
         const data = await response.json();
         setWorkflows(data.data || data);
       } else {
-        console.error('Failed to fetch workflows, using sample data');
-        // Load sample data for demonstration
-        loadSampleWorkflows();
+        console.error('Failed to fetch workflows');
       }
     } catch (error) {
       console.error('Error fetching workflows:', error);
-      loadSampleWorkflows();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const loadSampleWorkflows = () => {
-    const sampleWorkflows = [
-      {
-        id: 'wf-001',
-        name: 'Standard Procurement Workflow',
-        description: 'Default workflow for all procurement requests',
-        isActive: true,
-        priority: 1,
-        applyToAll: true,
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15',
-        createdBy: 'Admin User',
-        triggerConditions: [
-          { field: 'estimatedCost', operator: 'gte', value: 0 }
-        ],
-        nodes: [
-          {
-            id: 'start-001',
-            type: 'start',
-            name: 'Request Submitted',
-            position: { x: 100, y: 100 }
-          },
-          {
-            id: 'approval-001',
-            type: 'approval',
-            name: 'Department Head Approval',
-            approvers: sampleApprovers.filter(a => a.role.includes('Department Head')),
-            approvalType: 'sequential',
-            minApprovals: 1,
-            conditions: [],
-            position: { x: 300, y: 100 }
-          },
-          {
-            id: 'condition-001',
-            type: 'condition',
-            name: 'Amount Check',
-            conditions: [
-              { field: 'estimatedCost', operator: 'lt', value: 50000 }
-            ],
-            trueBranch: 'approval-002',
-            falseBranch: 'approval-003',
-            position: { x: 500, y: 100 }
-          },
-          {
-            id: 'approval-002',
-            type: 'approval',
-            name: 'Procurement Officer Approval',
-            approvers: sampleApprovers.filter(a => a.role.includes('Procurement Officer')),
-            approvalType: 'sequential',
-            minApprovals: 1,
-            position: { x: 700, y: 50 }
-          },
-          {
-            id: 'approval-003',
-            type: 'approval',
-            name: 'CFO Final Approval',
-            approvers: sampleApprovers.filter(a => a.role === 'CFO'),
-            approvalType: 'sequential',
-            minApprovals: 1,
-            position: { x: 700, y: 150 }
-          },
-          {
-            id: 'end-001',
-            type: 'end',
-            name: 'Request Approved',
-            position: { x: 900, y: 100 }
-          }
-        ],
-        connections: [
-          { from: 'start-001', to: 'approval-001' },
-          { from: 'approval-001', to: 'condition-001' },
-          { from: 'condition-001', to: 'approval-002', condition: 'true' },
-          { from: 'condition-001', to: 'approval-003', condition: 'false' },
-          { from: 'approval-002', to: 'end-001' },
-          { from: 'approval-003', to: 'end-001' }
-        ],
-        slaHours: 72,
-        autoApproveBelow: 10000,
-        requireCFOAbove: 500000,
-        statistics: {
-          totalRequests: 1247,
-          avgApprovalTime: '36h',
-          completionRate: '92%'
+  const fetchDepartments = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/departments`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      },
-      {
-        id: 'wf-002',
-        name: 'IT Hardware Workflow',
-        description: 'Specialized workflow for IT equipment purchases',
-        isActive: true,
-        priority: 2,
-        applyToAll: false,
-        departments: ['dept-003'], // IT department
-        categories: ['cat-001', 'cat-005'], // Computing Hardware & Networking
-        createdAt: '2024-01-10',
-        updatedAt: '2024-01-10',
-        createdBy: 'IT Admin',
-        triggerConditions: [
-          { field: 'category', operator: 'in', value: ['cat-001', 'cat-005'] },
-          { field: 'department', operator: 'eq', value: 'dept-003' }
-        ],
-        nodes: [
-          {
-            id: 'start-002',
-            type: 'start',
-            name: 'IT Request Submitted',
-            position: { x: 100, y: 100 }
-          },
-          {
-            id: 'parallel-001',
-            type: 'parallel',
-            name: 'IT & Security Review',
-            approvers: [
-              ...sampleApprovers.filter(a => a.department === 'Information Technology'),
-              ...sampleApprovers.filter(a => a.role === 'Legal Counsel')
-            ],
-            approvalType: 'parallel',
-            minApprovals: 2,
-            position: { x: 300, y: 100 }
-          },
-          {
-            id: 'approval-004',
-            type: 'approval',
-            name: 'Budget Committee Approval',
-            approvers: sampleApprovers.filter(a => a.department === 'Finance'),
-            approvalType: 'sequential',
-            minApprovals: 1,
-            position: { x: 500, y: 100 }
-          },
-          {
-            id: 'end-002',
-            type: 'end',
-            name: 'IT Purchase Approved',
-            position: { x: 700, y: 100 }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDepartments(data.data || data);
+        
+        setAvailableConditions(prev => prev.map(condition => {
+          if (condition.id === 'department') {
+            return {
+              ...condition,
+              options: (data.data || data).map(dept => ({
+                value: dept._id || dept.id,
+                label: dept.name
+              }))
+            };
           }
-        ],
-        connections: [
-          { from: 'start-002', to: 'parallel-001' },
-          { from: 'parallel-001', to: 'approval-004' },
-          { from: 'approval-004', to: 'end-002' }
-        ],
-        slaHours: 96,
-        requireITReview: true,
-        requireLegalReview: true,
-        statistics: {
-          totalRequests: 324,
-          avgApprovalTime: '48h',
-          completionRate: '88%'
-        }
-      },
-      {
-        id: 'wf-003',
-        name: 'Low Value Quick Approve',
-        description: 'Fast-track approval for low-value purchases',
-        isActive: true,
-        priority: 3,
-        applyToAll: true,
-        triggerConditions: [
-          { field: 'estimatedCost', operator: 'lt', value: 10000 }
-        ],
-        nodes: [
-          {
-            id: 'start-003',
-            type: 'start',
-            name: 'Low Value Request',
-            position: { x: 100, y: 100 }
-          },
-          {
-            id: 'notification-001',
-            type: 'notification',
-            name: 'Auto-Approval Notification',
-            recipients: sampleApprovers.slice(0, 3),
-            position: { x: 300, y: 100 }
-          },
-          {
-            id: 'end-003',
-            type: 'end',
-            name: 'Auto-Approved',
-            position: { x: 500, y: 100 }
-          }
-        ],
-        connections: [
-          { from: 'start-003', to: 'notification-001' },
-          { from: 'notification-001', to: 'end-003' }
-        ],
-        autoApproveBelow: 10000,
-        slaHours: 24,
-        statistics: {
-          totalRequests: 892,
-          avgApprovalTime: '1h',
-          completionRate: '100%'
-        }
+          return condition;
+        }));
       }
-    ];
-    setWorkflows(sampleWorkflows);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+    }
+  };
+
+  const fetchApprovers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/users?role=approver`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setApprovers(data.data || data);
+      }
+    } catch (error) {
+      console.error('Error fetching approvers:', error);
+    }
   };
 
   const saveWorkflow = async (workflow) => {
@@ -625,11 +434,42 @@ export default function ApprovalWorkflowConfig() {
         throw new Error('No authentication token found');
       }
 
-      const url = workflow.id 
-        ? `${backendUrl}/api/approval-workflows/${workflow.id}`
-        : `${backendUrl}/api/approval-workflows`;
+      const userStr = localStorage.getItem('user');
+      let userId = null;
+      let companyId = null;
       
-      const method = workflow.id ? 'PUT' : 'POST';
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          userId = user.id || user._id;
+          companyId = user.company;
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      }
+
+      const workflowToSave = {
+        ...workflow,
+        nodes: (workflow.nodes || []).map(node => ({
+          ...node,
+          approvers: (node.approvers || []).map(approver => ({
+            userId: approver._id || approver.id || approver.userId,
+            name: approver.name || approver.firstName + ' ' + approver.lastName,
+            email: approver.email,
+            role: approver.role || 'Approver'
+          }))
+        })),
+        departments: (workflow.departments || []).map(dept => dept._id || dept.id || dept),
+        company: companyId,
+        createdBy: userId,
+        _id: workflow._id ? workflow._id : undefined
+      };
+
+      const url = workflow._id 
+        ? `${backendUrl}/api/workflows/${workflow._id}`
+        : `${backendUrl}/api/workflows`;
+      
+      const method = workflow._id ? 'PUT' : 'POST';
       
       const response = await fetch(url, {
         method,
@@ -637,85 +477,236 @@ export default function ApprovalWorkflowConfig() {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(workflow)
+        body: JSON.stringify(workflowToSave)
       });
 
       if (response.ok) {
+        const savedWorkflow = await response.json();
         setSaveStatus('Saved successfully!');
-        fetchWorkflows(); // Refresh list
+        
+        await fetchWorkflows();
+        
+        if (activeWorkflow?._id === workflow._id) {
+          setActiveWorkflow(savedWorkflow.data || savedWorkflow);
+        }
+        
         setTimeout(() => setSaveStatus(''), 3000);
         return true;
       } else {
         const error = await response.json();
-        setSaveStatus(`Error: ${error.message}`);
+        setSaveStatus(`Error: ${error.message || 'Failed to save'}`);
+        console.error('Save error response:', error);
         return false;
       }
     } catch (error) {
       setSaveStatus(`Error: ${error.message}`);
+      console.error('Save error:', error);
       return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleCreateWorkflow = () => {
-    const workflowWithId = {
-      ...newWorkflow,
-      id: `wf-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      createdBy: 'Current User',
-    };
+  const publishWorkflow = async (workflowId) => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/workflows/${workflowId}/publish`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setSaveStatus('Published successfully!');
+        fetchWorkflows();
+        setTimeout(() => setSaveStatus(''), 3000);
+      } else {
+        const error = await response.json();
+        setSaveStatus(`Publish failed: ${error.message}`);
+      }
+    } catch (error) {
+      setSaveStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteWorkflow = async (workflowId) => {
+    if (!window.confirm('Are you sure you want to delete this workflow?')) return;
     
-    setWorkflows(prev => [...prev, workflowWithId]);
-    setActiveWorkflow(workflowWithId);
-    setIsEditing(true);
-    setShowCreateModal(false);
-    setNewWorkflow({
-      name: '',
-      description: '',
-      isActive: true,
-      priority: 1,
-      applyToAll: true,
-      departments: [],
-      categories: [],
-      minAmount: '',
-      maxAmount: '',
-      conditions: [],
-      nodes: [],
-      approvalActions: [],
-      notifications: [],
-      escalationRules: [],
-      slaHours: 72,
-      autoApproveBelow: '',
-      requireCFOAbove: 500000,
-      requireLegalReview: false,
-      requireITReview: false,
-      allowDelegation: true,
-      version: '1.0',
-    });
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/workflows/${workflowId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setWorkflows(prev => prev.filter(w => w._id !== workflowId));
+        if (activeWorkflow?._id === workflowId) {
+          setActiveWorkflow(null);
+        }
+      } else {
+        const error = await response.json();
+        alert(`Delete failed: ${error.message}`);
+      }
+    } catch (error) {
+      alert(`Error: ${error.message}`);
+    }
+  };
+
+  const cloneWorkflow = async (workflowId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/workflows/${workflowId}/clone`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: `${activeWorkflow.name} (Copy)`,
+          description: activeWorkflow.description
+        })
+      });
+
+      if (response.ok) {
+        const cloned = await response.json();
+        fetchWorkflows();
+        setActiveWorkflow(cloned.data || cloned);
+      }
+    } catch (error) {
+      console.error('Error cloning workflow:', error);
+    }
+  };
+   
+  const handleCreateWorkflow = async () => {
+    if (!newWorkflow.name) {
+      alert('Please enter a workflow name');
+      return;
+    }
+
+    const userStr = localStorage.getItem('user');
+    let userId = null;
+    let companyId = null;
+    
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        userId = user.id || user._id;
+        companyId = user.company;
+      } catch (e) {
+        console.error('Error parsing user data:', e);
+      }
+    }
+
+    const workflowToCreate = {
+      ...newWorkflow,
+      createdBy: userId,
+      company: companyId,
+      nodes: [
+        {
+          id: `start-${Date.now()}`,
+          type: 'start',
+          name: 'Start',
+          description: 'Workflow start point',
+          position: { x: 100, y: 100 },
+          approvers: [],
+          approvalType: 'sequential',
+          minApprovals: 1,
+          conditions: [],
+          trueBranch: '',
+          falseBranch: '',
+          timeoutHours: 24,
+          escalationTo: '',
+          isMandatory: true,
+          canDelegate: true,
+          actions: [],
+        },
+        {
+          id: `end-${Date.now() + 1}`,
+          type: 'end',
+          name: 'End',
+          description: 'Workflow end point',
+          position: { x: 400, y: 100 },
+          approvers: [],
+          approvalType: 'sequential',
+          minApprovals: 1,
+          conditions: [],
+          trueBranch: '',
+          falseBranch: '',
+          timeoutHours: 24,
+          escalationTo: '',
+          isMandatory: true,
+          canDelegate: true,
+          actions: [],
+        }
+      ],
+      connections: [],
+      isDraft: true
+    };
+
+    const created = await saveWorkflow(workflowToCreate);
+    if (created) {
+      setShowCreateModal(false);
+      setNewWorkflow({
+        name: '',
+        description: '',
+        isActive: true,
+        priority: 5,
+        applyToAll: false,
+        departments: [],
+        categories: [],
+        minAmount: 0,
+        maxAmount: null,
+        triggerConditions: [],
+        nodes: [],
+        connections: [],
+        slaHours: 72,
+        autoApproveBelow: null,
+        requireCFOAbove: 500000,
+        requireLegalReview: false,
+        requireITReview: false,
+        allowDelegation: true,
+        notifications: [],
+        version: '1.0',
+        isDraft: true,
+      });
+    }
   };
 
   const handleAddNode = (type) => {
+    const centerX = 400;
+    const centerY = 300;
+    const radius = 200;
+    const angle = Math.random() * Math.PI * 2;
+    
     const newNode = {
       id: `${type}-${Date.now()}`,
-      name: `New ${nodeTypes.find(t => t.id === type)?.name || 'Node'}`,
       type,
+      name: `New ${nodeTypes.find(t => t.id === type)?.name || 'Node'}`,
       description: '',
+      position: { 
+        x: centerX + Math.cos(angle) * radius,
+        y: centerY + Math.sin(angle) * radius
+      },
       approvers: [],
       approvalType: 'sequential',
       minApprovals: 1,
       conditions: [],
-      actions: [],
+      trueBranch: '',
+      falseBranch: '',
       timeoutHours: 24,
       escalationTo: '',
       isMandatory: true,
       canDelegate: true,
-      position: { 
-        x: 100 + (activeWorkflow?.nodes.length || 0) * 200,
-        y: 100
-      },
-      nextNodes: [],
+      actions: [],
     };
     
     setNodeForm(newNode);
@@ -726,7 +717,7 @@ export default function ApprovalWorkflowConfig() {
   const handleSaveNode = () => {
     if (!activeWorkflow) return;
     
-    const updatedNodes = [...activeWorkflow.nodes];
+    const updatedNodes = [...(activeWorkflow.nodes || [])];
     const existingIndex = updatedNodes.findIndex(n => n.id === nodeForm.id);
     
     if (existingIndex >= 0) {
@@ -743,31 +734,35 @@ export default function ApprovalWorkflowConfig() {
     setShowNodeModal(false);
     setNodeForm({
       id: '',
-      name: '',
       type: 'approval',
+      name: '',
       description: '',
+      position: { x: 0, y: 0 },
       approvers: [],
       approvalType: 'sequential',
       minApprovals: 1,
       conditions: [],
-      actions: [],
+      trueBranch: '',
+      falseBranch: '',
       timeoutHours: 24,
       escalationTo: '',
       isMandatory: true,
       canDelegate: true,
-      position: { x: 0, y: 0 },
-      nextNodes: [],
+      actions: [],
     });
     setSelectedNode(null);
   };
 
   const handleAddCondition = () => {
-    if (!selectedNode) return;
+    if (!nodeForm.conditions) {
+      setNodeForm(prev => ({ ...prev, conditions: [] }));
+    }
     
     const newCondition = {
-      id: `cond-${Date.now()}`,
-      ...conditionForm,
-      value: conditionForm.valueType === 'number' ? Number(conditionForm.value) : conditionForm.value
+      field: conditionForm.field,
+      operator: conditionForm.operator,
+      value: conditionForm.value,
+      logicalOperator: conditionForm.logicalOperator
     };
     
     setNodeForm(prev => ({
@@ -779,47 +774,85 @@ export default function ApprovalWorkflowConfig() {
       field: '',
       operator: 'gt',
       value: '',
-      valueType: 'number',
-      valueOptions: [],
       logicalOperator: 'AND',
-      groupWithNext: false,
     });
   };
 
-  const handleDragStart = (e, nodeId) => {
-    e.dataTransfer.setData('nodeId', nodeId);
-  };
-
-  const handleDragOver = (e, targetNodeId) => {
-    e.preventDefault();
-    setDragOverId(targetNodeId);
-  };
-
-  const handleDrop = (e, targetNodeId) => {
-    e.preventDefault();
-    const sourceNodeId = e.dataTransfer.getData('nodeId');
+  // DRAG AND DROP FUNCTIONS
+  const handleNodeDragStart = (e, nodeId) => {
+    e.stopPropagation();
+    setIsDragging(true);
+    setDraggedNodeId(nodeId);
     
-    if (sourceNodeId && targetNodeId && sourceNodeId !== targetNodeId) {
-      // Create connection between nodes
-      const updatedWorkflow = { ...activeWorkflow };
-      if (!updatedWorkflow.connections) updatedWorkflow.connections = [];
-      
-      const connectionExists = updatedWorkflow.connections.some(
-        conn => conn.from === sourceNodeId && conn.to === targetNodeId
-      );
-      
-      if (!connectionExists) {
-        updatedWorkflow.connections.push({
-          from: sourceNodeId,
-          to: targetNodeId,
-          id: `conn-${Date.now()}`
-        });
-        
-        setActiveWorkflow(updatedWorkflow);
+    const containerRect = workflowContainerRef.current?.getBoundingClientRect();
+    if (containerRect) {
+      const clientX = e.clientX || e.touches[0].clientX;
+      const clientY = e.clientY || e.touches[0].clientY;
+      setDragStartPos({
+        x: clientX - containerRect.left,
+        y: clientY - containerRect.top
+      });
+      setDragOffset({ x: 0, y: 0 });
+    }
+  };
+
+  const handleNodeDragMove = useCallback((clientX, clientY) => {
+    if (!isDragging || !draggedNodeId || !workflowContainerRef.current) return;
+    
+    const containerRect = workflowContainerRef.current.getBoundingClientRect();
+    const containerX = clientX - containerRect.left;
+    const containerY = clientY - containerRect.top;
+    
+    const deltaX = (containerX - dragStartPos.x) / zoomLevel;
+    const deltaY = (containerY - dragStartPos.y) / zoomLevel;
+    
+    setDragOffset({ x: deltaX, y: deltaY });
+    
+    const updatedNodes = activeWorkflow.nodes.map(node => {
+      if (node.id === draggedNodeId) {
+        return {
+          ...node,
+          position: {
+            x: Math.max(0, node.position.x + deltaX),
+            y: Math.max(0, node.position.y + deltaY)
+          }
+        };
+      }
+      return node;
+    });
+    
+    setActiveWorkflow(prev => ({ ...prev, nodes: updatedNodes }));
+    setDragStartPos({ x: containerX, y: containerY });
+  }, [isDragging, draggedNodeId, dragStartPos, zoomLevel, activeWorkflow]);
+
+  const handleNodeDragEnd = () => {
+    setIsDragging(false);
+    setDraggedNodeId(null);
+    setDragOffset({ x: 0, y: 0 });
+  };
+
+  // ZOOM FUNCTIONS
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev * 1.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev / 1.2, 0.3));
+  };
+
+  const handleZoomReset = () => {
+    setZoomLevel(1);
+  };
+
+  const handleWheel = (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        handleZoomIn();
+      } else {
+        handleZoomOut();
       }
     }
-    
-    setDragOverId(null);
   };
 
   const handleDeleteConnection = (connectionId) => {
@@ -834,10 +867,8 @@ export default function ApprovalWorkflowConfig() {
   const handleDeleteNode = (nodeId) => {
     if (!activeWorkflow) return;
     
-    // Remove the node
     const updatedNodes = activeWorkflow.nodes.filter(node => node.id !== nodeId);
     
-    // Remove connections involving this node
     const updatedConnections = (activeWorkflow.connections || []).filter(
       conn => conn.from !== nodeId && conn.to !== nodeId
     );
@@ -849,8 +880,48 @@ export default function ApprovalWorkflowConfig() {
     }));
   };
 
+  // Mouse event handlers for drag and drop
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (isDragging) {
+        handleNodeDragMove(e.clientX, e.clientY);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (isDragging) {
+        handleNodeDragEnd();
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (isDragging && e.touches.length === 1) {
+        e.preventDefault();
+        handleNodeDragMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (isDragging) {
+        handleNodeDragEnd();
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDragging, handleNodeDragMove]);
+
   const renderWorkflowVisualizer = () => {
-    if (!activeWorkflow?.nodes.length) {
+    if (!activeWorkflow?.nodes?.length) {
       return (
         <div className="flex flex-col items-center justify-center h-full min-h-[400px] bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 p-8">
           <Layers size={48} className="text-gray-400 mb-4" />
@@ -868,166 +939,242 @@ export default function ApprovalWorkflowConfig() {
     }
 
     return (
-      <div className="relative h-[600px] bg-gray-50 rounded-2xl border border-gray-300 overflow-auto p-4">
-        {/* Grid background */}
-        <div className="absolute inset-0" style={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-                           linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)`,
-          backgroundSize: '20px 20px'
-        }}></div>
-        
-        {/* Render connections first (behind nodes) */}
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          {activeWorkflow.connections?.map((conn, index) => {
-            const fromNode = activeWorkflow.nodes.find(n => n.id === conn.from);
-            const toNode = activeWorkflow.nodes.find(n => n.id === conn.to);
+      <div className="relative h-[600px] bg-gray-50 rounded-2xl border border-gray-300 overflow-hidden">
+        {/* Zoom Controls Only */}
+        <div className="absolute top-4 left-4 z-30">
+          <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-300 shadow-sm p-2 flex items-center space-x-2">
+            <button
+              onClick={handleZoomOut}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              title="Zoom Out (Ctrl/Cmd + -)"
+            >
+              <ZoomOut size={16} className="text-gray-700" />
+            </button>
+            <div className="flex items-center space-x-1">
+              <span className="text-sm font-medium w-12 text-center">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                onClick={handleZoomReset}
+                className="p-1 hover:bg-gray-100 rounded transition-colors duration-200"
+                title="Reset Zoom (Ctrl/Cmd + 0)"
+              >
+                <RotateCcw size={12} className="text-gray-600" />
+              </button>
+            </div>
+            <button
+              onClick={handleZoomIn}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              title="Zoom In (Ctrl/Cmd + +)"
+            >
+              <ZoomIn size={16} className="text-gray-700" />
+            </button>
+            <div className="w-px h-6 bg-gray-300 mx-1"></div>
+            <div className="text-xs text-gray-500">
+              Ctrl/Cmd + Scroll to zoom
+            </div>
+          </div>
+        </div>
+
+        {/* Workflow Container */}
+        <div
+          ref={workflowContainerRef}
+          className="relative w-full h-full overflow-auto"
+          style={{
+            transform: `scale(${zoomLevel})`,
+            transformOrigin: '0 0',
+          }}
+          onWheel={handleWheel}
+        >
+          {/* Grid background */}
+          <div className="absolute inset-0" style={{
+            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)`,
+            backgroundSize: `${20 * zoomLevel}px ${20 * zoomLevel}px`,
+          }}></div>
+          
+          {/* Connections SVG */}
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            <defs>
+              <marker
+                id="arrowhead"
+                markerWidth="10"
+                markerHeight="7"
+                refX="9"
+                refY="3.5"
+                orient="auto"
+              >
+                <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+              </marker>
+            </defs>
             
-            if (!fromNode || !toNode) return null;
-            
-            const x1 = fromNode.position.x + 100;
-            const y1 = fromNode.position.y + 50;
-            const x2 = toNode.position.x;
-            const y2 = toNode.position.y + 50;
-            
+            {activeWorkflow.connections?.map((conn, index) => {
+              const fromNode = activeWorkflow.nodes.find(n => n.id === conn.from);
+              const toNode = activeWorkflow.nodes.find(n => n.id === conn.to);
+              
+              if (!fromNode || !toNode) return null;
+              
+              const x1 = fromNode.position.x + 100;
+              const y1 = fromNode.position.y + 50;
+              const x2 = toNode.position.x;
+              const y2 = toNode.position.y + 50;
+              
+              return (
+                <g key={conn.id || index}>
+                  <path
+                    d={`M ${x1} ${y1} C ${x1 + 100} ${y1}, ${x2 - 100} ${y2}, ${x2} ${y2}`}
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                    fill="none"
+                    markerEnd="url(#arrowhead)"
+                  />
+                  <circle cx={x1 + (x2 - x1) / 2} cy={y1 + (y2 - y1) / 2} r="4" fill="#3b82f6" />
+                  <text
+                    x={x1 + (x2 - x1) / 2}
+                    y={y1 + (y2 - y1) / 2 - 10}
+                    textAnchor="middle"
+                    fill="#6b7280"
+                    fontSize="10"
+                  >
+                    {conn.condition || ''}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+
+          {/* Render nodes */}
+          {activeWorkflow.nodes.map((node) => {
+            const isBeingDragged = draggedNodeId === node.id;
+            const currentPosition = {
+              x: node.position.x + (isBeingDragged ? dragOffset.x : 0),
+              y: node.position.y + (isBeingDragged ? dragOffset.y : 0)
+            };
+
             return (
-              <g key={conn.id}>
-                <path
-                  d={`M ${x1} ${y1} C ${x1 + 100} ${y1}, ${x2 - 100} ${y2}, ${x2} ${y2}`}
-                  stroke="#3b82f6"
-                  strokeWidth="2"
-                  fill="none"
-                  markerEnd="url(#arrowhead)"
-                />
-                <circle cx={x1 + (x2 - x1) / 2} cy={y1 + (y2 - y1) / 2} r="4" fill="#3b82f6" />
-                <text
-                  x={x1 + (x2 - x1) / 2}
-                  y={y1 + (y2 - y1) / 2 - 10}
-                  textAnchor="middle"
-                  fill="#6b7280"
-                  fontSize="10"
-                >
-                  {conn.condition || ''}
-                </text>
-              </g>
+              <div
+                key={node.id}
+                className={`absolute ${isBeingDragged ? 'z-50 opacity-90' : 'z-10'} ${
+                  isBeingDragged ? 'cursor-grabbing' : 'cursor-grab'
+                } transition-transform duration-150`}
+                style={{
+                  left: `${currentPosition.x}px`,
+                  top: `${currentPosition.y}px`,
+                  transform: isBeingDragged ? 'scale(1.02)' : 'scale(1)',
+                  boxShadow: isBeingDragged 
+                    ? '0 10px 25px -5px rgba(0, 0, 0, 0.2)' 
+                    : '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                }}
+                onMouseDown={(e) => handleNodeDragStart(e, node.id)}
+                onTouchStart={(e) => handleNodeDragStart(e, node.id)}
+                onClick={(e) => {
+                  if (!isDragging) {
+                    e.stopPropagation();
+                    setSelectedNode(node);
+                    setNodeForm(node);
+                    setShowNodeModal(true);
+                  }
+                }}
+              >
+                <div className={`w-48 p-3 rounded-xl border-2 transition-all duration-200 ${
+                  node.type === 'start' ? 'bg-emerald-50 border-emerald-300 hover:border-emerald-400' :
+                  node.type === 'approval' ? 'bg-blue-50 border-blue-300 hover:border-blue-400' :
+                  node.type === 'condition' ? 'bg-amber-50 border-amber-300 hover:border-amber-400' :
+                  node.type === 'parallel' ? 'bg-purple-50 border-purple-300 hover:border-purple-400' :
+                  node.type === 'notification' ? 'bg-teal-50 border-teal-300 hover:border-teal-400' :
+                  'bg-red-50 border-red-300 hover:border-red-400'
+                }`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      {node.type === 'start' && <Play size={16} className="text-emerald-600" />}
+                      {node.type === 'approval' && <UserCheck size={16} className="text-blue-600" />}
+                      {node.type === 'condition' && <GitBranch size={16} className="text-amber-600" />}
+                      {node.type === 'parallel' && <GitMerge size={16} className="text-purple-600" />}
+                      {node.type === 'notification' && <Bell size={16} className="text-teal-600" />}
+                      {node.type === 'end' && <StopCircle size={16} className="text-red-600" />}
+                      <span className="font-bold text-sm">{node.name}</span>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNode(node.id);
+                      }}
+                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 space-y-1">
+                    {node.type === 'approval' && (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <span>Approvers:</span>
+                          <span className="font-medium">{node.approvers?.length || 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span>Type:</span>
+                          <span className="font-medium capitalize">{node.approvalType}</span>
+                        </div>
+                      </>
+                    )}
+                    {node.type === 'condition' && node.conditions?.length > 0 && (
+                      <div className="text-xs">
+                        {node.conditions[0].field}: {node.conditions[0].operator} {node.conditions[0].value}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-2 pt-2 border-t border-gray-200">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>ID: {node.id.slice(0, 8)}</span>
+                      <Move size={10} className={isBeingDragged ? 'animate-pulse' : ''} />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Drag handle overlay */}
+                <div className="absolute inset-0 cursor-grab active:cursor-grabbing"></div>
+              </div>
             );
           })}
-          
-          <defs>
-            <marker
-              id="arrowhead"
-              markerWidth="10"
-              markerHeight="7"
-              refX="9"
-              refY="3.5"
-              orient="auto"
-            >
-              <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
-            </marker>
-          </defs>
-        </svg>
 
-        {/* Render nodes */}
-        {activeWorkflow.nodes.map((node) => (
-          <div
-            key={node.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, node.id)}
-            onDragOver={(e) => handleDragOver(e, node.id)}
-            onDrop={(e) => handleDrop(e, node.id)}
-            className={`absolute cursor-move transition-all duration-200 ${
-              dragOverId === node.id ? 'scale-105 ring-2 ring-blue-500' : ''
-            }`}
-            style={{
-              left: `${node.position.x}px`,
-              top: `${node.position.y}px`,
-            }}
-            onClick={() => {
-              setSelectedNode(node);
-              setNodeForm(node);
-              setShowNodeModal(true);
-            }}
-          >
-            <div className={`w-48 p-3 rounded-xl border-2 shadow-sm ${
-              node.type === 'start' ? 'bg-emerald-50 border-emerald-300' :
-              node.type === 'approval' ? 'bg-blue-50 border-blue-300' :
-              node.type === 'condition' ? 'bg-amber-50 border-amber-300' :
-              node.type === 'parallel' ? 'bg-purple-50 border-purple-300' :
-              node.type === 'notification' ? 'bg-teal-50 border-teal-300' :
-              'bg-red-50 border-red-300'
-            }`}>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-2">
-                  {node.type === 'start' && <Play size={16} className="text-emerald-600" />}
-                  {node.type === 'approval' && <UserCheck size={16} className="text-blue-600" />}
-                  {node.type === 'condition' && <GitBranch size={16} className="text-amber-600" />}
-                  {node.type === 'parallel' && <GitMerge size={16} className="text-purple-600" />}
-                  {node.type === 'notification' && <Bell size={16} className="text-teal-600" />}
-                  {node.type === 'end' && <StopCircle size={16} className="text-red-600" />}
-                  <span className="font-bold text-sm">{node.name}</span>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteNode(node.id);
-                  }}
-                  className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-              
-              <div className="text-xs text-gray-600 space-y-1">
-                {node.type === 'approval' && (
-                  <>
-                    <div className="flex items-center justify-between">
-                      <span>Approvers:</span>
-                      <span className="font-medium">{node.approvers?.length || 0}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Type:</span>
-                      <span className="font-medium capitalize">{node.approvalType}</span>
-                    </div>
-                  </>
-                )}
-                {node.type === 'condition' && node.conditions?.length > 0 && (
-                  <div className="text-xs">
-                    {node.conditions[0].field}: {node.conditions[0].operator} {node.conditions[0].value}
-                  </div>
-                )}
-              </div>
-              
-              <div className="mt-2 pt-2 border-t border-gray-200">
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  <span>ID: {node.id.slice(0, 8)}</span>
-                  <Move size={10} />
-                </div>
+          {/* Add node button */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-300 shadow-sm p-2">
+              <div className="text-xs font-medium text-gray-700 mb-2 text-center">Add Node</div>
+              <div className="flex flex-wrap gap-1 justify-center">
+                {nodeTypes.map((type) => (
+                  <button
+                    key={type.id}
+                    onClick={() => handleAddNode(type.id)}
+                    className={`p-1.5 rounded-lg border text-xs font-medium flex items-center gap-1 ${
+                      type.id === 'start' ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' :
+                      type.id === 'approval' ? 'border-blue-200 text-blue-700 hover:bg-blue-50' :
+                      type.id === 'condition' ? 'border-amber-200 text-amber-700 hover:bg-amber-50' :
+                      type.id === 'parallel' ? 'border-purple-200 text-purple-700 hover:bg-purple-50' :
+                      type.id === 'notification' ? 'border-teal-200 text-teal-700 hover:bg-teal-50' :
+                      'border-red-200 text-red-700 hover:bg-red-50'
+                    }`}
+                  >
+                    {type.icon}
+                    <span>{type.name.split(' ')[0]}</span>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
-        ))}
 
-        {/* Add node button */}
-        <div className="absolute bottom-4 right-4">
-          <div className="bg-white rounded-xl border border-gray-300 shadow-sm p-2">
-            <div className="text-xs font-medium text-gray-700 mb-2">Add Node</div>
-            <div className="flex flex-wrap gap-1">
-              {nodeTypes.map((type) => (
-                <button
-                  key={type.id}
-                  onClick={() => handleAddNode(type.id)}
-                  className={`p-1.5 rounded-lg border text-xs font-medium flex items-center gap-1 ${
-                    type.id === 'start' ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' :
-                    type.id === 'approval' ? 'border-blue-200 text-blue-700 hover:bg-blue-50' :
-                    type.id === 'condition' ? 'border-amber-200 text-amber-700 hover:bg-amber-50' :
-                    type.id === 'parallel' ? 'border-purple-200 text-purple-700 hover:bg-purple-50' :
-                    type.id === 'notification' ? 'border-teal-200 text-teal-700 hover:bg-teal-50' :
-                    'border-red-200 text-red-700 hover:bg-red-50'
-                  }`}
-                >
-                  {type.icon}
-                  <span>{type.name.split(' ')[0]}</span>
-                </button>
-              ))}
+          {/* Status indicator */}
+          <div className="absolute top-4 right-4 z-20">
+            <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-300 shadow-sm px-3 py-1.5">
+              <div className="flex items-center space-x-2 text-xs text-gray-600">
+                <span>Zoom: {Math.round(zoomLevel * 100)}%</span>
+                <span>•</span>
+                <span>Nodes: {activeWorkflow.nodes.length}</span>
+                <span>•</span>
+                <span>Connections: {activeWorkflow.connections?.length || 0}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1036,6 +1183,8 @@ export default function ApprovalWorkflowConfig() {
   };
 
   const renderNodeConfigForm = () => {
+    const selectedCondition = availableConditions.find(c => c.id === conditionForm.field);
+    
     return (
       <div className="space-y-4">
         {/* Basic Info */}
@@ -1115,11 +1264,11 @@ export default function ApprovalWorkflowConfig() {
                 Select Approvers
               </label>
               <div className="border border-gray-300 rounded-xl p-2 max-h-40 overflow-y-auto">
-                {sampleApprovers.map((approver) => (
-                  <label key={approver.id} className="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded">
+                {approvers.map((approver) => (
+                  <label key={approver._id} className="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded">
                     <input
                       type="checkbox"
-                      checked={nodeForm.approvers.some(a => a.id === approver.id)}
+                      checked={nodeForm.approvers.some(a => a._id === approver._id || a.id === approver._id)}
                       onChange={(e) => {
                         if (e.target.checked) {
                           setNodeForm(prev => ({
@@ -1129,15 +1278,19 @@ export default function ApprovalWorkflowConfig() {
                         } else {
                           setNodeForm(prev => ({
                             ...prev,
-                            approvers: prev.approvers.filter(a => a.id !== approver.id)
+                            approvers: prev.approvers.filter(a => a._id !== approver._id)
                           }));
                         }
                       }}
                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                     />
                     <div className="flex-1">
-                      <div className="font-medium text-sm">{approver.name}</div>
-                      <div className="text-xs text-gray-500">{approver.role} • {approver.department}</div>
+                      <div className="font-medium text-sm">
+                        {approver.firstName} {approver.lastName}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {approver.role} • {approver.email}
+                      </div>
                     </div>
                   </label>
                 ))}
@@ -1168,9 +1321,9 @@ export default function ApprovalWorkflowConfig() {
                   className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                 >
                   <option value="">None</option>
-                  {sampleApprovers.map(approver => (
-                    <option key={approver.id} value={approver.id}>
-                      {approver.name} ({approver.role})
+                  {approvers.map(approver => (
+                    <option key={approver._id} value={approver._id}>
+                      {approver.firstName} {approver.lastName} ({approver.role})
                     </option>
                   ))}
                 </select>
@@ -1194,25 +1347,23 @@ export default function ApprovalWorkflowConfig() {
               </button>
             </div>
 
-            {nodeForm.conditions.length > 0 ? (
+            {nodeForm.conditions?.length > 0 ? (
               <div className="space-y-2">
                 {nodeForm.conditions.map((condition, index) => (
-                  <div key={condition.id} className="p-2 bg-gray-50 border border-gray-200 rounded-xl">
+                  <div key={index} className="p-2 bg-gray-50 border border-gray-200 rounded-xl">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-medium text-sm">{condition.field}</span>
-                      <div className="flex items-center space-x-1">
-                        <button
-                          onClick={() => {
-                            setNodeForm(prev => ({
-                              ...prev,
-                              conditions: prev.conditions.filter((_, i) => i !== index)
-                            }));
-                          }}
-                          className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
-                        >
-                          <Trash2 size={10} />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setNodeForm(prev => ({
+                            ...prev,
+                            conditions: prev.conditions.filter((_, i) => i !== index)
+                          }));
+                        }}
+                        className="p-0.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                      >
+                        <Trash2 size={10} />
+                      </button>
                     </div>
                     <div className="text-xs text-gray-600">
                       {condition.operator} {condition.value}
@@ -1242,8 +1393,7 @@ export default function ApprovalWorkflowConfig() {
                       setConditionForm(prev => ({
                         ...prev,
                         field: e.target.value,
-                        valueType: field?.type || 'text',
-                        valueOptions: field?.options || []
+                        valueType: field?.type || 'text'
                       }));
                     }}
                     className="w-full px-2 py-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs"
@@ -1276,31 +1426,22 @@ export default function ApprovalWorkflowConfig() {
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Value
                   </label>
-                  {conditionForm.valueType === 'select' ? (
+                  {selectedCondition?.type === 'select' ? (
                     <select
                       value={conditionForm.value}
                       onChange={(e) => setConditionForm(prev => ({ ...prev, value: e.target.value }))}
                       className="w-full px-2 py-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs"
                     >
                       <option value="">Select value</option>
-                      {conditionForm.valueOptions?.map(opt => (
+                      {selectedCondition.options?.map(opt => (
                         <option key={opt.value} value={opt.value}>
                           {opt.label}
                         </option>
                       ))}
                     </select>
-                  ) : conditionForm.valueType === 'boolean' ? (
-                    <select
-                      value={conditionForm.value}
-                      onChange={(e) => setConditionForm(prev => ({ ...prev, value: e.target.value }))}
-                      className="w-full px-2 py-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs"
-                    >
-                      <option value="true">True</option>
-                      <option value="false">False</option>
-                    </select>
                   ) : (
                     <input
-                      type={conditionForm.valueType}
+                      type={selectedCondition?.type || 'text'}
                       value={conditionForm.value}
                       onChange={(e) => setConditionForm(prev => ({ ...prev, value: e.target.value }))}
                       className="w-full px-2 py-1 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs"
@@ -1313,73 +1454,16 @@ export default function ApprovalWorkflowConfig() {
           </div>
         )}
 
-        {/* Notification-specific settings */}
-        {nodeForm.type === 'notification' && (
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Notification Recipients
-            </label>
-            <div className="border border-gray-300 rounded-xl p-2 max-h-40 overflow-y-auto">
-              {sampleApprovers.map((approver) => (
-                <label key={approver.id} className="flex items-center space-x-2 p-1.5 hover:bg-gray-50 rounded">
-                  <input
-                    type="checkbox"
-                    checked={nodeForm.approvers?.some(a => a.id === approver.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setNodeForm(prev => ({
-                          ...prev,
-                          approvers: [...(prev.approvers || []), approver]
-                        }));
-                      } else {
-                        setNodeForm(prev => ({
-                          ...prev,
-                          approvers: (prev.approvers || []).filter(a => a.id !== approver.id)
-                        }));
-                      }
-                    }}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium text-sm">{approver.name}</div>
-                    <div className="text-xs text-gray-500">{approver.role}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
+        {/* Position information (read-only) */}
+        <div className="p-2 bg-gray-50 border border-gray-200 rounded-xl">
+          <div className="text-xs font-medium text-gray-700 mb-1">Current Position</div>
+          <div className="flex items-center justify-between text-xs text-gray-600">
+            <span>X: {Math.round(nodeForm.position.x)}px</span>
+            <span>Y: {Math.round(nodeForm.position.y)}px</span>
           </div>
-        )}
-
-        {/* Position settings */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              X Position
-            </label>
-            <input
-              type="number"
-              value={nodeForm.position.x}
-              onChange={(e) => setNodeForm(prev => ({
-                ...prev,
-                position: { ...prev.position, x: parseInt(e.target.value) || 0 }
-              }))}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Y Position
-            </label>
-            <input
-              type="number"
-              value={nodeForm.position.y}
-              onChange={(e) => setNodeForm(prev => ({
-                ...prev,
-                position: { ...prev.position, y: parseInt(e.target.value) || 0 }
-              }))}
-              className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-            />
-          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Position is set by dragging the node in the workflow designer
+          </p>
         </div>
       </div>
     );
@@ -1396,7 +1480,7 @@ export default function ApprovalWorkflowConfig() {
                 Approval Workflow Configuration
               </h1>
               <p className="text-gray-600 mt-1">
-                Design custom approval processes with conditional routing, thresholds, and multi-level approvals
+                Design custom approval processes with drag-and-drop interface and zoom controls
               </p>
             </div>
             <div className="flex items-center space-x-2">
@@ -1426,10 +1510,11 @@ export default function ApprovalWorkflowConfig() {
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-gray-900">Workflows ({workflows.length})</h3>
                   <div className="flex items-center space-x-1">
-                    <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200">
-                      <Filter size={14} />
-                    </button>
-                    <button className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200">
+                    <button 
+                      onClick={fetchWorkflows}
+                      className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors duration-200"
+                      title="Refresh"
+                    >
                       <RefreshCw size={14} />
                     </button>
                   </div>
@@ -1470,9 +1555,9 @@ export default function ApprovalWorkflowConfig() {
                     )
                     .map((workflow) => (
                       <div
-                        key={workflow.id}
+                        key={workflow._id}
                         className={`p-3 border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors duration-200 ${
-                          activeWorkflow?.id === workflow.id ? 'bg-blue-50 border-blue-200' : ''
+                          activeWorkflow?._id === workflow._id ? 'bg-blue-50 border-blue-200' : ''
                         }`}
                         onClick={() => setActiveWorkflow(workflow)}
                       >
@@ -1489,9 +1574,9 @@ export default function ApprovalWorkflowConfig() {
                                 High
                               </span>
                             )}
-                            {workflow.applyToAll && (
-                              <span className="px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs rounded">
-                                All
+                            {workflow.isDraft && (
+                              <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-xs rounded">
+                                Draft
                               </span>
                             )}
                           </div>
@@ -1502,11 +1587,6 @@ export default function ApprovalWorkflowConfig() {
                         <div className="flex items-center justify-between text-xs text-gray-500">
                           <span>{workflow.nodes?.length || 0} steps</span>
                           <div className="flex items-center space-x-2">
-                            {workflow.statistics && (
-                              <span className="text-emerald-600 font-medium">
-                                {workflow.statistics.completionRate}
-                              </span>
-                            )}
                             <ChevronRight size={12} />
                           </div>
                         </div>
@@ -1533,9 +1613,9 @@ export default function ApprovalWorkflowConfig() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Auto-approval Rules</span>
+                  <span className="text-sm text-gray-600">Drafts</span>
                   <span className="font-bold text-gray-900">
-                    {workflows.filter(w => w.autoApproveBelow).length}
+                    {workflows.filter(w => w.isDraft).length}
                   </span>
                 </div>
               </div>
@@ -1559,8 +1639,15 @@ export default function ApprovalWorkflowConfig() {
                         }`}>
                           {activeWorkflow.isActive ? 'Active' : 'Inactive'}
                         </span>
+                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
+                          activeWorkflow.isDraft 
+                            ? 'bg-amber-100 text-amber-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {activeWorkflow.isDraft ? 'Draft' : `Priority: ${activeWorkflow.priority}`}
+                        </span>
                         <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                          Priority: {activeWorkflow.priority}
+                          Code: {activeWorkflow.code || 'N/A'}
                         </span>
                       </div>
                       <p className="text-gray-600">{activeWorkflow.description}</p>
@@ -1573,16 +1660,31 @@ export default function ApprovalWorkflowConfig() {
                         {isEditing ? <Save size={14} className="mr-1 inline" /> : <Edit size={14} className="mr-1 inline" />}
                         {isEditing ? 'Save Changes' : 'Edit Workflow'}
                       </button>
+                      {activeWorkflow.isDraft && (
+                        <button
+                          onClick={() => publishWorkflow(activeWorkflow._id)}
+                          disabled={isLoading}
+                          className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors duration-200 text-sm font-medium"
+                        >
+                          {isLoading ? (
+                            <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full mx-2"></div>
+                          ) : (
+                            'Publish'
+                          )}
+                        </button>
+                      )}
                       <button
-                        onClick={() => saveWorkflow(activeWorkflow)}
-                        disabled={isLoading}
-                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors duration-200 text-sm font-medium"
+                        onClick={() => cloneWorkflow(activeWorkflow._id)}
+                        className="px-3 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors duration-200 text-sm font-medium"
                       >
-                        {isLoading ? (
-                          <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full mx-2"></div>
-                        ) : (
-                          'Publish'
-                        )}
+                        <Copy size={14} className="mr-1 inline" />
+                        Clone
+                      </button>
+                      <button
+                        onClick={() => deleteWorkflow(activeWorkflow._id)}
+                        className="px-3 py-1.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors duration-200 text-sm font-medium"
+                      >
+                        <Trash2 size={14} className="mr-1 inline" />
                       </button>
                     </div>
                   </div>
@@ -1607,25 +1709,20 @@ export default function ApprovalWorkflowConfig() {
                     </div>
                     <div className="bg-gray-50 rounded-xl p-2">
                       <span className="text-xs text-gray-600">Created By</span>
-                      <p className="font-bold text-gray-900">{activeWorkflow.createdBy || 'Admin'}</p>
+                      <p className="font-bold text-gray-900">{activeWorkflow.createdBy?.name || 'Admin'}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Workflow Visualizer */}
+                {/* Workflow Visualizer with Drag & Drop */}
                 <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-gray-900">Workflow Designer</h3>
                       <div className="flex items-center space-x-2">
-                        <button className="px-2 py-1 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 text-xs font-medium">
-                          <ZoomIn size={12} className="mr-1 inline" />
-                          Zoom In
-                        </button>
-                        <button className="px-2 py-1 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 text-xs font-medium">
-                          <ZoomOut size={12} className="mr-1 inline" />
-                          Zoom Out
-                        </button>
+                        <div className="text-xs text-gray-500">
+                          Drag nodes to move • Ctrl+Scroll to zoom
+                        </div>
                         <button className="px-2 py-1 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 text-xs font-medium">
                           <Download size={12} className="mr-1 inline" />
                           Export
@@ -1633,174 +1730,154 @@ export default function ApprovalWorkflowConfig() {
                       </div>
                     </div>
                   </div>
-                  <div className="p-4">
+                  <div className="p-0">
                     {renderWorkflowVisualizer()}
                   </div>
                 </div>
 
-                {/* Workflow Settings (Collapsible) */}
-                <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-                    <h3 className="font-bold text-gray-900">Workflow Configuration</h3>
-                  </div>
-                  <div className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {/* Trigger Conditions */}
-                      <div className="space-y-3">
-                        <h4 className="font-bold text-gray-900 text-sm">Trigger Conditions</h4>
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-700">Apply to All Requests</span>
-                            <input
-                              type="checkbox"
-                              checked={activeWorkflow.applyToAll}
-                              onChange={(e) => setActiveWorkflow(prev => ({ ...prev, applyToAll: e.target.checked }))}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                            />
+                {/* Workflow Settings */}
+                {isEditing && (
+                  <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                      <h3 className="font-bold text-gray-900">Workflow Configuration</h3>
+                    </div>
+                    <div className="p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Trigger Conditions */}
+                        <div className="space-y-3">
+                          <h4 className="font-bold text-gray-900 text-sm">Trigger Conditions</h4>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-gray-700">Apply to All Requests</span>
+                              <input
+                                type="checkbox"
+                                checked={activeWorkflow.applyToAll || false}
+                                onChange={(e) => setActiveWorkflow(prev => ({ ...prev, applyToAll: e.target.checked }))}
+                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                              />
+                            </div>
+                            
+                            {!activeWorkflow.applyToAll && (
+                              <>
+                                <div>
+                                  <label className="block text-sm text-gray-700 mb-1">Departments</label>
+                                  <div className="flex flex-wrap gap-1">
+                                    {departments.map(dept => (
+                                      <label key={dept._id} className="inline-flex items-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={activeWorkflow.departments?.some(d => d._id === dept._id || d === dept._id)}
+                                          onChange={(e) => {
+                                            const departmentIds = activeWorkflow.departments || [];
+                                            const updatedDepts = e.target.checked
+                                              ? [...departmentIds, dept._id]
+                                              : departmentIds.filter(id => id !== dept._id);
+                                            setActiveWorkflow(prev => ({ ...prev, departments: updatedDepts }));
+                                          }}
+                                          className="w-3 h-3 text-blue-600 rounded focus:ring-blue-500"
+                                        />
+                                        <span className="ml-1 text-xs text-gray-700">{dept.name}</span>
+                                      </label>
+                                    ))}
+                                  </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-sm text-gray-700 mb-1">Min Amount (MWK)</label>
+                                    <input
+                                      type="number"
+                                      value={activeWorkflow.minAmount || 0}
+                                      onChange={(e) => setActiveWorkflow(prev => ({ ...prev, minAmount: Number(e.target.value) }))}
+                                      className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm text-gray-700 mb-1">Max Amount (MWK)</label>
+                                    <input
+                                      type="number"
+                                      value={activeWorkflow.maxAmount || ''}
+                                      onChange={(e) => setActiveWorkflow(prev => ({ ...prev, maxAmount: e.target.value ? Number(e.target.value) : null }))}
+                                      className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                      placeholder="No limit"
+                                    />
+                                  </div>
+                                </div>
+                              </>
+                            )}
                           </div>
-                          
-                          {!activeWorkflow.applyToAll && (
-                            <>
-                              <div>
-                                <label className="block text-sm text-gray-700 mb-1">Departments</label>
-                                <div className="flex flex-wrap gap-1">
-                                  {sampleDepartments.map(dept => (
-                                    <label key={dept.id} className="inline-flex items-center">
-                                      <input
-                                        type="checkbox"
-                                        checked={activeWorkflow.departments?.includes(dept.id)}
-                                        onChange={(e) => {
-                                          const updatedDepts = e.target.checked
-                                            ? [...(activeWorkflow.departments || []), dept.id]
-                                            : (activeWorkflow.departments || []).filter(id => id !== dept.id);
-                                          setActiveWorkflow(prev => ({ ...prev, departments: updatedDepts }));
-                                        }}
-                                        className="w-3 h-3 text-blue-600 rounded focus:ring-blue-500"
-                                      />
-                                      <span className="ml-1 text-xs text-gray-700">{dept.name}</span>
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <div>
-                                <label className="block text-sm text-gray-700 mb-1">Categories</label>
-                                <div className="flex flex-wrap gap-1">
-                                  {sampleCategories.map(cat => (
-                                    <label key={cat.id} className="inline-flex items-center">
-                                      <input
-                                        type="checkbox"
-                                        checked={activeWorkflow.categories?.includes(cat.id)}
-                                        onChange={(e) => {
-                                          const updatedCats = e.target.checked
-                                            ? [...(activeWorkflow.categories || []), cat.id]
-                                            : (activeWorkflow.categories || []).filter(id => id !== cat.id);
-                                          setActiveWorkflow(prev => ({ ...prev, categories: updatedCats }));
-                                        }}
-                                        className="w-3 h-3 text-blue-600 rounded focus:ring-blue-500"
-                                      />
-                                      <span className="ml-1 text-xs text-gray-700">{cat.name}</span>
-                                    </label>
-                                  ))}
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <label className="block text-sm text-gray-700 mb-1">Min Amount (MWK)</label>
-                                  <input
-                                    type="number"
-                                    value={activeWorkflow.minAmount || ''}
-                                    onChange={(e) => setActiveWorkflow(prev => ({ ...prev, minAmount: e.target.value }))}
-                                    className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                    placeholder="0"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-sm text-gray-700 mb-1">Max Amount (MWK)</label>
-                                  <input
-                                    type="number"
-                                    value={activeWorkflow.maxAmount || ''}
-                                    onChange={(e) => setActiveWorkflow(prev => ({ ...prev, maxAmount: e.target.value }))}
-                                    className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                                    placeholder="No limit"
-                                  />
-                                </div>
-                              </div>
-                            </>
-                          )}
                         </div>
-                      </div>
 
-                      {/* Approval Settings */}
-                      <div className="space-y-3">
-                        <h4 className="font-bold text-gray-900 text-sm">Approval Settings</h4>
-                        <div className="space-y-2">
-                          <div>
-                            <label className="block text-sm text-gray-700 mb-1">SLA Hours</label>
-                            <input
-                              type="number"
-                              value={activeWorkflow.slaHours || 72}
-                              onChange={(e) => setActiveWorkflow(prev => ({ ...prev, slaHours: parseInt(e.target.value) || 72 }))}
-                              className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm text-gray-700 mb-1">Auto-approve Below (MWK)</label>
-                            <input
-                              type="number"
-                              value={activeWorkflow.autoApproveBelow || ''}
-                              onChange={(e) => setActiveWorkflow(prev => ({ ...prev, autoApproveBelow: e.target.value ? parseInt(e.target.value) : null }))}
-                              className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                              placeholder="Disable auto-approval"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-sm text-gray-700 mb-1">Require CFO Above (MWK)</label>
-                            <input
-                              type="number"
-                              value={activeWorkflow.requireCFOAbove || 500000}
-                              onChange={(e) => setActiveWorkflow(prev => ({ ...prev, requireCFOAbove: parseInt(e.target.value) || 500000 }))}
-                              className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                            />
-                          </div>
-                          
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-700">Require Legal Review</span>
+                        {/* Approval Settings */}
+                        <div className="space-y-3">
+                          <h4 className="font-bold text-gray-900 text-sm">Approval Settings</h4>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-sm text-gray-700 mb-1">SLA Hours</label>
                               <input
-                                type="checkbox"
-                                checked={activeWorkflow.requireLegalReview || false}
-                                onChange={(e) => setActiveWorkflow(prev => ({ ...prev, requireLegalReview: e.target.checked }))}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                type="number"
+                                value={activeWorkflow.slaHours || 72}
+                                onChange={(e) => setActiveWorkflow(prev => ({ ...prev, slaHours: parseInt(e.target.value) || 72 }))}
+                                className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                               />
                             </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-700">Require IT Review</span>
+                            
+                            <div>
+                              <label className="block text-sm text-gray-700 mb-1">Auto-approve Below (MWK)</label>
                               <input
-                                type="checkbox"
-                                checked={activeWorkflow.requireITReview || false}
-                                onChange={(e) => setActiveWorkflow(prev => ({ ...prev, requireITReview: e.target.checked }))}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                type="number"
+                                value={activeWorkflow.autoApproveBelow || ''}
+                                onChange={(e) => setActiveWorkflow(prev => ({ ...prev, autoApproveBelow: e.target.value ? parseInt(e.target.value) : null }))}
+                                className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                placeholder="Disable auto-approval"
                               />
                             </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-700">Allow Delegation</span>
+                            
+                            <div>
+                              <label className="block text-sm text-gray-700 mb-1">Require CFO Above (MWK)</label>
                               <input
-                                type="checkbox"
-                                checked={activeWorkflow.allowDelegation !== false}
-                                onChange={(e) => setActiveWorkflow(prev => ({ ...prev, allowDelegation: e.target.checked }))}
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                type="number"
+                                value={activeWorkflow.requireCFOAbove || 500000}
+                                onChange={(e) => setActiveWorkflow(prev => ({ ...prev, requireCFOAbove: parseInt(e.target.value) || 500000 }))}
+                                className="w-full px-3 py-1.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                               />
+                            </div>
+                            
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-700">Require Legal Review</span>
+                                <input
+                                  type="checkbox"
+                                  checked={activeWorkflow.requireLegalReview || false}
+                                  onChange={(e) => setActiveWorkflow(prev => ({ ...prev, requireLegalReview: e.target.checked }))}
+                                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-700">Require IT Review</span>
+                                <input
+                                  type="checkbox"
+                                  checked={activeWorkflow.requireITReview || false}
+                                  onChange={(e) => setActiveWorkflow(prev => ({ ...prev, requireITReview: e.target.checked }))}
+                                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm text-gray-700">Allow Delegation</span>
+                                <input
+                                  type="checkbox"
+                                  checked={activeWorkflow.allowDelegation !== false}
+                                  onChange={(e) => setActiveWorkflow(prev => ({ ...prev, allowDelegation: e.target.checked }))}
+                                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             ) : (
               <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
@@ -1864,8 +1941,9 @@ export default function ApprovalWorkflowConfig() {
                       className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="1">High (1)</option>
-                      <option value="2">Medium (2)</option>
-                      <option value="3">Low (3)</option>
+                      <option value="3">Medium (3)</option>
+                      <option value="5">Low (5)</option>
+                      <option value="10">Very Low (10)</option>
                     </select>
                   </div>
                 </div>
@@ -1890,8 +1968,8 @@ export default function ApprovalWorkflowConfig() {
                     </label>
                     <input
                       type="number"
-                      value={newWorkflow.autoApproveBelow}
-                      onChange={(e) => setNewWorkflow(prev => ({ ...prev, autoApproveBelow: e.target.value }))}
+                      value={newWorkflow.autoApproveBelow || ''}
+                      onChange={(e) => setNewWorkflow(prev => ({ ...prev, autoApproveBelow: e.target.value ? parseInt(e.target.value) : null }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Leave empty to disable"
                     />
@@ -1930,46 +2008,21 @@ export default function ApprovalWorkflowConfig() {
                         Apply to Specific Departments
                       </label>
                       <div className="grid grid-cols-2 gap-2">
-                        {sampleDepartments.map(dept => (
-                          <label key={dept.id} className="flex items-center space-x-2">
+                        {departments.map(dept => (
+                          <label key={dept._id} className="flex items-center space-x-2">
                             <input
                               type="checkbox"
-                              checked={newWorkflow.departments.includes(dept.id)}
+                              checked={newWorkflow.departments.includes(dept._id)}
                               onChange={(e) => {
                                 if (e.target.checked) {
-                                  setNewWorkflow(prev => ({ ...prev, departments: [...prev.departments, dept.id] }));
+                                  setNewWorkflow(prev => ({ ...prev, departments: [...prev.departments, dept._id] }));
                                 } else {
-                                  setNewWorkflow(prev => ({ ...prev, departments: prev.departments.filter(id => id !== dept.id) }));
+                                  setNewWorkflow(prev => ({ ...prev, departments: prev.departments.filter(id => id !== dept._id) }));
                                 }
                               }}
                               className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                             />
                             <span className="text-sm text-gray-700">{dept.name}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Apply to Specific Categories
-                      </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {sampleCategories.map(cat => (
-                          <label key={cat.id} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              checked={newWorkflow.categories.includes(cat.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setNewWorkflow(prev => ({ ...prev, categories: [...prev.categories, cat.id] }));
-                                } else {
-                                  setNewWorkflow(prev => ({ ...prev, categories: prev.categories.filter(id => id !== cat.id) }));
-                                }
-                              }}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-sm text-gray-700">{cat.name}</span>
                           </label>
                         ))}
                       </div>
@@ -1987,6 +2040,19 @@ export default function ApprovalWorkflowConfig() {
                   />
                   <label htmlFor="isActive" className="text-sm text-gray-700">
                     Activate workflow immediately after creation
+                  </label>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isDraft"
+                    checked={newWorkflow.isDraft}
+                    onChange={(e) => setNewWorkflow(prev => ({ ...prev, isDraft: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="isDraft" className="text-sm text-gray-700">
+                    Save as draft (requires publishing later)
                   </label>
                 </div>
               </div>
@@ -2037,20 +2103,21 @@ export default function ApprovalWorkflowConfig() {
                     setSelectedNode(null);
                     setNodeForm({
                       id: '',
-                      name: '',
                       type: 'approval',
+                      name: '',
                       description: '',
+                      position: { x: 0, y: 0 },
                       approvers: [],
                       approvalType: 'sequential',
                       minApprovals: 1,
                       conditions: [],
-                      actions: [],
+                      trueBranch: '',
+                      falseBranch: '',
                       timeoutHours: 24,
                       escalationTo: '',
                       isMandatory: true,
                       canDelegate: true,
-                      position: { x: 0, y: 0 },
-                      nextNodes: [],
+                      actions: [],
                     });
                   }}
                   className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors duration-200"
@@ -2071,20 +2138,21 @@ export default function ApprovalWorkflowConfig() {
                   setSelectedNode(null);
                   setNodeForm({
                     id: '',
-                    name: '',
                     type: 'approval',
+                    name: '',
                     description: '',
+                    position: { x: 0, y: 0 },
                     approvers: [],
                     approvalType: 'sequential',
                     minApprovals: 1,
                     conditions: [],
-                    actions: [],
+                    trueBranch: '',
+                    falseBranch: '',
                     timeoutHours: 24,
                     escalationTo: '',
                     isMandatory: true,
                     canDelegate: true,
-                    position: { x: 0, y: 0 },
-                    nextNodes: [],
+                    actions: [],
                   });
                 }}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium"
