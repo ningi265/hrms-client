@@ -84,6 +84,7 @@ import Tenders from './pages/vendor-dash/tenders/tenders';
 import CreateTendersPage from './pages/dashboard/tenders/tenders'; 
 import VendorBidPortal from './pages/vendor-dash/tenders/bid'; 
 import VendorDetailsPage from "./pages/dashboard/vendors/vendor-details";
+import PublicTenderPortal from './pages/public-tenders';
 
 
 function App() {
@@ -111,6 +112,8 @@ function App() {
             <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
             <Route path="/complete-registration" element={<CompleteRegistration />} />
                      <Route path="/bid-portal" element={<VendorBidPortal/>}/>
+                        <Route path="/public-tenders" element={<PublicTenderPortal/>}/>
+
           
      
               

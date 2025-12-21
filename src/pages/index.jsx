@@ -653,6 +653,9 @@ export default function Home() {
               <a href="#process" className="font-medium text-gray-600 hover:text-blue-600 transition-colors text-sm">
                 How it Works
               </a>
+              <a href="/public-tenders" className="font-medium text-gray-600 hover:text-blue-600 transition-colors text-sm">
+                Tenders
+              </a>
               <button
                 onClick={() => setShowPricing(true)}
                 className="font-medium text-gray-600 hover:text-blue-600 transition-colors text-sm"
