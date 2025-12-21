@@ -1792,11 +1792,7 @@ export default function ApprovalWorkflowConfig() {
                                 High
                               </span>
                             )}
-                            {workflow.isDraft && (
-                              <span className="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-xs rounded">
-                                Draft
-                              </span>
-                            )}
+                          
                           </div>
                         </div>
                         <p className="text-gray-600 text-xs mb-2 line-clamp-2">
@@ -1857,16 +1853,8 @@ export default function ApprovalWorkflowConfig() {
                         }`}>
                           {activeWorkflow.isActive ? 'Active' : 'Inactive'}
                         </span>
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                          activeWorkflow.isDraft 
-                            ? 'bg-amber-100 text-amber-800' 
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {activeWorkflow.isDraft ? 'Draft' : `Priority: ${activeWorkflow.priority}`}
-                        </span>
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-                          Code: {activeWorkflow.code || 'N/A'}
-                        </span>
+                      
+                       
                       </div>
                       <p className="text-gray-600">{activeWorkflow.description}</p>
                     </div>
