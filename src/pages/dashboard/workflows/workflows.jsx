@@ -322,6 +322,7 @@ export default function ApprovalWorkflowConfig() {
   ]);
 
   const workflowContainerRef = useRef(null);
+  const workflowContentRef = useRef(null);
 
   // Load initial data from backend
   useEffect(() => {
@@ -446,105 +447,105 @@ export default function ApprovalWorkflowConfig() {
     }
   };
 
-   const saveWorkflow = async (workflow) => {
-  setIsLoading(true);
-  setSaveStatus('Saving...');
-  
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
-    const userStr = localStorage.getItem('user');
-    let userId = null;
-    let companyId = null;
+  const saveWorkflow = async (workflow) => {
+    setIsLoading(true);
+    setSaveStatus('Saving...');
     
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr);
-        userId = user.id || user._id;
-        companyId = user.company;
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const userStr = localStorage.getItem('user');
+      let userId = null;
+      let companyId = null;
+      
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          userId = user.id || user._id;
+          companyId = user.company;
+          
+          // Debug logging
+          console.log('User info:', user);
+          console.log('Company ID from user:', companyId);
+          console.log('User ID:', userId);
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      }
+
+      // Prepare workflow data for backend
+      const workflowToSave = {
+        ...workflow,
+        nodes: (workflow.nodes || []).map(node => ({
+          ...node,
+          approvers: (node.approvers || []).map(approver => ({
+            userId: approver._id || approver.id || approver.userId,
+            name: approver.name || approver.firstName + ' ' + approver.lastName,
+            email: approver.email,
+            role: approver.role || 'Approver'
+          }))
+        })),
+        departments: (workflow.departments || []).map(dept => dept._id || dept.id || dept),
+        // CRITICAL: Include company in the request body
+        company: companyId || workflow.company,
+        createdBy: userId || workflow.createdBy,
+        _id: workflow._id ? workflow._id : undefined
+      };
+
+      // Debug the workflow data being sent
+      console.log('Workflow to save:', workflowToSave);
+      console.log('Workflow company:', workflowToSave.company);
+
+      const url = workflow._id 
+        ? `${backendUrl}/api/workflows/${workflow._id}`
+        : `${backendUrl}/api/workflows`;
+      
+      const method = workflow._id ? 'PUT' : 'POST';
+      
+      console.log('API Call:', method, url);
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(workflowToSave)
+      });
+
+      console.log('Response Status:', response.status);
+      
+      if (response.ok) {
+        const savedWorkflow = await response.json();
+        setSaveStatus('Saved successfully!');
         
-        // Debug logging
-        console.log('User info:', user);
-        console.log('Company ID from user:', companyId);
-        console.log('User ID:', userId);
-      } catch (e) {
-        console.error('Error parsing user data:', e);
+        // Update the workflows list
+        await fetchWorkflows();
+        
+        // Update active workflow with server response
+        if (activeWorkflow?._id === workflow._id) {
+          setActiveWorkflow(savedWorkflow.data || savedWorkflow);
+        }
+        
+        setTimeout(() => setSaveStatus(''), 3000);
+        return true;
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        console.error('Error response:', errorData);
+        setSaveStatus(`Error: ${errorData.message || 'Failed to save'}`);
+        return false;
       }
-    }
-
-    // Prepare workflow data for backend
-    const workflowToSave = {
-      ...workflow,
-      nodes: (workflow.nodes || []).map(node => ({
-        ...node,
-        approvers: (node.approvers || []).map(approver => ({
-          userId: approver._id || approver.id || approver.userId,
-          name: approver.name || approver.firstName + ' ' + approver.lastName,
-          email: approver.email,
-          role: approver.role || 'Approver'
-        }))
-      })),
-      departments: (workflow.departments || []).map(dept => dept._id || dept.id || dept),
-      // CRITICAL: Include company in the request body
-      company: companyId || workflow.company,
-      createdBy: userId || workflow.createdBy,
-      _id: workflow._id ? workflow._id : undefined
-    };
-
-    // Debug the workflow data being sent
-    console.log('Workflow to save:', workflowToSave);
-    console.log('Workflow company:', workflowToSave.company);
-
-    const url = workflow._id 
-      ? `${backendUrl}/api/workflows/${workflow._id}`
-      : `${backendUrl}/api/workflows`;
-    
-    const method = workflow._id ? 'PUT' : 'POST';
-    
-    console.log('API Call:', method, url);
-
-    const response = await fetch(url, {
-      method,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(workflowToSave)
-    });
-
-    console.log('Response Status:', response.status);
-    
-    if (response.ok) {
-      const savedWorkflow = await response.json();
-      setSaveStatus('Saved successfully!');
-      
-      // Update the workflows list
-      await fetchWorkflows();
-      
-      // Update active workflow with server response
-      if (activeWorkflow?._id === workflow._id) {
-        setActiveWorkflow(savedWorkflow.data || savedWorkflow);
-      }
-      
-      setTimeout(() => setSaveStatus(''), 3000);
-      return true;
-    } else {
-      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-      console.error('Error response:', errorData);
-      setSaveStatus(`Error: ${errorData.message || 'Failed to save'}`);
+    } catch (error) {
+      console.error('Save error:', error);
+      setSaveStatus(`Error: ${error.message}`);
       return false;
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Save error:', error);
-    setSaveStatus(`Error: ${error.message}`);
-    return false;
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const publishWorkflow = async (workflowId) => {
     setIsLoading(true);
@@ -624,7 +625,7 @@ export default function ApprovalWorkflowConfig() {
       console.error('Error cloning workflow:', error);
     }
   };
-   
+  
   const handleCreateWorkflow = async () => {
     if (!newWorkflow.name) {
       alert('Please enter a workflow name');
@@ -840,9 +841,10 @@ export default function ApprovalWorkflowConfig() {
     if (containerRect) {
       const clientX = e.clientX || e.touches[0].clientX;
       const clientY = e.clientY || e.touches[0].clientY;
+      // Normalize by zoom level
       setDragStartPos({
-        x: clientX - containerRect.left,
-        y: clientY - containerRect.top
+        x: (clientX - containerRect.left) / zoomLevel,
+        y: (clientY - containerRect.top) / zoomLevel
       });
       setDragOffset({ x: 0, y: 0 });
     }
@@ -852,11 +854,11 @@ export default function ApprovalWorkflowConfig() {
     if (!isDragging || !draggedNodeId || !workflowContainerRef.current) return;
     
     const containerRect = workflowContainerRef.current.getBoundingClientRect();
-    const containerX = clientX - containerRect.left;
-    const containerY = clientY - containerRect.top;
+    const containerX = (clientX - containerRect.left) / zoomLevel;
+    const containerY = (clientY - containerRect.top) / zoomLevel;
     
-    const deltaX = (containerX - dragStartPos.x) / zoomLevel;
-    const deltaY = (containerY - dragStartPos.y) / zoomLevel;
+    const deltaX = containerX - dragStartPos.x;
+    const deltaY = containerY - dragStartPos.y;
     
     setDragOffset({ x: deltaX, y: deltaY });
     
@@ -878,6 +880,7 @@ export default function ApprovalWorkflowConfig() {
   }, [isDragging, draggedNodeId, dragStartPos, zoomLevel, activeWorkflow]);
 
   const handleNodeDragEnd = async () => {
+    // Reset dragging state first
     setIsDragging(false);
     setDraggedNodeId(null);
     
@@ -895,8 +898,8 @@ export default function ApprovalWorkflowConfig() {
     setConnectionMode({
       active: true,
       from: nodeId,
-      fromX: nodeX,
-      fromY: nodeY,
+      fromX: nodeX,  // Already in world coordinates
+      fromY: nodeY,  // Already in world coordinates
       to: null,
       toX: 0,
       toY: 0
@@ -953,8 +956,6 @@ export default function ApprovalWorkflowConfig() {
   const handleDeleteConnection = async (connectionId) => {
     if (!activeWorkflow?.connections) return;
     
-    if (!window.confirm('Are you sure you want to delete this connection?')) return;
-    
     const updatedConnections = activeWorkflow.connections.filter(conn => conn.id !== connectionId);
     
     const updatedWorkflow = {
@@ -997,8 +998,10 @@ export default function ApprovalWorkflowConfig() {
     
     if (!window.confirm('Are you sure you want to delete this node?')) return;
     
+    // Remove the node
     const updatedNodes = activeWorkflow.nodes.filter(node => node.id !== nodeId);
     
+    // Remove all connections that reference this node
     const updatedConnections = (activeWorkflow.connections || []).filter(
       conn => conn.from !== nodeId && conn.to !== nodeId
     );
@@ -1132,35 +1135,32 @@ export default function ApprovalWorkflowConfig() {
               />
             </svg>
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white border border-blue-300 px-3 py-1 rounded-lg shadow-sm">
-              <span className="text-sm font-medium text-blue-700">Drag to connect to another node</span>
+              <span className="text-sm font-medium text-blue-700">Drag to connect to another node • Click anywhere to cancel</span>
             </div>
           </div>
         )}
 
-        {/* Workflow Container */}
+        {/* WORKFLOW VIEWPORT (Never scaled) */}
         <div
           ref={workflowContainerRef}
           className="relative w-full h-full overflow-auto"
-          style={{
-            transform: `scale(${zoomLevel})`,
-            transformOrigin: '0 0',
-          }}
           onWheel={handleWheel}
           onMouseMove={(e) => {
             if (connectionMode.active) {
               const containerRect = workflowContainerRef.current?.getBoundingClientRect();
               if (containerRect) {
+                // NORMALIZE mouse coordinates by zoom level for preview
                 setConnectionMode(prev => ({
                   ...prev,
-                  toX: e.clientX - containerRect.left,
-                  toY: e.clientY - containerRect.top
+                  toX: (e.clientX - containerRect.left) / zoomLevel,
+                  toY: (e.clientY - containerRect.top) / zoomLevel
                 }));
               }
             }
           }}
           onClick={(e) => {
-            if (connectionMode.active) {
-              e.stopPropagation();
+            // Cancel connection mode when clicking on background
+            if (connectionMode.active && e.target === workflowContainerRef.current) {
               setConnectionMode({
                 active: false,
                 from: null,
@@ -1173,185 +1173,238 @@ export default function ApprovalWorkflowConfig() {
             }
           }}
         >
-          {/* Grid background */}
-          <div className="absolute inset-0" style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
-                             linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)`,
-            backgroundSize: `${20 * zoomLevel}px ${20 * zoomLevel}px`,
-          }}></div>
-          
-          {/* Connections SVG */}
-          <svg className="absolute inset-0 w-full h-full pointer-events-none">
-            <defs>
-              <marker
-                id="arrowhead"
-                markerWidth="10"
-                markerHeight="7"
-                refX="9"
-                refY="3.5"
-                orient="auto"
-              >
-                <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
-              </marker>
-            </defs>
-            
-            {activeWorkflow.connections?.map((conn, index) => {
-              const fromNode = activeWorkflow.nodes.find(n => n.id === conn.from);
-              const toNode = activeWorkflow.nodes.find(n => n.id === conn.to);
+          {/* GRID LAYER (Fixed scale, NOT scaled with zoom) */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: `
+                linear-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.05) 1px, transparent 1px)
+              `,
+              backgroundSize: '20px 20px', // Fixed size, independent of zoom
+            }}
+          />
+
+          {/* CONTENT LAYER (Scaled content) */}
+          <div
+            ref={workflowContentRef}
+            className="absolute inset-0 origin-top-left"
+            style={{
+              transform: `scale(${zoomLevel})`,
+            }}
+          >
+            {/* Connections SVG with improved delete functionality */}
+            <svg className="absolute inset-0 w-full h-full">
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="7"
+                  refX="9"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+                </marker>
+              </defs>
               
-              if (!fromNode || !toNode) return null;
-              
-              const x1 = fromNode.position.x + 100;
-              const y1 = fromNode.position.y + 50;
-              const x2 = toNode.position.x;
-              const y2 = toNode.position.y + 50;
-              
+              {activeWorkflow.connections?.map((conn, index) => {
+                const fromNode = activeWorkflow.nodes.find(n => n.id === conn.from);
+                const toNode = activeWorkflow.nodes.find(n => n.id === conn.to);
+                
+                if (!fromNode || !toNode) return null;
+                
+                const x1 = fromNode.position.x + 100;
+                const y1 = fromNode.position.y + 50;
+                const x2 = toNode.position.x;
+                const y2 = toNode.position.y + 50;
+                
+                // Calculate midpoint for delete button
+                const midX = x1 + (x2 - x1) / 2;
+                const midY = y1 + (y2 - y1) / 2;
+                
+                // Calculate control points for curve
+                const ctrlX1 = x1 + 100;
+                const ctrlX2 = x2 - 100;
+                
+                return (
+                  <g key={conn.id || index} className="connection-group">
+                    {/* Connection path - make it clickable for deletion */}
+                    <path
+                      d={`M ${x1} ${y1} C ${ctrlX1} ${y1}, ${ctrlX2} ${y2}, ${x2} ${y2}`}
+                      stroke="#3b82f6"
+                      strokeWidth="2"
+                      fill="none"
+                      markerEnd="url(#arrowhead)"
+                      className="cursor-pointer hover:stroke-blue-700 transition-colors duration-200"
+                      onClick={() => {
+                        if (window.confirm('Delete this connection?')) {
+                          handleDeleteConnection(conn.id || index);
+                        }
+                      }}
+                    />
+                    
+                    {/* Delete button at midpoint - larger and more visible */}
+                    <g 
+                      transform={`translate(${midX}, ${midY})`}
+                      className="cursor-pointer hover:scale-110 transition-transform duration-200"
+                      onClick={() => {
+                        if (window.confirm('Delete this connection?')) {
+                          handleDeleteConnection(conn.id || index);
+                        }
+                      }}
+                    >
+                      <circle 
+                        cx="0" 
+                        cy="0" 
+                        r="10" 
+                        fill="white" 
+                        stroke="#ef4444" 
+                        strokeWidth="1.5"
+                        className="hover:fill-red-50"
+                      />
+                      <path 
+                        d="M-4 -4L4 4M4 -4L-4 4" 
+                        stroke="#ef4444" 
+                        strokeWidth="2" 
+                        strokeLinecap="round"
+                      />
+                      <title>Click to delete connection</title>
+                    </g>
+                    
+                    {/* Connection label if exists */}
+                    {conn.condition && (
+                      <text
+                        x={midX}
+                        y={midY - 15}
+                        textAnchor="middle"
+                        fill="#6b7280"
+                        fontSize="10"
+                        fontWeight="500"
+                        className="pointer-events-none"
+                      >
+                        {conn.condition}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+
+            {/* Render nodes */}
+            {activeWorkflow.nodes.map((node) => {
+              const isBeingDragged = draggedNodeId === node.id;
+              const currentPosition = {
+                x: node.position.x + (isBeingDragged ? dragOffset.x : 0),
+                y: node.position.y + (isBeingDragged ? dragOffset.y : 0)
+              };
+
               return (
-                <g key={conn.id || index}>
-                  <path
-                    d={`M ${x1} ${y1} C ${x1 + 100} ${y1}, ${x2 - 100} ${y2}, ${x2} ${y2}`}
-                    stroke="#3b82f6"
-                    strokeWidth="2"
-                    fill="none"
-                    markerEnd="url(#arrowhead)"
-                  />
-                  <circle 
-                    cx={x1 + (x2 - x1) / 2} 
-                    cy={y1 + (y2 - y1) / 2} 
-                    r="4" 
-                    fill="#3b82f6"
-                    className="cursor-pointer hover:fill-red-500"
-                    onClick={() => handleDeleteConnection(conn.id || index)}
-                  />
-                  <text
-                    x={x1 + (x2 - x1) / 2}
-                    y={y1 + (y2 - y1) / 2 - 10}
-                    textAnchor="middle"
-                    fill="#6b7280"
-                    fontSize="10"
-                  >
-                    {conn.condition || ''}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
-
-          {/* Render nodes */}
-          {activeWorkflow.nodes.map((node) => {
-            const isBeingDragged = draggedNodeId === node.id;
-            const currentPosition = {
-              x: node.position.x + (isBeingDragged ? dragOffset.x : 0),
-              y: node.position.y + (isBeingDragged ? dragOffset.y : 0)
-            };
-
-            return (
-              <div
-                key={node.id}
-                className={`absolute ${isBeingDragged ? 'z-50 opacity-90' : 'z-10'} ${
-                  isBeingDragged ? 'cursor-grabbing' : 'cursor-grab'
-                } transition-transform duration-150`}
-                style={{
-                  left: `${currentPosition.x}px`,
-                  top: `${currentPosition.y}px`,
-                  transform: isBeingDragged ? 'scale(1.02)' : 'scale(1)',
-                  boxShadow: isBeingDragged 
-                    ? '0 10px 25px -5px rgba(0, 0, 0, 0.2)' 
-                    : '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-                }}
-                onMouseDown={(e) => handleNodeDragStart(e, node.id)}
-                onTouchStart={(e) => handleNodeDragStart(e, node.id)}
-                onClick={(e) => {
-                  if (!isDragging) {
-                    e.stopPropagation();
-                    if (connectionMode.active) {
-                      handleCompleteConnection(node.id, currentPosition.x, currentPosition.y + 50);
-                    } else {
+                <div
+                  key={node.id}
+                  className={`absolute ${isBeingDragged ? 'z-50 opacity-90' : 'z-10'} ${
+                    isBeingDragged ? 'cursor-grabbing' : 'cursor-grab'
+                  } transition-transform duration-150`}
+                  style={{
+                    left: `${currentPosition.x}px`,
+                    top: `${currentPosition.y}px`,
+                    transform: isBeingDragged ? 'scale(1.02)' : 'scale(1)',
+                    boxShadow: isBeingDragged 
+                      ? '0 10px 25px -5px rgba(0, 0, 0, 0.2)' 
+                      : '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
+                  }}
+                  onMouseDown={(e) => handleNodeDragStart(e, node.id)}
+                  onTouchStart={(e) => handleNodeDragStart(e, node.id)}
+                  onClick={(e) => {
+                    // Only open modal if not currently dragging and not in connection mode
+                    if (!isDragging && !connectionMode.active) {
+                      e.stopPropagation();
                       setSelectedNode(node);
                       setNodeForm(node);
                       setShowNodeModal(true);
                     }
-                  }
-                }}
-              >
-                <div className={`w-48 p-3 rounded-xl border-2 transition-all duration-200 ${
-                  node.type === 'start' ? 'bg-emerald-50 border-emerald-300 hover:border-emerald-400' :
-                  node.type === 'approval' ? 'bg-blue-50 border-blue-300 hover:border-blue-400' :
-                  node.type === 'condition' ? 'bg-amber-50 border-amber-300 hover:border-amber-400' :
-                  node.type === 'parallel' ? 'bg-purple-50 border-purple-300 hover:border-purple-400' :
-                  node.type === 'notification' ? 'bg-teal-50 border-teal-300 hover:border-teal-400' :
-                  'bg-red-50 border-red-300 hover:border-red-400'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      {node.type === 'start' && <Play size={16} className="text-emerald-600" />}
-                      {node.type === 'approval' && <UserCheck size={16} className="text-blue-600" />}
-                      {node.type === 'condition' && <GitBranch size={16} className="text-amber-600" />}
-                      {node.type === 'parallel' && <GitMerge size={16} className="text-purple-600" />}
-                      {node.type === 'notification' && <Bell size={16} className="text-teal-600" />}
-                      {node.type === 'end' && <StopCircle size={16} className="text-red-600" />}
-                      <span className="font-bold text-sm">{node.name}</span>
+                  }}
+                >
+                  <div className={`w-48 p-3 rounded-xl border-2 transition-all duration-200 ${
+                    node.type === 'start' ? 'bg-emerald-50 border-emerald-300 hover:border-emerald-400' :
+                    node.type === 'approval' ? 'bg-blue-50 border-blue-300 hover:border-blue-400' :
+                    node.type === 'condition' ? 'bg-amber-50 border-amber-300 hover:border-amber-400' :
+                    node.type === 'parallel' ? 'bg-purple-50 border-purple-300 hover:border-purple-400' :
+                    node.type === 'notification' ? 'bg-teal-50 border-teal-300 hover:border-teal-400' :
+                    'bg-red-50 border-red-300 hover:border-red-400'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        {node.type === 'start' && <Play size={16} className="text-emerald-600" />}
+                        {node.type === 'approval' && <UserCheck size={16} className="text-blue-600" />}
+                        {node.type === 'condition' && <GitBranch size={16} className="text-amber-600" />}
+                        {node.type === 'parallel' && <GitMerge size={16} className="text-purple-600" />}
+                        {node.type === 'notification' && <Bell size={16} className="text-teal-600" />}
+                        {node.type === 'end' && <StopCircle size={16} className="text-red-600" />}
+                        <span className="font-bold text-sm">{node.name}</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteNode(node.id);
+                        }}
+                        className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
+                    
+                    <div className="text-xs text-gray-600 space-y-1">
+                      {node.type === 'approval' && (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <span>Approvers:</span>
+                            <span className="font-medium">{node.approvers?.length || 0}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span>Type:</span>
+                            <span className="font-medium capitalize">{node.approvalType}</span>
+                          </div>
+                        </>
+                      )}
+                      {node.type === 'condition' && node.conditions?.length > 0 && (
+                        <div className="text-xs">
+                          {node.conditions[0].field}: {node.conditions[0].operator} {node.conditions[0].value}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="mt-2 pt-2 border-t border-gray-200">
+                      <div className="flex items-center justify-between text-xs text-gray-500">
+                        <span>ID: {node.id.slice(0, 8)}</span>
+                        <Move size={10} className={isBeingDragged ? 'animate-pulse' : ''} />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Connection handle */}
+                  {!connectionMode.active && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDeleteNode(node.id);
+                        // Normalize coordinates for connection start
+                        handleStartConnection(node.id, currentPosition.x + 100, currentPosition.y + 50);
                       }}
-                      className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors duration-200"
+                      className="absolute -right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center z-20"
+                      title="Create connection"
                     >
-                      <Trash2 size={12} />
+                      <Plus size={12} />
                     </button>
-                  </div>
+                  )}
                   
-                  <div className="text-xs text-gray-600 space-y-1">
-                    {node.type === 'approval' && (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <span>Approvers:</span>
-                          <span className="font-medium">{node.approvers?.length || 0}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span>Type:</span>
-                          <span className="font-medium capitalize">{node.approvalType}</span>
-                        </div>
-                      </>
-                    )}
-                    {node.type === 'condition' && node.conditions?.length > 0 && (
-                      <div className="text-xs">
-                        {node.conditions[0].field}: {node.conditions[0].operator} {node.conditions[0].value}
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-2 pt-2 border-t border-gray-200">
-                    <div className="flex items-center justify-between text-xs text-gray-500">
-                      <span>ID: {node.id.slice(0, 8)}</span>
-                      <Move size={10} className={isBeingDragged ? 'animate-pulse' : ''} />
-                    </div>
-                  </div>
+                  {/* Drag handle overlay */}
+                  <div className="absolute inset-0 cursor-grab active:cursor-grabbing"></div>
                 </div>
-                
-                {/* Connection handle */}
-                {!connectionMode.active && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleStartConnection(node.id, currentPosition.x + 100, currentPosition.y + 50);
-                    }}
-                    className="absolute -right-2 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors duration-200 flex items-center justify-center z-20"
-                    title="Create connection"
-                  >
-                    <Plus size={12} />
-                  </button>
-                )}
-                
-                {/* Drag handle overlay */}
-                <div className="absolute inset-0 cursor-grab active:cursor-grabbing"></div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
-          {/* Add node button */}
+          {/* Add node button - OUTSIDE content layer, stays fixed */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-20">
             <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-300 shadow-sm p-2">
               <div className="text-xs font-medium text-gray-700 mb-2 text-center">Add Node</div>
@@ -1377,7 +1430,7 @@ export default function ApprovalWorkflowConfig() {
             </div>
           </div>
 
-          {/* Status indicator */}
+          {/* Status indicator - also stays fixed outside content layer */}
           <div className="absolute top-4 right-4 z-20">
             <div className="bg-white/90 backdrop-blur-sm rounded-xl border border-gray-300 shadow-sm px-3 py-1.5">
               <div className="flex items-center space-x-2 text-xs text-gray-600">
@@ -1941,7 +1994,7 @@ export default function ApprovalWorkflowConfig() {
                       <h3 className="font-bold text-gray-900">Workflow Designer</h3>
                       <div className="flex items-center space-x-2">
                         <div className="text-xs text-gray-500">
-                          Drag nodes to move • Click + button to create connections • Ctrl+Scroll to zoom
+                          Drag nodes to move • Click + button to create connections • Click connection to delete • Ctrl+Scroll to zoom
                         </div>
                         <button className="px-2 py-1 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors duration-200 text-xs font-medium">
                           <Download size={12} className="mr-1 inline" />
