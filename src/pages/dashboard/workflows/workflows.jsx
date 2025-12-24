@@ -28,6 +28,8 @@ import {
   ZoomOut,
   Move,
   RotateCcw,
+  AlertTriangle,
+  AlertCircle,
 } from "lucide-react"
 
 // For icons that don't exist, let's create simple components
@@ -80,9 +82,6 @@ export default function ApprovalWorkflowConfig() {
   const [isLoading, setIsLoading] = useState(false)
   const [saveStatus, setSaveStatus] = useState("")
 
-  const [showDeleteConnectionModal, setShowDeleteConnectionModal] = useState(false)
-const [connectionToDelete, setConnectionToDelete] = useState(null)
-
   // Drag and Drop state
   const [draggedNodeId, setDraggedNodeId] = useState(null)
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 })
@@ -106,6 +105,19 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
 
   // Zoom state
   const [zoomLevel, setZoomLevel] = useState(1)
+
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [confirmConfig, setConfirmConfig] = useState({
+    title: "",
+    message: "",
+    type: "delete", // 'delete', 'warning', 'info'
+    onConfirm: () => {},
+    onCancel: () => {},
+    confirmText: "Delete",
+    cancelText: "Cancel",
+    destructive: true,
+  })
 
   // Workflow node types
   const nodeTypes = [
@@ -250,9 +262,58 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
     }
   }, [activeWorkflow, isEditing])
 
-  // Handle keyboard shortcuts for zoom
+  // Confirmation Modal Functions
+  const showConfirmation = (config) => {
+    setConfirmConfig({
+      title: config.title || "Are you sure?",
+      message: config.message || "This action cannot be undone.",
+      type: config.type || "delete",
+      onConfirm: config.onConfirm || (() => {}),
+      onCancel: config.onCancel || (() => {}),
+      confirmText: config.confirmText || "Confirm",
+      cancelText: config.cancelText || "Cancel",
+      destructive: config.destructive !== false,
+    })
+    setShowConfirmModal(true)
+  }
+
+  const handleConfirm = () => {
+    confirmConfig.onConfirm()
+    setShowConfirmModal(false)
+  }
+
+  const handleCancel = () => {
+    confirmConfig.onCancel()
+    setShowConfirmModal(false)
+  }
+
+  const handleCancelConnection = () => {
+    setConnectionMode({
+      active: false,
+      from: null,
+      fromX: 0,
+      fromY: 0,
+      to: null,
+      toX: 0,
+      toY: 0,
+    })
+    setHoverTarget(null)
+  }
+
+  // Handle keyboard shortcuts for zoom and modal close
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        if (connectionMode.active) {
+          e.preventDefault()
+          handleCancelConnection()
+        } else if (showConfirmModal) {
+          e.preventDefault()
+          handleCancel()
+        }
+        return
+      }
+
       // Ctrl/Cmd + = for zoom in
       if ((e.ctrlKey || e.metaKey) && (e.key === "=" || e.key === "+")) {
         e.preventDefault()
@@ -272,7 +333,7 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
 
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [])
+  }, [connectionMode.active, showConfirmModal])
 
   const fetchWorkflows = async () => {
     setIsLoading(true)
@@ -375,11 +436,6 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
           const user = JSON.parse(userStr)
           userId = user.id || user._id
           companyId = user.company
-
-          // Debug logging
-          console.log("User info:", user)
-          console.log("Company ID from user:", companyId)
-          console.log("User ID:", userId)
         } catch (e) {
           console.error("Error parsing user data:", e)
         }
@@ -398,21 +454,14 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
           })),
         })),
         departments: (workflow.departments || []).map((dept) => dept._id || dept.id || dept),
-        // CRITICAL: Include company in the request body
         company: companyId || workflow.company,
         createdBy: userId || workflow.createdBy,
         _id: workflow._id ? workflow._id : undefined,
       }
 
-      // Debug the workflow data being sent
-      console.log("Workflow to save:", workflowToSave)
-      console.log("Workflow company:", workflowToSave.company)
-
       const url = workflow._id ? `${backendUrl}/api/workflows/${workflow._id}` : `${backendUrl}/api/workflows`
 
       const method = workflow._id ? "PUT" : "POST"
-
-      console.log("API Call:", method, url)
 
       const response = await fetch(url, {
         method,
@@ -422,8 +471,6 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
         },
         body: JSON.stringify(workflowToSave),
       })
-
-      console.log("Response Status:", response.status)
 
       if (response.ok) {
         const savedWorkflow = await response.json()
@@ -482,30 +529,39 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
   }
 
   const deleteWorkflow = async (workflowId) => {
-    if (!window.confirm("Are you sure you want to delete this workflow?")) return
+    showConfirmation({
+      title: "Delete Workflow",
+      message: "Are you sure you want to delete this workflow? This action cannot be undone.",
+      type: "delete",
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem("token")
+          const response = await fetch(`${backendUrl}/api/workflows/${workflowId}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
 
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`${backendUrl}/api/workflows/${workflowId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      })
-
-      if (response.ok) {
-        setWorkflows((prev) => prev.filter((w) => w._id !== workflowId))
-        if (activeWorkflow?._id === workflowId) {
-          setActiveWorkflow(null)
+          if (response.ok) {
+            setWorkflows((prev) => prev.filter((w) => w._id !== workflowId))
+            if (activeWorkflow?._id === workflowId) {
+              setActiveWorkflow(null)
+            }
+          } else {
+            const error = await response.json()
+            alert(`Delete failed: ${error.message}`)
+          }
+        } catch (error) {
+          alert(`Error: ${error.message}`)
         }
-      } else {
-        const error = await response.json()
-        alert(`Delete failed: ${error.message}`)
-      }
-    } catch (error) {
-      alert(`Error: ${error.message}`)
-    }
+      },
+      onCancel: () => {},
+      confirmText: "Delete",
+      cancelText: "Cancel",
+      destructive: true,
+    })
   }
 
   const cloneWorkflow = async (workflowId) => {
@@ -535,7 +591,16 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
 
   const handleCreateWorkflow = async () => {
     if (!newWorkflow.name) {
-      alert("Please enter a workflow name")
+      showConfirmation({
+        title: "Missing Information",
+        message: "Please enter a workflow name before creating.",
+        type: "warning",
+        onConfirm: () => {},
+        onCancel: () => {},
+        confirmText: "OK",
+        cancelText: "",
+        destructive: false,
+      })
       return
     }
 
@@ -709,7 +774,16 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
     } else {
       // Revert frontend state if save failed
       setActiveWorkflow(activeWorkflow)
-      alert("Failed to save node. Please try again.")
+      showConfirmation({
+        title: "Save Failed",
+        message: "Failed to save node. Please try again.",
+        type: "warning",
+        onConfirm: () => {},
+        onCancel: () => {},
+        confirmText: "OK",
+        cancelText: "",
+        destructive: false,
+      })
     }
   }
 
@@ -828,31 +902,13 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
 
   const handleCompleteConnection = async (nodeId, nodeX, nodeY) => {
     if (!connectionMode.active || !connectionMode.from) {
-      setConnectionMode({
-        active: false,
-        from: null,
-        fromX: 0,
-        fromY: 0,
-        to: null,
-        toX: 0,
-        toY: 0,
-      })
-      setHoverTarget(null)
+      handleCancelConnection()
       return
     }
 
     // Prevent self-connections
     if (connectionMode.from === nodeId) {
-      setConnectionMode({
-        active: false,
-        from: null,
-        fromX: 0,
-        fromY: 0,
-        to: null,
-        toX: 0,
-        toY: 0,
-      })
-      setHoverTarget(null)
+      handleCancelConnection()
       return
     }
 
@@ -861,17 +917,16 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
     )
 
     if (isDuplicate) {
-      alert("A connection already exists between these nodes.")
-      setConnectionMode({
-        active: false,
-        from: null,
-        fromX: 0,
-        fromY: 0,
-        to: null,
-        toX: 0,
-        toY: 0,
+      showConfirmation({
+        title: "Duplicate Connection",
+        message: "A connection already exists between these nodes.",
+        type: "info",
+        onConfirm: () => handleCancelConnection(),
+        onCancel: () => {},
+        confirmText: "OK",
+        cancelText: "",
+        destructive: false,
       })
-      setHoverTarget(null)
       return
     }
 
@@ -894,32 +949,34 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
     // Save connection to backend
     await saveWorkflow(updatedWorkflow)
 
-    setConnectionMode({
-      active: false,
-      from: null,
-      fromX: 0,
-      fromY: 0,
-      to: null,
-      toX: 0,
-      toY: 0,
-    })
-    setHoverTarget(null)
+    handleCancelConnection()
   }
 
   const handleDeleteConnection = async (connectionId) => {
     if (!activeWorkflow?.connections) return
 
-    const updatedConnections = activeWorkflow.connections.filter((conn) => conn.id !== connectionId)
+    showConfirmation({
+      title: "Delete Connection",
+      message: "Are you sure you want to delete this connection?",
+      type: "delete",
+      onConfirm: async () => {
+        const updatedConnections = activeWorkflow.connections.filter((conn) => conn.id !== connectionId)
 
-    const updatedWorkflow = {
-      ...activeWorkflow,
-      connections: updatedConnections,
-    }
+        const updatedWorkflow = {
+          ...activeWorkflow,
+          connections: updatedConnections,
+        }
 
-    setActiveWorkflow(updatedWorkflow)
+        setActiveWorkflow(updatedWorkflow)
 
-    // Save to backend
-    await saveWorkflow(updatedWorkflow)
+        // Save to backend
+        await saveWorkflow(updatedWorkflow)
+      },
+      onCancel: () => {},
+      confirmText: "Delete",
+      cancelText: "Keep",
+      destructive: true,
+    })
   }
 
   // ZOOM FUNCTIONS
@@ -949,32 +1006,50 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
   const handleDeleteNode = async (nodeId) => {
     if (!activeWorkflow) return
 
-    if (!window.confirm("Are you sure you want to delete this node?")) return
+    showConfirmation({
+      title: "Delete Node",
+      message: "Are you sure you want to delete this node? All connections to this node will also be removed.",
+      type: "delete",
+      onConfirm: async () => {
+        // Remove the node
+        const updatedNodes = activeWorkflow.nodes.filter((node) => node.id !== nodeId)
 
-    // Remove the node
-    const updatedNodes = activeWorkflow.nodes.filter((node) => node.id !== nodeId)
+        // Remove all connections that reference this node
+        const updatedConnections = (activeWorkflow.connections || []).filter(
+          (conn) => conn.from !== nodeId && conn.to !== nodeId,
+        )
 
-    // Remove all connections that reference this node
-    const updatedConnections = (activeWorkflow.connections || []).filter(
-      (conn) => conn.from !== nodeId && conn.to !== nodeId,
-    )
+        const updatedWorkflow = {
+          ...activeWorkflow,
+          nodes: updatedNodes,
+          connections: updatedConnections,
+        }
 
-    const updatedWorkflow = {
-      ...activeWorkflow,
-      nodes: updatedNodes,
-      connections: updatedConnections,
-    }
+        setActiveWorkflow(updatedWorkflow)
 
-    setActiveWorkflow(updatedWorkflow)
+        // Save to backend
+        const saveSuccessful = await saveWorkflow(updatedWorkflow)
 
-    // Save to backend
-    const saveSuccessful = await saveWorkflow(updatedWorkflow)
-
-    if (!saveSuccessful) {
-      // Revert on failure
-      setActiveWorkflow(activeWorkflow)
-      alert("Failed to delete node. Please try again.")
-    }
+        if (!saveSuccessful) {
+          // Revert on failure
+          setActiveWorkflow(activeWorkflow)
+          showConfirmation({
+            title: "Delete Failed",
+            message: "Failed to delete node. Please try again.",
+            type: "warning",
+            onConfirm: () => {},
+            onCancel: () => {},
+            confirmText: "OK",
+            cancelText: "",
+            destructive: false,
+          })
+        }
+      },
+      onCancel: () => {},
+      confirmText: "Delete",
+      cancelText: "Keep",
+      destructive: true,
+    })
   }
 
   // Mouse event handlers for drag and drop
@@ -1095,8 +1170,17 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
                 markerEnd="url(#arrowhead-preview)"
               />
             </svg>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg shadow-lg pointer-events-none">
-              <span className="text-sm font-semibold">Click on a node to complete the connection</span>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-3 pointer-events-auto">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg shadow-lg">
+                <span className="text-sm font-semibold">Click on a node to complete the connection</span>
+              </div>
+              <button
+                onClick={handleCancelConnection}
+                className="flex items-center gap-2 bg-white text-gray-700 px-4 py-2 rounded-lg shadow-md hover:bg-gray-50 hover:shadow-lg transition-all duration-200 border border-gray-200"
+              >
+                <X size={16} />
+                <span className="text-sm font-medium">Cancel (Esc)</span>
+              </button>
             </div>
           </div>
         )}
@@ -1125,16 +1209,7 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
           }}
           onClick={(e) => {
             if (connectionMode.active && e.target === workflowContainerRef.current) {
-              setConnectionMode({
-                active: false,
-                from: null,
-                fromX: 0,
-                fromY: 0,
-                to: null,
-                toX: 0,
-                toY: 0,
-              })
-              setHoverTarget(null)
+              handleCancelConnection()
             }
           }}
         >
@@ -1386,11 +1461,7 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
                 }}
               >
                 <button
-                  onClick={() => {
-                    if (window.confirm("Delete this connection?")) {
-                      handleDeleteConnection(conn.id || index)
-                    }
-                  }}
+                  onClick={() => handleDeleteConnection(conn.id || index)}
                   className="w-6 h-6 bg-white border-2 border-red-300 rounded-full hover:bg-red-50 hover:border-red-400 hover:scale-110 transition-all duration-200 flex items-center justify-center shadow-sm"
                   title="Delete connection"
                 >
@@ -1721,115 +1792,74 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
     )
   }
 
-  const DeleteConnectionModal = () => {
-  if (!showDeleteConnectionModal || !connectionToDelete) return null
+  // Render Confirmation Modal
+  const renderConfirmationModal = () => {
+    const getIcon = () => {
+      switch (confirmConfig.type) {
+        case "delete":
+          return <AlertTriangle className="w-12 h-12 text-red-500" />
+        case "warning":
+          return <AlertTriangle className="w-12 h-12 text-amber-500" />
+        case "info":
+          return <AlertCircle className="w-12 h-12 text-blue-500" />
+        default:
+          return <AlertCircle className="w-12 h-12 text-blue-500" />
+      }
+    }
 
-  const connection = activeWorkflow.connections?.find(c => 
-    c.id === connectionToDelete.id || c === connectionToDelete
-  )
+    const getButtonStyles = () => {
+      if (confirmConfig.destructive) {
+        return {
+          confirm: "bg-red-600 hover:bg-red-700 focus:ring-red-500",
+          cancel: "bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500",
+        }
+      }
+      return {
+        confirm: "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
+        cancel: "bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500",
+      }
+    }
 
-  if (!connection) return null
+    const buttonStyles = getButtonStyles()
 
-  const fromNode = activeWorkflow.nodes.find(n => n.id === connection.from)
-  const toNode = activeWorkflow.nodes.find(n => n.id === connection.to)
-
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-[60] animate-fadeIn">
-      <div className="bg-white rounded-2xl max-w-md w-full animate-slideUp">
-        <div className="px-6 py-5 border-b border-gray-200">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-              <Trash2 size={20} className="text-red-600" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-gray-900">Delete Connection</h3>
-              <p className="text-sm text-gray-600 mt-1">This action cannot be undone</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <div className="mb-6">
-            <div className="flex items-center justify-center gap-4 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-center">
-                  {fromNode?.type === 'start' && <Play size={14} className="text-emerald-600" />}
-                  {fromNode?.type === 'approval' && <UserCheck size={14} className="text-blue-600" />}
-                  {fromNode?.type === 'condition' && <GitBranch size={14} className="text-amber-600" />}
-                  {fromNode?.type === 'parallel' && <GitMerge size={14} className="text-purple-600" />}
-                  {fromNode?.type === 'notification' && <Bell size={14} className="text-teal-600" />}
-                  {fromNode?.type === 'end' && <StopCircle size={14} className="text-red-600" />}
-                </div>
-                <span className="font-medium text-sm text-gray-900">
-                  {fromNode?.name || 'Unknown Node'}
-                </span>
-              </div>
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+        <div className="bg-white rounded-2xl max-w-md w-full animate-scaleIn">
+          <div className="p-6">
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-4">{getIcon()}</div>
               
-              <div className="flex items-center">
-                <div className="w-16 h-px bg-blue-300"></div>
-                <Forward size={16} className="text-blue-500 mx-1" />
-                <div className="w-16 h-px bg-blue-300"></div>
-              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {confirmConfig.title}
+              </h3>
               
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-50 rounded-lg border border-blue-200 flex items-center justify-center">
-                  {toNode?.type === 'start' && <Play size={14} className="text-emerald-600" />}
-                  {toNode?.type === 'approval' && <UserCheck size={14} className="text-blue-600" />}
-                  {toNode?.type === 'condition' && <GitBranch size={14} className="text-amber-600" />}
-                  {toNode?.type === 'parallel' && <GitMerge size={14} className="text-purple-600" />}
-                  {toNode?.type === 'notification' && <Bell size={14} className="text-teal-600" />}
-                  {toNode?.type === 'end' && <StopCircle size={14} className="text-red-600" />}
-                </div>
-                <span className="font-medium text-sm text-gray-900">
-                  {toNode?.name || 'Unknown Node'}
-                </span>
+              <p className="text-gray-600 mb-6">
+                {confirmConfig.message}
+              </p>
+              
+              <div className="flex w-full gap-3">
+                {confirmConfig.cancelText && (
+                  <button
+                    onClick={handleCancel}
+                    className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${buttonStyles.cancel}`}
+                  >
+                    {confirmConfig.cancelText}
+                  </button>
+                )}
+                
+                <button
+                  onClick={handleConfirm}
+                  className={`flex-1 px-4 py-3 text-white rounded-xl font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${buttonStyles.confirm}`}
+                >
+                  {confirmConfig.confirmText}
+                </button>
               </div>
             </div>
-            
-            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
-              <div className="flex items-start gap-2">
-                <div className="w-4 h-4 text-red-500 mt-0.5">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm text-red-800 font-medium">Warning</p>
-                  <p className="text-xs text-red-700 mt-1">
-                    Deleting this connection will remove the workflow path between these nodes.
-                    Make sure there are alternative paths if needed.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => {
-                setShowDeleteConnectionModal(false)
-                setConnectionToDelete(null)
-              }}
-              className="px-4 py-2.5 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl transition-all duration-200 font-medium text-sm min-w-[100px]"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                handleDeleteConnection(connectionToDelete.id || connectionToDelete)
-                setShowDeleteConnectionModal(false)
-                setConnectionToDelete(null)
-              }}
-              className="px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 rounded-xl transition-all duration-200 font-medium text-sm min-w-[100px] shadow-sm hover:shadow-md"
-            >
-              Delete Connection
-            </button>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -2293,9 +2323,12 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
         </div>
       </div>
 
+      {/* Confirmation Modal */}
+      {showConfirmModal && renderConfirmationModal()}
+
       {/* Create Workflow Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-2xl w-full">
             <div className="px-4 py-3 border-b border-gray-200 bg-blue-50">
               <div className="flex items-center justify-between">
@@ -2482,7 +2515,7 @@ const [connectionToDelete, setConnectionToDelete] = useState(null)
 
       {/* Node Configuration Modal */}
       {showNodeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
             <div className="px-4 py-3 border-b border-gray-200 bg-blue-50">
               <div className="flex items-center justify-between">
