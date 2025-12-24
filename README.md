@@ -73,5 +73,5 @@ Proprietary software. All rights reserved © NexusMWI.
 
 ## 📞 Contact
 
-Email: contact@nexusmwi.com  
-Website: https://nexusmwi.com
+Email: brianmtonga592@gmail.com 
+Website: https://app.nexusmwi.com
