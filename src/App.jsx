@@ -86,6 +86,7 @@ import VendorBidPortal from './pages/vendor-dash/tenders/bid';
 import VendorDetailsPage from "./pages/dashboard/vendors/vendor-details";
 import PublicTenderPortal from './pages/public-tenders';
 import ApprovalWorkflowConfig from './pages/dashboard/workflows/workflows';
+import ApprovalDashboardPage from './pages/dashboard/approvals/approvals'
 
 
 function App() {
@@ -128,6 +129,8 @@ function App() {
              
               <Route path="/tenders" element={<CreateTendersPage/>} />
               <Route path="/approval-workflows" element={<ApprovalWorkflowConfig/>} />
+              <Route path="/approvals" element={<ApprovalDashboardPage/>} />
+
 
             
        
