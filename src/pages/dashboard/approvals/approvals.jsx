@@ -981,12 +981,7 @@ export default function ApprovalDashboardPage() {
                   <Shield size={12} />
                   {userRole}
                 </div>
-                {userDepartment && (
-                  <div className="flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                    <Building size={12} />
-                    {userDepartment}
-                  </div>
-                )}
+               
                 <div className="text-sm text-gray-500">
                   {filteredApprovals.length} pending approvals
                 </div>
@@ -1017,6 +1012,7 @@ export default function ApprovalDashboardPage() {
                 Refresh
               </button>
             </div>
+            
           </div>
 
           {/* Search and Filters */}
@@ -1064,10 +1060,30 @@ export default function ApprovalDashboardPage() {
               Showing {filteredApprovals.length} of {approvals.length} approvals
             </div>
           </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-2 bg-blue-50 rounded-xl">
+              <Shield className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900">Your Approval Responsibilities</h3>
+              <p className="text-sm text-gray-600">
+                {userRole === 'Department Head' 
+                  ? `You can approve requests from the ${userDepartment} department. Review for departmental needs and budget alignment.`
+                  : userRole === 'Finance Officer'
+                  ? 'You review financial compliance, budget availability, and payment terms. Ensure proper documentation.'
+                  : userRole === 'CFO'
+                  ? 'You provide final approval for high-value purchases and strategic investments.'
+                  : userRole === 'Procurement'
+                  ? 'You review vendor selection, procurement process compliance, and contract terms.'
+                  : 'Review requests assigned to you and take appropriate action.'}
+              </p>
+            </div>
+          </div>
+        </div>
         </div>
 
-        {/* Key Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Key Metrics Grid -  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard 
             title="Pending Approvals" 
             value={stats.totalPending}
@@ -1098,30 +1114,11 @@ export default function ApprovalDashboardPage() {
             suffix=" days"
             subtitle="Your average response"
           />
-        </div>
+        </div> */}
+      
 
         {/* Role-Specific Guidance */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-blue-50 rounded-xl">
-              <Shield className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Your Approval Responsibilities</h3>
-              <p className="text-sm text-gray-600">
-                {userRole === 'Department Head' 
-                  ? `You can approve requests from the ${userDepartment} department. Review for departmental needs and budget alignment.`
-                  : userRole === 'Finance Officer'
-                  ? 'You review financial compliance, budget availability, and payment terms. Ensure proper documentation.'
-                  : userRole === 'CFO'
-                  ? 'You provide final approval for high-value purchases and strategic investments.'
-                  : userRole === 'Procurement'
-                  ? 'You review vendor selection, procurement process compliance, and contract terms.'
-                  : 'Review requests assigned to you and take appropriate action.'}
-              </p>
-            </div>
-          </div>
-        </div>
+        
 
         {/* Approvals Cards Section */}
         <div id="approvals-section" className="bg-white rounded-2xl border border-gray-200 p-4">
