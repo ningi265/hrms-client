@@ -5,7 +5,10 @@ export const PRIVILEGE_ROLES = {
       "Executive (CEO, CFO, etc.)",
       "Management",
       "Human Resources",
-      "Accounting/Finance"
+      "Accounting/Finance","Procurement Officer",
+    "Senior Procurement Officer",
+     "Procurement Manager",
+     "Supply Chain Officer",
     ],
     STANDARD: [
       "Sales/Marketing", 

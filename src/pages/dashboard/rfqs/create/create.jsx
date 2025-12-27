@@ -64,7 +64,7 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
 
         if (requisitionsRes.ok) {
           const requisitionsData = await requisitionsRes.json();
-          const approvedRequisitions = requisitionsData.filter(req => req.status === "approved");
+          const approvedRequisitions = requisitionsData.filter(req => req.status === "approved-rfq");
           setRequisitions(approvedRequisitions);
         }
       } catch (err) {

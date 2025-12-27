@@ -44,7 +44,10 @@ const enterpriseRoles = [
   "CFO",
   "CTO",
   "COO",
-  "Executive"
+  "Executive", "Procurement Officer",
+    "Senior Procurement Officer",
+     "Procurement Manager",
+     "Supply Chain Officer"
 ];
 
 export default function LoginPage() {
@@ -183,6 +186,10 @@ export default function LoginPage() {
         procurement_officer: "/dashboard",
         "IT/Technical": "/dashboard",
         "Executive (CEO, CFO, etc.)": "/dashboard",
+        "Procurement Officer": "/dashboard",
+    "Senior Procurement Officer": "/dashboard",
+     "Procurement Manager": "/dashboard",
+     "Supply Chain Officer": "/dashboard",
         Management: "/dashboard",
         "Human Resources": "/dashboard",
         "Accounting/Finance": "/dashboard",
