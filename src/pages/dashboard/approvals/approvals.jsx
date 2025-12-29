@@ -108,7 +108,7 @@ const MetricCard = ({ title, value, icon: Icon, color, trend, subtitle, prefix =
   );
 };
 
-// Approval Card Component with Role-Based Actions
+// Approval Card Component with All Roles
 const ApprovalCard = ({ 
   approval, 
   userRole, 
@@ -125,16 +125,28 @@ const ApprovalCard = ({
   formatDate,
   formatCurrency 
 }) => {
+  // Check if user has procurement role
+ const isProcurementRole = (role) => {
+  const procurementRoles = [
+    "Procurement Officer",
+    "Senior Procurement Officer",
+    "Procurement Manager", 
+    "Supply Chain Officer"
+  ];
+  return procurementRoles.includes(role);
+};
+
   // Determine available actions based on user role and approval stage
   const getAvailableActions = () => {
     const actions = {
       approve: false,
       reject: false,
-      comment: true, // Always allow comments
+      comment: true,
       delegate: false,
       requestInfo: false,
       adjustBudget: false,
-      viewDetails: true // Always allow viewing
+      viewDetails: true,
+      approveRfq: false
     };
 
     const currentStage = approval.currentStage;
@@ -146,10 +158,21 @@ const ApprovalCard = ({
     // Only allow actions if user is in current approvers list
     if (!userInApprovers) return actions;
 
+    // Check if this is a procurement-related approval
+    const isProcurementApproval = currentStage?.includes('procurement') || 
+                                 currentStage?.includes('vendor') ||
+                                 currentStage?.includes('rfq') ||
+                                 currentStage?.includes('po');
+
+    // Check if user is in procurement department
+    const isProcurementDept = approval.department?.toLowerCase().includes('procurement') ||
+                             approval.department?.toLowerCase().includes('supply chain');
+
     switch (userRole) {
+      // Department Management Roles
       case 'Department Head':
       case 'Manager':
-        // Department heads can only approve their own department's requests
+      case 'Senior Manager':
         if (approval.department === userDepartment) {
           actions.approve = currentStage === 'department-approval';
           actions.reject = currentStage === 'department-approval';
@@ -158,86 +181,215 @@ const ApprovalCard = ({
         }
         break;
 
+      // Finance Roles
       case 'Finance Officer':
+      case 'Senior Finance Officer':
       case 'Finance Manager':
-        actions.approve = currentStage === 'finance-approval';
-        actions.reject = currentStage === 'finance-approval';
-        actions.adjustBudget = true;
-        actions.requestInfo = true;
-        break;
-
       case 'CFO':
-        actions.approve = ['cfo-approval', 'final-approval'].includes(currentStage);
-        actions.reject = ['cfo-approval', 'final-approval'].includes(currentStage);
+      case 'Accountant':
+      case 'Finance Analyst':
+        actions.approve = ['finance-approval', 'budget-review', 'payment-approval'].includes(currentStage);
+        actions.reject = ['finance-approval', 'budget-review', 'payment-approval'].includes(currentStage);
         actions.adjustBudget = true;
-        break;
-
-      case 'Procurement':
-        actions.approve = ['procurement-review', 'po-creation'].includes(currentStage);
-        actions.reject = ['procurement-review', 'po-creation'].includes(currentStage);
         actions.requestInfo = true;
         break;
 
-      case 'IT Manager':
-        if (approval.category === 'IT Equipment' || approval.requireITReview) {
-          actions.approve = currentStage === 'it-review';
-          actions.reject = currentStage === 'it-review';
+      // Procurement Roles
+      case 'Procurement Officer':
+      case 'Senior Procurement Officer':
+      case 'Procurement Manager':
+      case 'Supply Chain Officer':
+        if (isProcurementApproval || isProcurementDept) {
+          actions.approve = true;
+          actions.reject = true;
+          actions.requestInfo = true;
+          actions.delegate = userRole === 'Procurement Manager' || userRole === 'Senior Procurement Officer';
+          actions.approveRfq = true; // Special action for procurement officers
         }
         break;
 
-      case 'Legal':
+      // IT Roles
+      case 'IT Manager':
+      case 'IT Officer':
+      case 'IT Support':
+      case 'Software Engineer':
+      case 'Senior Software Engineer':
+      case 'Lead Engineer':
+      case 'DevOps Engineer':
+      case 'IT/Technical':
+        if (approval.category === 'IT Equipment' || 
+            approval.category === 'Software & Licenses' || 
+            approval.requireITReview) {
+          actions.approve = currentStage === 'it-review';
+          actions.reject = currentStage === 'it-review';
+          actions.requestInfo = true;
+        }
+        break;
+
+      // Legal Roles
+      case 'Legal Counsel':
+      case 'Legal Officer':
         if (approval.requireLegalReview) {
           actions.approve = currentStage === 'legal-review';
           actions.reject = currentStage === 'legal-review';
         }
         break;
 
-      default:
-        // Admin or system roles
+      // Executive Roles
+      case 'Enterprise(CEO, CFO, etc.)':
+      case 'Executive (CEO, CFO, etc.)':
+      case 'CEO':
+      case 'COO':
+        actions.approve = ['executive-approval', 'final-approval', 'cfo-approval'].includes(currentStage);
+        actions.reject = ['executive-approval', 'final-approval', 'cfo-approval'].includes(currentStage);
+        actions.delegate = true;
+        break;
+
+      // Admin Roles
+      case 'admin':
+      case 'Administrator':
+      case 'System Admin':
         actions.approve = true;
         actions.reject = true;
         actions.delegate = true;
         actions.requestInfo = true;
+        actions.adjustBudget = true;
+        break;
+
+      // HR Roles
+      case 'HR Manager':
+      case 'HR Specialist':
+      case 'Human Resources':
+        if (approval.category === 'HR Related' || approval.department === 'Human Resources') {
+          actions.approve = true;
+          actions.reject = true;
+        }
+        break;
+
+      // Sales & Marketing Roles
+      case 'Sales Manager':
+      case 'Sales Representative':
+      case 'Marketing Manager':
+      case 'Marketing Specialist':
+        if (approval.department === 'Sales' || approval.department === 'Marketing') {
+          actions.approve = currentStage === 'department-approval';
+          actions.reject = currentStage === 'department-approval';
+        }
+        break;
+
+      // Default for other roles
+      default:
+        // Check if user has specific permissions based on their department
+        if (approval.department === userDepartment) {
+          actions.approve = currentStage === 'department-approval';
+          actions.reject = currentStage === 'department-approval';
+        }
     }
 
     return actions;
   };
 
   const actions = getAvailableActions();
-  const canTakeAction = actions.approve || actions.reject;
+  const canTakeAction = actions.approve || actions.reject || actions.approveRfq;
 
   // Get role-specific info to display
   const getRoleInfo = () => {
+    const procurementRoles = [
+      "Procurement Officer",
+      "Senior Procurement Officer", 
+      "Procurement Manager",
+      "Supply Chain Officer"
+    ];
+
+    const financeRoles = [
+      "Finance Officer",
+      "Senior Finance Officer",
+      "Finance Manager",
+      "CFO",
+      "Accountant",
+      "Finance Analyst"
+    ];
+
+    const itRoles = [
+      "IT Manager",
+      "IT Officer",
+      "IT Support",
+      "Software Engineer",
+      "Senior Software Engineer",
+      "Lead Engineer",
+      "DevOps Engineer",
+      "IT/Technical"
+    ];
+
+    if (procurementRoles.includes(userRole)) {
+      return {
+        title: userRole,
+        description: 'Review vendor selection, procurement compliance, and contract terms',
+        icon: <Package className="w-4 h-4" />,
+        color: 'orange'
+      };
+    }
+
+    if (financeRoles.includes(userRole)) {
+      return {
+        title: userRole,
+        description: 'Review budget availability, financial compliance, and payment terms',
+        icon: <CreditCard className="w-4 h-4" />,
+        color: 'green'
+      };
+    }
+
+    if (itRoles.includes(userRole)) {
+      return {
+        title: userRole,
+        description: 'Review technical specifications and IT requirements',
+        icon: <Settings className="w-4 h-4" />,
+        color: 'indigo'
+      };
+    }
+
     switch (userRole) {
       case 'Department Head':
+      case 'Manager':
+      case 'Senior Manager':
         return {
-          title: 'Department Approval Required',
-          description: `You need to approve requests from ${userDepartment} department`,
-          icon: <Building className="w-4 h-4" />
+          title: userRole,
+          description: `Review requests from ${userDepartment} department`,
+          icon: <Building className="w-4 h-4" />,
+          color: 'blue'
         };
-      case 'Finance Officer':
+      case 'Legal Counsel':
+      case 'Legal Officer':
         return {
-          title: 'Financial Review',
-          description: 'Verify budget availability and financial compliance',
-          icon: <CreditCard className="w-4 h-4" />
+          title: userRole,
+          description: 'Review legal compliance and contract terms',
+          icon: <FileText className="w-4 h-4" />,
+          color: 'red'
         };
-      case 'CFO':
+      case 'Enterprise(CEO, CFO, etc.)':
+      case 'Executive (CEO, CFO, etc.)':
+      case 'CEO':
+      case 'COO':
         return {
-          title: 'Executive Approval',
-          description: 'Final approval for high-value purchases',
-          icon: <Briefcase className="w-4 h-4" />
+          title: userRole,
+          description: 'Executive approval for strategic decisions',
+          icon: <Briefcase className="w-4 h-4" />,
+          color: 'purple'
         };
-      case 'Procurement':
+      case 'admin':
+      case 'Administrator':
         return {
-          title: 'Procurement Review',
-          description: 'Review vendor selection and procurement compliance',
-          icon: <Package className="w-4 h-4" />
+          title: 'System Administrator',
+          description: 'Manage and oversee all approval processes',
+          icon: <Shield className="w-4 h-4" />,
+          color: 'gray'
         };
       default:
         return {
-          title: 'Approval Required',
-          description: 'Your approval is needed',
-          icon: <FileCheck className="w-4 h-4" />
+          title: userRole || 'Approver',
+          description: 'Your approval is required',
+          icon: <FileCheck className="w-4 h-4" />,
+          color: 'gray'
         };
     }
   };
@@ -250,10 +402,12 @@ const ApprovalCard = ({
       <div className="flex items-center justify-between mb-1.5">
         <div className="flex items-center gap-1.5">
           <div className={`p-1.5 rounded-xl ${
-            userRole === 'Department Head' ? 'bg-blue-50' :
-            userRole === 'Finance Officer' ? 'bg-green-50' :
-            userRole === 'CFO' ? 'bg-purple-50' :
-            userRole === 'Procurement' ? 'bg-orange-50' :
+            roleInfo.color === 'blue' ? 'bg-blue-50' :
+            roleInfo.color === 'green' ? 'bg-green-50' :
+            roleInfo.color === 'orange' ? 'bg-orange-50' :
+            roleInfo.color === 'purple' ? 'bg-purple-50' :
+            roleInfo.color === 'red' ? 'bg-red-50' :
+            roleInfo.color === 'indigo' ? 'bg-indigo-50' :
             'bg-gray-50'
           }`}>
             {roleInfo.icon}
@@ -283,8 +437,23 @@ const ApprovalCard = ({
       {/* Role-Specific Context */}
       <div className="mb-2 p-1.5 bg-gray-50 rounded-xl">
         <p className="text-xs text-gray-600">{roleInfo.description}</p>
+        
+        {/* Special notifications for procurement roles */}
+        {isProcurementRole(userRole) && approval.status === 'approved-rfq' && (
+          <div className="flex items-center gap-1 mt-1 text-xs text-orange-600 bg-orange-50 p-1 rounded">
+            <AlertCircle size={10} />
+            <span>RFQ Approved - Ready for procurement processing</span>
+          </div>
+        )}
+
+        {/* Department check for department heads */}
         {userRole === 'Department Head' && approval.department !== userDepartment && (
           <p className="text-xs text-red-500 mt-1">⚠️ This request is not from your department</p>
+        )}
+
+        {/* Special note for finance roles about budgets */}
+        {['Finance Officer', 'Finance Manager', 'CFO', 'Accountant'].includes(userRole) && (
+          <p className="text-xs text-green-600 mt-1">💰 Check budget availability and financial compliance</p>
         )}
       </div>
 
@@ -322,6 +491,17 @@ const ApprovalCard = ({
           <span className="text-xs font-medium">{approval.category || "General"}</span>
         </div>
         <div className="flex justify-between items-center">
+          <span className="text-xs text-gray-600">Current Status</span>
+          <span className={`text-xs font-medium ${
+            approval.status === 'approved-rfq' ? 'text-orange-600' :
+            approval.status === 'approved' ? 'text-green-600' :
+            approval.status === 'rejected' ? 'text-red-600' :
+            'text-blue-600'
+          }`}>
+            {approval.status?.replace('-', ' ').toUpperCase() || 'IN REVIEW'}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
           <span className="text-xs text-gray-600">Submitted</span>
           <span className="text-xs font-medium">{formatDate(approval.createdAt)}</span>
         </div>
@@ -341,7 +521,7 @@ const ApprovalCard = ({
       {approval.previousApprovals && approval.previousApprovals.length > 0 && (
         <div className="mb-2">
           <div className="text-xs text-gray-600 mb-1">Previous Actions</div>
-          <div className="space-y-1">
+          <div className="space-y-1 max-h-20 overflow-y-auto">
             {approval.previousApprovals.slice(0, 2).map((action, idx) => (
               <div key={idx} className="text-xs bg-blue-50 p-1 rounded">
                 <span className="font-medium">{action.approver}:</span>{' '}
@@ -356,6 +536,7 @@ const ApprovalCard = ({
 
       {/* Dynamic Action Buttons */}
       <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-gray-100">
+        {/* Approve Button */}
         {actions.approve && (
           <button
             onClick={() => onAction(approval._id, "approve")}
@@ -365,7 +546,19 @@ const ApprovalCard = ({
             Approve
           </button>
         )}
+
+        {/* Special Approve-RFQ Button for Procurement Officers */}
+        {actions.approveRfq && (
+          <button
+            onClick={() => onAction(approval._id, "approve-rfq")}
+            className="flex items-center gap-1 px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-medium hover:bg-orange-200 transition-colors"
+          >
+            <FileCheck size={12} />
+            Approve RFQ
+          </button>
+        )}
         
+        {/* Reject Button */}
         {actions.reject && (
           <button
             onClick={() => onAction(approval._id, "reject")}
@@ -376,6 +569,7 @@ const ApprovalCard = ({
           </button>
         )}
         
+        {/* Adjust Budget Button */}
         {actions.adjustBudget && (
           <button
             onClick={() => onAction(approval._id, "adjust-budget")}
@@ -386,6 +580,7 @@ const ApprovalCard = ({
           </button>
         )}
         
+        {/* Request Info Button */}
         {actions.requestInfo && (
           <button
             onClick={() => onAction(approval._id, "request-info")}
@@ -396,6 +591,7 @@ const ApprovalCard = ({
           </button>
         )}
         
+        {/* Delegate Button */}
         {actions.delegate && (
           <button
             onClick={() => onDelegate(approval._id)}
@@ -408,6 +604,7 @@ const ApprovalCard = ({
 
         <div className="flex-1"></div>
         
+        {/* Action Icons */}
         <div className="flex gap-1">
           <button 
             onClick={() => onView(approval._id)}
@@ -466,75 +663,62 @@ export default function ApprovalDashboardPage() {
     : import.meta.env.VITE_BACKEND_URL_DEV;
 
   // Fetch user profile and approvals
-  useEffect(() => {
-    const fetchUserAndApprovals = async () => {
-      try {
-        setIsLoading(true);
-        const token = localStorage.getItem("token");
+ useEffect(() => {
+  const fetchUserAndApprovals = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("token");
+      
+      // Get user profile first
+      const userResponse = await fetch(`${backendUrl}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        setUserRole(userData.data?.role || 'Employee');
+        setUserDepartment(userData.data?.department || null);
         
-        // Get user profile first
-        const userResponse = await fetch(`${backendUrl}/api/auth/me`, {
+        // Fetch approvals - backend already filters by user role
+        const approvalsResponse = await fetch(`${backendUrl}/api/requisitions/pending-by-user`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         
-        if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUserRole(userData.data?.role || 'Employee');
-          setUserDepartment(userData.data?.department || null);
+        if (approvalsResponse.ok) {
+          const approvalsData = await approvalsResponse.json();
           
-          // Fetch approvals based on user role
-          const approvalsResponse = await fetch(`${backendUrl}/api/requisitions/pending-by-user`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          
-          if (approvalsResponse.ok) {
-            const approvalsData = await approvalsResponse.json();
+          if (approvalsData.success && Array.isArray(approvalsData.data)) {
+            // DIRECTLY USE THE DATA FROM BACKEND - NO ADDITIONAL FILTERING
+            setApprovals(approvalsData.data);
             
-            if (approvalsData.success && Array.isArray(approvalsData.data)) {
-              // Filter approvals based on user role and department
-              const filteredApprovals = approvalsData.data.filter(approval => {
-                // Check if user is in approvers list for current stage
-                const isApprover = approval.approvers?.some(approver => 
-                  approver.userId === userData.data?._id || 
-                  approver.email === userData.data?.email ||
-                  (userRole === 'Department Head' && approval.department === userDepartment)
-                );
-                
-                return isApprover || 
-                       userData.data?.role === 'admin' || 
-                       userData.data?.role === 'Enterprise(CEO, CFO, etc.)';
-              });
-              
-              setApprovals(filteredApprovals);
-              
-              // Calculate statistics
-              calculateStats(filteredApprovals);
-            } else {
-              setApprovals([]);
-            }
+            // Calculate statistics
+            calculateStats(approvalsData.data);
           } else {
-            throw new Error('Failed to fetch approvals');
+            setApprovals([]);
           }
         } else {
-          throw new Error('Failed to fetch user profile');
+          throw new Error('Failed to fetch approvals');
         }
-        
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-        console.error(err);
-        setApprovals([]);
-      } finally {
-        setIsLoading(false);
+      } else {
+        throw new Error('Failed to fetch user profile');
       }
-    };
+      
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+      console.error(err);
+      setApprovals([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    fetchUserAndApprovals();
-  }, [backendUrl]);
+  fetchUserAndApprovals();
+}, [backendUrl]);
 
   // Calculate statistics
   const calculateStats = (approvalList) => {
@@ -592,45 +776,76 @@ export default function ApprovalDashboardPage() {
     }));
   };
 
+  // Helper function for role context
+  const getRoleContext = (role, department) => {
+    if (['Procurement Officer', 'Senior Procurement Officer', 'Procurement Manager', 'Supply Chain Officer'].includes(role)) {
+      return 'Procurement Review';
+    }
+    if (['Finance Officer', 'Finance Manager', 'CFO', 'Accountant', 'Finance Analyst'].includes(role)) {
+      return 'Financial Review';
+    }
+    if (['IT Manager', 'IT Officer', 'Software Engineer', 'DevOps Engineer'].includes(role)) {
+      return 'Technical Review';
+    }
+    if (role === 'Department Head' && department) {
+      return `Department Head (${department})`;
+    }
+    return role;
+  };
+
   // Handle approval actions
   const handleAction = async (approvalId, action) => {
-  try {
-    const token = localStorage.getItem("token");
-    const endpoint = action === 'adjust-budget' ? 'adjust-budget' : 'approve-step';
-    
-    const response = await fetch(`${backendUrl}/api/requisitions/${approvalId}/${endpoint}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: action,
-        comment: `${action} by ${userRole}`,
-        role: userRole,
-        department: userDepartment
-      })
-    });
-    
-    const data = await response.json();
+    try {
+      const token = localStorage.getItem("token");
+      let endpoint = 'approve-step';
+      
+      // Map actions to endpoints
+      if (action === 'approve-rfq') {
+        endpoint = 'approve-step';
+        action = 'approve'; // Backend will handle RFQ approval based on role
+      } else if (action === 'adjust-budget') {
+        endpoint = 'adjust-budget';
+      }
 
-    if (response.ok && data.success) {
-      // Remove the approval from the list
-      setApprovals(prev => prev.filter(a => a._id !== approvalId));
+      const response = await fetch(`${backendUrl}/api/requisitions/${approvalId}/${endpoint}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: action === 'approve-rfq' ? 'approve' : action,
+          comment: `${action === 'approve-rfq' ? 'RFQ Approved' : action} by ${userRole}`,
+          role: userRole,
+          department: userDepartment,
+          isRfqApproval: action === 'approve-rfq'
+        })
+      });
       
-      // Update stats
-      calculateStats(approvals.filter(a => a._id !== approvalId));
-      
-      showNotificationMessage(`Request ${action}d successfully!`, "success");
-    } else {
-      showNotificationMessage(data.message || "Failed to process request", "error");
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Remove the approval from the list
+        setApprovals(prev => prev.filter(a => a._id !== approvalId));
+        
+        // Update stats
+        calculateStats(approvals.filter(a => a._id !== approvalId));
+        
+        showNotificationMessage(
+          action === 'approve-rfq' 
+            ? 'RFQ approved for procurement processing!' 
+            : `Request ${action}d successfully!`, 
+          "success"
+        );
+      } else {
+        showNotificationMessage(data.message || "Failed to process request", "error");
+      }
+    } catch (err) {
+      showNotificationMessage("Failed to process request", "error");
+      console.error(err);
     }
-  } catch (err) {
-    showNotificationMessage("Failed to process request", "error");
-    console.error(err);
-  }
-  setShowMenuId(null);
-};
+    setShowMenuId(null);
+  };
 
   // Handle delegate action
   const handleDelegate = async (approvalId) => {
@@ -699,10 +914,12 @@ export default function ApprovalDashboardPage() {
       "Category": approval.category || "General",
       "Current Stage": approval.currentStage || "N/A",
       "Urgency": approval.urgency || "medium",
+      "Current Status": approval.status || "in-review",
       "Days Pending": approval.daysPending || 0,
       "SLA Deadline": approval.slaDeadline ? formatDate(approval.slaDeadline) : "N/A",
       "Submitted Date": formatDate(approval.createdAt),
-      "Your Role": userRole
+      "Your Role": userRole,
+      "Approval Context": getRoleContext(userRole, approval.department)
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(formatted);
@@ -880,6 +1097,9 @@ export default function ApprovalDashboardPage() {
         case 'finance-approval': return '#10b981';
         case 'cfo-approval': return '#8b5cf6';
         case 'procurement-review': return '#f59e0b';
+        case 'vendor-selection': return '#f97316';
+        case 'rfq-processing': return '#ea580c';
+        case 'po-creation': return '#dc2626';
         case 'it-review': return '#6366f1';
         case 'legal-review': return '#ef4444';
         default: return '#6b7280';
@@ -894,7 +1114,10 @@ export default function ApprovalDashboardPage() {
       case 'cfo-approval':
         return "text-purple-700 bg-purple-50 border-purple-200";
       case 'procurement-review':
-        return "text-amber-700 bg-amber-50 border-amber-200";
+      case 'vendor-selection':
+      case 'rfq-processing':
+      case 'po-creation':
+        return "text-orange-700 bg-orange-50 border-orange-200";
       case 'it-review':
         return "text-indigo-700 bg-indigo-50 border-indigo-200";
       case 'legal-review':
@@ -1060,65 +1283,55 @@ export default function ApprovalDashboardPage() {
               Showing {filteredApprovals.length} of {approvals.length} approvals
             </div>
           </div>
+          
+          {/* Role-Specific Guidance */}
           <div className="bg-white rounded-2xl border border-gray-200 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-blue-50 rounded-xl">
-              <Shield className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">Your Approval Responsibilities</h3>
-              <p className="text-sm text-gray-600">
-                {userRole === 'Department Head' 
-                  ? `You can approve requests from the ${userDepartment} department. Review for departmental needs and budget alignment.`
-                  : userRole === 'Finance Officer'
-                  ? 'You review financial compliance, budget availability, and payment terms. Ensure proper documentation.'
-                  : userRole === 'CFO'
-                  ? 'You provide final approval for high-value purchases and strategic investments.'
-                  : userRole === 'Procurement'
-                  ? 'You review vendor selection, procurement process compliance, and contract terms.'
-                  : 'Review requests assigned to you and take appropriate action.'}
-              </p>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 bg-blue-50 rounded-xl">
+                <Shield className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Your Approval Responsibilities</h3>
+                <p className="text-sm text-gray-600">
+                  {userRole === 'Department Head' 
+                    ? `You can approve requests from the ${userDepartment} department. Review for departmental needs and budget alignment.`
+                    : ['Procurement Officer', 'Senior Procurement Officer', 'Procurement Manager', 'Supply Chain Officer'].includes(userRole)
+                    ? 'You review vendor selection, procurement compliance, contract terms, and can approve RFQs for processing.'
+                    : ['Finance Officer', 'Finance Manager', 'CFO', 'Accountant', 'Finance Analyst'].includes(userRole)
+                    ? 'You review financial compliance, budget availability, and payment terms. Ensure proper documentation.'
+                    : userRole === 'CFO'
+                    ? 'You provide final approval for high-value purchases and strategic investments.'
+                    : ['IT Manager', 'IT Officer', 'Software Engineer', 'DevOps Engineer'].includes(userRole)
+                    ? 'You review technical specifications and IT requirements for IT-related purchases.'
+                    : ['Legal Counsel', 'Legal Officer'].includes(userRole)
+                    ? 'You review legal compliance and contract terms for purchases requiring legal review.'
+                    : ['Enterprise(CEO, CFO, etc.)', 'Executive (CEO, CFO, etc.)', 'CEO', 'COO'].includes(userRole)
+                    ? 'You provide executive approval for strategic decisions and high-value investments.'
+                    : 'Review requests assigned to you and take appropriate action.'}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-        </div>
 
-        {/* Key Metrics Grid -  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard 
-            title="Pending Approvals" 
-            value={stats.totalPending}
-            icon={FileCheck} 
-            color="blue" 
-            subtitle="Awaiting your action"
-          />
-          <MetricCard 
-            title="High Priority" 
-            value={stats.highPriority}
-            icon={AlertCircle} 
-            color="red" 
-            trend={stats.highPriority > 0 ? 15 : 0}
-            subtitle="Require immediate attention"
-          />
-          <MetricCard 
-            title="Overdue Approvals" 
-            value={stats.overdue}
-            icon={Clock} 
-            color="amber" 
-            subtitle="Past SLA deadline"
-          />
-          <MetricCard 
-            title="Avg Response Time" 
-            value={stats.avgResponseTime}
-            icon={Activity} 
-            color="green" 
-            suffix=" days"
-            subtitle="Your average response"
-          />
-        </div> */}
-      
-
-        {/* Role-Specific Guidance */}
-        
+        {/* Procurement Status Section */}
+        {['Procurement Officer', 'Senior Procurement Officer', 'Procurement Manager', 'Supply Chain Officer'].includes(userRole) && (
+          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-orange-100 rounded-xl">
+                <Package className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-orange-800">Procurement Approval Status</h3>
+                <p className="text-sm text-orange-700">
+                  When you approve a requisition, it will be marked as <span className="font-bold">"approved-rfq"</span> status.
+                  This indicates the requisition is ready for RFQ (Request for Quotation) processing.
+                  The final approval status will be <span className="font-bold">"approved"</span> after all workflow steps are complete.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Approvals Cards Section */}
         <div id="approvals-section" className="bg-white rounded-2xl border border-gray-200 p-4">
