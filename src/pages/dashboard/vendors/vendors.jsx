@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"; // Add useRef
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Users,
@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'exceljs'; // Replace XLSX with ExcelJS
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -310,115 +310,219 @@ export default function VendorsPage() {
     fetchVendors();
   }, [backendUrl]);
 
-  // Excel Export Functionality
-  const handleExportToExcel = () => {
+  // Excel Export Functionality - Using ExcelJS
+  const handleExportToExcel = async () => {
     if (!vendors || vendors.length === 0) {
       showNotificationMessage("No vendors to export", "error");
       return;
     }
 
-    const formatted = vendors.map((vendor) => {
-      // Handle both User and Vendor object structures
-      const vendorName = vendor.name || `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim();
-      const companyName = vendor.businessName || vendor.companyName || '';
-      const email = vendor.email || '';
-      const phone = vendor.phoneNumber || vendor.phone || '';
-      const industry = vendor.industry || '';
-      const status = vendor.status || vendor.registrationStatus || 'pending';
-      const rating = vendor.rating || 0;
-      const categories = vendor.categories ? vendor.categories.join(", ") : '';
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Vendor Management System';
+      workbook.created = new Date();
       
-      return {
-        "Vendor ID": vendor._id || "N/A",
-        "Name": vendorName,
-        "Email": email,
-        "Phone": phone,
-        "Company": companyName,
-        "Industry": industry,
-        "Status": status,
-        "Rating": rating,
-        "Categories": categories,
-        "Address": vendor.address || "",
-        "Tax ID": vendor.taxpayerIdentificationNumber || "",
-        "Registration Number": vendor.registrationNumber || "",
-        "Created Date": vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : new Date().toLocaleDateString()
+      const worksheet = workbook.addWorksheet('Vendors');
+      
+      // Define columns
+      worksheet.columns = [
+        { header: 'Vendor ID', key: 'vendorId', width: 30 },
+        { header: 'Name', key: 'name', width: 25 },
+        { header: 'Email', key: 'email', width: 25 },
+        { header: 'Phone', key: 'phone', width: 20 },
+        { header: 'Company', key: 'company', width: 25 },
+        { header: 'Industry', key: 'industry', width: 20 },
+        { header: 'Status', key: 'status', width: 15 },
+        { header: 'Rating', key: 'rating', width: 10 },
+        { header: 'Categories', key: 'categories', width: 30 },
+        { header: 'Address', key: 'address', width: 30 },
+        { header: 'Tax ID', key: 'taxId', width: 20 },
+        { header: 'Registration Number', key: 'registrationNumber', width: 25 },
+        { header: 'Created Date', key: 'createdDate', width: 15 }
+      ];
+
+      // Style header row
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2D3748' }
       };
-    });
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+      // Add data rows
+      vendors.forEach((vendor) => {
+        // Handle both User and Vendor object structures
+        const vendorName = vendor.name || `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim();
+        const companyName = vendor.businessName || vendor.companyName || '';
+        const email = vendor.email || '';
+        const phone = vendor.phoneNumber || vendor.phone || '';
+        const industry = vendor.industry || '';
+        const status = vendor.status || vendor.registrationStatus || 'pending';
+        const rating = vendor.rating || 0;
+        const categories = vendor.categories ? vendor.categories.join(", ") : '';
+        
+        worksheet.addRow({
+          vendorId: vendor._id || "N/A",
+          name: vendorName,
+          email: email,
+          phone: phone,
+          company: companyName,
+          industry: industry,
+          status: status,
+          rating: rating,
+          categories: categories,
+          address: vendor.address || "",
+          taxId: vendor.taxpayerIdentificationNumber || "",
+          registrationNumber: vendor.registrationNumber || "",
+          createdDate: vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : new Date().toLocaleDateString()
+        });
+      });
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Vendors");
+      // Auto-fit columns
+      worksheet.columns.forEach(column => {
+        const lengths = column.values.map(v => v ? v.toString().length : 0);
+        const maxLength = Math.max(...lengths.filter(v => typeof v === 'number'));
+        column.width = Math.min(maxLength + 2, 50);
+      });
 
-    XLSX.writeFile(workbook, "vendors.xlsx");
+      // Generate buffer
+      const buffer = await workbook.xlsx.writeBuffer();
+      
+      // Create blob and download
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `vendors_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
 
-    showNotificationMessage("Export successful!", "success");
+      showNotificationMessage("Export successful!", "success");
+    } catch (error) {
+      console.error("Export error:", error);
+      showNotificationMessage("Failed to export Excel file", "error");
+    }
   };
 
-  // Excel Import Functionality
+  // Excel Import Functionality - Using ExcelJS
   const handleImportFromExcel = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    setIsLoading(true);
+    
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+      const workbook = new ExcelJS.Workbook();
+      const buffer = await file.arrayBuffer();
+      await workbook.xlsx.load(buffer);
+      
+      const worksheet = workbook.getWorksheet(1); // Get first sheet
+      if (!worksheet) {
+        throw new Error('No worksheet found in Excel file');
+      }
+
+      // Get headers
+      const headerRow = worksheet.getRow(1);
+      const headers = [];
+      headerRow.eachCell((cell) => {
+        headers.push(cell.value?.toString().toLowerCase().trim() || '');
+      });
 
       const token = localStorage.getItem("token");
+      let successCount = 0;
+      let errorCount = 0;
 
-      for (const row of rows) {
+      // Process rows starting from row 2
+      for (let i = 2; i <= worksheet.rowCount; i++) {
+        const row = worksheet.getRow(i);
+        
+        // Skip empty rows
+        if (row.cellCount === 0 || !row.getCell(1).value) continue;
+
+        const rowData = {};
+        headers.forEach((header, index) => {
+          rowData[header] = row.getCell(index + 1).value;
+        });
+
         // Parse categories from Excel
         let categories = [];
-        if (row.Categories) {
-          categories = row.Categories.split(",").map(cat => cat.trim()).filter(cat => cat !== '');
+        const categoriesCell = rowData.categories || rowData['service categories'];
+        if (categoriesCell) {
+          categories = categoriesCell.toString()
+            .split(/[,|;/]/)
+            .map(cat => cat.trim())
+            .filter(cat => cat !== '');
         }
 
         // Handle name splitting
-        const fullName = row.Name || '';
+        const fullName = rowData.name || rowData['vendor name'] || '';
         let firstName = '', lastName = '';
         if (fullName) {
-          const nameParts = fullName.split(' ');
+          const nameParts = fullName.toString().split(' ');
           firstName = nameParts[0] || '';
           lastName = nameParts.slice(1).join(' ') || '';
         }
 
         const payload = {
-          firstName: firstName || row["First Name"] || '',
-          lastName: lastName || row["Last Name"] || '',
-          email: row.Email || '',
-          phoneNumber: row.Phone || '',
-          address: row.Address || '',
-          companyName: row.Company || row["Company Name"] || '',
-          businessName: row.Company || row["Company Name"] || '',
-          industry: row.Industry || '',
+          firstName: firstName || rowData['first name'] || '',
+          lastName: lastName || rowData['last name'] || '',
+          email: rowData.email || '',
+          phoneNumber: rowData.phone || rowData['phone number'] || '',
+          address: rowData.address || '',
+          companyName: rowData.company || rowData['company name'] || '',
+          businessName: rowData.company || rowData['company name'] || '',
+          industry: rowData.industry || '',
           categories: categories,
-          taxpayerIdentificationNumber: row["Tax ID"] || `TIN-${Date.now()}`,
-          registrationNumber: row["Registration Number"] || `REG-${Date.now()}`,
+          taxpayerIdentificationNumber: rowData['tax id'] || rowData.tin || `TIN-${Date.now()}-${i}`,
+          registrationNumber: rowData['registration number'] || `REG-${Date.now()}-${i}`,
           companyType: 'Private Limited Company',
           formOfBusiness: 'Limited Liability Company',
           ownershipType: 'Private Ownership',
           countryOfRegistration: 'Malawi',
           role: "Vendor",
-          status: row.Status || 'pending'
+          status: (rowData.status || 'pending').toLowerCase()
         };
 
-        await fetch(`${backendUrl}/api/vendors`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+        try {
+          const response = await fetch(`${backendUrl}/api/vendors`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error(`Failed to import row ${i}:`, await response.text());
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`Error importing row ${i}:`, error);
+        }
       }
 
-      showNotificationMessage("Excel import completed successfully!", "success");
+      showNotificationMessage(
+        `Import completed: ${successCount} successful, ${errorCount} failed`,
+        errorCount === 0 ? "success" : "warning"
+      );
+      
+      // Refresh vendor list
       handleRefresh();
-    } catch (err) {
-      console.error(err);
-      showNotificationMessage("Excel import failed!", "error");
+    } catch (error) {
+      console.error("Import error:", error);
+      showNotificationMessage("Failed to import Excel file: " + error.message, "error");
+    } finally {
+      setIsLoading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -816,10 +920,29 @@ export default function VendorsPage() {
     showNotificationMessage("ID copied to clipboard!", "success");
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000);
-    window.location.reload();
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/vendors`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setVendors(Array.isArray(result.data) ? result.data : []);
+      } else if (Array.isArray(result)) {
+        setVendors(result);
+      }
+      showNotificationMessage("Vendors refreshed successfully", "success");
+    } catch (error) {
+      console.error("Refresh error:", error);
+      showNotificationMessage("Failed to refresh vendors", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (error) {
@@ -946,6 +1069,7 @@ export default function VendorsPage() {
               <button
                 className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
                 onClick={() => fileInputRef.current.click()}
+                disabled={isLoading}
               >
                 <FileSpreadsheet size={16} />
                 Excel Import
@@ -955,6 +1079,7 @@ export default function VendorsPage() {
               <button
                 className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
                 onClick={handleExportToExcel}
+                disabled={isLoading}
               >
                   <Upload size={16} />
                 Excel Export
