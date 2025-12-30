@@ -41,7 +41,7 @@ import {
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { useAuth } from "../../../authcontext/authcontext"
-import * as XLSX from "xlsx";
+import ExcelJS from 'exceljs';
 
 
 // LoadingOverlay Component
@@ -351,39 +351,91 @@ export default function DepartmentsPage() {
     }
   }
 
-
-  const handleExportToExcel = () => {
+const handleExportToExcel = async () => {
   if (!departments || departments.length === 0) {
     showNotificationMessage("No departments to export", "error");
     return;
   }
 
-  const formatted = departments.map((dept) => ({
-    Name: dept.name,
-    Description: dept.description,
-    DepartmentHead: dept.departmentHead,
-    Email: dept.headEmail,
-    Phone: dept.headPhone,
-    Budget: dept.budget,
-    Location: dept.location,
-    Building: dept.building,
-    Floor: dept.floor,
-    Status: dept.status,
-    Goals: dept.goals?.join(", "),
-    Established: dept.establishedDate
-      ? new Date(dept.establishedDate).toLocaleDateString()
-      : "",
-    MaxCapacity: dept.maxCapacity,
-  }));
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Departments');
 
-  const worksheet = XLSX.utils.json_to_sheet(formatted);
-  const workbook = XLSX.utils.book_new();
+    // Define headers
+    worksheet.columns = [
+      { header: 'Name', key: 'name', width: 25 },
+      { header: 'Description', key: 'description', width: 30 },
+      { header: 'DepartmentHead', key: 'departmentHead', width: 20 },
+      { header: 'Email', key: 'headEmail', width: 25 },
+      { header: 'Phone', key: 'headPhone', width: 15 },
+      { header: 'Budget', key: 'budget', width: 15 },
+      { header: 'Location', key: 'location', width: 20 },
+      { header: 'Building', key: 'building', width: 15 },
+      { header: 'Floor', key: 'floor', width: 10 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Goals', key: 'goals', width: 30 },
+      { header: 'Established', key: 'establishedDate', width: 12 },
+      { header: 'MaxCapacity', key: 'maxCapacity', width: 12 },
+    ];
 
-  XLSX.utils.book_append_sheet(workbook, worksheet, "Departments");
+    // Style headers
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' }
+    };
 
-  XLSX.writeFile(workbook, "departments.xlsx");
+    // Add data rows
+    departments.forEach((dept) => {
+      worksheet.addRow({
+        name: dept.name,
+        description: dept.description,
+        departmentHead: dept.departmentHead,
+        headEmail: dept.headEmail,
+        headPhone: dept.headPhone,
+        budget: dept.budget,
+        location: dept.location,
+        building: dept.building,
+        floor: dept.floor,
+        status: dept.status,
+        goals: dept.goals?.join(", ") || '',
+        establishedDate: dept.establishedDate
+          ? new Date(dept.establishedDate).toLocaleDateString()
+          : '',
+        maxCapacity: dept.maxCapacity,
+      });
+    });
 
-  showNotificationMessage("Export successful!", "success");
+    // Auto-fit columns (ExcelJS doesn't have auto-width, so we set manually)
+    worksheet.columns.forEach(column => {
+      if (column.width) {
+        const lengths = column.values.map(v => v ? v.toString().length : 0);
+        const maxLength = Math.max(...lengths.filter(v => typeof v === 'number'));
+        column.width = Math.min(Math.max(maxLength, column.width || 10), 50);
+      }
+    });
+
+    // Generate buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'departments.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    showNotificationMessage("Export successful!", "success");
+  } catch (error) {
+    console.error('Export error:', error);
+    showNotificationMessage("Export failed!", "error");
+  }
 };
 
 
@@ -392,14 +444,46 @@ const handleImportFromExcel = async (event) => {
   if (!file) return;
 
   try {
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+
     const data = await file.arrayBuffer();
-    const workbook = XLSX.read(data);
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(data);
+    
+    const worksheet = workbook.getWorksheet(1); // Get first sheet
+    if (!worksheet) {
+      throw new Error('No worksheet found in the Excel file');
+    }
+
+    const rows = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header row
+        const rowData = {
+          Name: row.getCell(1).value,
+          Description: row.getCell(2).value,
+          DepartmentHead: row.getCell(3).value,
+          Email: row.getCell(4).value,
+          Phone: row.getCell(5).value,
+          Budget: row.getCell(6).value,
+          Location: row.getCell(7).value,
+          Building: row.getCell(8).value,
+          Floor: row.getCell(9).value,
+          Status: row.getCell(10).value,
+          Goals: row.getCell(11).value,
+          Established: row.getCell(12).value,
+          MaxCapacity: row.getCell(13).value,
+        };
+        rows.push(rowData);
+      }
+    });
 
     const token = localStorage.getItem("token");
 
-    for (const row of rows) {
+    // Import each row
+    const importPromises = rows.map(async (row) => {
       const payload = {
         name: row.Name || "",
         description: row.Description || "",
@@ -418,7 +502,7 @@ const handleImportFromExcel = async (event) => {
         maxCapacity: Number(row.MaxCapacity) || "",
       };
 
-      await fetch(`${backendUrl}/api/departments`, {
+      const response = await fetch(`${backendUrl}/api/departments`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -426,13 +510,20 @@ const handleImportFromExcel = async (event) => {
         },
         body: JSON.stringify(payload),
       });
-    }
 
-    showNotificationMessage("Excel import completed successfully!", "success");
+      if (!response.ok) {
+        throw new Error(`Failed to import department: ${row.Name}`);
+      }
+
+      return response.json();
+    });
+
+    await Promise.all(importPromises);
+    showNotificationMessage(`Excel import completed successfully! ${rows.length} departments imported.`, "success");
     handleRefresh();
   } catch (err) {
-    console.error(err);
-    showNotificationMessage("Excel import failed!", "error");
+    console.error("Import error:", err);
+    showNotificationMessage(`Excel import failed: ${err.message}`, "error");
   }
 };
 
@@ -445,30 +536,72 @@ const handlePrint = () => {
 
   const printWindow = window.open("", "_blank", "width=900,height=700");
 
+  // Create a cleaner table for printing
+  const tableHTML = `
+    <table border="1" cellspacing="0" cellpadding="8" style="width: 100%; font-family: Arial, sans-serif; font-size: 12px;">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Department Head</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th>Budget</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${departments.map(dept => `
+          <tr>
+            <td>${dept.name || ''}</td>
+            <td>${dept.departmentHead || ''}</td>
+            <td>${dept.headEmail || ''}</td>
+            <td>${dept.headPhone || ''}</td>
+            <td>${dept.location || ''}</td>
+            <td>${dept.status || ''}</td>
+            <td>${formatBudget(dept.budget || 0)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
   printWindow.document.write(`
     <html>
       <head>
-        <title>Departments Print</title>
+        <title>Departments Print - ${new Date().toLocaleDateString()}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 20px; }
           h1 { text-align: center; margin-bottom: 20px; }
           table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-          th, td { border: 1px solid #ddd; padding: 8px; font-size: 14px; }
-          th { background-color: #f4f4f4; text-align: left; }
-          .section-title { font-size: 22px; margin-bottom: 10px; }
+          th { background-color: #f4f4f4; font-weight: bold; }
+          .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+          }
         </style>
       </head>
       <body>
-        <h1>Department List</h1>
-        ${printContents}
+        <div class="header">
+          <h1>Department List</h1>
+          <div>Generated: ${new Date().toLocaleString()}</div>
+        </div>
+        <div>Total Departments: ${departments.length}</div>
+        ${tableHTML}
       </body>
     </html>
   `);
 
   printWindow.document.close();
   printWindow.focus();
-
-  printWindow.print();
+  setTimeout(() => {
+    printWindow.print();
+    printWindow.close();
+  }, 500);
 };
 
 

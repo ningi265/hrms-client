@@ -14,7 +14,9 @@ import {
   Search,
   DollarSign,
   Eye,
-  Loader
+  Loader,
+  XCircle,
+  Check
 } from "lucide-react";
 import { useAuth } from "../../../../authcontext/authcontext";
 
@@ -39,6 +41,7 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
   const [successMessage, setSuccessMessage] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [validationErrors, setValidationErrors] = useState({});
+  const [existingRFQs, setExistingRFQs] = useState([]);
 
   const backendUrl = import.meta.env.VITE_ENV === 'production'
     ? import.meta.env.VITE_BACKEND_URL_PROD
@@ -50,12 +53,143 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
     { id: 3, title: 'Review & Submit', icon: CheckCircle, description: 'Confirm and send RFQ' }
   ];
 
+  // Helper function to ensure we always get an array from API responses
+  const ensureArray = (data) => {
+    if (Array.isArray(data)) return data;
+    if (data?.data && Array.isArray(data.data)) return data.data;
+    if (data?.rfqs && Array.isArray(data.rfqs)) return data.rfqs;
+    if (data?.requisitions && Array.isArray(data.requisitions)) return data.requisitions;
+    if (data?.success && Array.isArray(data.data)) return data.data;
+    return [];
+  };
+
+  // Helper function to check if procurement has approved based on workflow timeline
+  const hasProcurementApproved = (requisition) => {
+    if (!requisition) return false;
+    
+    // Check 1: Look for procurement approval in workflow timeline
+    if (requisition.workflowTimeline && Array.isArray(requisition.workflowTimeline)) {
+      const procurementApproval = requisition.workflowTimeline.find(item => 
+        item.action === "approved_rfq_intermediate" || 
+        item.action === "procurement_approved" ||
+        (item.details && item.details.isProcurementApproval === true)
+      );
+      
+      if (procurementApproval) {
+        return true;
+      }
+    }
+    
+    // Check 2: Look in history
+    if (requisition.history && Array.isArray(requisition.history)) {
+      const procurementHistory = requisition.history.find(item => 
+        item.action === "approved_rfq_intermediate" || 
+        item.action === "procurement_approved" ||
+        (item.details && item.details.isProcurementApproval === true)
+      );
+      
+      if (procurementHistory) {
+        return true;
+      }
+    }
+    
+    // Check 3: Look in approval steps
+    if (requisition.approvalSteps && Array.isArray(requisition.approvalSteps)) {
+      for (const step of requisition.approvalSteps) {
+        if (step.approvers && Array.isArray(step.approvers)) {
+          const procurementApprover = step.approvers.find(approver => {
+            // Check if approver is a procurement role
+            if (approver.userId && approver.userId.role) {
+              const procurementRoles = [
+                "Procurement Officer",
+                "Senior Procurement Officer", 
+                "Procurement Manager",
+                "Supply Chain Officer"
+              ];
+              return procurementRoles.includes(approver.userId.role) && 
+                     approver.status === "approved";
+            }
+            return false;
+          });
+          
+          if (procurementApprover) {
+            return true;
+          }
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  // Check if requisition already has an RFQ
+  const hasExistingRFQ = (requisitionId) => {
+    if (!Array.isArray(existingRFQs)) {
+      console.warn("existingRFQs is not an array:", existingRFQs);
+      return false;
+    }
+    
+    return existingRFQs.some(rfq => {
+      if (!rfq) return false;
+      
+      // Handle different RFQ object structures
+      const rfqRequisitionId = rfq.requisitionId || 
+                              (rfq.requisition && rfq.requisition._id) || 
+                              (rfq.requisitionIdObj && rfq.requisitionIdObj._id) ||
+                              (rfq.requisition && typeof rfq.requisition === 'string' ? rfq.requisition : null);
+      
+      return rfqRequisitionId === requisitionId || 
+             rfqRequisitionId?._id === requisitionId ||
+             (typeof rfqRequisitionId === 'string' && rfqRequisitionId === requisitionId);
+    });
+  };
+
+  // Get existing RFQ for a requisition
+  const getExistingRFQ = (requisitionId) => {
+    if (!Array.isArray(existingRFQs)) {
+      console.warn("existingRFQs is not an array:", existingRFQs);
+      return null;
+    }
+    
+    return existingRFQs.find(rfq => {
+      if (!rfq) return false;
+      
+      // Handle different RFQ object structures
+      const rfqRequisitionId = rfq.requisitionId || 
+                              (rfq.requisition && rfq.requisition._id) || 
+                              (rfq.requisitionIdObj && rfq.requisitionIdObj._id) ||
+                              (rfq.requisition && typeof rfq.requisition === 'string' ? rfq.requisition : null);
+      
+      return rfqRequisitionId === requisitionId || 
+             rfqRequisitionId?._id === requisitionId ||
+             (typeof rfqRequisitionId === 'string' && rfqRequisitionId === requisitionId);
+    });
+  };
+
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         const token = localStorage.getItem("token");
+        
+        // Fetch all RFQs to check which requisitions already have RFQs
+        const rfqsRes = await fetch(`${backendUrl}/api/rfqs`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (rfqsRes.ok) {
+          const rfqsData = await rfqsRes.json();
+          console.log("RFQs API response:", rfqsData);
+          
+          // Use ensureArray to handle different response structures
+          const rfqsArray = ensureArray(rfqsData);
+          setExistingRFQs(rfqsArray);
+          console.log("Processed RFQs array:", rfqsArray.length, rfqsArray);
+        } else {
+          console.error("Failed to fetch RFQs, status:", rfqsRes.status);
+          setExistingRFQs([]);
+        }
         
         // Fetch requisitions
         const requisitionsRes = await fetch(`${backendUrl}/api/requisitions`, {
@@ -64,12 +198,61 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
 
         if (requisitionsRes.ok) {
           const requisitionsData = await requisitionsRes.json();
-          const approvedRequisitions = requisitionsData.filter(req => req.status === "approved-rfq");
-          setRequisitions(approvedRequisitions);
+          console.log("Requisitions API response:", requisitionsData);
+          
+          // Use ensureArray to handle different response structures
+          const requisitionsArray = ensureArray(requisitionsData);
+          console.log("Processed requisitions array:", requisitionsArray.length, requisitionsArray);
+          
+          // Filter requisitions: only show those without existing RFQs and approved by procurement
+          const filteredRequisitions = requisitionsArray.filter(req => {
+            if (!req || !req._id) return false;
+            
+            // Skip if already has an RFQ
+            if (hasExistingRFQ(req._id)) {
+              console.log(`Skipping requisition ${req._id} - already has RFQ`);
+              return false;
+            }
+            
+            // Check if procurement approved
+            const procurementApproved = hasProcurementApproved(req);
+            
+            // Also check for backward compatibility status
+            const hasApprovedRFQStatus = req.status === "approved-rfq";
+            
+            const shouldInclude = procurementApproved || hasApprovedRFQStatus;
+            
+            if (shouldInclude) {
+              console.log(`Including requisition ${req._id} - procurement approved or approved-rfq status`);
+            } else {
+              console.log(`Excluding requisition ${req._id} - not approved by procurement`);
+            }
+            
+            return shouldInclude;
+          });
+          
+          setRequisitions(filteredRequisitions);
+          
+          // Debug logging
+          console.log("=== RFQ Creation Summary ===");
+          console.log("Total requisitions found:", requisitionsArray.length);
+          console.log("Total RFQs found:", existingRFQs.length);
+          console.log("Available for RFQ creation:", filteredRequisitions.length);
+          
+          // Log which requisitions have existing RFQs
+          const requisitionsWithRFQ = requisitionsArray.filter(req => hasExistingRFQ(req._id));
+          console.log("Requisitions with existing RFQs (excluded):", requisitionsWithRFQ.length);
+          
+          console.log("=== End Summary ===");
+        } else {
+          console.error("Failed to fetch requisitions, status:", requisitionsRes.status);
+          setRequisitions([]);
         }
       } catch (err) {
         setError("Failed to load data. Please try again.");
         console.error("Error fetching data:", err);
+        setExistingRFQs([]);
+        setRequisitions([]);
       } finally {
         setIsLoading(false);
       }
@@ -77,6 +260,19 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
 
     fetchData();
   }, [backendUrl]);
+
+  // Filter requisitions for display - exclude those with existing RFQs
+  const filteredRequisitions = (requisitions || []).filter(req => {
+    if (!req || !req.itemName) return false;
+    
+    // Don't show requisitions with existing RFQs
+    if (hasExistingRFQ(req._id)) {
+      return false;
+    }
+    
+    // Check search term
+    return req.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   // Validation functions
   const validateStep = (stepIndex) => {
@@ -110,17 +306,31 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
 
   // Form handlers
   const handleRequisitionSelect = (requisition) => {
+    if (!requisition || !requisition._id) {
+      setError("Invalid requisition selected");
+      return;
+    }
+    
+    // Check if requisition already has an RFQ (defensive check)
+    if (hasExistingRFQ(requisition._id)) {
+      const existingRFQ = getExistingRFQ(requisition._id);
+      setError(`This requisition already has an RFQ (${existingRFQ?.rfqNumber || existingRFQ?._id || 'unknown'}). Please select another requisition.`);
+      return;
+    }
+    
     setSelectedRequisition(requisition);
     setFormData(prev => ({
       ...prev,
-      itemName: requisition.itemName,
-      quantity: requisition.quantity,
+      itemName: requisition.itemName || "",
+      quantity: requisition.quantity || "",
       estimatedBudget: requisition.estimatedCost || "",
       description: requisition.reason || ""
     }));
+    
     if (validationErrors.requisition) {
       setValidationErrors(prev => ({ ...prev, requisition: "" }));
     }
+    setError(null); // Clear any previous errors
   };
 
   const handleInputChange = (e) => {
@@ -133,6 +343,13 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
 
   const handleSubmit = async () => {
     if (!validateStep(2)) return;
+
+    // Double-check if selected requisition still doesn't have an RFQ
+    if (selectedRequisition && selectedRequisition._id && hasExistingRFQ(selectedRequisition._id)) {
+      const existingRFQ = getExistingRFQ(selectedRequisition._id);
+      setError(`This requisition now has an existing RFQ (${existingRFQ?.rfqNumber || existingRFQ?._id || 'unknown'}). Please refresh and select another requisition.`);
+      return;
+    }
 
     setIsLoading(true);
     setError(null);
@@ -176,11 +393,6 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
       setIsLoading(false);
     }
   };
-
-  // Filter functions
-  const filteredRequisitions = (requisitions || []).filter(req =>
-    req.itemName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const canProceed = () => {
     switch (currentStep) {
@@ -273,7 +485,10 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
           <div className="h-full flex flex-col">
             <div className="mb-4">
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Select Requisition</h4>
-              <p className="text-gray-600 text-sm">Choose an approved requisition to create an RFQ</p>
+              <p className="text-gray-600 text-sm">Choose a requisition approved by procurement to create an RFQ</p>
+              <p className="text-gray-500 text-xs mt-1">
+                Note: Requisitions that already have an RFQ are not shown
+              </p>
             </div>
 
             {/* Search */}
@@ -292,83 +507,141 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
             <div className="flex-1 overflow-y-auto">
               {filteredRequisitions.length === 0 ? (
                 <div className="text-center py-8">
-                  <FileText size={48} className="text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 text-sm">
-                    {searchTerm ? "No requisitions match your search" : "No approved requisitions available"}
-                  </p>
+                  {searchTerm ? (
+                    <>
+                      <Search size={48} className="text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 text-sm">No requisitions match your search</p>
+                    </>
+                  ) : (
+                    <>
+                      <FileText size={48} className="text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500 text-sm">No requisitions available for RFQ creation</p>
+                      <p className="text-gray-400 text-xs mt-2">
+                        This could be because:
+                      </p>
+                      <ul className="text-gray-400 text-xs mt-1 text-left max-w-md mx-auto">
+                        <li className="flex items-center gap-1 mb-1">
+                          <Check size={12} className="text-green-400" />
+                          All approved requisitions already have RFQs created
+                        </li>
+                        <li className="flex items-center gap-1 mb-1">
+                          <Clock size={12} className="text-blue-400" />
+                          Requisitions are still pending procurement approval
+                        </li>
+                        <li className="flex items-center gap-1">
+                          <FileText size={12} className="text-gray-400" />
+                          No requisitions have been approved by procurement yet
+                        </li>
+                      </ul>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {filteredRequisitions.map((req) => (
-                    <div
-                      key={req._id}
-                      onClick={() => handleRequisitionSelect(req)}
-                      className={`bg-white rounded-xl border-2 cursor-pointer transition-all hover:shadow-sm ${
-                        selectedRequisition?._id === req._id
-                          ? 'border-blue-500 bg-blue-50 shadow-sm'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="p-3">
-                        {/* Header */}
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1 min-w-0">
-                            <h5 className="font-semibold text-gray-900 text-sm truncate">{req.itemName}</h5>
-                            <p className="text-xs text-gray-500 truncate">{req.department}</p>
+                  {filteredRequisitions.map((req) => {
+                    if (!req || !req._id) return null;
+                    
+                    return (
+                      <div
+                        key={req._id}
+                        onClick={() => handleRequisitionSelect(req)}
+                        className={`bg-white rounded-xl border-2 cursor-pointer transition-all hover:shadow-sm ${
+                          selectedRequisition?._id === req._id
+                            ? 'border-blue-500 bg-blue-50 shadow-sm'
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <div className="p-3">
+                          {/* Header */}
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-semibold text-gray-900 text-sm truncate">{req.itemName || "Unnamed Item"}</h5>
+                              <p className="text-xs text-gray-500 truncate">{req.department || "No Department"}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              {selectedRequisition?._id === req._id && (
+                                <CheckCircle size={16} className="text-blue-600 flex-shrink-0" />
+                              )}
+                              {hasProcurementApproved(req) && (
+                                <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-800 rounded-full">
+                                  Proc. Approved
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {selectedRequisition?._id === req._id && (
-                            <CheckCircle size={16} className="text-blue-600 flex-shrink-0 ml-2" />
-                          )}
-                        </div>
 
-                        {/* Key Metrics */}
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                          <div className="text-center p-2 bg-gray-50 rounded-lg">
-                            <div className="text-sm font-bold text-gray-900">{req.quantity}</div>
-                            <div className="text-xs text-gray-500">Quantity</div>
-                          </div>
-                        <div className="text-center p-2 bg-gray-50 rounded-lg">
-  <div className="text-sm font-bold text-green-600">
-    MWK {req.estimatedCost || 'N/A'}
-  </div>
-  <div className="text-xs text-gray-500">Budget</div>
-</div>
-                        </div>
-
-                        {/* Details */}
-                        <div className="space-y-1.5 text-xs">
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Urgency:</span>
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                              req.urgency === 'high' ? 'bg-red-100 text-red-800' :
-                              req.urgency === 'medium' ? 'bg-amber-100 text-amber-800' :
-                              'bg-green-100 text-green-800'
+                          {/* Status Badge */}
+                          <div className="mb-2">
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                              req.status === 'approved-rfq' ? 'bg-orange-100 text-orange-800' :
+                              req.status === 'approved' ? 'bg-green-100 text-green-800' :
+                              req.status === 'in-review' ? 'bg-blue-100 text-blue-800' :
+                              'bg-gray-100 text-gray-800'
                             }`}>
-                              {req.urgency || 'Medium'}
+                              {req.status === 'approved-rfq' ? 'Ready for RFQ' :
+                               req.status === 'approved' ? 'Fully Approved' :
+                               req.status === 'in-review' ? 'In Review' :
+                               req.status || 'Unknown'}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center">
-                            <span className="text-gray-600">Category:</span>
-                            <span className="font-medium text-gray-900">{req.category || 'General'}</span>
+
+                          {/* Key Metrics */}
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div className="text-center p-2 bg-gray-50 rounded-lg">
+                              <div className="text-sm font-bold text-gray-900">{req.quantity || 0}</div>
+                              <div className="text-xs text-gray-500">Quantity</div>
+                            </div>
+                            <div className="text-center p-2 bg-gray-50 rounded-lg">
+                              <div className="text-sm font-bold text-green-600">
+                                MWK {req.estimatedCost || 'N/A'}
+                              </div>
+                              <div className="text-xs text-gray-500">Budget</div>
+                            </div>
                           </div>
-                          {req.budgetCode && (
+
+                          {/* Details */}
+                          <div className="space-y-1.5 text-xs">
                             <div className="flex justify-between items-center">
-                              <span className="text-gray-600">Budget Code:</span>
-                              <span className="font-medium text-gray-900">{req.budgetCode}</span>
+                              <span className="text-gray-600">Urgency:</span>
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                req.urgency === 'high' ? 'bg-red-100 text-red-800' :
+                                req.urgency === 'medium' ? 'bg-amber-100 text-amber-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                                {req.urgency || 'Medium'}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-600">Category:</span>
+                              <span className="font-medium text-gray-900">{req.category || 'General'}</span>
+                            </div>
+                            {req.budgetCode && (
+                              <div className="flex justify-between items-center">
+                                <span className="text-gray-600">Budget Code:</span>
+                                <span className="font-medium text-gray-900">{req.budgetCode}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Reason Preview */}
+                          {req.reason && (
+                            <div className="mt-2 pt-2 border-t border-gray-100">
+                              <div className="text-xs text-gray-600 mb-1">Reason:</div>
+                              <p className="text-xs text-gray-800 line-clamp-2">{req.reason}</p>
+                            </div>
+                          )}
+
+                          {/* Workflow Info */}
+                          {req.currentApprovalStep && (
+                            <div className="mt-2 pt-2 border-t border-gray-100">
+                              <div className="text-xs text-gray-600 mb-1">Current Stage:</div>
+                              <p className="text-xs font-medium text-gray-800">{req.currentApprovalStep.nodeName || 'N/A'}</p>
                             </div>
                           )}
                         </div>
-
-                        {/* Reason Preview */}
-                        {req.reason && (
-                          <div className="mt-2 pt-2 border-t border-gray-100">
-                            <div className="text-xs text-gray-600 mb-1">Reason:</div>
-                            <p className="text-xs text-gray-800 line-clamp-2">{req.reason}</p>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -468,16 +741,16 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
                     Estimated Budget
                   </label>
                   <div className="relative">
-  <span className="absolute left-3 top-2 text-gray-400 text-sm font-medium">MWK</span>
-  <input
-    type="number"
-    name="estimatedBudget"
-    value={formData.estimatedBudget}
-    onChange={handleInputChange}
-    className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-    placeholder="0.00"
-  />
-</div>
+                    <span className="absolute left-3 top-2 text-gray-400 text-sm font-medium">MWK</span>
+                    <input
+                      type="number"
+                      name="estimatedBudget"
+                      value={formData.estimatedBudget}
+                      onChange={handleInputChange}
+                      className="w-full pl-12 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -564,12 +837,12 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
                       {formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)}
                     </span>
                   </div>
-                 {formData.estimatedBudget && (
-  <div>
-    <span className="text-gray-600">Budget:</span>
-    <span className="ml-2 font-medium text-green-600">MWK {formData.estimatedBudget}</span>
-  </div>
-)}
+                  {formData.estimatedBudget && (
+                    <div>
+                      <span className="text-gray-600">Budget:</span>
+                      <span className="ml-2 font-medium text-green-600">MWK {formData.estimatedBudget}</span>
+                    </div>
+                  )}
                   {formData.deliveryLocation && (
                     <div>
                       <span className="text-gray-600">Location:</span>
@@ -578,6 +851,44 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
                   )}
                 </div>
               </div>
+
+              {/* Source Requisition Info */}
+              {selectedRequisition && (
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <h5 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                    <FileText size={16} />
+                    Source Requisition
+                  </h5>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-blue-700">Requisition ID:</span>
+                      <span className="ml-2 font-medium text-blue-900">{selectedRequisition._id?.slice(-8) || 'N/A'}</span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700">Status:</span>
+                      <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${
+                        selectedRequisition.status === 'approved-rfq' ? 'bg-orange-100 text-orange-800' :
+                        selectedRequisition.status === 'approved' ? 'bg-green-100 text-green-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                        {selectedRequisition.status === 'approved-rfq' ? 'Ready for RFQ' :
+                         selectedRequisition.status === 'approved' ? 'Fully Approved' :
+                         selectedRequisition.status || 'Unknown'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700">Approved By:</span>
+                      <span className="ml-2 font-medium text-blue-900">
+                        {hasProcurementApproved(selectedRequisition) ? 'Procurement' : 'Various Approvers'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-blue-700">Department:</span>
+                      <span className="ml-2 font-medium text-blue-900">{selectedRequisition.department || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Additional Information */}
               {(formData.description || formData.specifications) && (
@@ -602,15 +913,15 @@ export default function CreateRFQForm({ onClose, onSuccess }) {
               )}
 
               {/* Source Information */}
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <h5 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <h5 className="font-semibold text-green-900 mb-2 flex items-center gap-2">
                   <Eye size={16} />
                   Sourcing Information
                 </h5>
-                <p className="text-sm text-blue-800">
+                <p className="text-sm text-green-800">
                   After submission, the procurement team will source quotes from qualified vendors based on:
                 </p>
-                <ul className="mt-2 text-sm text-blue-800 space-y-1">
+                <ul className="mt-2 text-sm text-green-800 space-y-1">
                   <li>• Vendor specialization and capabilities</li>
                   <li>• Past performance and reliability</li>
                   <li>• Competitive pricing and quality</li>

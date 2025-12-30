@@ -34,7 +34,7 @@ import {
   FileSpreadsheet
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import * as XLSX from "xlsx";
+import ExcelJS from 'exceljs';
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -346,63 +346,394 @@ export default function ManageRequisitionsPage() {
   };
 
   // Export to Excel
-  const handleExportToExcel = () => {
-    if (!requisitions || requisitions.length === 0) {
-      showNotificationMessage("No requisitions to export", "error");
-      return;
-    }
+ const handleExportToExcel = async () => {
+  if (!requisitions || requisitions.length === 0) {
+    showNotificationMessage("No requisitions to export", "error");
+    return;
+  }
 
-    const formatted = requisitions.map((req) => ({
-      "Item Name": req.itemName || "N/A",
-      "Quantity": req.quantity || 0,
-      "Budget Code": req.budgetCode || "N/A",
-      "Urgency": req.urgency || "N/A",
-      "Employee Name": req.employee?.firstName + " " + req.employee?.lastName || "N/A",
-      "Employee Email": req.employee?.email || "N/A",
-      "Description": req.description || "",
-      "Submitted Date": req.createdAt ? formatDate(req.createdAt) : "N/A",
-      "Department": req.department || "N/A",
-      "Project Code": req.projectCode || "N/A",
-      "Status": "Pending"
-    }));
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Pending Requisitions');
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+    // Define headers
+    worksheet.columns = [
+      { header: 'Item Name', key: 'itemName', width: 25 },
+      { header: 'Quantity', key: 'quantity', width: 12 },
+      { header: 'Budget Code', key: 'budgetCode', width: 15 },
+      { header: 'Urgency', key: 'urgency', width: 12 },
+      { header: 'Employee Name', key: 'employeeName', width: 20 },
+      { header: 'Employee Email', key: 'employeeEmail', width: 25 },
+      { header: 'Description', key: 'description', width: 30 },
+      { header: 'Submitted Date', key: 'submittedDate', width: 15 },
+      { header: 'Department', key: 'department', width: 20 },
+      { header: 'Project Code', key: 'projectCode', width: 15 },
+      { header: 'Estimated Cost', key: 'estimatedCost', width: 15 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Justification', key: 'justification', width: 25 },
+      { header: 'Required By', key: 'requiredBy', width: 15 },
+      { header: 'Location', key: 'location', width: 20 }
+    ];
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Requisitions");
+    // Style headers
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue color
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    XLSX.writeFile(workbook, "pending-requisitions.xlsx");
+    // Add data rows
+    requisitions.forEach((req) => {
+      const employeeName = req.employee ? 
+        `${req.employee.firstName || ''} ${req.employee.lastName || ''}`.trim() : 
+        'N/A';
+      
+      worksheet.addRow({
+        itemName: req.itemName || '',
+        quantity: req.quantity || 0,
+        budgetCode: req.budgetCode || '',
+        urgency: req.urgency || 'medium',
+        employeeName: employeeName,
+        employeeEmail: req.employee?.email || '',
+        description: req.description || '',
+        submittedDate: req.createdAt ? new Date(req.createdAt).toISOString().split('T')[0] : '',
+        department: req.department || '',
+        projectCode: req.projectCode || '',
+        estimatedCost: req.estimatedCost || 0,
+        status: 'Pending Review',
+        justification: req.justification || '',
+        requiredBy: req.requiredBy ? new Date(req.requiredBy).toISOString().split('T')[0] : '',
+        location: req.location || ''
+      });
+    });
+
+    // Format number columns
+    const numberColumns = ['quantity', 'estimatedCost'];
+    numberColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = '#,##0';
+    });
+
+    // Format date columns
+    const dateColumns = ['submittedDate', 'requiredBy'];
+    dateColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = 'yyyy-mm-dd';
+    });
+
+    // Style urgency column with colors
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header
+        const urgencyCell = row.getCell('urgency');
+        const urgency = urgencyCell.value?.toString().toLowerCase();
+        
+        if (urgency === 'high') {
+          urgencyCell.font = { color: { argb: 'FFEF4444' }, bold: true }; // Red
+        } else if (urgency === 'medium') {
+          urgencyCell.font = { color: { argb: 'FFF59E0B' }, bold: true }; // Orange
+        } else if (urgency === 'low') {
+          urgencyCell.font = { color: { argb: 'FF10B981' }, bold: true }; // Green
+        }
+      }
+    });
+
+    // Style estimated cost column
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        const costCell = row.getCell('estimatedCost');
+        const cost = Number(costCell.value) || 0;
+        if (cost > 10000) {
+          costCell.font = { bold: true, color: { argb: 'FFEF4444' } }; // Red for high costs
+        } else if (cost > 5000) {
+          costCell.font = { bold: true, color: { argb: 'FFF59E0B' } }; // Orange for medium costs
+        }
+      }
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const cellLength = cell.value ? cell.value.toString().length : 0;
+        if (cellLength > maxLength) {
+          maxLength = cellLength;
+        }
+      });
+      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+    });
+
+    // Add summary statistics
+    const lastRow = worksheet.rowCount;
+    worksheet.addRow([]); // Empty row
+    
+    const summaryRow = worksheet.addRow({
+      itemName: 'SUMMARY STATISTICS',
+      quantity: '',
+      budgetCode: '',
+      urgency: '',
+      employeeName: '',
+      employeeEmail: '',
+      description: '',
+      submittedDate: '',
+      department: '',
+      projectCode: '',
+      estimatedCost: requisitions.reduce((sum, req) => sum + (req.estimatedCost || 0), 0),
+      status: '',
+      justification: '',
+      requiredBy: '',
+      location: ''
+    });
+
+    // Style summary row
+    summaryRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summaryRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF059669' } // Emerald green
+    };
+
+    // Add urgency breakdown
+    const urgencyCounts = {};
+    requisitions.forEach(req => {
+      urgencyCounts[req.urgency] = (urgencyCounts[req.urgency] || 0) + 1;
+    });
+
+    Object.entries(urgencyCounts).forEach(([urgency, count]) => {
+      const urgencyRow = worksheet.addRow({
+        itemName: `Urgency: ${urgency}`,
+        quantity: '',
+        budgetCode: '',
+        urgency: count,
+        employeeName: '',
+        employeeEmail: '',
+        description: '',
+        submittedDate: '',
+        department: '',
+        projectCode: '',
+        estimatedCost: '',
+        status: '',
+        justification: '',
+        requiredBy: '',
+        location: ''
+      });
+      
+      urgencyRow.getCell('itemName').font = { italic: true };
+    });
+
+    // Add department breakdown
+    const departmentCounts = {};
+    requisitions.forEach(req => {
+      const dept = req.department || 'No Department';
+      departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
+    });
+
+    worksheet.addRow([]); // Empty row
+    worksheet.addRow({
+      itemName: 'DEPARTMENT BREAKDOWN',
+      quantity: '',
+      budgetCode: '',
+      urgency: '',
+      employeeName: '',
+      employeeEmail: '',
+      description: '',
+      submittedDate: '',
+      department: '',
+      projectCode: '',
+      estimatedCost: '',
+      status: '',
+      justification: '',
+      requiredBy: '',
+      location: ''
+    });
+
+    Object.entries(departmentCounts).forEach(([dept, count]) => {
+      worksheet.addRow({
+        itemName: dept,
+        quantity: '',
+        budgetCode: '',
+        urgency: count,
+        employeeName: '',
+        employeeEmail: '',
+        description: '',
+        submittedDate: '',
+        department: '',
+        projectCode: '',
+        estimatedCost: '',
+        status: '',
+        justification: '',
+        requiredBy: '',
+        location: ''
+      });
+    });
+
+    // Add financial summary
+    worksheet.addRow([]); // Empty row
+    worksheet.addRow({
+      itemName: 'FINANCIAL SUMMARY',
+      quantity: '',
+      budgetCode: '',
+      urgency: '',
+      employeeName: '',
+      employeeEmail: '',
+      description: '',
+      submittedDate: '',
+      department: '',
+      projectCode: '',
+      estimatedCost: '',
+      status: '',
+      justification: '',
+      requiredBy: '',
+      location: ''
+    });
+
+    const totalEstimatedCost = requisitions.reduce((sum, req) => sum + (req.estimatedCost || 0), 0);
+    const avgCostPerRequisition = requisitions.length > 0 ? (totalEstimatedCost / requisitions.length).toFixed(2) : 0;
+    const highCostRequisitions = requisitions.filter(req => (req.estimatedCost || 0) > 10000).length;
+
+    const financialStats = [
+      { label: 'Total Estimated Cost', value: totalEstimatedCost },
+      { label: 'Average Cost per Requisition', value: avgCostPerRequisition },
+      { label: 'High Cost Items (> $10,000)', value: highCostRequisitions },
+      { label: 'Total Items Requested', value: requisitions.reduce((sum, req) => sum + (req.quantity || 0), 0) }
+    ];
+
+    financialStats.forEach(stat => {
+      worksheet.addRow({
+        itemName: stat.label,
+        quantity: '',
+        budgetCode: '',
+        urgency: '',
+        employeeName: '',
+        employeeEmail: '',
+        description: '',
+        submittedDate: '',
+        department: '',
+        projectCode: '',
+        estimatedCost: stat.value,
+        status: '',
+        justification: '',
+        requiredBy: '',
+        location: ''
+      });
+    });
+
+    // Generate buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const today = new Date().toISOString().split('T')[0];
+    link.download = `pending-requisitions-report-${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
     showNotificationMessage("Export successful!", "success");
-  };
+  } catch (error) {
+    console.error('Export error:', error);
+    showNotificationMessage("Export failed!", "error");
+  }
+};
 
   // Import from Excel
   const handleImportFromExcel = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const file = event.target.files[0];
+  if (!file) return;
 
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+  try {
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
-      const token = localStorage.getItem("token");
+    const data = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(data);
+    
+    const worksheet = workbook.getWorksheet(1); // Get first sheet
+    if (!worksheet) {
+      throw new Error('No worksheet found in the Excel file');
+    }
 
-      for (const row of rows) {
+    const rows = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header row
+        const rowData = {
+          'Item Name': row.getCell(1).value,
+          'Quantity': row.getCell(2).value,
+          'Budget Code': row.getCell(3).value,
+          'Urgency': row.getCell(4).value,
+          'Employee Name': row.getCell(5).value,
+          'Employee Email': row.getCell(6).value,
+          'Description': row.getCell(7).value,
+          'Submitted Date': row.getCell(8).value,
+          'Department': row.getCell(9).value,
+          'Project Code': row.getCell(10).value,
+          'Estimated Cost': row.getCell(11).value,
+          'Status': row.getCell(12).value,
+          'Justification': row.getCell(13).value,
+          'Required By': row.getCell(14).value,
+          'Location': row.getCell(15).value
+        };
+        rows.push(rowData);
+      }
+    });
+
+    const token = localStorage.getItem("token");
+    const importResults = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Import each row
+    for (const row of rows) {
+      try {
+        // Note: This is a simplified import. In a real application, you would need to:
+        // 1. Look up employee by email to get employeeId
+        // 2. Validate budget codes
+        // 3. Check department validity
+        
         const payload = {
-          itemName: row["Item Name"] || "",
-          quantity: Number(row["Quantity"]) || 0,
-          budgetCode: row["Budget Code"] || "",
-          urgency: row["Urgency"]?.toLowerCase() || "medium",
-          description: row["Description"] || "",
-          department: row["Department"] || "",
-          projectCode: row["Project Code"] || "",
-          // Note: Employee information would typically be looked up by email
+          itemName: row['Item Name'] || '',
+          quantity: Number(row['Quantity']) || 0,
+          budgetCode: row['Budget Code'] || '',
+          urgency: (row['Urgency'] || 'medium').toLowerCase(),
+          description: row['Description'] || '',
+          department: row['Department'] || '',
+          projectCode: row['Project Code'] || '',
+          estimatedCost: Number(row['Estimated Cost']) || 0,
+          justification: row['Justification'] || '',
+          requiredBy: row['Required By'] ? new Date(row['Required By']).toISOString() : '',
+          location: row['Location'] || '',
+          // employeeId would need to be looked up from Employee Email
+          // For now, we'll set a placeholder or require it to be set manually
         };
 
-        // This is a simplified import - in production you'd need to handle employee mapping
-        await fetch(`${backendUrl}/api/requisitions`, {
+        // Validate required fields
+        if (!payload.itemName || !payload.quantity || !payload.budgetCode) {
+          throw new Error('Missing required fields (Item Name, Quantity, Budget Code)');
+        }
+
+        // Validate quantity
+        if (payload.quantity <= 0) {
+          throw new Error('Quantity must be greater than 0');
+        }
+
+        // Validate urgency
+        if (!['high', 'medium', 'low'].includes(payload.urgency)) {
+          throw new Error('Urgency must be high, medium, or low');
+        }
+
+        const response = await fetch(`${backendUrl}/api/requisitions`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -410,15 +741,50 @@ export default function ManageRequisitionsPage() {
           },
           body: JSON.stringify(payload),
         });
-      }
 
-      showNotificationMessage("Excel import completed successfully!", "success");
-      handleRefresh();
-    } catch (err) {
-      console.error(err);
-      showNotificationMessage("Excel import failed!", "error");
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}: ${row['Item Name']}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          importResults.success++;
+        } else {
+          throw new Error(result.message || 'Import failed');
+        }
+      } catch (err) {
+        importResults.failed++;
+        importResults.errors.push({
+          row: row['Item Name'] || 'Unknown requisition',
+          error: err.message
+        });
+        console.error(`Import error for row:`, row, err);
+      }
     }
-  };
+
+    if (importResults.success > 0) {
+      showNotificationMessage(
+        `Excel import completed! ${importResults.success} requisitions imported successfully, ${importResults.failed} failed.`,
+        importResults.failed === 0 ? "success" : "warning"
+      );
+      
+      if (importResults.failed > 0) {
+        console.warn('Import errors:', importResults.errors);
+      }
+      
+      handleRefresh();
+    } else {
+      showNotificationMessage(
+        `Import failed for all ${importResults.failed} requisitions.`,
+        "error"
+      );
+    }
+  } catch (err) {
+    console.error("Import error:", err);
+    showNotificationMessage(`Excel import failed: ${err.message}`, "error");
+  }
+};
 
   // Print functionality
   const handlePrint = () => {

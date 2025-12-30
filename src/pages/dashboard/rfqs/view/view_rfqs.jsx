@@ -61,7 +61,7 @@ import {
 import { motion } from "framer-motion";
 import { useAuth } from "../../../../authcontext/authcontext";
 import CreateRFQForm from "../create/create";
-import * as XLSX from "xlsx";
+import ExcelJS from 'exceljs';
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -832,68 +832,382 @@ export default function RFQsPage() {
   };
 
   // Excel Export Function
-  const handleExportToExcel = () => {
-    if (!rfqs || rfqs.length === 0) {
-      showNotificationMessage("No RFQs to export", "error");
-      return;
-    }
+ const handleExportToExcel = async () => {
+  if (!rfqs || rfqs.length === 0) {
+    showNotificationMessage("No RFQs to export", "error");
+    return;
+  }
 
-    const formatted = rfqs.map((rfq) => ({
-      'RFQ ID': `rfq-${rfq._id?.slice(-6) || rfq.id?.slice(-6) || 'N/A'}`,
-      'Item Name': rfq.itemName || "",
-      'Description': rfq.description || "",
-      'Quantity': rfq.quantity || 0,
-      'Status': rfq.status || "",
-      'Deadline': rfq.deadline ? new Date(rfq.deadline).toLocaleDateString() : "",
-      'Created': rfq.createdAt ? new Date(rfq.createdAt).toLocaleDateString() : "",
-      'Vendor Count': rfq.vendors?.length || 0,
-      'Quote Count': rfq.quotes?.length || 0,
-      'Selected Vendor': rfq.selectedVendor ? 
-        (typeof rfq.selectedVendor === 'object' 
-          ? (rfq.selectedVendor.email || `${rfq.selectedVendor.firstName || ''} ${rfq.selectedVendor.lastName || ''}`.trim())
-          : `Vendor ${rfq.selectedVendor.slice(-4)}`)
-        : "",
-      'Unit': rfq.unit || "",
-      'Priority': rfq.priority || "",
-      'Category': rfq.category || "",
-    }));
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('RFQs');
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+    // Define headers
+    worksheet.columns = [
+      { header: 'RFQ ID', key: 'rfqId', width: 15 },
+      { header: 'Item Name', key: 'itemName', width: 25 },
+      { header: 'Description', key: 'description', width: 30 },
+      { header: 'Quantity', key: 'quantity', width: 12 },
+      { header: 'Unit', key: 'unit', width: 10 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Priority', key: 'priority', width: 12 },
+      { header: 'Category', key: 'category', width: 15 },
+      { header: 'Created Date', key: 'createdDate', width: 12 },
+      { header: 'Deadline', key: 'deadline', width: 12 },
+      { header: 'Vendor Count', key: 'vendorCount', width: 12 },
+      { header: 'Quote Count', key: 'quoteCount', width: 12 },
+      { header: 'Selected Vendor', key: 'selectedVendor', width: 25 },
+      { header: 'Lowest Quote Price', key: 'lowestPrice', width: 15 },
+      { header: 'Delivery Time (Selected)', key: 'deliveryTime', width: 20 },
+      { header: 'Unit Price', key: 'unitPrice', width: 15 }
+    ];
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "RFQs");
+    // Style headers
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue color
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    XLSX.writeFile(workbook, "rfqs.xlsx");
+    // Helper function to find lowest quote price
+    const getLowestQuotePrice = (rfq) => {
+      if (!rfq.quotes || rfq.quotes.length === 0) return 0;
+      const validPrices = rfq.quotes.map(q => Number(q.price)).filter(price => !isNaN(price) && price > 0);
+      return validPrices.length > 0 ? Math.min(...validPrices) : 0;
+    };
+
+    // Helper function to get selected vendor info
+    const getSelectedVendorInfo = (rfq) => {
+      if (!rfq.selectedVendor) return '';
+      
+      if (typeof rfq.selectedVendor === 'object') {
+        return rfq.selectedVendor.email || 
+               `${rfq.selectedVendor.firstName || ''} ${rfq.selectedVendor.lastName || ''}`.trim() ||
+               'Vendor Selected';
+      }
+      
+      // If it's just a vendor ID, try to find vendor info
+      const vendorInfo = rfq.vendors?.find(v => 
+        (v._id || v.id || v) === rfq.selectedVendor || 
+        (typeof v === 'object' && (v._id || v.id) === rfq.selectedVendor)
+      );
+      
+      if (vendorInfo) {
+        return vendorInfo.name || 
+               `${vendorInfo.firstName || ''} ${vendorInfo.lastName || ''}`.trim() || 
+               vendorInfo.email || 
+               'Vendor Selected';
+      }
+      
+      return `Vendor ${rfq.selectedVendor.slice(-4)}`;
+    };
+
+    // Helper function to get selected quote delivery time
+    const getSelectedDeliveryTime = (rfq) => {
+      if (!rfq.selectedVendor || !rfq.quotes) return '';
+      const selectedQuote = rfq.quotes.find(q => q.vendor === rfq.selectedVendor);
+      return selectedQuote?.deliveryTime || '';
+    };
+
+    // Add data rows
+    rfqs.forEach((rfq, index) => {
+      const rfqId = `RFQ-${String(index + 1).padStart(3, '0')}`;
+      const lowestPrice = getLowestQuotePrice(rfq);
+      const selectedVendorInfo = getSelectedVendorInfo(rfq);
+      const deliveryTime = getSelectedDeliveryTime(rfq);
+      const unitPrice = rfq.quantity > 0 ? (lowestPrice / rfq.quantity).toFixed(2) : 0;
+
+      worksheet.addRow({
+        rfqId: rfqId,
+        itemName: rfq.itemName || '',
+        description: rfq.description || '',
+        quantity: rfq.quantity || 0,
+        unit: rfq.unit || 'pcs',
+        status: rfq.status || '',
+        priority: rfq.priority || 'medium',
+        category: rfq.category || 'General',
+        createdDate: rfq.createdAt ? new Date(rfq.createdAt).toISOString().split('T')[0] : '',
+        deadline: rfq.deadline ? new Date(rfq.deadline).toISOString().split('T')[0] : '',
+        vendorCount: rfq.vendors?.length || 0,
+        quoteCount: rfq.quotes?.length || 0,
+        selectedVendor: selectedVendorInfo,
+        lowestPrice: lowestPrice,
+        deliveryTime: deliveryTime,
+        unitPrice: unitPrice
+      });
+    });
+
+    // Format number columns
+    const numberColumns = ['quantity', 'lowestPrice', 'unitPrice'];
+    numberColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = '#,##0';
+    });
+
+    // Format date columns
+    const dateColumns = ['createdDate', 'deadline'];
+    dateColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = 'yyyy-mm-dd';
+    });
+
+    // Style status column with colors
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header
+        const statusCell = row.getCell('status');
+        const status = statusCell.value?.toString().toLowerCase();
+        
+        if (status === 'open') {
+          statusCell.font = { color: { argb: 'FF10B981' }, bold: true }; // Green
+        } else if (status === 'closed') {
+          statusCell.font = { color: { argb: 'FF3B82F6' }, bold: true }; // Blue
+        } else if (status === 'pending') {
+          statusCell.font = { color: { argb: 'FFF59E0B' }, bold: true }; // Orange
+        }
+      }
+    });
+
+    // Style priority column
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) {
+        const priorityCell = row.getCell('priority');
+        const priority = priorityCell.value?.toString().toLowerCase();
+        
+        if (priority === 'high') {
+          priorityCell.font = { color: { argb: 'FFEF4444' }, bold: true }; // Red
+        } else if (priority === 'medium') {
+          priorityCell.font = { color: { argb: 'FFF59E0B' }, bold: true }; // Orange
+        } else if (priority === 'low') {
+          priorityCell.font = { color: { argb: 'FF10B981' }, bold: true }; // Green
+        }
+      }
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const cellLength = cell.value ? cell.value.toString().length : 0;
+        if (cellLength > maxLength) {
+          maxLength = cellLength;
+        }
+      });
+      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+    });
+
+    // Add summary statistics
+    const lastRow = worksheet.rowCount;
+    worksheet.addRow([]); // Empty row
+    
+    const summaryRow = worksheet.addRow({
+      rfqId: 'RFQ SUMMARY STATISTICS',
+      itemName: '',
+      description: '',
+      quantity: '',
+      unit: '',
+      status: '',
+      priority: '',
+      category: '',
+      createdDate: '',
+      deadline: '',
+      vendorCount: '',
+      quoteCount: '',
+      selectedVendor: '',
+      lowestPrice: '',
+      deliveryTime: '',
+      unitPrice: ''
+    });
+
+    // Style summary row
+    summaryRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summaryRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF059669' } // Emerald green
+    };
+
+    // Add status summary
+    const statusCounts = {};
+    rfqs.forEach(rfq => {
+      statusCounts[rfq.status] = (statusCounts[rfq.status] || 0) + 1;
+    });
+
+    Object.entries(statusCounts).forEach(([status, count]) => {
+      const statusRow = worksheet.addRow({
+        rfqId: `Status: ${status}`,
+        itemName: '',
+        description: '',
+        quantity: '',
+        unit: '',
+        status: count,
+        priority: '',
+        category: '',
+        createdDate: '',
+        deadline: '',
+        vendorCount: '',
+        quoteCount: '',
+        selectedVendor: '',
+        lowestPrice: '',
+        deliveryTime: '',
+        unitPrice: ''
+      });
+      
+      statusRow.getCell('rfqId').font = { italic: true };
+    });
+
+    // Add quote statistics
+    worksheet.addRow([]); // Empty row
+    worksheet.addRow({
+      rfqId: 'QUOTE ANALYSIS',
+      itemName: '',
+      description: '',
+      quantity: '',
+      unit: '',
+      status: '',
+      priority: '',
+      category: '',
+      createdDate: '',
+      deadline: '',
+      vendorCount: '',
+      quoteCount: '',
+      selectedVendor: '',
+      lowestPrice: '',
+      deliveryTime: '',
+      unitPrice: ''
+    });
+
+    // Calculate quote statistics
+    const totalQuotes = rfqs.reduce((sum, rfq) => sum + (rfq.quotes?.length || 0), 0);
+    const avgQuotesPerRFQ = rfqs.length > 0 ? (totalQuotes / rfqs.length).toFixed(1) : 0;
+    const rfqsWithQuotes = rfqs.filter(rfq => (rfq.quotes?.length || 0) > 0).length;
+    const rfqsWithSelectedVendor = rfqs.filter(rfq => rfq.selectedVendor).length;
+
+    const quoteStats = [
+      { label: 'Total Quotes Received', value: totalQuotes },
+      { label: 'Avg Quotes per RFQ', value: avgQuotesPerRFQ },
+      { label: 'RFQs with Quotes', value: rfqsWithQuotes },
+      { label: 'RFQs with Selected Vendor', value: rfqsWithSelectedVendor }
+    ];
+
+    quoteStats.forEach(stat => {
+      worksheet.addRow({
+        rfqId: stat.label,
+        itemName: '',
+        description: '',
+        quantity: '',
+        unit: '',
+        status: '',
+        priority: '',
+        category: '',
+        createdDate: '',
+        deadline: '',
+        vendorCount: '',
+        quoteCount: stat.value,
+        selectedVendor: '',
+        lowestPrice: '',
+        deliveryTime: '',
+        unitPrice: ''
+      });
+    });
+
+    // Generate buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const today = new Date().toISOString().split('T')[0];
+    link.download = `rfqs-report-${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
     showNotificationMessage("Export successful!", "success");
-  };
+  } catch (error) {
+    console.error('Export error:', error);
+    showNotificationMessage("Export failed!", "error");
+  }
+};
 
   // Excel Import Function
   const handleImportFromExcel = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const file = event.target.files[0];
+  if (!file) return;
 
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+  try {
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
-      const token = localStorage.getItem("token");
+    const data = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(data);
+    
+    const worksheet = workbook.getWorksheet(1); // Get first sheet
+    if (!worksheet) {
+      throw new Error('No worksheet found in the Excel file');
+    }
 
-      for (const row of rows) {
+    const rows = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header row
+        const rowData = {
+          'Item Name': row.getCell(2).value,
+          'Description': row.getCell(3).value,
+          'Quantity': row.getCell(4).value,
+          'Unit': row.getCell(5).value,
+          'Status': row.getCell(6).value,
+          'Priority': row.getCell(7).value,
+          'Category': row.getCell(8).value,
+          'Deadline': row.getCell(10).value,
+          'Vendor Count': row.getCell(11).value,
+          'Quote Count': row.getCell(12).value
+        };
+        rows.push(rowData);
+      }
+    });
+
+    const token = localStorage.getItem("token");
+    const importResults = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Import each row
+    for (const row of rows) {
+      try {
         const payload = {
-          itemName: row['Item Name'] || "",
-          description: row['Description'] || "",
+          itemName: row['Item Name'] || '',
+          description: row['Description'] || '',
           quantity: Number(row['Quantity']) || 0,
-          status: row['Status'] || "open",
+          unit: row['Unit'] || 'pcs',
+          status: row['Status'] || 'open',
+          priority: row['Priority'] || 'medium',
+          category: row['Category'] || 'General',
           deadline: row['Deadline'] ? new Date(row['Deadline']).toISOString() : new Date().toISOString(),
-          unit: row['Unit'] || "pcs",
-          priority: row['Priority'] || "medium",
-          category: row['Category'] || "General",
+          // Note: vendorCount and quoteCount are read-only statistics, not input fields
         };
 
-        await fetch(`${backendUrl}/api/rfqs`, {
+        // Validate required fields
+        if (!payload.itemName || !payload.quantity) {
+          throw new Error('Missing required fields (Item Name, Quantity)');
+        }
+
+        // Validate quantity
+        if (payload.quantity <= 0) {
+          throw new Error('Quantity must be greater than 0');
+        }
+
+        const response = await fetch(`${backendUrl}/api/rfqs`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -901,15 +1215,50 @@ export default function RFQsPage() {
           },
           body: JSON.stringify(payload),
         });
-      }
 
-      showNotificationMessage("Excel import completed successfully!", "success");
-      handleRefresh();
-    } catch (err) {
-      console.error(err);
-      showNotificationMessage("Excel import failed!", "error");
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}: ${row['Item Name']}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          importResults.success++;
+        } else {
+          throw new Error(result.message || 'Import failed');
+        }
+      } catch (err) {
+        importResults.failed++;
+        importResults.errors.push({
+          row: row['Item Name'] || 'Unknown RFQ',
+          error: err.message
+        });
+        console.error(`Import error for row:`, row, err);
+      }
     }
-  };
+
+    if (importResults.success > 0) {
+      showNotificationMessage(
+        `Excel import completed! ${importResults.success} RFQs imported successfully, ${importResults.failed} failed.`,
+        importResults.failed === 0 ? "success" : "warning"
+      );
+      
+      if (importResults.failed > 0) {
+        console.warn('Import errors:', importResults.errors);
+      }
+      
+      handleRefresh();
+    } else {
+      showNotificationMessage(
+        `Import failed for all ${importResults.failed} RFQs.`,
+        "error"
+      );
+    }
+  } catch (err) {
+    console.error("Import error:", err);
+    showNotificationMessage(`Excel import failed: ${err.message}`, "error");
+  }
+};
 
   // Print Function
   const handlePrint = () => {
@@ -1305,36 +1654,143 @@ export default function RFQsPage() {
               </button>
 
               {/* Export to Excel option */}
-              <button
-                onClick={() => {
-                  const rfq = filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId);
-                  if (rfq) {
-                    // Export single RFQ
-                    const formatted = [{
-                      'RFQ ID': showMenuId,
-                      'Item Name': rfq.itemName || "",
-                      'Description': rfq.description || "",
-                      'Quantity': rfq.quantity || 0,
-                      'Status': rfq.status || "",
-                      'Deadline': rfq.deadline ? new Date(rfq.deadline).toLocaleDateString() : "",
-                      'Vendor Count': rfq.vendors?.length || 0,
-                      'Quote Count': rfq.quotes?.length || 0,
-                    }];
+<button
+  onClick={async () => {
+    const rfq = filteredRFQs.find((rfq, index) => `rfq-${String(index + 1).padStart(3, '0')}` === showMenuId);
+    if (rfq) {
+      try {
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('RFQ Details');
 
-                    const worksheet = XLSX.utils.json_to_sheet(formatted);
-                    const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, "RFQ Details");
-                    XLSX.writeFile(workbook, `${showMenuId}-details.xlsx`);
-                    
-                    showNotificationMessage(`${showMenuId} exported to Excel!`, "success");
-                    setShowMenuId(null);
-                  }
-                }}
-                className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
-              >
-                <Download size={16} className="text-gray-500" />
-                Export to Excel
-              </button>
+        // Define headers
+        worksheet.columns = [
+          { header: 'Field', key: 'field', width: 20 },
+          { header: 'Value', key: 'value', width: 30 }
+        ];
+
+        // Style headers
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF3B82F6' }
+        };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // Add RFQ details
+        const rfqDetails = [
+          { field: 'RFQ ID', value: showMenuId },
+          { field: 'Item Name', value: rfq.itemName || '' },
+          { field: 'Description', value: rfq.description || '' },
+          { field: 'Quantity', value: rfq.quantity || 0 },
+          { field: 'Unit', value: rfq.unit || 'pcs' },
+          { field: 'Status', value: rfq.status || '' },
+          { field: 'Priority', value: rfq.priority || 'medium' },
+          { field: 'Category', value: rfq.category || 'General' },
+          { field: 'Created Date', value: rfq.createdAt ? new Date(rfq.createdAt).toLocaleDateString() : '' },
+          { field: 'Deadline', value: rfq.deadline ? new Date(rfq.deadline).toLocaleDateString() : '' },
+          { field: 'Vendor Count', value: rfq.vendors?.length || 0 },
+          { field: 'Quote Count', value: rfq.quotes?.length || 0 }
+        ];
+
+        rfqDetails.forEach(detail => {
+          worksheet.addRow(detail);
+        });
+
+        // Add selected vendor if exists
+        if (rfq.selectedVendor) {
+          worksheet.addRow([]);
+          worksheet.addRow({ field: 'SELECTED VENDOR', value: '' });
+          
+          let vendorInfo = '';
+          if (typeof rfq.selectedVendor === 'object') {
+            vendorInfo = rfq.selectedVendor.email || 
+                        `${rfq.selectedVendor.firstName || ''} ${rfq.selectedVendor.lastName || ''}`.trim();
+          } else {
+            const vendor = rfq.vendors?.find(v => 
+              (v._id || v.id || v) === rfq.selectedVendor || 
+              (typeof v === 'object' && (v._id || v.id) === rfq.selectedVendor)
+            );
+            vendorInfo = vendor ? 
+              (vendor.email || `${vendor.firstName || ''} ${vendor.lastName || ''}`.trim()) : 
+              `Vendor ${rfq.selectedVendor.slice(-4)}`;
+          }
+          
+          worksheet.addRow({ field: 'Vendor Name', value: vendorInfo });
+          
+          // Add quote details for selected vendor
+          const selectedQuote = rfq.quotes?.find(q => q.vendor === rfq.selectedVendor);
+          if (selectedQuote) {
+            worksheet.addRow({ field: 'Quote Price', value: selectedQuote.price || 0 });
+            worksheet.addRow({ field: 'Delivery Time', value: selectedQuote.deliveryTime || '' });
+            worksheet.addRow({ field: 'Unit Price', value: rfq.quantity > 0 ? (Number(selectedQuote.price) / Number(rfq.quantity)).toFixed(2) : 0 });
+            if (selectedQuote.notes) {
+              worksheet.addRow({ field: 'Vendor Notes', value: selectedQuote.notes });
+            }
+          }
+        }
+
+        // Add quotes summary if available
+        if (rfq.quotes && rfq.quotes.length > 0) {
+          worksheet.addRow([]);
+          worksheet.addRow({ field: 'QUOTES SUMMARY', value: '' });
+          worksheet.addRow({ field: 'Total Quotes', value: rfq.quotes.length });
+          
+          // Calculate quote statistics
+          const validPrices = rfq.quotes.map(q => Number(q.price)).filter(price => !isNaN(price) && price > 0);
+          if (validPrices.length > 0) {
+            const lowestPrice = Math.min(...validPrices);
+            const highestPrice = Math.max(...validPrices);
+            const avgPrice = validPrices.reduce((sum, price) => sum + price, 0) / validPrices.length;
+            
+            worksheet.addRow({ field: 'Lowest Quote', value: lowestPrice });
+            worksheet.addRow({ field: 'Highest Quote', value: highestPrice });
+            worksheet.addRow({ field: 'Average Quote', value: avgPrice.toFixed(2) });
+            worksheet.addRow({ field: 'Price Range', value: (highestPrice - lowestPrice).toFixed(2) });
+          }
+        }
+
+        // Auto-fit columns
+        worksheet.columns.forEach(column => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, (cell) => {
+            const cellLength = cell.value ? cell.value.toString().length : 0;
+            if (cellLength > maxLength) {
+              maxLength = cellLength;
+            }
+          });
+          column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
+
+        // Generate buffer and download
+        const buffer = await workbook.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { 
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+        });
+        
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${showMenuId}-details.xlsx`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        showNotificationMessage(`${showMenuId} exported to Excel!`, "success");
+        setShowMenuId(null);
+      } catch (error) {
+        console.error('Export error:', error);
+        showNotificationMessage("Export failed!", "error");
+      }
+    }
+  }}
+  className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm"
+>
+  <Download size={16} className="text-gray-500" />
+  Export to Excel
+</button>
               
               <button
                 onClick={() => {

@@ -31,7 +31,7 @@ import {
   Upload
 } from "lucide-react"
 import { motion } from "framer-motion"
-import * as XLSX from "xlsx"
+import ExcelJS from 'exceljs';
 
 const backendUrl = import.meta.env.VITE_ENV === 'production'
     ? import.meta.env.VITE_BACKEND_URL_PROD
@@ -891,51 +891,233 @@ export default function TendersPage() {
   }
 
   // Excel Export Function
-  const handleExportToExcel = () => {
-    if (!tenders || tenders.length === 0) {
-      showNotificationMessage("No tenders to export", "error");
-      return;
-    }
+  const handleExportToExcel = async () => {
+  if (!tenders || tenders.length === 0) {
+    showNotificationMessage("No tenders to export", "error");
+    return;
+  }
 
-    const formatted = tenders.map((tender) => ({
-      Title: tender.title,
-      Description: tender.description,
-      Company: tender.company?.name || "",
-      Budget: tender.budget,
-      Category: tender.category,
-      Location: tender.location,
-      Urgency: tender.urgency,
-      Status: tender.status,
-      Deadline: tender.deadline ? new Date(tender.deadline).toLocaleDateString() : "",
-      ContactEmail: tender.contactEmail,
-      Requirements: tender.requirements?.join(", ") || "",
-      Created: tender.createdAt ? new Date(tender.createdAt).toLocaleDateString() : "",
-    }));
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Tenders');
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+    // Define headers
+    worksheet.columns = [
+      { header: 'Title', key: 'title', width: 30 },
+      { header: 'Description', key: 'description', width: 40 },
+      { header: 'Company', key: 'company', width: 25 },
+      { header: 'Budget (USD)', key: 'budget', width: 15 },
+      { header: 'Category', key: 'category', width: 20 },
+      { header: 'Location', key: 'location', width: 20 },
+      { header: 'Urgency', key: 'urgency', width: 12 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Deadline', key: 'deadline', width: 15 },
+      { header: 'Contact Email', key: 'contactEmail', width: 25 },
+      { header: 'Requirements', key: 'requirements', width: 30 },
+      { header: 'Created Date', key: 'createdAt', width: 15 },
+      { header: 'Bid Count', key: 'bidCount', width: 12 }
+    ];
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Tenders");
+    // Style headers
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue color
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    XLSX.writeFile(workbook, "tenders.xlsx");
+    // Add data rows
+    tenders.forEach((tender) => {
+      worksheet.addRow({
+        title: tender.title || "N/A",
+        description: tender.description || "N/A",
+        company: tender.company?.name || "N/A",
+        budget: tender.budget || 0,
+        category: tender.category || "N/A",
+        location: tender.location || "N/A",
+        urgency: tender.urgency || "medium",
+        status: tender.status || "open",
+        deadline: tender.deadline ? formatDateForExport(tender.deadline) : "N/A",
+        contactEmail: tender.contactEmail || "N/A",
+        requirements: tender.requirements?.join(", ") || "N/A",
+        createdAt: tender.createdAt ? formatDateForExport(tender.createdAt) : "N/A",
+        bidCount: bidCounts[tender._id] || 0
+      });
+    });
+
+    // Format currency column
+    const budgetColumn = worksheet.getColumn('budget');
+    budgetColumn.numFmt = '"$"#,##0';
+
+    // Format date columns
+    const dateColumns = ['deadline', 'createdAt'];
+    dateColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = 'yyyy-mm-dd';
+    });
+
+    // Style urgency column
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header
+        const urgencyCell = row.getCell('urgency');
+        const urgency = urgencyCell.value?.toString().toLowerCase();
+        
+        if (urgency === 'high') {
+          urgencyCell.font = { color: { argb: 'FFFF0000' }, bold: true }; // Red
+        } else if (urgency === 'medium') {
+          urgencyCell.font = { color: { argb: 'FFFF9900' }, bold: true }; // Orange
+        } else if (urgency === 'low') {
+          urgencyCell.font = { color: { argb: 'FF00CC00' }, bold: true }; // Green
+        }
+      }
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const cellLength = cell.value ? cell.value.toString().length : 0;
+        if (cellLength > maxLength) {
+          maxLength = cellLength;
+        }
+      });
+      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+    });
+
+    // Add summary statistics
+    const lastRow = worksheet.rowCount;
+    worksheet.addRow([]); // Empty row
+    
+    const summaryRow = worksheet.addRow({
+      title: 'SUMMARY STATISTICS',
+      description: '',
+      company: '',
+      budget: tenders.reduce((sum, t) => sum + (t.budget || 0), 0),
+      category: '',
+      location: '',
+      urgency: '',
+      status: '',
+      deadline: '',
+      contactEmail: '',
+      requirements: '',
+      createdAt: '',
+      bidCount: Object.values(bidCounts).reduce((sum, count) => sum + count, 0)
+    });
+
+    // Style summary row
+    summaryRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summaryRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF10B981' } // Green
+    };
+
+    // Add status summary
+    const statusCounts = {};
+    tenders.forEach(t => {
+      statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
+    });
+
+    Object.entries(statusCounts).forEach(([status, count], index) => {
+      const statusRow = worksheet.addRow({
+        title: `Status: ${status}`,
+        description: '',
+        company: '',
+        budget: '',
+        category: '',
+        location: '',
+        urgency: '',
+        status: count,
+        deadline: '',
+        contactEmail: '',
+        requirements: '',
+        createdAt: '',
+        bidCount: ''
+      });
+      
+      statusRow.getCell('title').font = { italic: true };
+    });
+
+    // Generate buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `tenders-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
     showNotificationMessage("Export successful!", "success");
-  };
+  } catch (error) {
+    console.error('Export error:', error);
+    showNotificationMessage("Export failed!", "error");
+  }
+};
+
+// Helper function for date formatting in Excel
+const formatDateForExport = (dateString) => {
+  return new Date(dateString).toISOString().split('T')[0]; // YYYY-MM-DD format
+};
 
   // Excel Import Function
   const handleImportFromExcel = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const file = event.target.files[0];
+  if (!file) return;
 
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+  try {
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
-      const token = localStorage.getItem("token");
+    const data = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(data);
+    
+    const worksheet = workbook.getWorksheet(1); // Get first sheet
+    if (!worksheet) {
+      throw new Error('No worksheet found in the Excel file');
+    }
 
-      for (const row of rows) {
+    const rows = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header row
+        const rowData = {
+          Title: row.getCell(1).value,
+          Description: row.getCell(2).value,
+          Company: row.getCell(3).value,
+          Budget: row.getCell(4).value,
+          Category: row.getCell(5).value,
+          Location: row.getCell(6).value,
+          Urgency: row.getCell(7).value,
+          Status: row.getCell(8).value,
+          Deadline: row.getCell(9).value,
+          ContactEmail: row.getCell(10).value,
+          Requirements: row.getCell(11).value,
+          Created: row.getCell(12).value
+        };
+        rows.push(rowData);
+      }
+    });
+
+    const token = localStorage.getItem("token");
+    const importResults = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Import each row
+    for (const row of rows) {
+      try {
         const payload = {
           title: row.Title || "",
           description: row.Description || "",
@@ -949,7 +1131,7 @@ export default function TendersPage() {
           requirements: row.Requirements ? row.Requirements.split(",").map((r) => r.trim()) : [],
         };
 
-        await fetch(`${backendUrl}/api/tenders`, {
+        const response = await fetch(`${backendUrl}/api/tenders`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -957,58 +1139,298 @@ export default function TendersPage() {
           },
           body: JSON.stringify(payload),
         });
-      }
 
-      showNotificationMessage("Excel import completed successfully!", "success");
-      handleRefresh();
-    } catch (err) {
-      console.error(err);
-      showNotificationMessage("Excel import failed!", "error");
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${row.Title || 'Unknown tender'}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          importResults.success++;
+        } else {
+          throw new Error(result.message || 'Import failed');
+        }
+      } catch (err) {
+        importResults.failed++;
+        importResults.errors.push({
+          row: row.Title || 'Unknown',
+          error: err.message
+        });
+        console.error(`Import error for row:`, row, err);
+      }
     }
-  };
+
+    if (importResults.success > 0) {
+      showNotificationMessage(
+        `Excel import completed! ${importResults.success} successful, ${importResults.failed} failed.`,
+        importResults.failed === 0 ? "success" : "warning"
+      );
+      
+      if (importResults.failed > 0) {
+        console.warn('Import errors:', importResults.errors);
+      }
+      
+      handleRefresh();
+    } else {
+      showNotificationMessage(
+        `Import failed for all ${importResults.failed} items.`,
+        "error"
+      );
+    }
+  } catch (err) {
+    console.error("Import error:", err);
+    showNotificationMessage(`Excel import failed: ${err.message}`, "error");
+  }
+};
 
   // Print Function
   const handlePrint = () => {
-    const printContents = document.getElementById("tenders-section")?.innerHTML;
-    if (!printContents) {
-      showNotificationMessage("Nothing to print", "error");
-      return;
-    }
+  if (filteredTenders.length === 0) {
+    showNotificationMessage("Nothing to print", "error");
+    return;
+  }
 
-    const printWindow = window.open("", "_blank", "width=900,height=700");
+  const printWindow = window.open("", "_blank", "width=1000,height=700");
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Tenders Print</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { text-align: center; margin-bottom: 20px; }
-            .tenders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
-            .tender-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-            .tender-card h3 { margin: 0 0 10px 0; color: #333; }
-            .tender-card p { margin: 5px 0; color: #666; font-size: 14px; }
-            .status { display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; }
-            .open { background-color: #d1fae5; color: #065f46; }
-            .closed { background-color: #fee2e2; color: #991b1b; }
-            .under_review { background-color: #fef3c7; color: #92400e; }
-            .awarded { background-color: #dbeafe; color: #1e40af; }
-          </style>
-        </head>
-        <body>
-          <h1>Tenders List</h1>
-          <div class="tenders-grid">
-            ${printContents}
-          </div>
-        </body>
-      </html>
-    `);
+  // Calculate statistics for print
+  const totalValue = filteredTenders.reduce((sum, tender) => sum + (tender.budget || 0), 0);
+  const avgBudget = filteredTenders.length > 0 ? totalValue / filteredTenders.length : 0;
+  const openTenders = filteredTenders.filter(t => t.status === 'open').length;
+  const statusCounts = {};
+  filteredTenders.forEach(t => {
+    statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
+  });
 
-    printWindow.document.close();
-    printWindow.focus();
-
-    printWindow.print();
+  const formatDateForPrint = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
   };
+
+  const formatCurrencyForPrint = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Tenders Report - ${new Date().toLocaleDateString()}</title>
+        <style>
+          body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            padding: 30px; 
+            color: #333;
+            line-height: 1.4;
+          }
+          
+          .print-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+            padding-bottom: 15px;
+            border-bottom: 2px solid #3B82F6;
+          }
+          
+          h1 { 
+            color: #1F2937; 
+            margin: 0;
+            font-size: 28px;
+          }
+          
+          .report-info {
+            text-align: right;
+            font-size: 14px;
+            color: #6B7280;
+          }
+          
+          .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+          }
+          
+          .stat-card {
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+          }
+          
+          .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 8px 0;
+          }
+          
+          .stat-title {
+            font-size: 14px;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          .tender-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            font-size: 13px;
+          }
+          
+          .tender-table th {
+            background: #3B82F6;
+            color: white;
+            text-align: left;
+            padding: 12px 15px;
+            font-weight: 600;
+            border: none;
+          }
+          
+          .tender-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #E5E7EB;
+          }
+          
+          .tender-table tr:hover {
+            background: #F9FAFB;
+          }
+          
+          .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+          }
+          
+          .status-open { background: #D1FAE5; color: #065F46; }
+          .status-closed { background: #FEE2E2; color: #991B1B; }
+          .status-under_review { background: #FEF3C7; color: #92400E; }
+          .status-awarded { background: #DBEAFE; color: #1E40AF; }
+          
+          .urgency-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+          }
+          
+          .urgency-high { background: #EF4444; }
+          .urgency-medium { background: #F59E0B; }
+          .urgency-low { background: #10B981; }
+          
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+            color: #6B7280;
+            font-size: 12px;
+          }
+          
+          @media print {
+            @page { margin: 20mm; }
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-header">
+          <h1>Tenders Report</h1>
+          <div class="report-info">
+            Generated: ${new Date().toLocaleString()}<br>
+            User: Tender Manager<br>
+            Page: 1 of 1
+          </div>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value">${filteredTenders.length}</div>
+            <div class="stat-title">Total Tenders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${openTenders}</div>
+            <div class="stat-title">Open Tenders</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${formatCurrencyForPrint(totalValue)}</div>
+            <div class="stat-title">Total Value</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${formatCurrencyForPrint(avgBudget)}</div>
+            <div class="stat-title">Avg. Budget</div>
+          </div>
+        </div>
+        
+        <h2>Tender List (${filteredTenders.length} items)</h2>
+        
+        <table class="tender-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Budget</th>
+              <th>Deadline</th>
+              <th>Status</th>
+              <th>Urgency</th>
+              <th>Bids</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredTenders.map(tender => `
+              <tr>
+                <td style="font-weight: 500;">${tender.title || 'N/A'}</td>
+                <td>${tender.category || 'N/A'}</td>
+                <td style="font-weight: 600;">${formatCurrencyForPrint(tender.budget || 0)}</td>
+                <td>${formatDateForPrint(tender.deadline)}</td>
+                <td>
+                  <span class="status-badge status-${tender.status}">
+                    ${tender.status.replace('_', ' ')}
+                  </span>
+                </td>
+                <td>
+                  <span class="urgency-indicator urgency-${tender.urgency || 'medium'}"></span>
+                  ${tender.urgency || 'medium'}
+                </td>
+                <td style="text-align: center;">${bidCounts[tender._id] || 0}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p><strong>Status Summary:</strong> ${Object.entries(statusCounts).map(([status, count]) => 
+            `${status.replace('_', ' ')}: ${count}`).join(', ')}</p>
+          <p>Report generated by Tender Management System &copy; ${new Date().getFullYear()}</p>
+        </div>
+        
+        <script>
+          // Auto-print and close
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => window.close(), 500);
+          }, 300);
+        </script>
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+};
 
   // Handle Delete Tender
   const handleDeleteTender = async (tenderId) => {

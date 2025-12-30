@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
-import * as XLSX from "xlsx"; // Add this import
+import ExcelJS from 'exceljs';
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -359,62 +359,302 @@ export default function EmployeesPage() {
   };
 
   // Excel Export Functionality
-  const handleExportToExcel = () => {
-    if (!employees || employees.length === 0) {
-      showNotificationMessage("No employees to export", "error");
-      return;
-    }
+ const handleExportToExcel = async () => {
+  if (!employees || employees.length === 0) {
+    showNotificationMessage("No employees to export", "error");
+    return;
+  }
 
-    const formatted = employees.map((emp) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Employees');
+
+    // Define headers
+    worksheet.columns = [
+      { header: 'Employee ID', key: 'employeeId', width: 15 },
+      { header: 'First Name', key: 'firstName', width: 15 },
+      { header: 'Last Name', key: 'lastName', width: 15 },
+      { header: 'Full Name', key: 'fullName', width: 20 },
+      { header: 'Email', key: 'email', width: 25 },
+      { header: 'Phone', key: 'phone', width: 15 },
+      { header: 'Position', key: 'position', width: 20 },
+      { header: 'Department', key: 'department', width: 20 },
+      { header: 'Department Code', key: 'departmentCode', width: 15 },
+      { header: 'Salary (USD)', key: 'salary', width: 15 },
+      { header: 'Hire Date', key: 'hireDate', width: 12 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Address', key: 'address', width: 25 },
+      { header: 'Emergency Contact', key: 'emergencyContact', width: 20 },
+      { header: 'Skills', key: 'skills', width: 30 },
+      { header: 'Years of Service', key: 'yearsOfService', width: 12 }
+    ];
+
+    // Style headers
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue color
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    // Add data rows
+    employees.forEach((emp) => {
       const employeeId = emp._id || emp.id || emp.employeeId;
       const employeeDepartment = findEmployeeDepartment(employeeId);
-      
-      return {
-        "Employee ID": employeeId || "N/A",
-        "First Name": emp.firstName || "",
-        "Last Name": emp.lastName || "",
-        "Full Name": `${emp.firstName || ""} ${emp.lastName || ""}`.trim(),
-        "Email": emp.email || "",
-        "Phone": emp.phoneNumber || emp.phone || "",
-        "Position": emp.position || "",
-        "Department": employeeDepartment ? employeeDepartment.name : "",
-        "Department Code": employeeDepartment ? employeeDepartment.departmentCode : "",
-        "Salary": emp.salary || 0,
-        "Hire Date": emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : "",
-        "Status": emp.status || "",
-        "Address": emp.address || "",
-        "Emergency Contact": emp.emergencyContact || "",
-        "Skills": emp.skills ? emp.skills.join(", ") : "",
-        "Years of Service": emp.hireDate 
-          ? Math.floor((new Date() - new Date(emp.hireDate)) / (1000 * 60 * 60 * 24 * 365))
-          : 0
-      };
+      const hireDate = emp.hireDate ? new Date(emp.hireDate) : null;
+      const yearsOfService = hireDate 
+        ? Math.floor((new Date() - hireDate) / (1000 * 60 * 60 * 24 * 365))
+        : 0;
+
+      worksheet.addRow({
+        employeeId: employeeId || "N/A",
+        firstName: emp.firstName || "",
+        lastName: emp.lastName || "",
+        fullName: `${emp.firstName || ""} ${emp.lastName || ""}`.trim(),
+        email: emp.email || "",
+        phone: emp.phoneNumber || emp.phone || "",
+        position: emp.position || "",
+        department: employeeDepartment ? employeeDepartment.name : "",
+        departmentCode: employeeDepartment ? employeeDepartment.departmentCode : "",
+        salary: emp.salary || 0,
+        hireDate: hireDate ? hireDate.toISOString().split('T')[0] : "",
+        status: emp.status || "",
+        address: emp.address || "",
+        emergencyContact: emp.emergencyContact || "",
+        skills: emp.skills ? emp.skills.join(", ") : "",
+        yearsOfService: yearsOfService
+      });
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+    // Format currency column
+    const salaryColumn = worksheet.getColumn('salary');
+    salaryColumn.numFmt = '"$"#,##0';
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Employees");
+    // Format date columns
+    const dateColumns = ['hireDate'];
+    dateColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = 'yyyy-mm-dd';
+    });
 
-    XLSX.writeFile(workbook, "employees.xlsx");
+    // Style status column
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header
+        const statusCell = row.getCell('status');
+        const status = statusCell.value?.toString().toLowerCase();
+        
+        if (status === 'active') {
+          statusCell.font = { color: { argb: 'FF10B981' }, bold: true }; // Green
+        } else if (status === 'on-leave') {
+          statusCell.font = { color: { argb: 'FFF59E0B' }, bold: true }; // Yellow
+        } else if (status === 'terminated') {
+          statusCell.font = { color: { argb: 'FFEF4444' }, bold: true }; // Red
+        }
+      }
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const cellLength = cell.value ? cell.value.toString().length : 0;
+        if (cellLength > maxLength) {
+          maxLength = cellLength;
+        }
+      });
+      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+    });
+
+    // Add summary statistics
+    const lastRow = worksheet.rowCount;
+    worksheet.addRow([]); // Empty row
+    
+    const summaryRow = worksheet.addRow({
+      employeeId: 'SUMMARY STATISTICS',
+      firstName: '',
+      lastName: '',
+      fullName: '',
+      email: '',
+      phone: '',
+      position: '',
+      department: '',
+      departmentCode: '',
+      salary: employees.reduce((sum, emp) => sum + (emp.salary || 0), 0),
+      hireDate: '',
+      status: '',
+      address: '',
+      emergencyContact: '',
+      skills: '',
+      yearsOfService: avgTenure
+    });
+
+    // Style summary row
+    summaryRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summaryRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF10B981' } // Green
+    };
+
+    // Add employee counts by status
+    const statusCounts = {};
+    employees.forEach(emp => {
+      statusCounts[emp.status] = (statusCounts[emp.status] || 0) + 1;
+    });
+
+    Object.entries(statusCounts).forEach(([status, count], index) => {
+      const statusRow = worksheet.addRow({
+        employeeId: `Status: ${status}`,
+        firstName: '',
+        lastName: '',
+        fullName: '',
+        email: '',
+        phone: '',
+        position: '',
+        department: '',
+        departmentCode: '',
+        salary: '',
+        hireDate: '',
+        status: count,
+        address: '',
+        emergencyContact: '',
+        skills: '',
+        yearsOfService: ''
+      });
+      
+      statusRow.getCell('employeeId').font = { italic: true };
+    });
+
+    // Add department summary
+    const departmentSummary = {};
+    employees.forEach(emp => {
+      const employeeId = emp._id || emp.id || emp.employeeId;
+      const department = findEmployeeDepartment(employeeId);
+      const deptName = department ? department.name : 'No Department';
+      departmentSummary[deptName] = (departmentSummary[deptName] || 0) + 1;
+    });
+
+    worksheet.addRow([]); // Empty row
+    worksheet.addRow({
+      employeeId: 'DEPARTMENT SUMMARY',
+      firstName: '',
+      lastName: '',
+      fullName: '',
+      email: '',
+      phone: '',
+      position: '',
+      department: '',
+      departmentCode: '',
+      salary: '',
+      hireDate: '',
+      status: '',
+      address: '',
+      emergencyContact: '',
+      skills: '',
+      yearsOfService: ''
+    });
+
+    Object.entries(departmentSummary).forEach(([dept, count]) => {
+      worksheet.addRow({
+        employeeId: dept,
+        firstName: '',
+        lastName: '',
+        fullName: '',
+        email: '',
+        phone: '',
+        position: '',
+        department: '',
+        departmentCode: '',
+        salary: '',
+        hireDate: '',
+        status: count,
+        address: '',
+        emergencyContact: '',
+        skills: '',
+        yearsOfService: ''
+      });
+    });
+
+    // Generate buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const today = new Date().toISOString().split('T')[0];
+    link.download = `employees-export-${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
     showNotificationMessage("Export successful!", "success");
-  };
+  } catch (error) {
+    console.error('Export error:', error);
+    showNotificationMessage("Export failed!", "error");
+  }
+};
 
   // Excel Import Functionality
   const handleImportFromExcel = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+  const file = event.target.files[0];
+  if (!file) return;
 
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+  try {
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
-      const token = localStorage.getItem("token");
+    const data = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(data);
+    
+    const worksheet = workbook.getWorksheet(1); // Get first sheet
+    if (!worksheet) {
+      throw new Error('No worksheet found in the Excel file');
+    }
 
-      for (const row of rows) {
+    const rows = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header row
+        const rowData = {
+          "Employee ID": row.getCell(1).value,
+          "First Name": row.getCell(2).value,
+          "Last Name": row.getCell(3).value,
+          "Full Name": row.getCell(4).value,
+          "Email": row.getCell(5).value,
+          "Phone": row.getCell(6).value,
+          "Position": row.getCell(7).value,
+          "Department": row.getCell(8).value,
+          "Department Code": row.getCell(9).value,
+          "Salary": row.getCell(10).value,
+          "Hire Date": row.getCell(11).value,
+          "Status": row.getCell(12).value,
+          "Address": row.getCell(13).value,
+          "Emergency Contact": row.getCell(14).value,
+          "Skills": row.getCell(15).value,
+          "Years of Service": row.getCell(16).value
+        };
+        rows.push(rowData);
+      }
+    });
+
+    const token = localStorage.getItem("token");
+    const importResults = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Import each row
+    for (const row of rows) {
+      try {
         // Find department by name or code
         let departmentId = "";
         if (row.Department || row["Department Code"]) {
@@ -443,7 +683,12 @@ export default function EmployeesPage() {
           workLocation: "office"
         };
 
-        await fetch(`${backendUrl}/api/auth/employees`, {
+        // Validate required fields
+        if (!payload.firstName || !payload.lastName || !payload.email) {
+          throw new Error('Missing required fields (First Name, Last Name, Email)');
+        }
+
+        const response = await fetch(`${backendUrl}/api/auth/employees`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
@@ -451,148 +696,434 @@ export default function EmployeesPage() {
           },
           body: JSON.stringify(payload),
         });
-      }
 
-      showNotificationMessage("Excel import completed successfully!", "success");
-      handleRefresh();
-    } catch (err) {
-      console.error(err);
-      showNotificationMessage("Excel import failed!", "error");
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}: ${row["First Name"]} ${row["Last Name"]}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+          importResults.success++;
+        } else {
+          throw new Error(result.message || 'Import failed');
+        }
+      } catch (err) {
+        importResults.failed++;
+        importResults.errors.push({
+          row: `${row["First Name"] || ''} ${row["Last Name"] || ''}`.trim() || 'Unknown',
+          error: err.message
+        });
+        console.error(`Import error for row:`, row, err);
+      }
     }
-  };
+
+    if (importResults.success > 0) {
+      showNotificationMessage(
+        `Excel import completed! ${importResults.success} employees imported successfully, ${importResults.failed} failed.`,
+        importResults.failed === 0 ? "success" : "warning"
+      );
+      
+      if (importResults.failed > 0) {
+        console.warn('Import errors:', importResults.errors);
+        // Optionally show detailed errors to user
+      }
+      
+      handleRefresh();
+    } else {
+      showNotificationMessage(
+        `Import failed for all ${importResults.failed} employees.`,
+        "error"
+      );
+    }
+  } catch (err) {
+    console.error("Import error:", err);
+    showNotificationMessage(`Excel import failed: ${err.message}`, "error");
+  }
+};
 
   // Print Functionality
-  const handlePrint = () => {
-    const printContents = document.getElementById("employees-section")?.innerHTML;
-    if (!printContents) {
-      showNotificationMessage("Nothing to print", "error");
-      return;
-    }
+ const handlePrint = () => {
+  if (filteredEmployees.length === 0) {
+    showNotificationMessage("Nothing to print", "error");
+    return;
+  }
 
-    const printWindow = window.open("", "_blank", "width=900,height=700");
+  const printWindow = window.open("", "_blank", "width=1100,height=700");
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Employees Print</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { text-align: center; margin-bottom: 20px; }
-            .print-grid { 
-              display: grid; 
-              grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-              gap: 15px; 
-              margin-top: 20px; 
-            }
-            .print-card { 
-              border: 1px solid #ddd; 
-              padding: 15px; 
-              border-radius: 10px; 
-              page-break-inside: avoid;
-            }
-            .print-header { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center; 
-              margin-bottom: 10px; 
-              border-bottom: 1px solid #eee; 
-              padding-bottom: 10px; 
-            }
-            .print-metrics { 
-              display: grid; 
-              grid-template-columns: repeat(4, 1fr); 
-              gap: 10px; 
-              margin-bottom: 20px; 
-            }
-            .print-metric { 
-              text-align: center; 
-              padding: 10px; 
-              border: 1px solid #ddd; 
-              border-radius: 8px; 
-            }
-            @media print {
-              body { padding: 0; }
-              .print-card { margin-bottom: 15px; }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Employee List</h1>
-          <div class="print-metrics">
-            <div class="print-metric">
-              <h3>Total Employees</h3>
-              <p>${totalEmployees}</p>
-            </div>
-            <div class="print-metric">
-              <h3>Active Employees</h3>
-              <p>${activeEmployees}</p>
-            </div>
-            <div class="print-metric">
-              <h3>Departments</h3>
-              <p>${totalDepartments}</p>
-            </div>
-            <div class="print-metric">
-              <h3>Avg Tenure</h3>
-              <p>${avgTenure} years</p>
-            </div>
-          </div>
-          <div class="print-grid">
-            ${filteredEmployees.map(emp => {
-              const employeeId = emp._id || emp.id || emp.employeeId;
-              const employeeDepartment = findEmployeeDepartment(employeeId);
-              return `
-                <div class="print-card">
-                  <div class="print-header">
-                    <div>
-                      <h3>${emp.firstName || ''} ${emp.lastName || ''}</h3>
-                      <p>${emp.position || 'N/A'}</p>
-                    </div>
-                    <span style="
-                      padding: 4px 8px; 
-                      border-radius: 12px; 
-                      font-size: 12px;
-                      ${emp.status === 'active' ? 'background-color: #d1fae5; color: #065f46;' : 
-                        emp.status === 'on-leave' ? 'background-color: #fef3c7; color: #92400e;' :
-                        'background-color: #fee2e2; color: #991b1b;'}
-                    ">
-                      ${emp.status}
-                    </span>
-                  </div>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0;">
-                    <div style="text-align: center; padding: 8px; background-color: #f9fafb; border-radius: 8px;">
-                      <strong>$${emp.salary ? emp.salary.toLocaleString() : 0}</strong>
-                      <p style="font-size: 12px; color: #6b7280;">Salary</p>
-                    </div>
-                    <div style="text-align: center; padding: 8px; background-color: #f9fafb; border-radius: 8px;">
-                      <strong>${emp.hireDate ? Math.floor((new Date() - new Date(emp.hireDate)) / (1000 * 60 * 60 * 24 * 365)) : 0}</strong>
-                      <p style="font-size: 12px; color: #6b7280;">Years</p>
-                    </div>
-                  </div>
-                  <div style="font-size: 13px;">
-                    <p><strong>Email:</strong> ${emp.email || 'N/A'}</p>
-                    <p><strong>Phone:</strong> ${emp.phoneNumber || emp.phone || 'N/A'}</p>
-                    <p><strong>Department:</strong> ${employeeDepartment ? employeeDepartment.departmentCode : 'N/A'}</p>
-                    <p><strong>Hired:</strong> ${emp.hireDate ? new Date(emp.hireDate).toLocaleDateString() : 'N/A'}</p>
-                    ${emp.skills && emp.skills.length > 0 ? `
-                      <p><strong>Skills:</strong> ${emp.skills.slice(0, 3).join(', ')}${emp.skills.length > 3 ? '...' : ''}</p>
-                    ` : ''}
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-          <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px;">
-            Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
-          </div>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-
-    printWindow.print();
+  // Format functions for print
+  const formatDateForPrint = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
   };
+
+  const formatCurrencyForPrint = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Calculate department stats
+  const departmentStats = {};
+  filteredEmployees.forEach(emp => {
+    const employeeId = emp._id || emp.id || emp.employeeId;
+    const department = findEmployeeDepartment(employeeId);
+    const deptName = department ? department.name : 'No Department';
+    departmentStats[deptName] = (departmentStats[deptName] || 0) + 1;
+  });
+
+  // Calculate salary stats
+  const totalSalary = filteredEmployees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
+  const avgSalary = filteredEmployees.length > 0 ? totalSalary / filteredEmployees.length : 0;
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Employee Directory - ${new Date().toLocaleDateString()}</title>
+        <style>
+          body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            padding: 30px; 
+            color: #1F2937;
+            line-height: 1.4;
+            background: #F9FAFB;
+          }
+          
+          .print-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }
+          
+          .print-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+            padding-bottom: 20px;
+            border-bottom: 2px solid #3B82F6;
+          }
+          
+          h1 { 
+            color: #1F2937; 
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+          }
+          
+          .company-info {
+            text-align: right;
+          }
+          
+          .company-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3B82F6;
+          }
+          
+          .report-date {
+            font-size: 14px;
+            color: #6B7280;
+            margin-top: 4px;
+          }
+          
+          .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 25px 0;
+          }
+          
+          .stat-card {
+            background: linear-gradient(135deg, #F9FAFB 0%, #F3F4F6 100%);
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.2s;
+          }
+          
+          .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+          }
+          
+          .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 8px 0;
+          }
+          
+          .stat-title {
+            font-size: 14px;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+          }
+          
+          .employee-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            font-size: 13px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          }
+          
+          .employee-table th {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            text-align: left;
+            padding: 14px 16px;
+            font-weight: 600;
+            font-size: 13px;
+          }
+          
+          .employee-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #E5E7EB;
+            vertical-align: middle;
+          }
+          
+          .employee-table tr:hover {
+            background: #F9FAFB;
+          }
+          
+          .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+            min-width: 80px;
+            text-align: center;
+          }
+          
+          .status-active { 
+            background: #D1FAE5; 
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+          }
+          
+          .status-on-leave { 
+            background: #FEF3C7; 
+            color: #92400E;
+            border: 1px solid #FDE68A;
+          }
+          
+          .status-terminated { 
+            background: #FEE2E2; 
+            color: #991B1B;
+            border: 1px solid #FECACA;
+          }
+          
+          .salary-cell {
+            font-weight: 600;
+            color: #059669;
+          }
+          
+          .department-cell {
+            font-weight: 500;
+            color: #4F46E5;
+          }
+          
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+            color: #6B7280;
+            font-size: 12px;
+          }
+          
+          .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 15px;
+          }
+          
+          .footer-section h4 {
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 13px;
+          }
+          
+          .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+          }
+          
+          .footer-section li {
+            margin-bottom: 4px;
+            font-size: 12px;
+          }
+          
+          @media print {
+            @page { margin: 15mm; }
+            body { 
+              background: white; 
+              padding: 0; 
+            }
+            .print-container {
+              box-shadow: none;
+              padding: 0;
+            }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-container">
+          <div class="print-header">
+            <div>
+              <h1>Employee Directory</h1>
+              <p style="color: #6B7280; margin-top: 4px;">Comprehensive employee listing</p>
+            </div>
+            <div class="company-info">
+              <div class="company-name">${user?.companyName || 'Your Company'}</div>
+              <div class="report-date">Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+            </div>
+          </div>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">${filteredEmployees.length}</div>
+              <div class="stat-title">Total Employees</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${activeEmployees}</div>
+              <div class="stat-title">Active Employees</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${formatCurrencyForPrint(totalSalary)}</div>
+              <div class="stat-title">Total Salary</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${formatCurrencyForPrint(avgSalary)}</div>
+              <div class="stat-title">Avg. Salary</div>
+            </div>
+          </div>
+          
+          <h2>Employee List (${filteredEmployees.length} employees)</h2>
+          
+          <table class="employee-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Department</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Salary</th>
+                <th>Status</th>
+                <th>Hire Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredEmployees.map(emp => {
+                const employeeId = emp._id || emp.id || emp.employeeId;
+                const department = findEmployeeDepartment(employeeId);
+                const deptName = department ? department.name : 'N/A';
+                const deptCode = department ? department.departmentCode : '';
+                
+                return `
+                  <tr>
+                    <td style="font-weight: 600;">
+                      <div>${emp.firstName || ''} ${emp.lastName || ''}</div>
+                      <div style="font-size: 11px; color: #6B7280; margin-top: 2px;">ID: ${employeeId?.substring(0, 8) || 'N/A'}</div>
+                    </td>
+                    <td>${emp.position || 'N/A'}</td>
+                    <td class="department-cell">
+                      <div>${deptName}</div>
+                      <div style="font-size: 11px; color: #6B7280;">${deptCode}</div>
+                    </td>
+                    <td style="font-size: 12px;">${emp.email || 'N/A'}</td>
+                    <td>${emp.phoneNumber || emp.phone || 'N/A'}</td>
+                    <td class="salary-cell">${formatCurrencyForPrint(emp.salary || 0)}</td>
+                    <td>
+                      <span class="status-badge status-${emp.status || 'active'}">
+                        ${(emp.status || 'active').replace('-', ' ')}
+                      </span>
+                    </td>
+                    <td>${formatDateForPrint(emp.hireDate)}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div>
+                <strong>Report ID:</strong> EMP-${new Date().getTime().toString().substring(0, 8)}
+              </div>
+              <div style="font-size: 11px; color: #6B7280;">
+                Page 1 of 1 • Confidential
+              </div>
+            </div>
+            
+            <div class="footer-grid">
+              <div class="footer-section">
+                <h4>Department Distribution</h4>
+                <ul>
+                  ${Object.entries(departmentStats).map(([dept, count]) => 
+                    `<li>${dept}: ${count} employees</li>`
+                  ).join('')}
+                </ul>
+              </div>
+              <div class="footer-section">
+                <h4>Summary Statistics</h4>
+                <ul>
+                  <li>Total Departments: ${Object.keys(departmentStats).length}</li>
+                  <li>Active Rate: ${((activeEmployees / filteredEmployees.length) * 100).toFixed(1)}%</li>
+                  <li>Avg Tenure: ${avgTenure} years</li>
+                </ul>
+              </div>
+              <div class="footer-section">
+                <h4>Notes</h4>
+                <ul>
+                  <li>Data as of ${new Date().toLocaleDateString()}</li>
+                  <li>Generated by HR Management System</li>
+                  <li>© ${new Date().getFullYear()} ${user?.companyName || 'Company'}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <script>
+          // Auto-print and close
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+              if (!document.querySelector('.no-print')) {
+                window.close();
+              }
+            }, 500);
+          }, 300);
+        </script>
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+};
 
   // Ensure filteredEmployees always works with an array
   const filteredEmployees = Array.isArray(employees) ? employees.filter((employee) => {

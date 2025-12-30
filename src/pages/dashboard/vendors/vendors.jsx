@@ -44,7 +44,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
-import * as XLSX from "xlsx"; // Add this import
+import ExcelJS from 'exceljs';
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {

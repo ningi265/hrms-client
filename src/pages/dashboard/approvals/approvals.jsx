@@ -44,7 +44,7 @@ import {
   FileBarChart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import * as XLSX from "xlsx";
+import ExcelJS from 'exceljs';
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -900,37 +900,134 @@ export default function ApprovalDashboardPage() {
   };
 
   // Export to Excel
-  const handleExportToExcel = () => {
-    if (!approvals || approvals.length === 0) {
-      showNotificationMessage("No approvals to export", "error");
-      return;
-    }
+ const handleExportToExcel = async () => {
+  if (!approvals || approvals.length === 0) {
+    showNotificationMessage("No approvals to export", "error");
+    return;
+  }
 
-    const formatted = approvals.map((approval) => ({
-      "Item Name": approval.itemName || "N/A",
-      "Amount": approval.amount || 0,
-      "Requestor": approval.requestor?.name || approval.requestorEmail || "N/A",
-      "Department": approval.department || "N/A",
-      "Category": approval.category || "General",
-      "Current Stage": approval.currentStage || "N/A",
-      "Urgency": approval.urgency || "medium",
-      "Current Status": approval.status || "in-review",
-      "Days Pending": approval.daysPending || 0,
-      "SLA Deadline": approval.slaDeadline ? formatDate(approval.slaDeadline) : "N/A",
-      "Submitted Date": formatDate(approval.createdAt),
-      "Your Role": userRole,
-      "Approval Context": getRoleContext(userRole, approval.department)
-    }));
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('My Approvals');
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+    // Define headers
+    worksheet.columns = [
+      { header: 'Item Name', key: 'itemName', width: 25 },
+      { header: 'Amount', key: 'amount', width: 15 },
+      { header: 'Requestor', key: 'requestor', width: 20 },
+      { header: 'Department', key: 'department', width: 20 },
+      { header: 'Category', key: 'category', width: 20 },
+      { header: 'Current Stage', key: 'currentStage', width: 20 },
+      { header: 'Urgency', key: 'urgency', width: 12 },
+      { header: 'Current Status', key: 'status', width: 15 },
+      { header: 'Days Pending', key: 'daysPending', width: 12 },
+      { header: 'SLA Deadline', key: 'slaDeadline', width: 15 },
+      { header: 'Submitted Date', key: 'submittedDate', width: 15 },
+      { header: 'Your Role', key: 'yourRole', width: 20 },
+      { header: 'Approval Context', key: 'approvalContext', width: 25 }
+    ];
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "My Approvals");
+    // Style headers
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue color
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    XLSX.writeFile(workbook, `my-approvals-${userRole}-${new Date().toISOString().split('T')[0]}.xlsx`);
+    // Add data rows
+    approvals.forEach((approval) => {
+      worksheet.addRow({
+        itemName: approval.itemName || "N/A",
+        amount: approval.amount || 0,
+        requestor: approval.requestor?.name || approval.requestorEmail || "N/A",
+        department: approval.department || "N/A",
+        category: approval.category || "General",
+        currentStage: approval.currentStage || "N/A",
+        urgency: approval.urgency || "medium",
+        status: approval.status || "in-review",
+        daysPending: approval.daysPending || 0,
+        slaDeadline: approval.slaDeadline ? formatDate(approval.slaDeadline) : "N/A",
+        submittedDate: formatDate(approval.createdAt),
+        yourRole: userRole,
+        approvalContext: getRoleContext(userRole, approval.department)
+      });
+    });
+
+    // Format currency column
+    const amountColumn = worksheet.getColumn('amount');
+    amountColumn.numFmt = '"$"#,##0';
+
+    // Format date columns
+    const dateColumns = ['slaDeadline', 'submittedDate'];
+    dateColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = 'yyyy-mm-dd';
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const cellLength = cell.value ? cell.value.toString().length : 0;
+        if (cellLength > maxLength) {
+          maxLength = cellLength;
+        }
+      });
+      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+    });
+
+    // Add a summary row
+    const lastRow = worksheet.rowCount;
+    worksheet.addRow([]); // Empty row
+    
+    const summaryRow = worksheet.addRow({
+      itemName: 'SUMMARY',
+      amount: approvals.reduce((sum, a) => sum + (a.amount || 0), 0),
+      requestor: `Total: ${approvals.length}`,
+      department: '',
+      category: '',
+      currentStage: '',
+      urgency: '',
+      status: '',
+      daysPending: Math.round(approvals.reduce((sum, a) => sum + (a.daysPending || 0), 0) / approvals.length),
+      slaDeadline: '',
+      submittedDate: '',
+      yourRole: userRole,
+      approvalContext: `${stats.highPriority} High Priority`
+    });
+
+    // Style summary row
+    summaryRow.font = { bold: true };
+    summaryRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF3F4F6' } // Gray background
+    };
+
+    // Generate buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `my-approvals-${userRole}-${new Date().toISOString().split('T')[0]}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
     showNotificationMessage("Export successful!", "success");
-  };
+  } catch (error) {
+    console.error('Export error:', error);
+    showNotificationMessage("Export failed!", "error");
+  }
+};
 
   // Print functionality
   const handlePrint = () => {
@@ -1090,42 +1187,42 @@ export default function ApprovalDashboardPage() {
     setTimeout(() => setShowNotification(false), 5000);
   };
 
-  const getStageColor = (stage, forPrint = false) => {
-    if (forPrint) {
-      switch (stage) {
-        case 'department-approval': return '#3b82f6';
-        case 'finance-approval': return '#10b981';
-        case 'cfo-approval': return '#8b5cf6';
-        case 'procurement-review': return '#f59e0b';
-        case 'vendor-selection': return '#f97316';
-        case 'rfq-processing': return '#ea580c';
-        case 'po-creation': return '#dc2626';
-        case 'it-review': return '#6366f1';
-        case 'legal-review': return '#ef4444';
-        default: return '#6b7280';
-      }
-    }
-    
+const getStageColor = (stage, forPrint = false) => {
+  if (forPrint) {
     switch (stage) {
-      case 'department-approval':
-        return "text-blue-700 bg-blue-50 border-blue-200";
-      case 'finance-approval':
-        return "text-green-700 bg-green-50 border-green-200";
-      case 'cfo-approval':
-        return "text-purple-700 bg-purple-50 border-purple-200";
-      case 'procurement-review':
-      case 'vendor-selection':
-      case 'rfq-processing':
-      case 'po-creation':
-        return "text-orange-700 bg-orange-50 border-orange-200";
-      case 'it-review':
-        return "text-indigo-700 bg-indigo-50 border-indigo-200";
-      case 'legal-review':
-        return "text-red-700 bg-red-50 border-red-200";
-      default:
-        return "text-gray-700 bg-gray-50 border-gray-200";
+      case 'department-approval': return '#3b82f6';
+      case 'finance-approval': return '#10b981';
+      case 'cfo-approval': return '#8b5cf6';
+      case 'procurement-review': return '#f59e0b';
+      case 'vendor-selection': return '#f97316';
+      case 'rfq-processing': return '#ea580c';
+      case 'po-creation': return '#dc2626';
+      case 'it-review': return '#6366f1';
+      case 'legal-review': return '#ef4444';
+      default: return '#6b7280';
     }
-  };
+  }
+  
+  switch (stage) {
+    case 'department-approval':
+      return "text-blue-700 bg-blue-50 border-blue-200";
+    case 'finance-approval':
+      return "text-green-700 bg-green-50 border-green-200";
+    case 'cfo-approval':
+      return "text-purple-700 bg-purple-50 border-purple-200";
+    case 'procurement-review':
+    case 'vendor-selection':
+    case 'rfq-processing':
+    case 'po-creation':
+      return "text-orange-700 bg-orange-50 border-orange-200";
+    case 'it-review':
+      return "text-indigo-700 bg-indigo-50 border-indigo-200";
+    case 'legal-review':
+      return "text-red-700 bg-red-50 border-red-200";
+    default:
+      return "text-gray-700 bg-gray-50 border-gray-200";
+  }
+};
 
   const getUrgencyIcon = (urgency) => {
     switch (urgency?.toLowerCase()) {

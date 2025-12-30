@@ -37,7 +37,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
 import { useNavigate } from "react-router-dom";
-import * as XLSX from "xlsx";
+import ExcelJS from 'exceljs';
 
 // LoadingOverlay Component (compact like view_rfqs.js)
 const LoadingOverlay = ({ isVisible, message = "Loading Invoices..." }) => {
@@ -450,72 +450,333 @@ export default function InvoicesPage() {
   };
 
   // Excel Export Functionality
-  const handleExportToExcel = () => {
-    if (!invoices || invoices.length === 0) {
-      showNotificationMessage("No invoices to export", "error");
-      return;
-    }
+  const handleExportToExcel = async () => {
+  if (!invoices || invoices.length === 0) {
+    showNotificationMessage("No invoices to export", "error");
+    return;
+  }
 
-    const formatted = invoices.map((invoice) => ({
-      "Invoice Number": invoice.invoiceNumber || "N/A",
-      "Vendor Name": `${invoice.vendor?.firstName || ""} ${invoice.vendor?.lastName || ""}`.trim() || "N/A",
-      "Vendor Email": invoice.vendor?.email || "N/A",
-      "Amount Due": invoice.amountDue || 0,
-      "Status": invoice.status || "N/A",
-      "PO Number": invoice.po?.poNumber || "N/A",
-      "Created Date": invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : "N/A",
-      "Due Date": invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "N/A",
-      "Payment Method": invoice.paymentMethod || "N/A",
-      "Notes": invoice.notes || "",
-      "Currency": "USD",
-      "Items Count": invoice.items?.length || 0,
-      "Tax Amount": invoice.taxAmount || 0,
-      "Shipping Amount": invoice.shippingAmount || 0,
-      "Discount Amount": invoice.discountAmount || 0,
-      "Total Amount": invoice.totalAmount || 0,
-    }));
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Invoices');
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+    // Define headers
+    worksheet.columns = [
+      { header: 'Invoice Number', key: 'invoiceNumber', width: 18 },
+      { header: 'Vendor Name', key: 'vendorName', width: 25 },
+      { header: 'Vendor Email', key: 'vendorEmail', width: 25 },
+      { header: 'Amount Due (USD)', key: 'amountDue', width: 16 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'PO Number', key: 'poNumber', width: 15 },
+      { header: 'Created Date', key: 'createdDate', width: 12 },
+      { header: 'Due Date', key: 'dueDate', width: 12 },
+      { header: 'Payment Method', key: 'paymentMethod', width: 15 },
+      { header: 'Notes', key: 'notes', width: 30 },
+      { header: 'Currency', key: 'currency', width: 10 },
+      { header: 'Items Count', key: 'itemsCount', width: 12 },
+      { header: 'Tax Amount', key: 'taxAmount', width: 12 },
+      { header: 'Shipping Amount', key: 'shippingAmount', width: 15 },
+      { header: 'Discount Amount', key: 'discountAmount', width: 15 },
+      { header: 'Total Amount (USD)', key: 'totalAmount', width: 16 }
+    ];
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Invoices");
+    // Style headers
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF3B82F6' } // Blue color
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-    XLSX.writeFile(workbook, "invoices.xlsx");
+    // Add data rows
+    invoices.forEach((invoice) => {
+      const vendorName = `${invoice.vendor?.firstName || ""} ${invoice.vendor?.lastName || ""}`.trim() || "N/A";
+      
+      worksheet.addRow({
+        invoiceNumber: invoice.invoiceNumber || "N/A",
+        vendorName: vendorName,
+        vendorEmail: invoice.vendor?.email || "N/A",
+        amountDue: invoice.amountDue || 0,
+        status: invoice.status || "pending",
+        poNumber: invoice.po?.poNumber || "N/A",
+        createdDate: invoice.createdAt ? new Date(invoice.createdAt).toISOString().split('T')[0] : "N/A",
+        dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : "N/A",
+        paymentMethod: invoice.paymentMethod || "N/A",
+        notes: invoice.notes || "",
+        currency: "USD",
+        itemsCount: invoice.items?.length || 0,
+        taxAmount: invoice.taxAmount || 0,
+        shippingAmount: invoice.shippingAmount || 0,
+        discountAmount: invoice.discountAmount || 0,
+        totalAmount: invoice.totalAmount || 0
+      });
+    });
+
+    // Format currency columns
+    const currencyColumns = ['amountDue', 'taxAmount', 'shippingAmount', 'discountAmount', 'totalAmount'];
+    currencyColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = '"$"#,##0.00';
+    });
+
+    // Format date columns
+    const dateColumns = ['createdDate', 'dueDate'];
+    dateColumns.forEach(colName => {
+      const col = worksheet.getColumn(colName);
+      col.numFmt = 'yyyy-mm-dd';
+    });
+
+    // Style status column with colors
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header
+        const statusCell = row.getCell('status');
+        const status = statusCell.value?.toString().toLowerCase();
+        
+        if (status === 'paid') {
+          statusCell.font = { color: { argb: 'FF10B981' }, bold: true }; // Green
+        } else if (status === 'approved') {
+          statusCell.font = { color: { argb: 'FF3B82F6' }, bold: true }; // Blue
+        } else if (status === 'pending') {
+          statusCell.font = { color: { argb: 'FFF59E0B' }, bold: true }; // Orange
+        } else if (status === 'rejected') {
+          statusCell.font = { color: { argb: 'FFEF4444' }, bold: true }; // Red
+        }
+      }
+    });
+
+    // Auto-fit columns
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column.eachCell({ includeEmpty: true }, (cell) => {
+        const cellLength = cell.value ? cell.value.toString().length : 0;
+        if (cellLength > maxLength) {
+          maxLength = cellLength;
+        }
+      });
+      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+    });
+
+    // Add summary statistics
+    const lastRow = worksheet.rowCount;
+    worksheet.addRow([]); // Empty row
+    
+    const summaryRow = worksheet.addRow({
+      invoiceNumber: 'FINANCIAL SUMMARY',
+      vendorName: '',
+      vendorEmail: '',
+      amountDue: invoices.reduce((sum, inv) => sum + (inv.amountDue || 0), 0),
+      status: '',
+      poNumber: '',
+      createdDate: '',
+      dueDate: '',
+      paymentMethod: '',
+      notes: '',
+      currency: '',
+      itemsCount: invoices.reduce((sum, inv) => sum + (inv.items?.length || 0), 0),
+      taxAmount: invoices.reduce((sum, inv) => sum + (inv.taxAmount || 0), 0),
+      shippingAmount: invoices.reduce((sum, inv) => sum + (inv.shippingAmount || 0), 0),
+      discountAmount: invoices.reduce((sum, inv) => sum + (inv.discountAmount || 0), 0),
+      totalAmount: invoices.reduce((sum, inv) => sum + (inv.totalAmount || 0), 0)
+    });
+
+    // Style summary row
+    summaryRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summaryRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF059669' } // Emerald green
+    };
+
+    // Add status summary
+    const statusCounts = {};
+    invoices.forEach(inv => {
+      statusCounts[inv.status] = (statusCounts[inv.status] || 0) + 1;
+    });
+
+    Object.entries(statusCounts).forEach(([status, count], index) => {
+      const statusRow = worksheet.addRow({
+        invoiceNumber: `Status: ${status}`,
+        vendorName: '',
+        vendorEmail: '',
+        amountDue: '',
+        status: count,
+        poNumber: '',
+        createdDate: '',
+        dueDate: '',
+        paymentMethod: '',
+        notes: '',
+        currency: '',
+        itemsCount: '',
+        taxAmount: '',
+        shippingAmount: '',
+        discountAmount: '',
+        totalAmount: ''
+      });
+      
+      statusRow.getCell('invoiceNumber').font = { italic: true };
+    });
+
+    // Add payment method summary
+    const paymentMethodCounts = {};
+    invoices.forEach(inv => {
+      const method = inv.paymentMethod || 'Not Specified';
+      paymentMethodCounts[method] = (paymentMethodCounts[method] || 0) + 1;
+    });
+
+    worksheet.addRow([]); // Empty row
+    worksheet.addRow({
+      invoiceNumber: 'PAYMENT METHOD SUMMARY',
+      vendorName: '',
+      vendorEmail: '',
+      amountDue: '',
+      status: '',
+      poNumber: '',
+      createdDate: '',
+      dueDate: '',
+      paymentMethod: '',
+      notes: '',
+      currency: '',
+      itemsCount: '',
+      taxAmount: '',
+      shippingAmount: '',
+      discountAmount: '',
+      totalAmount: ''
+    });
+
+    Object.entries(paymentMethodCounts).forEach(([method, count]) => {
+      worksheet.addRow({
+        invoiceNumber: method,
+        vendorName: '',
+        vendorEmail: '',
+        amountDue: '',
+        status: count,
+        poNumber: '',
+        createdDate: '',
+        dueDate: '',
+        paymentMethod: '',
+        notes: '',
+        currency: '',
+        itemsCount: '',
+        taxAmount: '',
+        shippingAmount: '',
+        discountAmount: '',
+        totalAmount: ''
+      });
+    });
+
+    // Generate buffer and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { 
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+    });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const today = new Date().toISOString().split('T')[0];
+    link.download = `invoices-report-${today}.xlsx`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
 
     showNotificationMessage("Export successful!", "success");
-  };
+  } catch (error) {
+    console.error('Export error:', error);
+    showNotificationMessage("Export failed!", "error");
+  }
+};
 
   // Excel Import Functionality
-  const handleImportFromExcel = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+ const handleImportFromExcel = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
 
-    try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+  try {
+    // Clear the file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
 
-      const token = localStorage.getItem("token");
-      let importCount = 0;
+    const data = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(data);
+    
+    const worksheet = workbook.getWorksheet(1); // Get first sheet
+    if (!worksheet) {
+      throw new Error('No worksheet found in the Excel file');
+    }
 
-      for (const row of rows) {
-        // Parse the row data to match your invoice structure
+    const rows = [];
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1) { // Skip header row
+        const rowData = {
+          "Invoice Number": row.getCell(1).value,
+          "Vendor Name": row.getCell(2).value,
+          "Vendor Email": row.getCell(3).value,
+          "Amount Due (USD)": row.getCell(4).value,
+          "Status": row.getCell(5).value,
+          "PO Number": row.getCell(6).value,
+          "Created Date": row.getCell(7).value,
+          "Due Date": row.getCell(8).value,
+          "Payment Method": row.getCell(9).value,
+          "Notes": row.getCell(10).value,
+          "Currency": row.getCell(11).value,
+          "Items Count": row.getCell(12).value,
+          "Tax Amount": row.getCell(13).value,
+          "Shipping Amount": row.getCell(14).value,
+          "Discount Amount": row.getCell(15).value,
+          "Total Amount (USD)": row.getCell(16).value
+        };
+        rows.push(rowData);
+      }
+    });
+
+    const token = localStorage.getItem("token");
+    const importResults = {
+      success: 0,
+      failed: 0,
+      errors: []
+    };
+
+    // Import each row
+    for (const row of rows) {
+      try {
+        // Note: This is a simplified import. In a real application, you would need to:
+        // 1. Look up vendor by name/email to get vendorId
+        // 2. Look up PO by PO number to get poId
+        // 3. Handle items parsing if present
+        
         const invoiceData = {
           invoiceNumber: row["Invoice Number"] || "",
-          vendorId: row["Vendor ID"] || "", // This might need to be looked up
-          poId: row["PO ID"] || "", // This might need to be looked up
-          amountDue: Number(row["Amount Due"]) || 0,
-          dueDate: row["Due Date"] ? new Date(row["Due Date"]) : new Date(),
+          // vendorId: would need to be looked up based on vendor info
+          // poId: would need to be looked up based on PO number
+          amountDue: Number(row["Amount Due (USD)"]) || 0,
+          dueDate: row["Due Date"] ? new Date(row["Due Date"]).toISOString() : new Date().toISOString(),
           status: row["Status"] || "pending",
           notes: row["Notes"] || "",
           paymentMethod: row["Payment Method"] || "bank_transfer",
-          items: row["Items"] ? JSON.parse(row["Items"]) : [],
+          items: [], // Would need to parse if provided
           taxAmount: Number(row["Tax Amount"]) || 0,
           shippingAmount: Number(row["Shipping Amount"]) || 0,
           discountAmount: Number(row["Discount Amount"]) || 0,
-          totalAmount: Number(row["Total Amount"]) || 0,
+          totalAmount: Number(row["Total Amount (USD)"]) || 0,
         };
+
+        // Validate required fields
+        if (!invoiceData.invoiceNumber || !invoiceData.amountDue) {
+          throw new Error('Missing required fields (Invoice Number, Amount)');
+        }
+
+        // In a real implementation, you would need vendor lookup logic here
+        // For now, we'll use a placeholder or skip vendor association
+        if (row["Vendor Email"]) {
+          // Look up vendor by email to get vendorId
+          // This would require additional API calls
+          console.log(`Would look up vendor for email: ${row["Vendor Email"]}`);
+        }
 
         const response = await fetch(`${backendUrl}/api/invoices`, {
           method: "POST",
@@ -526,135 +787,467 @@ export default function InvoicesPage() {
           body: JSON.stringify(invoiceData),
         });
 
-        if (response.ok) {
-          importCount++;
-        } else {
-          console.warn(`Failed to import row: ${JSON.stringify(row)}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `HTTP ${response.status}: ${row["Invoice Number"]}`);
         }
-      }
 
-      showNotificationMessage(`Successfully imported ${importCount} invoices!`, "success");
-      handleRefresh();
-    } catch (err) {
-      console.error(err);
-      showNotificationMessage("Excel import failed!", "error");
+        const result = await response.json();
+        if (result.success) {
+          importResults.success++;
+        } else {
+          throw new Error(result.message || 'Import failed');
+        }
+      } catch (err) {
+        importResults.failed++;
+        importResults.errors.push({
+          row: row["Invoice Number"] || 'Unknown invoice',
+          error: err.message
+        });
+        console.error(`Import error for row:`, row, err);
+      }
     }
-  };
+
+    if (importResults.success > 0) {
+      showNotificationMessage(
+        `Excel import completed! ${importResults.success} invoices imported successfully, ${importResults.failed} failed.`,
+        importResults.failed === 0 ? "success" : "warning"
+      );
+      
+      if (importResults.failed > 0) {
+        console.warn('Import errors:', importResults.errors);
+      }
+      
+      handleRefresh();
+    } else {
+      showNotificationMessage(
+        `Import failed for all ${importResults.failed} invoices.`,
+        "error"
+      );
+    }
+  } catch (err) {
+    console.error("Import error:", err);
+    showNotificationMessage(`Excel import failed: ${err.message}`, "error");
+  }
+};
 
   // Print Functionality
-  const handlePrint = () => {
-    const printContents = document.getElementById("invoices-section")?.innerHTML;
-    if (!printContents) {
-      showNotificationMessage("Nothing to print", "error");
-      return;
-    }
+const handlePrint = () => {
+  if (filteredInvoices.length === 0) {
+    showNotificationMessage("Nothing to print", "error");
+    return;
+  }
 
-    const printWindow = window.open("", "_blank", "width=900,height=700");
+  const printWindow = window.open("", "_blank", "width=1200,height=700");
 
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Invoices Report</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { text-align: center; margin-bottom: 20px; }
-            .print-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
-            .print-date { text-align: right; color: #666; }
-            .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-bottom: 20px; }
-            .metric-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; }
-            .metric-value { font-size: 20px; font-weight: bold; color: #333; }
-            .metric-label { font-size: 12px; color: #666; text-transform: uppercase; }
-            .invoice-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-            .invoice-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; break-inside: avoid; }
-            .invoice-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
-            .invoice-number { font-weight: bold; font-size: 16px; }
-            .invoice-status { padding: 2px 8px; border-radius: 12px; font-size: 12px; }
-            .status-pending { background-color: #fef3c7; color: #92400e; }
-            .status-approved { background-color: #d1fae5; color: #065f46; }
-            .status-paid { background-color: #dbeafe; color: #1e40af; }
-            .status-rejected { background-color: #fee2e2; color: #991b1b; }
-            .invoice-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-            .invoice-amount { font-size: 18px; font-weight: bold; color: #059669; }
-            .print-footer { margin-top: 30px; text-align: center; font-size: 12px; color: #666; }
-            @media print {
-              .invoice-grid { 
-                grid-template-columns: repeat(2, 1fr) !important;
-                gap: 10px !important;
-              }
-              .invoice-card {
-                page-break-inside: avoid;
-                break-inside: avoid;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Invoices Report</h1>
-          <div class="print-header">
-            <div>Generated by Procurement System</div>
-            <div class="print-date">${new Date().toLocaleDateString()}</div>
-          </div>
-          <div class="metrics-grid">
-            <div class="metric-card">
-              <div class="metric-value">${totalInvoices}</div>
-              <div class="metric-label">Total Invoices</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value">${pendingInvoices}</div>
-              <div class="metric-label">Pending</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value">${approvedInvoices}</div>
-              <div class="metric-label">Approved</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value">${paidInvoices}</div>
-              <div class="metric-label">Paid</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-value">$${totalAmount.toFixed(0)}</div>
-              <div class="metric-label">Total Amount</div>
-            </div>
-          </div>
-          <div class="invoice-grid">
-            ${filteredInvoices.map(invoice => {
-              const vendorName = `${invoice.vendor?.firstName || ""} ${invoice.vendor?.lastName || ""}`.trim() || "N/A";
-              const statusClass = `status-${invoice.status?.toLowerCase() || 'pending'}`;
-              
-              return `
-                <div class="invoice-card">
-                  <div class="invoice-header">
-                    <div class="invoice-number">${invoice.invoiceNumber || "N/A"}</div>
-                    <span class="invoice-status ${statusClass}">${invoice.status || "Pending"}</span>
-                  </div>
-                  <div class="vendor-name">${vendorName}</div>
-                  <div class="invoice-details">
-                    <div>Amount Due:</div>
-                    <div class="invoice-amount">$${invoice.amountDue?.toFixed(0) || 0}</div>
-                    <div>PO Number:</div>
-                    <div>${invoice.po?.poNumber || "N/A"}</div>
-                    <div>Created:</div>
-                    <div>${invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString() : "N/A"}</div>
-                    <div>Due Date:</div>
-                    <div>${invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : "N/A"}</div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-          <div class="print-footer">
-            <p>Confidential - For internal use only</p>
-            <p>Page 1 of 1</p>
-          </div>
-        </body>
-      </html>
-    `);
-
-    printWindow.document.close();
-    printWindow.focus();
-
-    printWindow.print();
+  // Calculate financial summary
+  const totalAmountDue = filteredInvoices.reduce((sum, inv) => sum + (inv.amountDue || 0), 0);
+  const totalTax = filteredInvoices.reduce((sum, inv) => sum + (inv.taxAmount || 0), 0);
+  const totalShipping = filteredInvoices.reduce((sum, inv) => sum + (inv.shippingAmount || 0), 0);
+  const totalDiscount = filteredInvoices.reduce((sum, inv) => sum + (inv.discountAmount || 0), 0);
+  
+  const formatCurrencyForPrint = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
   };
+
+  const formatDateForPrint = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+  };
+
+  // Status counts
+  const statusCounts = {};
+  filteredInvoices.forEach(inv => {
+    statusCounts[inv.status] = (statusCounts[inv.status] || 0) + 1;
+  });
+
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Invoice Management Report - ${new Date().toLocaleDateString()}</title>
+        <style>
+          body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            padding: 30px; 
+            color: #1F2937;
+            line-height: 1.4;
+            background: #F9FAFB;
+          }
+          
+          .print-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          }
+          
+          .print-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+            padding-bottom: 20px;
+            border-bottom: 2px solid #3B82F6;
+          }
+          
+          h1 { 
+            color: #1F2937; 
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+          }
+          
+          .report-subtitle {
+            color: #6B7280;
+            font-size: 14px;
+            margin-top: 4px;
+          }
+          
+          .company-info {
+            text-align: right;
+          }
+          
+          .company-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #3B82F6;
+          }
+          
+          .report-date {
+            font-size: 14px;
+            color: #6B7280;
+            margin-top: 4px;
+          }
+          
+          .financial-summary {
+            background: linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%);
+            border: 1px solid #BAE6FD;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 25px 0;
+          }
+          
+          .financial-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+          }
+          
+          .financial-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #E5E7EB;
+          }
+          
+          .financial-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1F2937;
+            margin: 5px 0;
+          }
+          
+          .financial-label {
+            font-size: 13px;
+            color: #6B7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          
+          .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            font-size: 13px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          }
+          
+          .invoice-table th {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            text-align: left;
+            padding: 14px 16px;
+            font-weight: 600;
+            font-size: 13px;
+            position: sticky;
+            top: 0;
+          }
+          
+          .invoice-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #E5E7EB;
+            vertical-align: middle;
+          }
+          
+          .invoice-table tr:hover {
+            background: #F9FAFB;
+          }
+          
+          .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+            min-width: 80px;
+            text-align: center;
+          }
+          
+          .status-paid { 
+            background: #D1FAE5; 
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+          }
+          
+          .status-approved { 
+            background: #DBEAFE; 
+            color: #1E40AF;
+            border: 1px solid #BFDBFE;
+          }
+          
+          .status-pending { 
+            background: #FEF3C7; 
+            color: #92400E;
+            border: 1px solid #FDE68A;
+          }
+          
+          .status-rejected { 
+            background: #FEE2E2; 
+            color: #991B1B;
+            border: 1px solid #FECACA;
+          }
+          
+          .amount-cell {
+            font-weight: 600;
+            color: #059669;
+          }
+          
+          .due-date-cell {
+            font-weight: 500;
+          }
+          
+          .overdue {
+            color: #EF4444;
+            font-weight: bold;
+          }
+          
+          .vendor-cell {
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+          
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+            color: #6B7280;
+            font-size: 12px;
+          }
+          
+          .footer-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-top: 15px;
+          }
+          
+          .footer-section h4 {
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 13px;
+          }
+          
+          .footer-section ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+          }
+          
+          .footer-section li {
+            margin-bottom: 4px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+          }
+          
+          .status-count {
+            font-weight: 600;
+          }
+          
+          @media print {
+            @page { 
+              margin: 10mm;
+              size: A4 landscape;
+            }
+            body { 
+              background: white; 
+              padding: 0; 
+            }
+            .print-container {
+              box-shadow: none;
+              padding: 0;
+            }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="print-container">
+          <div class="print-header">
+            <div>
+              <h1>Invoice Management Report</h1>
+              <p class="report-subtitle">Comprehensive invoice tracking and financial overview</p>
+            </div>
+            <div class="company-info">
+              <div class="company-name">Procurement System</div>
+              <div class="report-date">Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+            </div>
+          </div>
+          
+          <div class="financial-summary">
+            <h3 style="color: #1E40AF; margin: 0 0 15px 0;">Financial Summary</h3>
+            <div class="financial-grid">
+              <div class="financial-item">
+                <div class="financial-value">${formatCurrencyForPrint(totalAmountDue)}</div>
+                <div class="financial-label">Total Amount Due</div>
+              </div>
+              <div class="financial-item">
+                <div class="financial-value">${formatCurrencyForPrint(totalTax)}</div>
+                <div class="financial-label">Total Tax</div>
+              </div>
+              <div class="financial-item">
+                <div class="financial-value">${formatCurrencyForPrint(totalShipping)}</div>
+                <div class="financial-label">Total Shipping</div>
+              </div>
+              <div class="financial-item">
+                <div class="financial-value">${formatCurrencyForPrint(totalDiscount)}</div>
+                <div class="financial-label">Total Discount</div>
+              </div>
+            </div>
+          </div>
+          
+          <h2>Invoice Details (${filteredInvoices.length} invoices)</h2>
+          
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Invoice #</th>
+                <th>Vendor</th>
+                <th>PO Number</th>
+                <th>Amount Due</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Due Date</th>
+                <th>Payment Method</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${filteredInvoices.map(invoice => {
+                const vendorName = `${invoice.vendor?.firstName || ""} ${invoice.vendor?.lastName || ""}`.trim() || "N/A";
+                const poNumber = invoice.po?.poNumber || "N/A";
+                const dueDate = new Date(invoice.dueDate);
+                const isOverdue = invoice.status === 'pending' && dueDate < new Date();
+                
+                return `
+                  <tr>
+                    <td style="font-weight: 600;">
+                      <div>${invoice.invoiceNumber || 'N/A'}</div>
+                      <div style="font-size: 11px; color: #6B7280; margin-top: 2px;">ID: ${invoice._id?.substring(0, 8) || 'N/A'}</div>
+                    </td>
+                    <td class="vendor-cell">
+                      <div>${vendorName}</div>
+                      <div style="font-size: 11px; color: #6B7280;">${invoice.vendor?.email || 'N/A'}</div>
+                    </td>
+                    <td>${poNumber}</td>
+                    <td class="amount-cell">${formatCurrencyForPrint(invoice.amountDue || 0)}</td>
+                    <td>
+                      <span class="status-badge status-${invoice.status?.toLowerCase() || 'pending'}">
+                        ${invoice.status || 'Pending'}
+                      </span>
+                    </td>
+                    <td>${formatDateForPrint(invoice.createdAt)}</td>
+                    <td class="${isOverdue ? 'overdue' : 'due-date-cell'}">
+                      ${formatDateForPrint(invoice.dueDate)}
+                      ${isOverdue ? '<span style="color: #EF4444; margin-left: 4px;">(Overdue)</span>' : ''}
+                    </td>
+                    <td>${invoice.paymentMethod || 'Not Specified'}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div>
+                <strong>Report ID:</strong> INV-${new Date().getTime().toString().substring(0, 8)}
+              </div>
+              <div style="font-size: 11px; color: #6B7280;">
+                Page 1 of 1 • Confidential Financial Document
+              </div>
+            </div>
+            
+            <div class="footer-grid">
+              <div class="footer-section">
+                <h4>Status Distribution</h4>
+                <ul>
+                  ${Object.entries(statusCounts).map(([status, count]) => 
+                    `<li>
+                      <span>${status}:</span>
+                      <span class="status-count">${count} invoices</span>
+                    </li>`
+                  ).join('')}
+                </ul>
+              </div>
+              <div class="footer-section">
+                <h4>Report Notes</h4>
+                <ul>
+                  <li>Data as of ${new Date().toLocaleDateString()}</li>
+                  <li>Generated by Procurement Management System</li>
+                  <li>© ${new Date().getFullYear()} Procurement Department</li>
+                  <li>Confidential - For internal finance use only</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <script>
+          // Auto-print and close
+          setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+              if (!document.querySelector('.no-print')) {
+                window.close();
+              }
+            }, 500);
+          }, 300);
+        </script>
+      </body>
+    </html>
+  `);
+
+  printWindow.document.close();
+};
 
   const showNotificationMessage = (message, type = "success") => {
     setNotificationMessage(message);
