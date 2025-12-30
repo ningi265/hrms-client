@@ -49,7 +49,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../../../authcontext/authcontext";
-import ExcelJS from 'exceljs';
+import ExcelJS from 'exceljs'; // Replace XLSX with ExcelJS
 
 // LoadingOverlay Component (compact like view_rfqs.js)
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -244,7 +244,7 @@ const DeliveryTrackingModal = ({ po, isOpen, onClose, onConfirmReceipt }) => {
         <div className="p-8 max-h-[75vh] overflow-y-auto">
           {/* Order Summary */}
           <div className="bg-blue-50 rounded-xl p-6 border border-blue-200 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Package size={20} className="text-blue-500" />
               Order Summary
             </h3>
@@ -359,7 +359,7 @@ const DeliveryTrackingModal = ({ po, isOpen, onClose, onConfirmReceipt }) => {
 
           {/* Order Items */}
           <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <FileText size={20} className="text-purple-500" />
               Order Items
             </h3>
@@ -489,7 +489,7 @@ const ReceiptConfirmationModal = ({ po, isOpen, onClose, onConfirm, showNotifica
           </div>
           {/* Order Summary */}
           <div className="bg-green-50 rounded-xl p-6 border border-green-200 mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <Package size={20} className="text-green-500" />
               Order Details
             </h3>
@@ -1270,93 +1270,315 @@ export default function PurchaseOrdersPage() {
     }
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000);
-    window.location.reload();
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${backendUrl}/api/purchase-orders`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setPurchaseOrders(Array.isArray(result.data) ? result.data : []);
+      } else if (Array.isArray(result)) {
+        setPurchaseOrders(result);
+      }
+      showNotificationMessage("Purchase Orders refreshed successfully", "success");
+    } catch (error) {
+      console.error("Refresh error:", error);
+      showNotificationMessage("Failed to refresh purchase orders", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Excel Export Functionality
-  const handleExportToExcel = () => {
+  // Excel Export Functionality - Using ExcelJS
+  const handleExportToExcel = async () => {
     if (!purchaseOrders || purchaseOrders.length === 0) {
       showNotificationMessage("No purchase orders to export", "error");
       return;
     }
 
-    const formatted = purchaseOrders.map((po) => ({
-      "PO Number": po._id?.slice(-8) || "N/A",
-      "Vendor Name": po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A",
-      "Vendor Email": po.vendor?.email || "N/A",
-      "Total Amount": `MWK ${po.totalAmount?.toFixed(0) || 0}`,
-      "Status": po.status || "N/A",
-      "Delivery Status": po.deliveryStatus || "Pending",
-      "Created Date": po.createdAt ? new Date(po.createdAt).toLocaleDateString() : "N/A",
-      "Estimated Delivery": po.estimatedDelivery ? new Date(po.estimatedDelivery).toLocaleDateString() : "N/A",
-      "Items Count": po.items?.length || 0,
-      "Received By Customer": po.receivedByCustomer ? "Yes" : "No",
-      "Customer Rating": po.customerRating || "N/A",
-      "Delivery Address": po.deliveryAddress || "N/A",
-      "Tracking Number": po.trackingNumber || "N/A",
-    }));
+    try {
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Procurement System';
+      workbook.created = new Date();
+      
+      const worksheet = workbook.addWorksheet('Purchase Orders');
+      
+      // Define columns
+      worksheet.columns = [
+        { header: 'PO Number', key: 'poNumber', width: 15 },
+        { header: 'Vendor Name', key: 'vendorName', width: 25 },
+        { header: 'Vendor Email', key: 'vendorEmail', width: 30 },
+        { header: 'Total Amount', key: 'totalAmount', width: 15 },
+        { header: 'Status', key: 'status', width: 12 },
+        { header: 'Delivery Status', key: 'deliveryStatus', width: 15 },
+        { header: 'Created Date', key: 'createdDate', width: 15 },
+        { header: 'Estimated Delivery', key: 'estimatedDelivery', width: 15 },
+        { header: 'Items Count', key: 'itemsCount', width: 12 },
+        { header: 'Received by Customer', key: 'receivedByCustomer', width: 18 },
+        { header: 'Customer Rating', key: 'customerRating', width: 14 },
+        { header: 'Delivery Address', key: 'deliveryAddress', width: 25 },
+        { header: 'Tracking Number', key: 'trackingNumber', width: 20 },
+      ];
 
-    const worksheet = XLSX.utils.json_to_sheet(formatted);
-    const workbook = XLSX.utils.book_new();
+      // Style header row
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { 
+        bold: true, 
+        color: { argb: 'FFFFFFFF' },
+        size: 12
+      };
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF2D3748' } // Dark gray/blue
+      };
+      headerRow.alignment = { horizontal: 'center' };
+      headerRow.height = 25;
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Orders");
+      // Add data rows
+      purchaseOrders.forEach((po, index) => {
+        const vendorName = po.vendor ? `${po.vendor.lastName || ""} ${po.vendor.firstName || ""}`.trim() : "N/A";
+        const poNumber = po._id?.slice(-8) || "N/A";
+        
+        const row = worksheet.addRow({
+          poNumber: poNumber,
+          vendorName: vendorName,
+          vendorEmail: po.vendor?.email || "N/A",
+          totalAmount: `MWK ${po.totalAmount?.toFixed(0) || 0}`,
+          status: po.status || "N/A",
+          deliveryStatus: po.deliveryStatus || "Pending",
+          createdDate: po.createdAt ? new Date(po.createdAt).toLocaleDateString() : "N/A",
+          estimatedDelivery: po.estimatedDelivery ? new Date(po.estimatedDelivery).toLocaleDateString() : "N/A",
+          itemsCount: po.items?.length || 0,
+          receivedByCustomer: po.receivedByCustomer ? "Yes" : "No",
+          customerRating: po.customerRating || "N/A",
+          deliveryAddress: po.deliveryAddress || "N/A",
+          trackingNumber: po.trackingNumber || "N/A"
+        });
 
-    XLSX.writeFile(workbook, "purchase_orders.xlsx");
+        // Style status cells
+        const statusCell = row.getCell(5); // Status column
+        switch((po.status || "").toLowerCase()) {
+          case 'approved':
+            statusCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFD1FAE5' } // Light green
+            };
+            statusCell.font = { color: { argb: 'FF065F46' }, bold: true };
+            break;
+          case 'pending':
+            statusCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEF3C7' } // Light yellow
+            };
+            statusCell.font = { color: { argb: 'FF92400E' }, bold: true };
+            break;
+          case 'rejected':
+            statusCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFFEE2E2' } // Light red
+            };
+            statusCell.font = { color: { argb: 'FF991B1B' }, bold: true };
+            break;
+        }
 
-    showNotificationMessage("Export successful!", "success");
+        // Style delivery status cells
+        const deliveryStatusCell = row.getCell(6); // Delivery Status column
+        switch((po.deliveryStatus || "").toLowerCase()) {
+          case 'delivered':
+            deliveryStatusCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFD1FAE5' }
+            };
+            deliveryStatusCell.font = { color: { argb: 'FF065F46' }, bold: true };
+            break;
+          case 'shipped':
+            deliveryStatusCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFDBEAFE' }
+            };
+            deliveryStatusCell.font = { color: { argb: 'FF1E40AF' }, bold: true };
+            break;
+          case 'processing':
+            deliveryStatusCell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'FFEDE9FE' }
+            };
+            deliveryStatusCell.font = { color: { argb: 'FF5B21B6' }, bold: true };
+            break;
+        }
+
+        // Alternate row colors for better readability
+        if (index % 2 === 0) {
+          row.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9FAFB' } // Very light gray
+          };
+        }
+      });
+
+      // Auto-fit columns
+      worksheet.columns.forEach(column => {
+        const maxLength = Math.max(
+          column.header.length,
+          ...column.values.slice(1).map(v => v ? v.toString().length : 0)
+        );
+        column.width = Math.min(maxLength + 2, 50);
+      });
+
+      // Add borders to all cells
+      worksheet.eachRow((row, rowNumber) => {
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      });
+
+      // Generate buffer
+      const buffer = await workbook.xlsx.writeBuffer();
+      
+      // Create blob and download
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `purchase_orders_${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      showNotificationMessage("Export successful!", "success");
+    } catch (error) {
+      console.error("Export error:", error);
+      showNotificationMessage("Failed to export Excel file", "error");
+    }
   };
 
-  // Excel Import Functionality
+  // Excel Import Functionality - Using ExcelJS
   const handleImportFromExcel = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    setIsLoading(true);
+    
     try {
-      const data = await file.arrayBuffer();
-      const workbook = XLSX.read(data);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
+      const workbook = new ExcelJS.Workbook();
+      const buffer = await file.arrayBuffer();
+      await workbook.xlsx.load(buffer);
+      
+      const worksheet = workbook.getWorksheet(1); // Get first sheet
+      if (!worksheet) {
+        throw new Error('No worksheet found in Excel file');
+      }
+
+      // Get headers
+      const headerRow = worksheet.getRow(1);
+      const headers = [];
+      headerRow.eachCell((cell) => {
+        headers.push(cell.value?.toString().toLowerCase().trim() || '');
+      });
 
       const token = localStorage.getItem("token");
-      let importCount = 0;
+      let successCount = 0;
+      let errorCount = 0;
 
-      for (const row of rows) {
-        // Parse the row data to match your PO structure
-        const poData = {
-          // Map Excel columns to your PO fields
-          // You'll need to adjust this based on your Excel structure
-          vendorId: row["Vendor ID"] || "", // This might need to be looked up
-          items: row["Items"] ? JSON.parse(row["Items"]) : [],
-          totalAmount: Number(row["Total Amount"]) || 0,
-          deliveryAddress: row["Delivery Address"] || "",
-          status: row["Status"] || "pending",
-          deliveryStatus: row["Delivery Status"] || "processing",
-        };
+      // Process rows starting from row 2
+      for (let i = 2; i <= worksheet.rowCount; i++) {
+        const row = worksheet.getRow(i);
+        
+        // Skip empty rows
+        if (row.cellCount === 0 || !row.getCell(1).value) continue;
 
-        const response = await fetch(`${backendUrl}/api/purchase-orders`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(poData),
+        const rowData = {};
+        headers.forEach((header, index) => {
+          rowData[header] = row.getCell(index + 1).value;
         });
 
-        if (response.ok) {
-          importCount++;
-        } else {
-          console.warn(`Failed to import row: ${JSON.stringify(row)}`);
+        // Parse items if present
+        let items = [];
+        const itemsData = rowData.items || rowData['order items'];
+        if (itemsData) {
+          try {
+            items = JSON.parse(itemsData);
+          } catch (e) {
+            console.warn(`Failed to parse items for row ${i}:`, itemsData);
+          }
+        }
+
+        const payload = {
+          vendorId: rowData['vendor id'] || "", // This will need to be looked up or passed differently
+          items: items.length > 0 ? items : [{
+            itemName: rowData['item name'] || "Imported Item",
+            product: rowData['product'] || "Imported Product",
+            quantity: Number(rowData.quantity) || 1,
+            price: Number(rowData.price) || 0,
+          }],
+          totalAmount: Number(rowData['total amount']?.replace('MWK ', '')) || 0,
+          deliveryAddress: rowData['delivery address'] || "Default Address",
+          status: (rowData.status || 'pending').toLowerCase(),
+          deliveryStatus: (rowData['delivery status'] || 'processing').toLowerCase(),
+          estimatedDelivery: rowData['estimated delivery'] ? new Date(rowData['estimated delivery']) : null,
+          trackingNumber: rowData['tracking number'] || `TRACK-${Date.now()}-${i}`,
+          // Map Excel columns to your PO fields
+          // You'll need to adjust this based on your Excel structure
+        };
+
+        try {
+          const response = await fetch(`${backendUrl}/api/purchase-orders`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            successCount++;
+          } else {
+            errorCount++;
+            console.error(`Failed to import row ${i}:`, await response.text());
+          }
+        } catch (error) {
+          errorCount++;
+          console.error(`Error importing row ${i}:`, error);
         }
       }
 
-      showNotificationMessage(`Successfully imported ${importCount} purchase orders!`, "success");
+      showNotificationMessage(
+        `Import completed: ${successCount} purchase orders imported successfully, ${errorCount} failed`,
+        errorCount === 0 ? "success" : errorCount < successCount ? "warning" : "error"
+      );
+      
+      // Refresh purchase order list
       handleRefresh();
-    } catch (err) {
-      console.error(err);
-      showNotificationMessage("Excel import failed!", "error");
+    } catch (error) {
+      console.error("Import error:", error);
+      showNotificationMessage("Failed to import Excel file: " + error.message, "error");
+    } finally {
+      setIsLoading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -1373,7 +1595,7 @@ export default function PurchaseOrdersPage() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Purchase Orders Print</title>
+          <title>Purchase Orders Report</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; }
             h1 { text-align: center; margin-bottom: 20px; }
@@ -1548,6 +1770,7 @@ export default function PurchaseOrdersPage() {
               <button
                 onClick={() => fileInputRef.current.click()}
                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                disabled={isLoading}
               >
                 <FileSpreadsheet size={16} />
                 Excel Import
@@ -1557,6 +1780,7 @@ export default function PurchaseOrdersPage() {
               <button
                 onClick={handleExportToExcel}
                className="flex items-center gap-2 px-4 py-2 border border-blue-500 text-blue-600 bg-white rounded-2xl text-sm font-medium hover:bg-blue-50 transition"
+                disabled={isLoading}
               >
                 <Upload size={16} />
                 Excel Export
