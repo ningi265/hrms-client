@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import {
   FileText,
@@ -28,14 +28,18 @@ import {
   Download,
   Printer,
   FileSpreadsheet,
-  Upload
+  Upload,
+  Calendar,
+  CheckSquare,
+  FileCheck,
+  XCircle,
 } from "lucide-react"
 import { motion } from "framer-motion"
 import ExcelJS from 'exceljs';
 
 const backendUrl = import.meta.env.VITE_ENV === 'production'
-    ? import.meta.env.VITE_BACKEND_URL_PROD
-    : import.meta.env.VITE_BACKEND_URL_DEV
+  ? import.meta.env.VITE_BACKEND_URL_PROD
+  : import.meta.env.VITE_BACKEND_URL_DEV
 
 // LoadingOverlay Component
 const LoadingOverlay = ({ isVisible, message = "Processing..." }) => {
@@ -73,14 +77,14 @@ const MetricCard = ({
             color === "blue"
               ? "bg-blue-50"
               : color === "green"
-                ? "bg-emerald-50"
-                : color === "purple"
-                  ? "bg-purple-50"
-                  : color === "orange"
-                    ? "bg-orange-50"
-                    : color === "red"
-                      ? "bg-red-50"
-                      : "bg-gray-50"
+              ? "bg-emerald-50"
+              : color === "purple"
+              ? "bg-purple-50"
+              : color === "orange"
+              ? "bg-orange-50"
+              : color === "red"
+              ? "bg-red-50"
+              : "bg-gray-50"
           }`}
         >
           <Icon
@@ -89,14 +93,14 @@ const MetricCard = ({
               color === "blue"
                 ? "text-blue-600"
                 : color === "green"
-                  ? "text-emerald-600"
-                  : color === "purple"
-                    ? "text-purple-600"
-                    : color === "orange"
-                      ? "text-orange-600"
-                      : color === "red"
-                        ? "text-red-600"
-                        : "text-gray-600"
+                ? "text-emerald-600"
+                : color === "purple"
+                ? "text-purple-600"
+                : color === "orange"
+                ? "text-orange-600"
+                : color === "red"
+                ? "text-red-600"
+                : "text-gray-600"
             }
           />
         </div>
@@ -120,7 +124,7 @@ const TenderCard = ({ tender, onMenuClick, showMenuId, onViewTender, bidCounts, 
         return "bg-green-100 text-green-800"
       case "under_review":
         return "bg-yellow-100 text-yellow-800"
-      case "closed": 
+      case "closed":
         return "bg-red-100 text-red-800"
       case "awarded":
         return "bg-blue-100 text-blue-800"
@@ -384,7 +388,7 @@ const TenderDetailsModal = ({ tender, bids, isOpen, onClose, onAwardBid }) => {
     const getDocumentTypeName = (type) => {
       const typeMap = {
         'technical_proposal': 'Technical Proposal',
-        'financial_proposal': 'Financial Proposal', 
+        'financial_proposal': 'Financial Proposal',
         'company_profile': 'Company Profile',
         'certificate_of_incorporation': 'Certificate of Incorporation',
         'tax_clearance': 'Tax Clearance Certificate',
@@ -512,7 +516,7 @@ const TenderDetailsModal = ({ tender, bids, isOpen, onClose, onAwardBid }) => {
                   <div className="flex flex-col">
                     <span className="text-xs text-gray-600">Urgency</span>
                     <span className={`text-xs font-medium ${
-                      tender.urgency === 'high' ? 'text-red-600' : 
+                      tender.urgency === 'high' ? 'text-red-600' :
                       tender.urgency === 'medium' ? 'text-yellow-600' : 'text-green-600'
                     }`}>
                       {tender.urgency}
@@ -618,7 +622,7 @@ const TenderDetailsModal = ({ tender, bids, isOpen, onClose, onAwardBid }) => {
                             Evaluate
                           </button>
                           {bid.documents && bid.documents.length > 0 && (
-                            <button 
+                            <button
                               onClick={() => setViewingDocuments(bid)}
                               className="px-2 py-0.5 bg-purple-500 text-white text-xs font-medium rounded-xl hover:bg-purple-600 transition-colors flex items-center gap-0.5"
                             >
@@ -707,7 +711,7 @@ const BidEvaluationModal = ({ bid, isOpen, onClose, onAward }) => {
                 min="0"
                 max="100"
                 value={evaluation.technicalScore}
-                onChange={(e) => setEvaluation(prev => ({...prev, technicalScore: e.target.value}))}
+                onChange={(e) => setEvaluation(prev => ({ ...prev, technicalScore: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-xl"
               />
             </div>
@@ -720,7 +724,7 @@ const BidEvaluationModal = ({ bid, isOpen, onClose, onAward }) => {
                 min="0"
                 max="100"
                 value={evaluation.financialScore}
-                onChange={(e) => setEvaluation(prev => ({...prev, financialScore: e.target.value}))}
+                onChange={(e) => setEvaluation(prev => ({ ...prev, financialScore: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-xl"
               />
             </div>
@@ -732,7 +736,7 @@ const BidEvaluationModal = ({ bid, isOpen, onClose, onAward }) => {
             </label>
             <textarea
               value={evaluation.comments}
-              onChange={(e) => setEvaluation(prev => ({...prev, comments: e.target.value}))}
+              onChange={(e) => setEvaluation(prev => ({ ...prev, comments: e.target.value }))}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-xl"
               placeholder="Provide detailed evaluation comments..."
@@ -745,7 +749,7 @@ const BidEvaluationModal = ({ bid, isOpen, onClose, onAward }) => {
             </label>
             <select
               value={evaluation.recommendation}
-              onChange={(e) => setEvaluation(prev => ({...prev, recommendation: e.target.value}))}
+              onChange={(e) => setEvaluation(prev => ({ ...prev, recommendation: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-300 rounded-xl"
             >
               <option value="">Select recommendation</option>
@@ -793,21 +797,62 @@ export default function TendersPage() {
   const [isFormSubmitting, setIsFormSubmitting] = useState(false)
   const [requisitions, setRequisitions] = useState([])
   const [formData, setFormData] = useState({
-      title: "",
-      description: "",
-      budget: "",
-      location: "",
-      urgency: "medium",
-      category: "",
-      deadline: "",
-      requisitionId: "",
-      requirements: []
-    })
+    title: "",
+    description: "",
+    budget: "",
+    location: "",
+    urgency: "medium",
+    category: "",
+    deadline: "",
+    requisitionId: "",
+    requirements: [],
+    // New fields for the enhanced form
+    scopeOfWork: "",
+    technicalSpecs: "",
+    paymentTerms: "30 days after invoice",
+    deadlineTime: "17:00",
+    techScoreWeight: 70,
+    financialScoreWeight: 30,
+    evaluationDetails: "",
+    projectStartDate: "",
+    projectEndDate: "",
+    contractDuration: "",
+    warrantyPeriod: "",
+    additionalTerms: "",
+    preBidMeetingDate: "",
+    preBidMeetingTime: "",
+    preBidMeetingVenue: "",
+    requireTechnicalProposal: true,
+    requireFinancialProposal: true,
+    requireCompanyProfile: true,
+    requireCertificates: true,
+    submissionInstructions: "",
+    bidSecurityRequired: "no",
+    bidSecurityAmount: "",
+    customPaymentTerms: "",
+    documents: []
+  })
   const [showMenuId, setShowMenuId] = useState(null)
   const [actionLoading, setActionLoading] = useState(null)
-  const fileInputRef = useState(null)
-  
+  const fileInputRef = useRef(null)
+
   const navigate = useNavigate()
+
+  // Add the missing functions here
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files)
+    setFormData(prev => ({
+      ...prev,
+      documents: [...(prev.documents || []), ...files]
+    }))
+  }
+
+  const handleRemoveDocument = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      documents: prev.documents.filter((_, i) => i !== index)
+    }))
+  }
 
   const openCreateTenderModal = () => {
     setIsCreateTenderModalOpen(true)
@@ -824,7 +869,31 @@ export default function TendersPage() {
       category: "",
       deadline: "",
       requisitionId: "",
-      requirements: []
+      requirements: [],
+      scopeOfWork: "",
+      technicalSpecs: "",
+      paymentTerms: "30 days after invoice",
+      deadlineTime: "17:00",
+      techScoreWeight: 70,
+      financialScoreWeight: 30,
+      evaluationDetails: "",
+      projectStartDate: "",
+      projectEndDate: "",
+      contractDuration: "",
+      warrantyPeriod: "",
+      additionalTerms: "",
+      preBidMeetingDate: "",
+      preBidMeetingTime: "",
+      preBidMeetingVenue: "",
+      requireTechnicalProposal: true,
+      requireFinancialProposal: true,
+      requireCompanyProfile: true,
+      requireCertificates: true,
+      submissionInstructions: "",
+      bidSecurityRequired: "no",
+      bidSecurityAmount: "",
+      customPaymentTerms: "",
+      documents: []
     })
   }
 
@@ -836,25 +905,27 @@ export default function TendersPage() {
   }
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target
 
-    if (name === "requirements") {
-      const reqs = value.split(",").map((r) => r.trim());
-      setFormData((prev) => ({ ...prev, requirements: reqs }));
+    if (type === "checkbox") {
+      setFormData(prev => ({ ...prev, [name]: checked }))
+    } else if (name === "requirements") {
+      const reqs = value.split("\n").map(r => r.trim()).filter(r => r.length > 0)
+      setFormData(prev => ({ ...prev, requirements: reqs }))
     } else if (name === "requisitionId") {
-      const selectedReq = requisitions.find((req) => req._id === value);
-      setFormData((prev) => ({
+      const selectedReq = requisitions.find(req => req._id === value)
+      setFormData(prev => ({
         ...prev,
         requisitionId: value,
         budget: selectedReq ? selectedReq.estimatedCost : "",
         urgency: selectedReq ? selectedReq.urgency : "medium",
         category: selectedReq ? selectedReq.category : "",
         location: selectedReq ? selectedReq.location : "",
-      }));
+      }))
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData(prev => ({ ...prev, [name]: value }))
     }
-  };
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -862,6 +933,19 @@ export default function TendersPage() {
     setError(null)
 
     try {
+      // Prepare the form data for submission
+      const submissionData = {
+        ...formData,
+        // Convert requirements array to string if needed by backend
+        requirements: Array.isArray(formData.requirements) ? formData.requirements : [],
+        // Handle documents - you might need to upload them separately
+        documents: formData.documents.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type
+        }))
+      }
+
       const token = localStorage.getItem("token")
       const response = await fetch(`${backendUrl}/api/tenders`, {
         method: "POST",
@@ -869,14 +953,14 @@ export default function TendersPage() {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submissionData),
       })
 
       const responseData = await response.json()
 
       if (response.ok) {
         const newTender = responseData.tender || responseData.data || responseData
-        setTenders((prev) => Array.isArray(prev) ? [...prev, newTender] : [newTender])
+        setTenders(prev => Array.isArray(prev) ? [...prev, newTender] : [newTender])
         showNotificationMessage("Tender created successfully!", "success")
         closeCreateTenderModal()
       } else {
@@ -892,549 +976,549 @@ export default function TendersPage() {
 
   // Excel Export Function
   const handleExportToExcel = async () => {
-  if (!tenders || tenders.length === 0) {
-    showNotificationMessage("No tenders to export", "error");
-    return;
-  }
+    if (!tenders || tenders.length === 0) {
+      showNotificationMessage("No tenders to export", "error")
+      return
+    }
 
-  try {
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Tenders');
+    try {
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('Tenders')
 
-    // Define headers
-    worksheet.columns = [
-      { header: 'Title', key: 'title', width: 30 },
-      { header: 'Description', key: 'description', width: 40 },
-      { header: 'Company', key: 'company', width: 25 },
-      { header: 'Budget (USD)', key: 'budget', width: 15 },
-      { header: 'Category', key: 'category', width: 20 },
-      { header: 'Location', key: 'location', width: 20 },
-      { header: 'Urgency', key: 'urgency', width: 12 },
-      { header: 'Status', key: 'status', width: 15 },
-      { header: 'Deadline', key: 'deadline', width: 15 },
-      { header: 'Contact Email', key: 'contactEmail', width: 25 },
-      { header: 'Requirements', key: 'requirements', width: 30 },
-      { header: 'Created Date', key: 'createdAt', width: 15 },
-      { header: 'Bid Count', key: 'bidCount', width: 12 }
-    ];
+      // Define headers
+      worksheet.columns = [
+        { header: 'Title', key: 'title', width: 30 },
+        { header: 'Description', key: 'description', width: 40 },
+        { header: 'Company', key: 'company', width: 25 },
+        { header: 'Budget (USD)', key: 'budget', width: 15 },
+        { header: 'Category', key: 'category', width: 20 },
+        { header: 'Location', key: 'location', width: 20 },
+        { header: 'Urgency', key: 'urgency', width: 12 },
+        { header: 'Status', key: 'status', width: 15 },
+        { header: 'Deadline', key: 'deadline', width: 15 },
+        { header: 'Contact Email', key: 'contactEmail', width: 25 },
+        { header: 'Requirements', key: 'requirements', width: 30 },
+        { header: 'Created Date', key: 'createdAt', width: 15 },
+        { header: 'Bid Count', key: 'bidCount', width: 12 }
+      ]
 
-    // Style headers
-    const headerRow = worksheet.getRow(1);
-    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    headerRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF3B82F6' } // Blue color
-    };
-    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
-
-    // Add data rows
-    tenders.forEach((tender) => {
-      worksheet.addRow({
-        title: tender.title || "N/A",
-        description: tender.description || "N/A",
-        company: tender.company?.name || "N/A",
-        budget: tender.budget || 0,
-        category: tender.category || "N/A",
-        location: tender.location || "N/A",
-        urgency: tender.urgency || "medium",
-        status: tender.status || "open",
-        deadline: tender.deadline ? formatDateForExport(tender.deadline) : "N/A",
-        contactEmail: tender.contactEmail || "N/A",
-        requirements: tender.requirements?.join(", ") || "N/A",
-        createdAt: tender.createdAt ? formatDateForExport(tender.createdAt) : "N/A",
-        bidCount: bidCounts[tender._id] || 0
-      });
-    });
-
-    // Format currency column
-    const budgetColumn = worksheet.getColumn('budget');
-    budgetColumn.numFmt = '"$"#,##0';
-
-    // Format date columns
-    const dateColumns = ['deadline', 'createdAt'];
-    dateColumns.forEach(colName => {
-      const col = worksheet.getColumn(colName);
-      col.numFmt = 'yyyy-mm-dd';
-    });
-
-    // Style urgency column
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber > 1) { // Skip header
-        const urgencyCell = row.getCell('urgency');
-        const urgency = urgencyCell.value?.toString().toLowerCase();
-        
-        if (urgency === 'high') {
-          urgencyCell.font = { color: { argb: 'FFFF0000' }, bold: true }; // Red
-        } else if (urgency === 'medium') {
-          urgencyCell.font = { color: { argb: 'FFFF9900' }, bold: true }; // Orange
-        } else if (urgency === 'low') {
-          urgencyCell.font = { color: { argb: 'FF00CC00' }, bold: true }; // Green
-        }
+      // Style headers
+      const headerRow = worksheet.getRow(1)
+      headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+      headerRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF3B82F6' } // Blue color
       }
-    });
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
 
-    // Auto-fit columns
-    worksheet.columns.forEach(column => {
-      let maxLength = 0;
-      column.eachCell({ includeEmpty: true }, (cell) => {
-        const cellLength = cell.value ? cell.value.toString().length : 0;
-        if (cellLength > maxLength) {
-          maxLength = cellLength;
+      // Add data rows
+      tenders.forEach((tender) => {
+        worksheet.addRow({
+          title: tender.title || "N/A",
+          description: tender.description || "N/A",
+          company: tender.company?.name || "N/A",
+          budget: tender.budget || 0,
+          category: tender.category || "N/A",
+          location: tender.location || "N/A",
+          urgency: tender.urgency || "medium",
+          status: tender.status || "open",
+          deadline: tender.deadline ? formatDateForExport(tender.deadline) : "N/A",
+          contactEmail: tender.contactEmail || "N/A",
+          requirements: tender.requirements?.join(", ") || "N/A",
+          createdAt: tender.createdAt ? formatDateForExport(tender.createdAt) : "N/A",
+          bidCount: bidCounts[tender._id] || 0
+        })
+      })
+
+      // Format currency column
+      const budgetColumn = worksheet.getColumn('budget')
+      budgetColumn.numFmt = '"$"#,##0'
+
+      // Format date columns
+      const dateColumns = ['deadline', 'createdAt']
+      dateColumns.forEach(colName => {
+        const col = worksheet.getColumn(colName)
+        col.numFmt = 'yyyy-mm-dd'
+      })
+
+      // Style urgency column
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) { // Skip header
+          const urgencyCell = row.getCell('urgency')
+          const urgency = urgencyCell.value?.toString().toLowerCase()
+
+          if (urgency === 'high') {
+            urgencyCell.font = { color: { argb: 'FFFF0000' }, bold: true } // Red
+          } else if (urgency === 'medium') {
+            urgencyCell.font = { color: { argb: 'FFFF9900' }, bold: true } // Orange
+          } else if (urgency === 'low') {
+            urgencyCell.font = { color: { argb: 'FF00CC00' }, bold: true } // Green
+          }
         }
-      });
-      column.width = Math.min(Math.max(maxLength + 2, 10), 50);
-    });
+      })
 
-    // Add summary statistics
-    const lastRow = worksheet.rowCount;
-    worksheet.addRow([]); // Empty row
-    
-    const summaryRow = worksheet.addRow({
-      title: 'SUMMARY STATISTICS',
-      description: '',
-      company: '',
-      budget: tenders.reduce((sum, t) => sum + (t.budget || 0), 0),
-      category: '',
-      location: '',
-      urgency: '',
-      status: '',
-      deadline: '',
-      contactEmail: '',
-      requirements: '',
-      createdAt: '',
-      bidCount: Object.values(bidCounts).reduce((sum, count) => sum + count, 0)
-    });
+      // Auto-fit columns
+      worksheet.columns.forEach(column => {
+        let maxLength = 0
+        column.eachCell({ includeEmpty: true }, (cell) => {
+          const cellLength = cell.value ? cell.value.toString().length : 0
+          if (cellLength > maxLength) {
+            maxLength = cellLength
+          }
+        })
+        column.width = Math.min(Math.max(maxLength + 2, 10), 50)
+      })
 
-    // Style summary row
-    summaryRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    summaryRow.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF10B981' } // Green
-    };
+      // Add summary statistics
+      const lastRow = worksheet.rowCount
+      worksheet.addRow([]) // Empty row
 
-    // Add status summary
-    const statusCounts = {};
-    tenders.forEach(t => {
-      statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
-    });
-
-    Object.entries(statusCounts).forEach(([status, count], index) => {
-      const statusRow = worksheet.addRow({
-        title: `Status: ${status}`,
+      const summaryRow = worksheet.addRow({
+        title: 'SUMMARY STATISTICS',
         description: '',
         company: '',
-        budget: '',
+        budget: tenders.reduce((sum, t) => sum + (t.budget || 0), 0),
         category: '',
         location: '',
         urgency: '',
-        status: count,
+        status: '',
         deadline: '',
         contactEmail: '',
         requirements: '',
         createdAt: '',
-        bidCount: ''
-      });
-      
-      statusRow.getCell('title').font = { italic: true };
-    });
+        bidCount: Object.values(bidCounts).reduce((sum, count) => sum + count, 0)
+      })
 
-    // Generate buffer and download
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { 
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-    });
-    
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `tenders-export-${new Date().toISOString().split('T')[0]}.xlsx`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+      // Style summary row
+      summaryRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+      summaryRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF10B981' } // Green
+      }
 
-    showNotificationMessage("Export successful!", "success");
-  } catch (error) {
-    console.error('Export error:', error);
-    showNotificationMessage("Export failed!", "error");
+      // Add status summary
+      const statusCounts = {}
+      tenders.forEach(t => {
+        statusCounts[t.status] = (statusCounts[t.status] || 0) + 1
+      })
+
+      Object.entries(statusCounts).forEach(([status, count], index) => {
+        const statusRow = worksheet.addRow({
+          title: `Status: ${status}`,
+          description: '',
+          company: '',
+          budget: '',
+          category: '',
+          location: '',
+          urgency: '',
+          status: count,
+          deadline: '',
+          contactEmail: '',
+          requirements: '',
+          createdAt: '',
+          bidCount: ''
+        })
+
+        statusRow.getCell('title').font = { italic: true }
+      })
+
+      // Generate buffer and download
+      const buffer = await workbook.xlsx.writeBuffer()
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `tenders-export-${new Date().toISOString().split('T')[0]}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      showNotificationMessage("Export successful!", "success")
+    } catch (error) {
+      console.error('Export error:', error)
+      showNotificationMessage("Export failed!", "error")
+    }
   }
-};
 
-// Helper function for date formatting in Excel
-const formatDateForExport = (dateString) => {
-  return new Date(dateString).toISOString().split('T')[0]; // YYYY-MM-DD format
-};
+  // Helper function for date formatting in Excel
+  const formatDateForExport = (dateString) => {
+    return new Date(dateString).toISOString().split('T')[0] // YYYY-MM-DD format
+  }
 
   // Excel Import Function
   const handleImportFromExcel = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
+    const file = event.target.files[0]
+    if (!file) return
 
-  try {
-    // Clear the file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-
-    const data = await file.arrayBuffer();
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(data);
-    
-    const worksheet = workbook.getWorksheet(1); // Get first sheet
-    if (!worksheet) {
-      throw new Error('No worksheet found in the Excel file');
-    }
-
-    const rows = [];
-    worksheet.eachRow((row, rowNumber) => {
-      if (rowNumber > 1) { // Skip header row
-        const rowData = {
-          Title: row.getCell(1).value,
-          Description: row.getCell(2).value,
-          Company: row.getCell(3).value,
-          Budget: row.getCell(4).value,
-          Category: row.getCell(5).value,
-          Location: row.getCell(6).value,
-          Urgency: row.getCell(7).value,
-          Status: row.getCell(8).value,
-          Deadline: row.getCell(9).value,
-          ContactEmail: row.getCell(10).value,
-          Requirements: row.getCell(11).value,
-          Created: row.getCell(12).value
-        };
-        rows.push(rowData);
+    try {
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
       }
-    });
 
-    const token = localStorage.getItem("token");
-    const importResults = {
-      success: 0,
-      failed: 0,
-      errors: []
-    };
+      const data = await file.arrayBuffer()
+      const workbook = new ExcelJS.Workbook()
+      await workbook.xlsx.load(data)
 
-    // Import each row
-    for (const row of rows) {
-      try {
-        const payload = {
-          title: row.Title || "",
-          description: row.Description || "",
-          budget: Number(row.Budget) || 0,
-          category: row.Category || "",
-          location: row.Location || "",
-          urgency: row.Urgency || "medium",
-          status: row.Status || "open",
-          deadline: row.Deadline ? new Date(row.Deadline).toISOString() : new Date().toISOString(),
-          contactEmail: row.ContactEmail || "",
-          requirements: row.Requirements ? row.Requirements.split(",").map((r) => r.trim()) : [],
-        };
+      const worksheet = workbook.getWorksheet(1) // Get first sheet
+      if (!worksheet) {
+        throw new Error('No worksheet found in the Excel file')
+      }
 
-        const response = await fetch(`${backendUrl}/api/tenders`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+      const rows = []
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) { // Skip header row
+          const rowData = {
+            Title: row.getCell(1).value,
+            Description: row.getCell(2).value,
+            Company: row.getCell(3).value,
+            Budget: row.getCell(4).value,
+            Category: row.getCell(5).value,
+            Location: row.getCell(6).value,
+            Urgency: row.getCell(7).value,
+            Status: row.getCell(8).value,
+            Deadline: row.getCell(9).value,
+            ContactEmail: row.getCell(10).value,
+            Requirements: row.getCell(11).value,
+            Created: row.getCell(12).value
+          }
+          rows.push(rowData)
+        }
+      })
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${row.Title || 'Unknown tender'}`);
+      const token = localStorage.getItem("token")
+      const importResults = {
+        success: 0,
+        failed: 0,
+        errors: []
+      }
+
+      // Import each row
+      for (const row of rows) {
+        try {
+          const payload = {
+            title: row.Title || "",
+            description: row.Description || "",
+            budget: Number(row.Budget) || 0,
+            category: row.Category || "",
+            location: row.Location || "",
+            urgency: row.Urgency || "medium",
+            status: row.Status || "open",
+            deadline: row.Deadline ? new Date(row.Deadline).toISOString() : new Date().toISOString(),
+            contactEmail: row.ContactEmail || "",
+            requirements: row.Requirements ? row.Requirements.split(",").map((r) => r.trim()) : [],
+          }
+
+          const response = await fetch(`${backendUrl}/api/tenders`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${row.Title || 'Unknown tender'}`)
+          }
+
+          const result = await response.json()
+          if (result.success) {
+            importResults.success++
+          } else {
+            throw new Error(result.message || 'Import failed')
+          }
+        } catch (err) {
+          importResults.failed++
+          importResults.errors.push({
+            row: row.Title || 'Unknown',
+            error: err.message
+          })
+          console.error(`Import error for row:`, row, err)
+        }
+      }
+
+      if (importResults.success > 0) {
+        showNotificationMessage(
+          `Excel import completed! ${importResults.success} successful, ${importResults.failed} failed.`,
+          importResults.failed === 0 ? "success" : "warning"
+        )
+
+        if (importResults.failed > 0) {
+          console.warn('Import errors:', importResults.errors)
         }
 
-        const result = await response.json();
-        if (result.success) {
-          importResults.success++;
-        } else {
-          throw new Error(result.message || 'Import failed');
-        }
-      } catch (err) {
-        importResults.failed++;
-        importResults.errors.push({
-          row: row.Title || 'Unknown',
-          error: err.message
-        });
-        console.error(`Import error for row:`, row, err);
+        handleRefresh()
+      } else {
+        showNotificationMessage(
+          `Import failed for all ${importResults.failed} items.`,
+          "error"
+        )
       }
+    } catch (err) {
+      console.error("Import error:", err)
+      showNotificationMessage(`Excel import failed: ${err.message}`, "error")
     }
-
-    if (importResults.success > 0) {
-      showNotificationMessage(
-        `Excel import completed! ${importResults.success} successful, ${importResults.failed} failed.`,
-        importResults.failed === 0 ? "success" : "warning"
-      );
-      
-      if (importResults.failed > 0) {
-        console.warn('Import errors:', importResults.errors);
-      }
-      
-      handleRefresh();
-    } else {
-      showNotificationMessage(
-        `Import failed for all ${importResults.failed} items.`,
-        "error"
-      );
-    }
-  } catch (err) {
-    console.error("Import error:", err);
-    showNotificationMessage(`Excel import failed: ${err.message}`, "error");
   }
-};
 
   // Print Function
   const handlePrint = () => {
-  if (filteredTenders.length === 0) {
-    showNotificationMessage("Nothing to print", "error");
-    return;
-  }
+    if (filteredTenders.length === 0) {
+      showNotificationMessage("Nothing to print", "error")
+      return
+    }
 
-  const printWindow = window.open("", "_blank", "width=1000,height=700");
+    const printWindow = window.open("", "_blank", "width=1000,height=700")
 
-  // Calculate statistics for print
-  const totalValue = filteredTenders.reduce((sum, tender) => sum + (tender.budget || 0), 0);
-  const avgBudget = filteredTenders.length > 0 ? totalValue / filteredTenders.length : 0;
-  const openTenders = filteredTenders.filter(t => t.status === 'open').length;
-  const statusCounts = {};
-  filteredTenders.forEach(t => {
-    statusCounts[t.status] = (statusCounts[t.status] || 0) + 1;
-  });
+    // Calculate statistics for print
+    const totalValue = filteredTenders.reduce((sum, tender) => sum + (tender.budget || 0), 0)
+    const avgBudget = filteredTenders.length > 0 ? totalValue / filteredTenders.length : 0
+    const openTenders = filteredTenders.filter(t => t.status === 'open').length
+    const statusCounts = {}
+    filteredTenders.forEach(t => {
+      statusCounts[t.status] = (statusCounts[t.status] || 0) + 1
+    })
 
-  const formatDateForPrint = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    });
-  };
+    const formatDateForPrint = (dateString) => {
+      return new Date(dateString).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      })
+    }
 
-  const formatCurrencyForPrint = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+    const formatCurrencyForPrint = (amount) => {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(amount)
+    }
 
-  printWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>Tenders Report - ${new Date().toLocaleDateString()}</title>
-        <style>
-          body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            padding: 30px; 
-            color: #333;
-            line-height: 1.4;
-          }
-          
-          .print-header { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 30px; 
-            padding-bottom: 15px;
-            border-bottom: 2px solid #3B82F6;
-          }
-          
-          h1 { 
-            color: #1F2937; 
-            margin: 0;
-            font-size: 28px;
-          }
-          
-          .report-info {
-            text-align: right;
-            font-size: 14px;
-            color: #6B7280;
-          }
-          
-          .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin: 25px 0;
-          }
-          
-          .stat-card {
-            background: #F9FAFB;
-            border: 1px solid #E5E7EB;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-          }
-          
-          .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #1F2937;
-            margin: 8px 0;
-          }
-          
-          .stat-title {
-            font-size: 14px;
-            color: #6B7280;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-          
-          .tender-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 25px;
-            font-size: 13px;
-          }
-          
-          .tender-table th {
-            background: #3B82F6;
-            color: white;
-            text-align: left;
-            padding: 12px 15px;
-            font-weight: 600;
-            border: none;
-          }
-          
-          .tender-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #E5E7EB;
-          }
-          
-          .tender-table tr:hover {
-            background: #F9FAFB;
-          }
-          
-          .status-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: capitalize;
-          }
-          
-          .status-open { background: #D1FAE5; color: #065F46; }
-          .status-closed { background: #FEE2E2; color: #991B1B; }
-          .status-under_review { background: #FEF3C7; color: #92400E; }
-          .status-awarded { background: #DBEAFE; color: #1E40AF; }
-          
-          .urgency-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 6px;
-          }
-          
-          .urgency-high { background: #EF4444; }
-          .urgency-medium { background: #F59E0B; }
-          .urgency-low { background: #10B981; }
-          
-          .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #E5E7EB;
-            color: #6B7280;
-            font-size: 12px;
-          }
-          
-          @media print {
-            @page { margin: 20mm; }
-            body { padding: 0; }
-            .no-print { display: none; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-header">
-          <h1>Tenders Report</h1>
-          <div class="report-info">
-            Generated: ${new Date().toLocaleString()}<br>
-            User: Tender Manager<br>
-            Page: 1 of 1
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Tenders Report - ${new Date().toLocaleDateString()}</title>
+          <style>
+            body { 
+              font-family: 'Segoe UI', Arial, sans-serif; 
+              padding: 30px; 
+              color: #333;
+              line-height: 1.4;
+            }
+            
+            .print-header { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center; 
+              margin-bottom: 30px; 
+              padding-bottom: 15px;
+              border-bottom: 2px solid #3B82F6;
+            }
+            
+            h1 { 
+              color: #1F2937; 
+              margin: 0;
+              font-size: 28px;
+            }
+            
+            .report-info {
+              text-align: right;
+              font-size: 14px;
+              color: #6B7280;
+            }
+            
+            .stats-grid {
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 15px;
+              margin: 25px 0;
+            }
+            
+            .stat-card {
+              background: #F9FAFB;
+              border: 1px solid #E5E7EB;
+              border-radius: 12px;
+              padding: 20px;
+              text-align: center;
+            }
+            
+            .stat-value {
+              font-size: 24px;
+              font-weight: bold;
+              color: #1F2937;
+              margin: 8px 0;
+            }
+            
+            .stat-title {
+              font-size: 14px;
+              color: #6B7280;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            
+            .tender-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 25px;
+              font-size: 13px;
+            }
+            
+            .tender-table th {
+              background: #3B82F6;
+              color: white;
+              text-align: left;
+              padding: 12px 15px;
+              font-weight: 600;
+              border: none;
+            }
+            
+            .tender-table td {
+              padding: 12px 15px;
+              border-bottom: 1px solid #E5E7EB;
+            }
+            
+            .tender-table tr:hover {
+              background: #F9FAFB;
+            }
+            
+            .status-badge {
+              display: inline-block;
+              padding: 4px 10px;
+              border-radius: 20px;
+              font-size: 12px;
+              font-weight: 600;
+              text-transform: capitalize;
+            }
+            
+            .status-open { background: #D1FAE5; color: #065F46; }
+            .status-closed { background: #FEE2E2; color: #991B1B; }
+            .status-under_review { background: #FEF3C7; color: #92400E; }
+            .status-awarded { background: #DBEAFE; color: #1E40AF; }
+            
+            .urgency-indicator {
+              display: inline-block;
+              width: 10px;
+              height: 10px;
+              border-radius: 50%;
+              margin-right: 6px;
+            }
+            
+            .urgency-high { background: #EF4444; }
+            .urgency-medium { background: #F59E0B; }
+            .urgency-low { background: #10B981; }
+            
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #E5E7EB;
+              color: #6B7280;
+              font-size: 12px;
+            }
+            
+            @media print {
+              @page { margin: 20mm; }
+              body { padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-header">
+            <h1>Tenders Report</h1>
+            <div class="report-info">
+              Generated: ${new Date().toLocaleString()}<br>
+              User: Tender Manager<br>
+              Page: 1 of 1
+            </div>
           </div>
-        </div>
-        
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-value">${filteredTenders.length}</div>
-            <div class="stat-title">Total Tenders</div>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-value">${filteredTenders.length}</div>
+              <div class="stat-title">Total Tenders</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${openTenders}</div>
+              <div class="stat-title">Open Tenders</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${formatCurrencyForPrint(totalValue)}</div>
+              <div class="stat-title">Total Value</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">${formatCurrencyForPrint(avgBudget)}</div>
+              <div class="stat-title">Avg. Budget</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-value">${openTenders}</div>
-            <div class="stat-title">Open Tenders</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${formatCurrencyForPrint(totalValue)}</div>
-            <div class="stat-title">Total Value</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-value">${formatCurrencyForPrint(avgBudget)}</div>
-            <div class="stat-title">Avg. Budget</div>
-          </div>
-        </div>
-        
-        <h2>Tender List (${filteredTenders.length} items)</h2>
-        
-        <table class="tender-table">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Category</th>
-              <th>Budget</th>
-              <th>Deadline</th>
-              <th>Status</th>
-              <th>Urgency</th>
-              <th>Bids</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredTenders.map(tender => `
+          
+          <h2>Tender List (${filteredTenders.length} items)</h2>
+          
+          <table class="tender-table">
+            <thead>
               <tr>
-                <td style="font-weight: 500;">${tender.title || 'N/A'}</td>
-                <td>${tender.category || 'N/A'}</td>
-                <td style="font-weight: 600;">${formatCurrencyForPrint(tender.budget || 0)}</td>
-                <td>${formatDateForPrint(tender.deadline)}</td>
-                <td>
-                  <span class="status-badge status-${tender.status}">
-                    ${tender.status.replace('_', ' ')}
-                  </span>
-                </td>
-                <td>
-                  <span class="urgency-indicator urgency-${tender.urgency || 'medium'}"></span>
-                  ${tender.urgency || 'medium'}
-                </td>
-                <td style="text-align: center;">${bidCounts[tender._id] || 0}</td>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Budget</th>
+                <th>Deadline</th>
+                <th>Status</th>
+                <th>Urgency</th>
+                <th>Bids</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-        
-        <div class="footer">
-          <p><strong>Status Summary:</strong> ${Object.entries(statusCounts).map(([status, count]) => 
-            `${status.replace('_', ' ')}: ${count}`).join(', ')}</p>
-          <p>Report generated by Tender Management System &copy; ${new Date().getFullYear()}</p>
-        </div>
-        
-        <script>
-          // Auto-print and close
-          setTimeout(() => {
-            window.print();
-            setTimeout(() => window.close(), 500);
-          }, 300);
-        </script>
-      </body>
-    </html>
-  `);
+            </thead>
+            <tbody>
+              ${filteredTenders.map(tender => `
+                <tr>
+                  <td style="font-weight: 500;">${tender.title || 'N/A'}</td>
+                  <td>${tender.category || 'N/A'}</td>
+                  <td style="font-weight: 600;">${formatCurrencyForPrint(tender.budget || 0)}</td>
+                  <td>${formatDateForPrint(tender.deadline)}</td>
+                  <td>
+                    <span class="status-badge status-${tender.status}">
+                      ${tender.status.replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="urgency-indicator urgency-${tender.urgency || 'medium'}"></span>
+                    ${tender.urgency || 'medium'}
+                  </td>
+                  <td style="text-align: center;">${bidCounts[tender._id] || 0}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            <p><strong>Status Summary:</strong> ${Object.entries(statusCounts).map(([status, count]) =>
+      `${status.replace('_', ' ')}: ${count}`).join(', ')}</p>
+            <p>Report generated by Tender Management System &copy; ${new Date().getFullYear()}</p>
+          </div>
+          
+          <script>
+            // Auto-print and close
+            setTimeout(() => {
+              window.print();
+              setTimeout(() => window.close(), 500);
+            }, 300);
+          </script>
+        </body>
+      </html>
+    `)
 
-  printWindow.document.close();
-};
+    printWindow.document.close()
+  }
 
   // Handle Delete Tender
   const handleDeleteTender = async (tenderId) => {
-    setActionLoading(tenderId);
+    setActionLoading(tenderId)
     try {
       const token = localStorage.getItem("token")
       const response = await fetch(`${backendUrl}/api/tenders/${tenderId}`, {
@@ -1455,17 +1539,17 @@ const formatDateForExport = (dateString) => {
       showNotificationMessage(error.message || "Failed to delete tender", "error")
       console.error("Failed to delete tender:", error)
     } finally {
-      setActionLoading(null);
+      setActionLoading(null)
       setShowMenuId(null)
     }
-  };
+  }
 
   // Copy to Clipboard
   const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-    showNotificationMessage("Tender ID copied to clipboard!", "success");
-    setShowMenuId(null);
-  };
+    navigator.clipboard.writeText(text)
+    showNotificationMessage("Tender ID copied to clipboard!", "success")
+    setShowMenuId(null)
+  }
 
   // Format budget for display
   const formatBudget = (budget) => {
@@ -1482,7 +1566,7 @@ const formatDateForExport = (dateString) => {
       setIsLoading(true)
       try {
         const token = localStorage.getItem("token")
-        
+
         const [tendersRes, requisitionsRes] = await Promise.all([
           fetch(`${backendUrl}/api/tenders/company`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -1505,7 +1589,7 @@ const formatDateForExport = (dateString) => {
           const response = await requisitionsRes.json()
           requisitionsData = Array.isArray(response) ? response : response.data || []
           const approvedRequisitions = requisitionsData.filter(req => req.status === "approved")
-          const tenderRequisitions = approvedRequisitions.filter(req => 
+          const tenderRequisitions = approvedRequisitions.filter(req =>
             req.estimatedCost > 1000 || req.urgency === "high"
           )
           setRequisitions(tenderRequisitions)
@@ -1564,7 +1648,7 @@ const formatDateForExport = (dateString) => {
 
       if (response.ok) {
         const responseData = await response.json()
-        
+
         let bidsData = []
         if (Array.isArray(responseData)) {
           bidsData = responseData
@@ -1575,8 +1659,8 @@ const formatDateForExport = (dateString) => {
         } else if (typeof responseData === 'object' && responseData !== null) {
           bidsData = [responseData]
         }
-        
-        console.log('Bids data:', bidsData) 
+
+        console.log('Bids data:', bidsData)
         setTenderBids(bidsData)
         setSelectedTender(tender)
         setShowTenderModal(true)
@@ -1606,7 +1690,7 @@ const formatDateForExport = (dateString) => {
 
       if (response.ok) {
         showNotificationMessage(`Bid awarded to ${bid.vendor.businessName} successfully!`, "success")
-        
+
         // Refresh the bids data
         if (selectedTender) {
           const bidsRes = await fetch(`${backendUrl}/api/bids/tender/${selectedTender._id}`, {
@@ -1635,7 +1719,7 @@ const formatDateForExport = (dateString) => {
 
   // Filter tenders based on search term and status
   const filteredTenders = tenders.filter((tender) => {
-    const matchesSearch = 
+    const matchesSearch =
       tender.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tender.company?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       tender.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -1699,7 +1783,7 @@ const formatDateForExport = (dateString) => {
               <option value="closed">Closed</option>
               <option value="awarded">Awarded</option>
             </select>
-          
+
             <button
               onClick={openCreateTenderModal}
               disabled={isLoading}
@@ -1708,7 +1792,7 @@ const formatDateForExport = (dateString) => {
               <Plus size={16} />
               Create Tender
             </button>
-              <button
+            <button
               onClick={handleRefresh}
               disabled={isLoading}
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-2xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -1836,7 +1920,7 @@ const formatDateForExport = (dateString) => {
             className="fixed inset-0 z-[100] bg-transparent"
             onClick={() => setShowMenuId(null)}
           />
-          
+
           {/* Menu positioned exactly at button edge */}
           <motion.div
             initial={{ opacity: 0, y: -5 }}
@@ -1844,26 +1928,26 @@ const formatDateForExport = (dateString) => {
             className="fixed z-[101] w-56 bg-white rounded-2xl shadow-xl border border-gray-200"
             style={{
               top: (() => {
-                const button = document.querySelector(`[data-tender-id="${showMenuId}"]`);
+                const button = document.querySelector(`[data-tender-id="${showMenuId}"]`)
                 if (button) {
-                  const rect = button.getBoundingClientRect();
-                  return `${rect.bottom + window.scrollY}px`;
+                  const rect = button.getBoundingClientRect()
+                  return `${rect.bottom + window.scrollY}px`
                 }
-                return '50px';
+                return '50px'
               })(),
               left: (() => {
-                const button = document.querySelector(`[data-tender-id="${showMenuId}"]`);
+                const button = document.querySelector(`[data-tender-id="${showMenuId}"]`)
                 if (button) {
-                  const rect = button.getBoundingClientRect();
-                  const menuWidth = 224;
-                  const rightEdge = rect.right + window.scrollX;
-                  
+                  const rect = button.getBoundingClientRect()
+                  const menuWidth = 224
+                  const rightEdge = rect.right + window.scrollX
+
                   if (rightEdge + menuWidth > window.innerWidth) {
-                    return `${window.innerWidth - menuWidth - 8}px`;
+                    return `${window.innerWidth - menuWidth - 8}px`
                   }
-                  return `${rect.right - menuWidth + window.scrollX}px`;
+                  return `${rect.right - menuWidth + window.scrollX}px`
                 }
-                return '50px';
+                return '50px'
               })()
             }}
             transition={{
@@ -1874,17 +1958,17 @@ const formatDateForExport = (dateString) => {
             <div className="py-1">
               <button
                 onClick={() => {
-                  setShowMenuId(null);
+                  setShowMenuId(null)
                 }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
               >
                 <Eye size={16} className="text-gray-500" />
                 View Details
               </button>
-              
+
               <button
                 onClick={() => {
-                  setShowMenuId(null);
+                  setShowMenuId(null)
                 }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
               >
@@ -1894,7 +1978,7 @@ const formatDateForExport = (dateString) => {
 
               <button
                 onClick={() => {
-                  copyToClipboard(showMenuId);
+                  copyToClipboard(showMenuId)
                 }}
                 className="w-full flex items-center gap-3 px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-600 text-left text-sm rounded-xl"
               >
@@ -1936,11 +2020,10 @@ const formatDateForExport = (dateString) => {
       {/* Create Tender Modal */}
       {isCreateTenderModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[1000]">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
-            
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl">
             {/* Header */}
             <div className="px-5 py-3 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">Create Tender</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Create New Tender</h2>
               <button
                 onClick={closeCreateTenderModal}
                 className="p-1.5 hover:bg-gray-100 rounded-2xl transition-colors"
@@ -1951,197 +2034,595 @@ const formatDateForExport = (dateString) => {
 
             {/* Body */}
             <div className="p-5 max-h-[75vh] overflow-y-auto">
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Section 1: Basic Information */}
+                <div className="border border-gray-200 rounded-2xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FileText size={14} />
+                    Basic Information
+                  </h3>
+
+                  <div className="space-y-3">
+                    {/* Title + Category */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Tender Title *</label>
+                        <input
+                          type="text"
+                          name="title"
+                          value={formData.title}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="e.g., Supply of Medical Equipment"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Category *</label>
+                        <select
+                          name="category"
+                          value={formData.category}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select category</option>
+                          <option value="Construction">Construction</option>
+                          <option value="Medical Supplies">Medical Supplies</option>
+                          <option value="IT Services">IT Services</option>
+                          <option value="Consultancy">Consultancy</option>
+                          <option value="Goods Supply">Goods Supply</option>
+                          <option value="Works">Works</option>
+                          <option value="Services">Services</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Requisition -     <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Requisition *</label>
+                      <select
+                        name="requisitionId"
+                        value={formData.requisitionId}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select requisition</option>
+                        {requisitions.map((req) => (
+                          <option key={req._id} value={req._id}>
+                            {req.itemName} ({req.budgetCode})
+                          </option>
+                        ))}
+                      </select>
+                    </div> */}
                 
-                {/* Title + Category */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Title *</label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., Supply of Medical Equipment"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Category *</label>
-                    <input
-                      type="text"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Medical Supplies"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
                   </div>
                 </div>
 
-                {/* Requisition */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Requisition *</label>
-                  <select
-                    name="requisitionId"
-                    value={formData.requisitionId}
-                    onChange={handleInputChange}
-                    required
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                  >
-                    <option value="">Select requisition</option>
-                    {requisitions.map((req) => (
-                      <option key={req._id} value={req._id}>
-                        {req.itemName} ({req.budgetCode})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Section 2: Tender Details */}
+                <div className="border border-gray-200 rounded-2xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FileText size={14} />
+                    Tender Details
+                  </h3>
 
-                {/* Description */}
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">Scope / Description *</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    required
-                    rows={3}
-                    placeholder="Provide detailed description of goods/services"
-                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                  />
-                </div>
+                  <div className="space-y-3">
+                    {/* Detailed Description */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Detailed Description *</label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        required
+                        rows={3}
+                        placeholder="Provide comprehensive description of the tender"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
 
-                {/* Requirements + Technical Specs */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Requirements *</label>
-                    <input
-                      type="text"
-                      name="requirements"
-                      value={(formData.requirements || []).join(", ")}
-                      onChange={handleInputChange}
-                      placeholder="e.g., License, 5+ yrs exp, ISO Cert"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Technical Specs</label>
-                    <input
-                      type="text"
-                      name="technicalSpecs"
-                      value={formData.technicalSpecs || ""}
-                      onChange={handleInputChange}
-                      placeholder="Key specs"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
-                  </div>
-                </div>
+                    {/* Scope of Work */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Scope of Work *</label>
+                      <textarea
+                        name="scopeOfWork"
+                        value={formData.scopeOfWork}
+                        onChange={handleInputChange}
+                        required
+                        rows={3}
+                        placeholder="Detailed breakdown of work, deliverables, and milestones..."
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </div>
 
-                {/* Budget + Payment Terms */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Budget *</label>
-                    <input
-                      type="number"
-                      name="budget"
-                      value={formData.budget}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="e.g., 500000"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Payment Terms</label>
-                    <input
-                      type="text"
-                      name="paymentTerms"
-                      value={formData.paymentTerms || ""}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 30% advance"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
+                    {/* Requirements + Technical Specs */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Requirements *</label>
+                        <textarea
+                          name="requirements"
+                          value={formData.requirements.join("\n")}
+                          onChange={handleInputChange}
+                          required
+                          rows={3}
+                          placeholder="List vendor requirements (one per line):
+• Valid business license
+• 5+ years experience
+• ISO certification
+• Tax clearance certificate"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Technical Specifications</label>
+                        <textarea
+                          name="technicalSpecs"
+                          value={formData.technicalSpecs}
+                          onChange={handleInputChange}
+                          rows={3}
+                          placeholder="Key technical specifications, standards, and quality requirements..."
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Deadline + Evaluation Criteria */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Deadline *</label>
-                    <input
-                      type="date"
-                      name="deadline"
-                      value={formData.deadline}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Evaluation Criteria</label>
-                    <input
-                      type="text"
-                      name="evaluationCriteria"
-                      value={formData.evaluationCriteria || ""}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 60% tech / 40% finance"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
+                {/* Section 3: Financial Information */}
+                <div className="border border-gray-200 rounded-2xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <DollarSign size={14} />
+                    Financial Information
+                  </h3>
+
+                  <div className="space-y-3">
+                    {/* Budget + Payment Terms */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Estimated Budget (MWK) *</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-2 text-gray-500">MWK</span>
+                          <input
+                            type="number"
+                            name="budget"
+                            value={formData.budget}
+                            onChange={handleInputChange}
+                            required
+                            min="0"
+                            placeholder="e.g., 5000000"
+                            className="w-full pl-12 pr-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Payment Terms *</label>
+                        <select
+                          name="paymentTerms"
+                          value={formData.paymentTerms}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">Select payment terms</option>
+                          <option value="30 days after invoice">30 days after invoice</option>
+                          <option value="50% advance, 50% on completion">50% advance, 50% on completion</option>
+                          <option value="Milestone payments">Milestone payments</option>
+                          <option value="On delivery">On delivery</option>
+                          <option value="Custom">Custom terms</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Bid Security */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Bid Security Required</label>
+                        <select
+                          name="bidSecurityRequired"
+                          value={formData.bidSecurityRequired || "no"}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="no">No</option>
+                          <option value="yes">Yes</option>
+                        </select>
+                      </div>
+                      {formData.bidSecurityRequired === "yes" && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Bid Security Amount (MWK)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2 text-gray-500">MWK</span>
+                            <input
+                              type="number"
+                              name="bidSecurityAmount"
+                              value={formData.bidSecurityAmount}
+                              onChange={handleInputChange}
+                              min="0"
+                              placeholder="Amount"
+                              className="w-full pl-12 pr-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Custom Payment Terms */}
+                    {formData.paymentTerms === "Custom" && (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Custom Payment Terms</label>
+                        <textarea
+                          name="customPaymentTerms"
+                          value={formData.customPaymentTerms}
+                          onChange={handleInputChange}
+                          rows={2}
+                          placeholder="Specify your custom payment terms..."
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Urgency + Location */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Urgency *</label>
-                    <select
-                      name="urgency"
-                      value={formData.urgency}
-                      onChange={handleInputChange}
-                      required
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
+                {/* Section 4: Timeline */}
+                <div className="border border-gray-200 rounded-2xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Calendar size={14} />
+                    Timeline
+                  </h3>
+
+                  <div className="space-y-3">
+                    {/* Bid Submission Deadline */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Bid Submission Deadline *</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="date"
+                            name="deadline"
+                            value={formData.deadline}
+                            onChange={handleInputChange}
+                            required
+                            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                          <input
+                            type="time"
+                            name="deadlineTime"
+                            value={formData.deadlineTime || "17:00"}
+                            onChange={handleInputChange}
+                            className="w-32 px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Urgency Level *</label>
+                        <select
+                          name="urgency"
+                          value={formData.urgency}
+                          onChange={handleInputChange}
+                          required
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Project Timeline */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Project Start Date</label>
+                        <input
+                          type="date"
+                          name="projectStartDate"
+                          value={formData.projectStartDate}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Project End Date</label>
+                        <input
+                          type="date"
+                          name="projectEndDate"
+                          value={formData.projectEndDate}
+                          onChange={handleInputChange}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Pre-bid Meeting */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Pre-bid Meeting (Optional)</label>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div>
+                          <label className="text-xs text-gray-600">Date</label>
+                          <input
+                            type="date"
+                            name="preBidMeetingDate"
+                            value={formData.preBidMeetingDate}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-600">Time</label>
+                          <input
+                            type="time"
+                            name="preBidMeetingTime"
+                            value={formData.preBidMeetingTime}
+                            onChange={handleInputChange}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-gray-600">Venue</label>
+                          <input
+                            type="text"
+                            name="preBidMeetingVenue"
+                            value={formData.preBidMeetingVenue}
+                            onChange={handleInputChange}
+                            placeholder="Meeting venue"
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location || ""}
-                      onChange={handleInputChange}
-                      placeholder="Location"
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl"
-                    />
+                </div>
+
+                {/* Section 5: Submission & Evaluation */}
+                <div className="border border-gray-200 rounded-2xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <CheckSquare size={14} />
+                    Submission & Evaluation
+                  </h3>
+
+                  <div className="space-y-3">
+                    {/* Submission Requirements */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Submission Requirements *</label>
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          <label className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              name="requireTechnicalProposal"
+                              checked={formData.requireTechnicalProposal || true}
+                              onChange={handleInputChange}
+                              className="rounded"
+                            />
+                            Technical Proposal
+                          </label>
+                          <label className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              name="requireFinancialProposal"
+                              checked={formData.requireFinancialProposal || true}
+                              onChange={handleInputChange}
+                              className="rounded"
+                            />
+                            Financial Proposal
+                          </label>
+                          <label className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              name="requireCompanyProfile"
+                              checked={formData.requireCompanyProfile || true}
+                              onChange={handleInputChange}
+                              className="rounded"
+                            />
+                            Company Profile
+                          </label>
+                          <label className="flex items-center gap-1 text-xs">
+                            <input
+                              type="checkbox"
+                              name="requireCertificates"
+                              checked={formData.requireCertificates || true}
+                              onChange={handleInputChange}
+                              className="rounded"
+                            />
+                            Certificates
+                          </label>
+                        </div>
+                        <textarea
+                          name="submissionInstructions"
+                          value={formData.submissionInstructions}
+                          onChange={handleInputChange}
+                          rows={2}
+                          placeholder="Specific submission instructions (format, number of copies, submission method...)"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Evaluation Criteria */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Evaluation Criteria *</label>
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="text-xs text-gray-600">Technical Score (%)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              name="techScoreWeight"
+                              value={formData.techScoreWeight || 70}
+                              onChange={handleInputChange}
+                              className="w-full px-3 py-1 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-600">Financial Score (%)</label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              name="financialScoreWeight"
+                              value={formData.financialScoreWeight || 30}
+                              onChange={handleInputChange}
+                              className="w-full px-3 py-1 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-gray-600">Total (%)</label>
+                            <input
+                              type="number"
+                              value={(parseInt(formData.techScoreWeight) || 70) + (parseInt(formData.financialScoreWeight) || 30)}
+                              disabled
+                              className="w-full px-3 py-1 text-sm bg-gray-50 border border-gray-300 rounded-2xl"
+                            />
+                          </div>
+                        </div>
+                        <textarea
+                          name="evaluationDetails"
+                          value={formData.evaluationDetails}
+                          onChange={handleInputChange}
+                          rows={2}
+                          placeholder="Specific evaluation factors (experience, methodology, qualifications, timeline...)"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 6: Contract & Additional Info */}
+                <div className="border border-gray-200 rounded-2xl p-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <FileCheck size={14} />
+                    Contract & Additional Information
+                  </h3>
+
+                  <div className="space-y-3">
+                    {/* Contract Terms */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Contract Duration (months)</label>
+                        <input
+                          type="number"
+                          name="contractDuration"
+                          value={formData.contractDuration}
+                          onChange={handleInputChange}
+                          min="0"
+                          placeholder="e.g., 12"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Warranty Period (months)</label>
+                        <input
+                          type="number"
+                          name="warrantyPeriod"
+                          value={formData.warrantyPeriod}
+                          onChange={handleInputChange}
+                          min="0"
+                          placeholder="e.g., 6"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Location + Additional Terms */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Location *</label>
+                        <input
+                          type="text"
+                          name="location"
+                          value={formData.location}
+                          onChange={handleInputChange}
+                          required
+                          placeholder="e.g., Lilongwe, Malawi"
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Additional Terms & Conditions</label>
+                        <textarea
+                          name="additionalTerms"
+                          value={formData.additionalTerms}
+                          onChange={handleInputChange}
+                          rows={2}
+                          placeholder="Any additional terms and conditions..."
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Document Upload */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Supporting Documents</label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center hover:border-blue-400 transition-colors">
+                        <Upload size={20} className="w-6 h-6 text-gray-400 mx-auto mb-2" />
+                        <p className="text-xs text-gray-600 mb-2">Upload tender documents (PDF, DOC, drawings, BOQ)</p>
+                        <input
+                          type="file"
+                          multiple
+                          onChange={handleFileUpload}
+                          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                          className="block w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        />
+                        {formData.documents && formData.documents.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs text-gray-600 text-left">
+                              {formData.documents.length} file(s) selected:
+                            </p>
+                            <div className="space-y-1">
+                              {formData.documents.map((file, index) => (
+                                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                                  <div className="flex items-center gap-2">
+                                    <FileText size={12} className="text-gray-400" />
+                                    <span className="text-xs truncate max-w-[200px]">{file.name}</span>
+                                    <span className="text-xs text-gray-500">
+                                      ({(file.size / 1024).toFixed(1)} KB)
+                                    </span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveDocument(index)}
+                                    className="p-1 text-gray-400 hover:text-red-500"
+                                  >
+                                    <XCircle size={12} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
+                <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
                   <button
                     type="button"
                     onClick={closeCreateTenderModal}
-                    className="px-4 py-2 text-xs text-gray-700 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-colors font-medium"
+                    className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-2xl hover:bg-gray-200 transition-colors font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isFormSubmitting}
-                    className="px-4 py-2 text-xs bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-4 py-2 text-sm bg-blue-500 text-white rounded-2xl hover:bg-blue-600 transition-colors font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isFormSubmitting ? (
                       <>
-                        <div className="animate-spin w-3 h-3 border-2 border-white border-t-transparent rounded-full"></div>
-                        Creating...
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        Creating Tender...
                       </>
                     ) : (
-                      "Create Tender"
+                      <>
+                        <FileText size={14} />
+                        Create Tender
+                      </>
                     )}
                   </button>
                 </div>

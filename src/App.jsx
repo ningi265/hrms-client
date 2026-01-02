@@ -87,6 +87,7 @@ import VendorDetailsPage from "./pages/dashboard/vendors/vendor-details";
 import PublicTenderPortal from './pages/public-tenders';
 import ApprovalWorkflowConfig from './pages/dashboard/workflows/workflows';
 import ApprovalDashboardPage from './pages/dashboard/approvals/approvals'
+import TenderDetailPage from './pages/tender-details';
 
 
 function App() {
@@ -113,8 +114,9 @@ function App() {
             <Route path="/vehicle-management" element={<VehicleManagementDashboard/>}/>
             <Route path="/driver-reconciliation" element={<FinancialReconciliationDashboard/>}/>
             <Route path="/complete-registration" element={<CompleteRegistration />} />
-                     <Route path="/bid-portal" element={<VendorBidPortal/>}/>
-                        <Route path="/public-tenders" element={<PublicTenderPortal/>}/>
+            <Route path="/bid-portal" element={<VendorBidPortal/>}/>
+            <Route path="/public-tenders" element={<PublicTenderPortal/>}/>
+            <Route path="/tender/:id" element={<TenderDetailPage />} />
 
           
      
